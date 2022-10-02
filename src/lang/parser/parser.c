@@ -555,8 +555,12 @@ get_block(struct ParseBlock *self, bool in_module)
                     next_token_pb(self);
                     get_fun_parse_context(&fun_parse_context, self);
                     end__Location(&loc,
-                                  self->current->loc->s_line,
-                                  self->current->loc->s_col);
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
 
                     return NEW(ParseContextFun, fun_parse_context, loc);
                 }
@@ -585,8 +589,12 @@ get_block(struct ParseBlock *self, bool in_module)
 
                     get_fun_parse_context(&fun_parse_context, self);
                     end__Location(&loc,
-                                  self->current->loc->s_line,
-                                  self->current->loc->s_col);
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
 
                     return NEW(ParseContextFun, fun_parse_context, loc);
                 }
@@ -609,8 +617,12 @@ get_block(struct ParseBlock *self, bool in_module)
 
                     get_error_parse_context(&error_parse_context, self);
                     end__Location(&loc,
-                                  self->current->loc->s_line,
-                                  self->current->loc->s_col);
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
 
                     return NEW(ParseContextError, error_parse_context, loc);
                 }
@@ -623,8 +635,12 @@ get_block(struct ParseBlock *self, bool in_module)
 
                     get_module_parse_context(&module_parse_context, self);
                     end__Location(&loc,
-                                  self->current->loc->s_line,
-                                  self->current->loc->s_col);
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
 
                     return NEW(ParseContextModule, module_parse_context, loc);
                 }
@@ -637,8 +653,12 @@ get_block(struct ParseBlock *self, bool in_module)
 
                     get_constant_parse_context(&constant_parse_context, self);
                     end__Location(&loc,
-                                  self->current->loc->s_line,
-                                  self->current->loc->s_col);
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
 
                     return NEW(
                       ParseContextConstant, constant_parse_context, loc);
@@ -668,7 +688,11 @@ get_block(struct ParseBlock *self, bool in_module)
             next_token_pb(self);
             get_fun_parse_context(&fun_parse_context, self);
             end__Location(
-              &loc, self->current->loc->s_line, self->current->loc->s_col);
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_col);
 
             return NEW(ParseContextFun, fun_parse_context, loc);
         }
@@ -687,7 +711,11 @@ get_block(struct ParseBlock *self, bool in_module)
 
             get_error_parse_context(&error_parse_context, self);
             end__Location(
-              &loc, self->current->loc->s_line, self->current->loc->s_col);
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_col);
 
             return NEW(ParseContextError, error_parse_context, loc);
         }
@@ -698,7 +726,11 @@ get_block(struct ParseBlock *self, bool in_module)
 
             get_module_parse_context(&module_parse_context, self);
             end__Location(
-              &loc, self->current->loc->s_line, self->current->loc->s_col);
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_col);
 
             return NEW(ParseContextModule, module_parse_context, loc);
         }
@@ -792,7 +824,11 @@ get_block(struct ParseBlock *self, bool in_module)
 
             get_constant_parse_context(&constant_parse_context, self);
             end__Location(
-              &loc, self->current->loc->s_line, self->current->loc->s_col);
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_col);
 
             return NEW(ParseContextConstant, constant_parse_context, loc);
         }
@@ -803,7 +839,11 @@ get_block(struct ParseBlock *self, bool in_module)
 
             get_import_parse_context(&import_parse_context, self);
             end__Location(
-              &loc, self->current->loc->s_line, self->current->loc->s_col);
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->s_col);
 
             return NEW(ParseContextImport, import_parse_context, loc);
         }
