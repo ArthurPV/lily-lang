@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <base/assert.h>
 #include <base/new.h>
 #include <base/vec.h>
@@ -25,6 +26,23 @@ from__Vec(void **items, Usize item_size, Usize len)
 
     for (Usize i = 0; i <= len; i++)
         push__Vec(self, items[i]);
+
+    return self;
+}
+
+struct Vec *
+init__Vec(Usize item_size, Usize count, ...)
+{
+    struct Vec *self = NEW(Vec, item_size);
+
+    va_list vl;
+
+    va_start(vl, count);
+
+    for (Usize i = 0; i < count; i++)
+        push__Vec(self, va_arg(vl, void*));
+
+    va_end(vl);
 
     return self;
 }

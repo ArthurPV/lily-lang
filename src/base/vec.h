@@ -31,6 +31,14 @@ from__Vec(void **items, Usize item_size, Usize len);
 
 /**
  *
+ * @brief Initialize with Vec.
+ * @return the Vec instance.
+ */
+struct Vec *
+init__Vec(Usize item_size, Usize count, ...);
+
+/**
+ *
  * @return Vec.
  */
 struct Vec *

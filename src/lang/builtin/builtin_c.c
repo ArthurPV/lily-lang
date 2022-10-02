@@ -31,6 +31,18 @@ static struct Builtin *
 Load_Float32_module();
 static struct Builtin *
 Load_Float64_module();
+static struct Builtin *
+Load_Char_module();
+static struct Builtin *
+Load_Str_module();
+static struct Builtin *
+Load_Isize_module();
+static struct Builtin *
+Load_Usize_module();
+static struct Builtin *
+Load_Optional_module();
+static struct Builtin *
+Load_Ptr_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
 
@@ -4881,24 +4893,1005 @@ Load_Float64_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Float64", items));
 }
 
+static struct Builtin *
+Load_Char_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          2, NEW(DataType, DataTypeKindChar), NEW(DataType, DataTypeKindU32));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "code", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          2, NEW(DataType, DataTypeKindU32), NEW(DataType, DataTypeKindChar));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "chr", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          2, NEW(DataType, DataTypeKindChar), NEW(DataType, DataTypeKindChar));
+
+        push__Vec(items,
+                  NEW(BuiltinFunVar, NEW(BuiltinFun, "lowercase", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          2, NEW(DataType, DataTypeKindChar), NEW(DataType, DataTypeKindChar));
+
+        push__Vec(items,
+                  NEW(BuiltinFunVar, NEW(BuiltinFun, "uppercase", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindChar)),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindChar),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Char", items));
+}
+
+static struct Builtin *
+Load_Str_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindStr)),
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindStr));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "$", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindStr),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Str", items));
+}
+
+static struct Builtin *
+Load_Isize_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "+", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "*", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "/", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "%", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "**", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "+=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "*=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "/=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "%=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<<", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">>", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<<=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">>=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "|", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "&", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "|=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "&=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "xor", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindIsize)),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "xor=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(2,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "..", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindIsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Isize", items));
+}
+
+static struct Builtin *
+Load_Usize_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "+", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "*", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "/", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "%", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "**", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "+=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "*=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "/=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "%=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<<", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">>", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<<=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">>=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "|", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "&", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "|=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "&=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "xor", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeMut, NEW(DataType, DataTypeKindUsize)),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "xor=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(2,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "..", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "<=", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindUsize),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, ">=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Usize", items));
+}
+
+static struct Builtin *
+Load_Optional_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeOptional,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataTypeOptional,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeOptional,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataTypeOptional,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Optional", items));
+}
+
+static struct Builtin *
+Load_Ptr_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypePtr,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataTypePtr,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypePtr,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataTypePtr,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL)),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ptr", items));
+}
+
 struct Vec *
 Load_C_builtins()
 {
-    struct Vec *builtins = NEW(Vec, sizeof(struct Builtin));
-
-    push__Vec(builtins, Load_Int8_module());
-    push__Vec(builtins, Load_Int16_module());
-    push__Vec(builtins, Load_Int32_module());
-    push__Vec(builtins, Load_Int64_module());
-    push__Vec(builtins, Load_Int128_module());
-    push__Vec(builtins, Load_Uint8_module());
-    push__Vec(builtins, Load_Uint16_module());
-    push__Vec(builtins, Load_Uint32_module());
-    push__Vec(builtins, Load_Uint64_module());
-    push__Vec(builtins, Load_Uint128_module());
-    push__Vec(builtins, Load_Bool_module());
-    push__Vec(builtins, Load_Float32_module());
-    push__Vec(builtins, Load_Float64_module());
-
-    return builtins;
+    return init__Vec(sizeof(struct Builtin),
+                     19,
+                     Load_Int8_module(),
+                     Load_Int16_module(),
+                     Load_Int32_module(),
+                     Load_Int64_module(),
+                     Load_Int128_module(),
+                     Load_Uint8_module(),
+                     Load_Uint16_module(),
+                     Load_Uint32_module(),
+                     Load_Uint64_module(),
+                     Load_Uint128_module(),
+                     Load_Bool_module(),
+                     Load_Float32_module(),
+                     Load_Float64_module(),
+                     Load_Char_module(),
+                     Load_Str_module(),
+                     Load_Isize_module(),
+                     Load_Usize_module(),
+                     Load_Optional_module(),
+                     Load_Ptr_module());
 }
