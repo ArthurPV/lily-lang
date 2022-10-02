@@ -18,7 +18,7 @@ add__u128_t(U128 self, U128 v)
         struct u128_t u = { .x = self.x, .y = self.y + v.x + v.y };
 
         RUNTIME_ASSERT(u.y > v.x + v.y);
-        
+
         return u;
     }
 
@@ -46,7 +46,7 @@ sub__u128_t(U128 self, U128 v)
         u.y -= self.y;
 
         RUNTIME_ASSERT(u.y < v.x && u.y < v.y);
-        
+
         return u;
     }
 
@@ -58,7 +58,8 @@ sub__u128_t(U128 self, U128 v)
     return u;
 }
 
-LILY_API U128 mul__u128_t(U128 self, U128 v)
+LILY_API U128
+mul__u128_t(U128 self, U128 v)
 {
     RUNTIME_ASSERT(!(self.x == ULONG_MAX && self.y == ULONG_MAX));
 
