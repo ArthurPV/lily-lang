@@ -9,13 +9,13 @@
 #include <string.h>
 
 #define EXPECTED_TOKEN_PB_ERR(parse_block, expected) \
-    NEW(DiagnosticWithErrParser,                  \
-        parse_block,                              \
-        NEW(LilyError, LilyErrorExpectedToken),   \
-        *parse_block->current->loc,               \
-        format(""),                               \
-        Some(format("expected {s}, found `{Sr}`", \
-                    expected,                     \
+    NEW(DiagnosticWithErrParser,                     \
+        parse_block,                                 \
+        NEW(LilyError, LilyErrorExpectedToken),      \
+        *parse_block->current->loc,                  \
+        format(""),                                  \
+        Some(format("expected {s}, found `{Sr}`",    \
+                    expected,                        \
                     token_kind_to_string__Token(*parse_block->current))));
 
 #define CLOSE_BLOCK_NOTE()                                   \
@@ -45,7 +45,7 @@
                                                                          \
     if (self->current->kind != TokenKindColon && !is_object) {           \
                                                                          \
-        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`:`");        \
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`:`");     \
                                                                          \
         err->err->s = from__String("`:`");                               \
                                                                          \
@@ -54,10 +54,18 @@
         next_token_pb(self);
 
 #define EXPECTED_TOKEN_PB(self, token_kind, err) \
-    if (self->current->kind != token_kind) {  \
-        err;                                  \
-    } else                                    \
+    if (self->current->kind != token_kind) {     \
+        err;                                     \
+    } else                                       \
         next_token_pb(self);
+
+#define EXPECTED_TOKEN(self, token_kind, err)    \
+    if (self->pos < len__Vec(*self->tokens)) {   \
+        if (self->current->kind != token_kind) { \
+            err;                                 \
+        } else                                   \
+            next_token(self);                    \
+    }
 
 #define VERIFY_EOF(parse_block, bad_token, expected)                   \
     if (parse_block->current->kind == TokenKindEof && !bad_token) {    \
@@ -1232,7 +1240,8 @@ get_enum_parse_context(struct EnumParseContext *self,
             next_token_pb(parse_block);
 
             EXPECTED_TOKEN_PB(parse_block, TokenKindRParen, {
-                struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`)`");
+                struct Diagnostic *err =
+                  EXPECTED_TOKEN_PB_ERR(parse_block, "`)`");
 
                 err->err->s = from__String("`)`");
 
@@ -2364,8 +2373,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                         push__Vec(data_types,
                                   parse_data_type(self, parse_decl));
 
-                        if (parse_decl->pos < len__Vec(*parse_decl->tokens) &&
-                            parse_decl->current->kind != TokenKindComma) {
+                        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
                             struct Diagnostic *err =
                               NEW(DiagnosticWithErrParser,
                                   &self.parse_block,
@@ -2377,8 +2385,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                             err->err->s = from__String("`,`");
 
                             emit__Diagnostic(err);
-                        } else
-                            next_token(parse_decl);
+                        });
                     });
 
                     if (len__Vec(*data_types) == 0) {
@@ -2467,7 +2474,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             if (!is_wildcard && size == NULL) {
                 next_token(parse_decl);
 
-                if (parse_decl->current->kind != TokenKindRHook) {
+                EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
                     struct Diagnostic *err =
                       NEW(DiagnosticWithErrParser,
                           &self.parse_block,
@@ -2479,8 +2486,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                     err->err->s = from__String("`]`");
 
                     emit__Diagnostic(err);
-                } else
-                    next_token(parse_decl);
+                });
             }
 
             if (is_data_type(parse_decl)) {
@@ -2512,8 +2518,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             PARSE_PAREN(parse_decl, {
                 push__Vec(data_types, parse_data_type(self, parse_decl));
 
-                if (parse_decl->pos < len__Vec(*parse_decl->tokens) &&
-                    parse_decl->current->kind != TokenKindComma) {
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
                     struct Diagnostic *err =
                       NEW(DiagnosticWithErrParser,
                           &self.parse_block,
@@ -2525,8 +2530,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                     err->err->s = from__String("`,`");
 
                     emit__Diagnostic(err);
-                } else
-                    next_token(parse_decl);
+                });
             });
 
             data_type = NEW(DataTypeTuple, data_types);
@@ -2610,8 +2614,7 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
                 break;
         }
 
-        if (parse_decl->pos < len__Vec(*parse_decl->tokens) &&
-            parse_decl->current->kind != TokenKindComma) {
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
             struct Diagnostic *err = NEW(DiagnosticWithErrParser,
                                          &self.parse_block,
                                          NEW(LilyError, LilyErrorExpectedToken),
@@ -2622,8 +2625,7 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
             err->err->s = from__String("`,`");
 
             emit__Diagnostic(err);
-        } else
-            next_token(parse_decl);
+        });
     }
 
     return tags;
@@ -2698,8 +2700,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
             }
         }
 
-        if (parse_decl->pos < len__Vec(*parse_decl->tokens) &&
-            parse_decl->current->kind != TokenKindComma) {
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
             struct Diagnostic *err = NEW(DiagnosticWithErrParser,
                                          &self.parse_block,
                                          NEW(LilyError, LilyErrorExpectedToken),
@@ -2710,8 +2711,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
             err->err->s = from__String("`,`");
 
             emit__Diagnostic(err);
-        } else
-            next_token(parse_decl);
+        });
     }
 
     return generic_params;
@@ -2739,11 +2739,11 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             const Str int_str = to_Str__String(*parse_decl->previous->lit);
             Int128 res = atoi_i128(int_str);
 
-            if (res > Int32Min && res < Int32Max)
+            if (res >= Int32Min && res <= Int32Max)
                 literal = NEW(LiteralInt32, (Int32)res);
-            else if (res > Int64Min && res < Int64Max)
+            else if (res >= Int64Min && res <= Int64Max)
                 literal = NEW(LiteralInt64, (Int64)res);
-            else if (res > Int128Min && res < Int128Max)
+            else if (res >= Int128Min && res <= Int128Max)
                 literal = NEW(LiteralInt128, res);
             else {
                 struct Diagnostic *err =
@@ -2957,22 +2957,18 @@ parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
                           parse_decl->current->loc->s_line,
                           parse_decl->current->loc->s_col);
 
-        if (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
-            if (parse_decl->current->kind != TokenKindComma) {
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      &self.parse_block,
-                      NEW(LilyError, LilyErrorExpectedToken),
-                      *parse_decl->current->loc,
-                      format(""),
-                      None());
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         format(""),
+                                         None());
 
-                err->err->s = from__String("`,` or `:=`");
+            err->err->s = from__String("`,` or `:=`");
 
-                emit__Diagnostic(err);
-            } else
-                next_token(parse_decl);
-        }
+            emit__Diagnostic(err);
+        });
 
         if (default_value == NULL && data_type == NULL)
             push__Vec(params, NEW(FunParamNormal, name, None(), loc));
