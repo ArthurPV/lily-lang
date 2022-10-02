@@ -32,7 +32,7 @@ fun mod(x, y) = x % y;
 fun pow(x, y) = x ** y;
 
 /// @prot(Usize -> Usize)
-fun abs(x) = x;
+fun abs(x) = if x < 0 do -x else x;;
 
 /// @prot(Usize -> Usize -> Usize)
 fun min(x, y) = if x < y do x else y;;

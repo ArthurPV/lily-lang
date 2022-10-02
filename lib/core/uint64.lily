@@ -32,7 +32,7 @@ fun mod(x, y) = x % y;
 fun pow(x, y) = x ** y;
 
 /// @prot(Uint64 -> Uint64)
-fun abs(x) = x;
+fun abs(x) = if x < 0 do -x else x;;
 
 /// @prot(Uint64 -> Uint64 -> Uint64)
 fun min(x, y) = if x < y do x else y;;

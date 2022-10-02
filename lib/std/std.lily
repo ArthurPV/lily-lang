@@ -1,8 +1,8 @@
-import "@file(./alloc).*" as alloc
-import "@file(./allocator).*" as allocator
-import "@file(./arch).*" as arch
-import "@file(./clone).*" as clone
-import "@file(./error_).*" as error_
-import "@file(./hashmap).*" as hashmap
-import "@file(./hashset).*" as hashset
-import "@file(./int8).*" as Int8
+pub import "alloc.*" as alloc
+pub import "allocator.*" as allocator
+pub import "arch.*" as arch
+pub import "clone.*" as clone
+pub import "error_.*" as error_
+pub import "hashmap.*" as hashmap
+pub import "hashset.*" as hashset
+pub import "int8.*" as Int8

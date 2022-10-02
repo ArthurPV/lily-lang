@@ -1,1 +1,30 @@
+import "@builtin.Float32"
 
+/// @prot(Unit -> Float32)
+fun zero = 0.;
+
+/// @prot(Unit -> Float32)
+fun one = 1.;
+
+/// @prot(Float32 -> Float32)
+fun neg(x) = -x;
+
+/// @prot(Float32 -> Float32 -> Float32)
+fun add(x, y) = x + y;
+
+/// @prot(Float32 -> Float32 -> Float32)
+fun sub(x, y) = x - y;
+
+/// @prot(Float32 -> Float32 -> Float32)
+fun mul(x, y) = x * y;
+
+/// @prot(Float32 -> Float32 -> Float32)
+fun div(x, y) = x / y;
+
+/// @prot(Float32 -> Float32 -> Float32)
+fun mod(x, y) = x % y;
+
+/// @prot(Float32 -> Float32)
+fun abs(x) = if x < 0 do -x else x;;
+
+PI :: Float32 = Float32.PI;

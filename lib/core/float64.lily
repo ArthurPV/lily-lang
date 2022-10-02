@@ -1,0 +1,30 @@
+import "@builtin.Float64"
+
+/// @prot(Unit -> Float64)
+fun zero = 0.;
+
+/// @prot(Unit -> Float64)
+fun one = 1.;
+
+/// @prot(Float64 -> Float64)
+fun neg(x) = -x;
+
+/// @prot(Float64 -> Float64 -> Float64)
+fun add(x, y) = x + y;
+
+/// @prot(Float64 -> Float64 -> Float64)
+fun sub(x, y) = x - y;
+
+/// @prot(Float64 -> Float64 -> Float64)
+fun mul(x, y) = x * y;
+
+/// @prot(Float64 -> Float64 -> Float64)
+fun div(x, y) = x / y;
+
+/// @prot(Float64 -> Float64 -> Float64)
+fun mod(x, y) = x % y;
+
+/// @prot(Float64 -> Float64)
+fun abs(x) = if x < 0 do -x else x;;
+
+PI :: Float64 = Float64.PI;
