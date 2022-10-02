@@ -62,8 +62,7 @@ get_extension__Path(struct Path self)
 struct String *
 read_file__Path(struct Path self)
 {
-    bool is_directory = is_directory__Path(self);
-    assert(is_directory == false && "The path is a directory");
+    assert(is_directory__Path(self) == false && "The path is a directory");
 
     Str path = to_Str__String(*self.path);
     FILE *file = fopen(path, "rb");
@@ -97,6 +96,22 @@ read_file__Path(struct Path self)
     push__String(file_content, (char*)'\n');
 
     return file_content;
+}
+
+void
+write_file__Path(struct Path self, const Str content)
+{
+    assert(is_directory__Path(self) == false && "The path is a directory");
+
+    Str path = to_Str__String(*self.path);
+    FILE *file = fopen(path, "w");
+
+    if (file == NULL)
+        assert(0 && "write error");
+
+    fprintf(file, "%s", content);
+    fclose(file);
+    free(path);
 }
 
 void

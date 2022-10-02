@@ -61,6 +61,7 @@ main(int argc, char **argv)
                 struct Generate gen = NEW(Generate, tc);
 
                 write_main_function(&gen);
+                run__GenerateC(gen);
 
                 FREE(Generate, gen);
 

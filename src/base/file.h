@@ -47,6 +47,15 @@ read_file__Path(struct Path self);
 
 /**
  *
+ * @brief The function try to write on file.
+ * @param self
+ * @return void
+ */
+void
+write_file__Path(struct Path self, const Str content);
+
+/**
+ *
  * @brief Free Path type.
  */
 void
