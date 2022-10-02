@@ -4,7 +4,7 @@
 
 - <a href="#introduction">Introduction</a>
 - <a href="#hello-world">Hello World</a>
-- <a href="#comments"><Comments</a>
+- <a href="#comments">Comments</a>
 - <a href="#values">Values</a>
 - <a href="#variables">Variables</a>
 - <a href="#integers">Integers</a>
