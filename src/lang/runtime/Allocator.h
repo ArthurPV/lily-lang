@@ -9,8 +9,8 @@ extern "C"
 {
 #endif
 
-	LILY_API void* allocate__Allocator(Usize n, Usize t_size);
-	inline LILY_API void deallocate__Allocator(void* const p);
+    LILY_API void *allocate__Allocator(Usize n, Usize t_size);
+    inline LILY_API void deallocate__Allocator(void *const p);
 
 #if defined(__cplusplus)
 }
