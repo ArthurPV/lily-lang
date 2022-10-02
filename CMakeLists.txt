@@ -21,6 +21,7 @@ set(BASE_SRC
         src/base/test.c
         src/base/tuple.c
         src/base/u128.c
+        src/base/util.c
         src/base/vec.c)
 
 set(LANG_SRC

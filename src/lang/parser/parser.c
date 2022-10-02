@@ -2,6 +2,7 @@
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/platform.h>
+#include <base/util.h>
 #include <lang/diagnostic/diagnostic.h>
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/parser.h>
@@ -255,6 +256,12 @@ static struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl);
 static struct Vec *
 parse_generic_params(struct Parser self, struct ParseDecl *parse_decl);
+static struct Expr *
+parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
+static struct Expr *
+parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
+static struct Expr *
+parse_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct FunDecl *
 parse_fun_declaration(struct Parser *self);
 static void
@@ -2655,6 +2662,99 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
     return generic_params;
 }
 
+#define INT32_MIN -2147483648
+#define INT32_MAX 2147483647
+#define INT64_MIN -9223372036854775808
+#define INT64_MAX 9223372036854775807
+#define INT128_MIN -2E127
+#define INT128_MAX 2E127 - 1
+
+static struct Expr *
+parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
+{
+    switch (parse_decl->previous->kind) {
+        case TokenKindIntLit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int128 res = atoi_i128(int_str);
+
+            if (res > INT32_MIN && res <= INT32_MAX) {
+                assert(0 && "todo");
+            } else if (res > INT64_MIN && res <= INT64_MAX) {
+                assert(0 && "todo");
+            } else if (res > INT128_MIN && res <= INT128_MAX) {
+                assert(0 && "todo");
+            } else {
+                assert(0 && "error out of range");
+            }
+
+            free(int_str);
+
+            break;
+        }
+        case TokenKindCharLit:
+            break;
+        case TokenKindFloatLit:
+            break;
+        case TokenKindBitCharLit:
+            break;
+        case TokenKindStringLit:
+            break;
+        case TokenKindBitStringLit:
+            break;
+        default:
+            UNREACHABLE("");
+    }
+}
+
+static struct Expr *
+parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
+{
+    next_token(parse_decl);
+
+    struct Expr *expr = NULL;
+
+    switch (parse_decl->previous->kind) {
+        case TokenKindIdentifier:
+            break;
+        case TokenKindSelfKw:
+            break;
+        case TokenKindLParen:
+            break;
+        case TokenKindLHook:
+            break;
+        case TokenKindTryKw:
+            break;
+        case TokenKindIfKw:
+            break;
+        case TokenKindBeginKw:
+            break;
+        case TokenKindAmpersand:
+            break;
+        case TokenKindUndefKw:
+            break;
+        case TokenKindNilKw:
+            break;
+        case TokenKindIntLit:
+        case TokenKindCharLit:
+        case TokenKindFloatLit:
+        case TokenKindBitCharLit:
+        case TokenKindStringLit:
+        case TokenKindBitStringLit:
+            expr = parse_literal_expr(self, parse_decl);
+            break;
+        default:
+            assert(0 && "error");
+    }
+
+    return expr;
+}
+
+static struct Expr *
+parse_expr(struct Parser self, struct ParseDecl *parse_decl)
+{
+    assert(0 && "todo");
+}
+
 static struct FunDecl *
 parse_fun_declaration(struct Parser *self)
 {
@@ -2676,6 +2776,12 @@ parse_fun_declaration(struct Parser *self)
           NEW(ParseDecl, fun_parse_context.generic_params);
 
         generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (fun_parse_context.has_params) {
+    }
+
+    {
     }
 
     return NEW(FunDecl,
