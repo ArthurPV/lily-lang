@@ -6,14 +6,14 @@
 #include <lang/parser/parser.h>
 #include <pthread.h>
 
-#define EXPECTED_TOKEN_ERR(parse_block, expected)   \
-    NEW(DiagnosticWithErrParser,                    \
-        parse_block,                                \
-        NEW(LilyError, LilyErrorExpectedToken),     \
-        *parse_block->current->loc,                 \
-        format(""),                                 \
-        Some(format("expected `{c}`, found `{Sr}`", \
-                    expected,                       \
+#define EXPECTED_TOKEN_ERR(parse_block, expected) \
+    NEW(DiagnosticWithErrParser,                  \
+        parse_block,                              \
+        NEW(LilyError, LilyErrorExpectedToken),   \
+        *parse_block->current->loc,               \
+        format(""),                               \
+        Some(format("expected {s}, found `{Sr}`", \
+                    expected,                     \
                     token_kind_to_string__Token(*parse_block->current))));
 
 #define CLOSE_BLOCK_NOTE()                                   \
@@ -43,14 +43,22 @@
                                                                           \
     if (self->current->kind != TokenKindColon && !is_object) {            \
                                                                           \
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, ':');           \
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");         \
                                                                           \
-        err->err->s = from__String(":");                                  \
+        err->err->s = from__String("`:`");                                \
                                                                           \
         emit__Diagnostic(err);                                            \
     } else if (self->current->kind == TokenKindColon && !is_object)       \
         next_token_pb(self);
 
+#define EXPECTED_TOKEN(parse_block, token_kind, err) \
+    if (parse_block->current->kind != token_kind) {  \
+        err;                                         \
+    } else                                           \
+        next_token_pb(parse_block);
+
+static void
+get_block(struct ParseBlock *self);
 static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
@@ -66,8 +74,7 @@ get_object_context(struct ParseBlock *self, bool is_pub);
 static struct Vec *
 get_generic_params(struct ParseBlock *self);
 static inline bool
-valid_fun_body_item(struct ParseBlock *parse_block,
-                    bool already_invalid);
+valid_fun_body_item(struct ParseBlock *parse_block, bool already_invalid);
 static void
 get_body_fun_parse_context(struct FunParseContext *self,
                            struct ParseBlock *parse_block);
@@ -102,6 +109,17 @@ valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
 static void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block);
+static inline bool
+valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
+static void
+get_tag_parse_context(struct TagParseContext *self,
+                      struct ParseBlock *parse_block);
+static void
+get_method_parse_context(struct MethodParseContext *self,
+                         struct ParseBlock *parse_block);
+static void
+get_property_parse_context(struct PropertyParseContext *self,
+                           struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -136,6 +154,110 @@ __new__ParseBlock(struct Scanner *scanner)
     return self;
 }
 
+static void
+get_block(struct ParseBlock *self)
+{
+    switch (self->current->kind) {
+        case TokenKindPubKw:
+            next_token_pb(self);
+
+            switch (self->current->kind) {
+                case TokenKindFunKw: {
+                    struct FunParseContext *fun_parse_context =
+                      NEW(FunParseContext);
+                    fun_parse_context->is_pub = true;
+
+                    next_token_pb(self);
+                    get_fun_parse_context(fun_parse_context, self);
+
+                    push__Vec(self->blocks,
+                              NEW(ParseContextFun, fun_parse_context));
+
+                    break;
+                }
+                case TokenKindAsyncKw: {
+                    next_token_pb(self);
+
+                    if (self->current->kind != TokenKindFunKw) {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrParser,
+                              self,
+                              NEW(LilyError, LilyErrorBadUsageOfAsync),
+                              *self->current->loc,
+                              format("expected `fun` after async declaration"),
+                              None());
+
+                        emit__Diagnostic(err);
+                    } else
+                        next_token_pb(self);
+
+                    struct FunParseContext *fun_parse_context =
+                      NEW(FunParseContext);
+                    fun_parse_context->is_pub = true;
+                    fun_parse_context->is_async = true;
+
+                    get_fun_parse_context(fun_parse_context, self);
+
+                    push__Vec(self->blocks,
+                              NEW(ParseContextFun, fun_parse_context));
+
+                    break;
+                }
+                case TokenKindTypeKw:
+                    get_type_context(self, true);
+                    break;
+                case TokenKindObjectKw:
+                    get_object_context(self, true);
+                    break;
+                case TokenKindTagKw:
+                    TODO("");
+                    break;
+                case TokenKindErrorKw:
+                    TODO("");
+                    break;
+                default: {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          self,
+                          NEW(LilyError, LilyErrorBadUsageOfPub),
+                          *self->current->loc,
+                          format("expected `fun`, `async`, `type`, tag` or "
+                                 "`object` after `pub` declaration"),
+                          None());
+
+                    emit__Diagnostic(err);
+                    skip_to_next_block(self);
+
+                    break;
+                }
+            }
+
+            break;
+        case TokenKindFunKw: {
+            struct FunParseContext *fun_parse_context = NEW(FunParseContext);
+
+            next_token_pb(self);
+            get_fun_parse_context(fun_parse_context, self);
+
+            push__Vec(self->blocks, NEW(ParseContextFun, fun_parse_context));
+
+            break;
+        }
+        case TokenKindTagKw:
+            break;
+        case TokenKindTypeKw:
+            get_type_context(self, false);
+            break;
+        case TokenKindObjectKw:
+            get_object_context(self, false);
+            break;
+        default:
+            assert(0 && "error");
+            skip_to_next_block(self);
+            break;
+    }
+}
+
 void
 run__ParseBlock(struct ParseBlock *self)
 {
@@ -146,107 +268,7 @@ run__ParseBlock(struct ParseBlock *self)
     // block
 
     while (self->current->kind != TokenKindEof) {
-        switch (self->current->kind) {
-            case TokenKindPubKw:
-                next_token_pb(self);
-
-                switch (self->current->kind) {
-                    case TokenKindFunKw: {
-                        struct FunParseContext *fun_parse_context =
-                          NEW(FunParseContext);
-                        fun_parse_context->is_pub = true;
-
-                        next_token_pb(self);
-                        get_fun_parse_context(fun_parse_context, self);
-
-                        push__Vec(self->blocks,
-                                  NEW(ParseContextFun, fun_parse_context));
-
-                        break;
-                    }
-                    case TokenKindAsyncKw: {
-                        next_token_pb(self);
-
-                        if (self->current->kind != TokenKindFunKw) {
-                            struct Diagnostic *err = NEW(
-                              DiagnosticWithErrParser,
-                              self,
-                              NEW(LilyError, LilyErrorBadUsageOfAsync),
-                              *self->current->loc,
-                              format("expected `fun` after async declaration"),
-                              None());
-
-                            emit__Diagnostic(err);
-                        } else
-                            next_token_pb(self);
-
-                        struct FunParseContext *fun_parse_context =
-                          NEW(FunParseContext);
-                        fun_parse_context->is_pub = true;
-                        fun_parse_context->is_async = true;
-
-                        get_fun_parse_context(fun_parse_context, self);
-
-                        push__Vec(self->blocks,
-                                  NEW(ParseContextFun, fun_parse_context));
-
-                        break;
-                    }
-                    case TokenKindTypeKw:
-                        get_type_context(self, true);
-                        break;
-                    case TokenKindObjectKw:
-                        get_object_context(self, true);
-                        break;
-                    case TokenKindTagKw:
-                        TODO("");
-                        break;
-                    case TokenKindErrorKw:
-                        TODO("");
-                        break;
-                    default: {
-                        struct Diagnostic *err =
-                          NEW(DiagnosticWithErrParser,
-                              self,
-                              NEW(LilyError, LilyErrorBadUsageOfPub),
-                              *self->current->loc,
-                              format("expected `fun`, `async`, `type`, tag` or "
-                                     "`object` after `pub` declaration"),
-                              None());
-
-                        emit__Diagnostic(err);
-                        skip_to_next_block(self);
-
-                        break;
-                    }
-                }
-
-                break;
-            case TokenKindFunKw: {
-                struct FunParseContext *fun_parse_context =
-                  NEW(FunParseContext);
-
-                next_token_pb(self);
-                get_fun_parse_context(fun_parse_context, self);
-
-                push__Vec(self->blocks,
-                          NEW(ParseContextFun, fun_parse_context));
-
-                break;
-            }
-            case TokenKindTagKw:
-                break;
-            case TokenKindTypeKw:
-                get_type_context(self, false);
-                break;
-            case TokenKindObjectKw:
-                get_object_context(self, false);
-                break;
-            default:
-                assert(0 && "error");
-                skip_to_next_block(self);
-                break;
-        }
+        get_block(self);
     }
 }
 
@@ -450,14 +472,13 @@ get_object_context(struct ParseBlock *self, bool is_pub)
     if (self->current->kind == TokenKindFatArrow) {
         next_token_pb(self);
 
-        if (self->current->kind != TokenKindLHook) {
-            struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, '[');
+        EXPECTED_TOKEN(self, TokenKindLHook, {
+            struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`[`");
 
-            err->err->s = from__String("[");
+            err->err->s = from__String("`[`");
 
             emit__Diagnostic(err);
-        } else
-            next_token_pb(self);
+        });
 
         while (self->current->kind != TokenKindRHook &&
                self->current->kind != TokenKindEof) {
@@ -471,14 +492,13 @@ get_object_context(struct ParseBlock *self, bool is_pub)
         next_token_pb(self);
     }
 
-    if (self->current->kind != TokenKindColon) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, ':');
+    EXPECTED_TOKEN(self, TokenKindColon, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");
 
-        err->err->s = from__String(":");
+        err->err->s = from__String("`:`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(self);
+    });
 
     if ((self->current->kind == TokenKindEnumKw ||
          self->current->kind == TokenKindRecordKw ||
@@ -570,7 +590,8 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindClassKw: {
-            struct ClassParseContext *class_parse_context = NEW(ClassParseContext);
+            struct ClassParseContext *class_parse_context =
+              NEW(ClassParseContext);
 
             class_parse_context->name = name;
             class_parse_context->generic_params = generic_params;
@@ -587,7 +608,8 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             get_class_parse_context(class_parse_context, self);
 
-            push__Vec(self->blocks, NEW(ParseContextClass, class_parse_context));
+            push__Vec(self->blocks,
+                      NEW(ParseContextClass, class_parse_context));
 
             break;
         }
@@ -649,8 +671,7 @@ __new__FunParseContext()
 }
 
 static inline bool
-valid_fun_body_item(struct ParseBlock *parse_block,
-                    bool already_invalid)
+valid_fun_body_item(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
         case TokenKindEof:
@@ -672,13 +693,13 @@ valid_fun_body_item(struct ParseBlock *parse_block,
         case TokenKindMacroKw:
         case TokenKindImplKw: {
             if (!already_invalid) {
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      parse_block,
-                      NEW(LilyError, LilyErrorInvalidItemInFunOrClassBody),
-                      *parse_block->current->loc,
-                      format("this token is invalid inside the function or class"),
-                      None());
+                struct Diagnostic *err = NEW(
+                  DiagnosticWithErrParser,
+                  parse_block,
+                  NEW(LilyError, LilyErrorInvalidItemInFunOrClassBody),
+                  *parse_block->current->loc,
+                  format("this token is invalid inside the function or class"),
+                  None());
 
                 struct Diagnostic *note = CLOSE_BLOCK_NOTE();
 
@@ -879,15 +900,13 @@ get_fun_parse_context(struct FunParseContext *self,
     }
 
     // 5. Get body.
-    if (parse_block->current->kind == TokenKindEq)
-        next_token_pb(parse_block);
-    else {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    }
+    });
 
     get_body_fun_parse_context(self, parse_block);
 }
@@ -932,15 +951,13 @@ get_enum_parse_context(struct EnumParseContext *self,
 
             next_token_pb(parse_block);
 
-            if (parse_block->current->kind != TokenKindRParen) {
-                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, ')');
+            EXPECTED_TOKEN(parse_block, TokenKindRParen, {
+                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`)`");
 
-                err->err->s = from__String(")");
+                err->err->s = from__String("`)`");
 
                 emit__Diagnostic(err);
-            } else {
-                next_token_pb(parse_block);
-            }
+            });
 
             self->is_error = true;
         } else {
@@ -958,14 +975,13 @@ get_enum_parse_context(struct EnumParseContext *self,
     // 2. Variants
     bool bad_token = false;
 
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    });
 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
@@ -1099,14 +1115,13 @@ get_record_parse_context(struct RecordParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Fields
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    });
 
     bool bad_token = false;
 
@@ -1202,14 +1217,13 @@ get_alias_parse_context(struct AliasParseContext *self,
     next_token_pb(parse_block);
 
     // 1. DataType
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    })
 
     bool bad_token = false;
 
@@ -1307,14 +1321,13 @@ get_trait_parse_context(struct TraitParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Body
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    });
 
     bool bad_token = false;
 
@@ -1390,28 +1403,138 @@ get_class_parse_context(struct ClassParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Body
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
-        err->err->s = from__String("=");
+        err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    });
 
     bool bad_token = false;
 
-    while (parse_block->current->kind != TokenKindEndKw && parse_block->current->kind != TokenKindEof) {
+    struct MethodParseContext *method_parse_context = NULL;
+    struct PropertyParseContext *property_parse_context = NULL;
+
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
+        bool is_pub = false;
+        bool is_async = false;
+        struct Location *async_loc = NULL;
+
         if (valid_class_token_in_body(parse_block, bad_token)) {
-            push__Vec(self->body, &*parse_block->current);
-            next_token_pb(parse_block);
+            // push__Vec(self->body, &*parse_block->current);
+            // next_token_pb(parse_block);
+
+            if (parse_block->current->kind == TokenKindAt)
+                goto method_or_property;
+            else if (parse_block->current->kind == TokenKindImportKw)
+                goto import;
+            else if (parse_block->current->kind == TokenKindPubKw) {
+                next_token_pb(parse_block);
+
+                is_pub = true;
+
+                goto method_or_property;
+            } else if (parse_block->current->kind == TokenKindAsyncKw) {
+                async_loc = parse_block->current->loc;
+                is_async = true;
+
+                next_token_pb(parse_block);
+
+                goto method_or_property;
+            } else
+                assert(0 && "error");
         } else {
             bad_token = true;
             next_token_pb(parse_block);
         }
+
+    method_or_property : {
+        next_token_pb(parse_block);
+
+        if (parse_block->current->kind != TokenKindIdentifier) {
+            struct Diagnostic *err = NEW(
+              DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissNameOnPropertyOrMethod),
+              *parse_block->current->loc,
+              format(""),
+              Some(format("add name on property or method, found `{Sr}`",
+                          token_kind_to_string__Token(*parse_block->current))));
+
+            emit__Diagnostic(err);
+        }
+
+        struct String *name = &*parse_block->current->lit;
+
+        next_token_pb(parse_block);
+
+        if (parse_block->current->kind != TokenKindLParen ||
+            parse_block->current->kind != TokenKindLHook ||
+            parse_block->current->kind != TokenKindEq) {
+
+            if (is_async) {
+                struct Diagnostic *note =
+                  NEW(DiagnosticWithNoteParser,
+                      parse_block,
+                      format(
+                        "the declaration of async in property is not expected"),
+                      *async_loc,
+                      format(""),
+                      None());
+
+                struct Diagnostic *err =
+                  EXPECTED_TOKEN_ERR(parse_block, "`(`, `[` or `=`");
+
+                err->err->s = from__String("`(`, `[` or `=`");
+
+                emit__Diagnostic(note);
+                emit__Diagnostic(err);
+            }
+
+            property_parse_context = NEW(PropertyParseContext);
+            property_parse_context->name = name;
+            property_parse_context->is_pub = is_pub;
+
+            goto property;
+        } else {
+            method_parse_context = NEW(MethodParseContext);
+            method_parse_context->name = name;
+            method_parse_context->is_pub = is_pub;
+            method_parse_context->is_async = is_async;
+
+            goto method;
+        }
     }
 
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
+    method : {
+        if (parse_block->current->kind == TokenKindLHook) {
+        }
+
+        if (parse_block->current->kind == TokenKindLParen) {
+        }
+
+        EXPECTED_TOKEN(parse_block, TokenKindEq, {
+            struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+
+            err->err->s = from__String("`=`");
+
+            emit__Diagnostic(err);
+        })
+    }
+
+        import: {
+
+        }
+
+        property: {
+            while (parse_block->current->kind != TokenKindSemicolon && parse_block->current->kind != TokenKindEof) {
+                push__Vec(property_parse_context->data_type, &*parse_block->current);
+        next_token_pb(parse_block);
+    }
+
+    if (parse_block->current->kind == TokenKindEof) {
         struct Diagnostic *err =
           NEW(DiagnosticWithErrParser,
               parse_block,
@@ -1422,11 +1545,30 @@ get_class_parse_context(struct ClassParseContext *self,
               format("expected closing block here"),
               None());
 
-        err->err->s = from__String("`end`");
+        err->err->s = from__String("`;`");
 
         emit__Diagnostic(err);
     } else
         next_token_pb(parse_block);
+}
+}
+
+if (parse_block->current->kind == TokenKindEof && !bad_token) {
+    struct Diagnostic *err =
+      NEW(DiagnosticWithErrParser,
+          parse_block,
+          NEW(LilyError, LilyErrorMissClosingBlock),
+          *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+                                     parse_block->pos - 1))
+             ->loc,
+          format("expected closing block here"),
+          None());
+
+    err->err->s = from__String("`end`");
+
+    emit__Diagnostic(err);
+} else
+    next_token_pb(parse_block);
 }
 
 void
@@ -1436,6 +1578,130 @@ __free__ClassParseContext(struct ClassParseContext *self)
     FREE(Vec, self->inheritance);
     FREE(Vec, self->impl);
     FREE(Vec, self->body);
+    free(self);
+}
+
+struct TagParseContext *
+__new__TagParseContext()
+{
+    struct TagParseContext *self = malloc(sizeof(struct TagParseContext));
+    self->has_generic_params = false;
+    self->name = NULL;
+    self->generic_params = NULL;
+    self->body = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static inline bool
+valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
+{
+    if (valid_fun_body_item(parse_block, true))
+        return true;
+    else {
+        if (!already_invalid) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  parse_block,
+                  NEW(LilyError, LilyErrorInvalidTokenInTagBody),
+                  *parse_block->current->loc,
+                  format("invalid token in tag body"),
+                  None());
+
+            struct Diagnostic *note = CLOSE_BLOCK_NOTE();
+
+            emit__Diagnostic(err);
+            emit__Diagnostic(note);
+        }
+
+        return false;
+    }
+}
+
+static void
+get_tag_parse_context(struct TagParseContext *self,
+                      struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    // 1. Body
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+
+        err->err->s = from__String("`=`");
+
+        emit__Diagnostic(err);
+    });
+
+    bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
+        if (parse_block->current->kind == TokenKindFunKw) {
+
+        } else if (parse_block->current->kind == TokenKindImportKw) {
+        }
+    }
+}
+
+void
+__free__TagParseContext(struct TagParseContext *self)
+{
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->body);
+    free(self);
+}
+
+struct MethodParseContext *
+__new__MethodParseContext()
+{
+    struct MethodParseContext *self = malloc(sizeof(struct MethodParseContext));
+    self->is_pub = false;
+    self->is_async = false;
+    self->has_generic_params = false;
+    self->has_params = false;
+    self->name = NULL;
+    self->generic_params = NULL;
+    self->params = NULL;
+    self->body = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static void
+get_method_parse_context(struct MethodParseContext *self,
+                         struct ParseBlock *parse_block)
+{
+}
+
+void
+__free__MethodParseContext(struct MethodParseContext *self)
+{
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->params);
+    FREE(Vec, self->body);
+    free(self);
+}
+
+struct PropertyParseContext *
+__new__PropertyParseContext()
+{
+    struct PropertyParseContext *self =
+      malloc(sizeof(struct PropertyParseContext));
+    self->is_pub = false;
+    self->name = NULL;
+    self->data_type = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static void
+get_property_parse_context(struct PropertyParseContext *self,
+                           struct ParseBlock *parse_block)
+{
+}
+
+void
+__free__PropertyParseContext(struct PropertyParseContext *self)
+{
+    FREE(Vec, self->data_type);
     free(self);
 }
 
@@ -1546,6 +1812,24 @@ __new__ParseContextClass(struct ClassParseContext *class)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextMethod(struct MethodParseContext *method)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindMethod;
+    self->value.method = method;
+    return self;
+}
+
+struct ParseContext *
+__new__ParseContextProperty(struct PropertyParseContext *property)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindProperty;
+    self->value.property = property;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -1589,6 +1873,20 @@ __free__ParseContextClass(struct ParseContext *self)
 }
 
 void
+__free__ParseContextMethod(struct ParseContext *self)
+{
+    FREE(MethodParseContext, self->value.method);
+    free(self);
+}
+
+void
+__free__ParseContextProperty(struct ParseContext *self)
+{
+    FREE(PropertyParseContext, self->value.property);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -1611,6 +1909,12 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
         case ParseContextKindClass:
             FREE(ParseContextClass, self);
+            break;
+        case ParseContextKindMethod:
+            FREE(ParseContextMethod, self);
+            break;
+        case ParseContextKindProperty:
+            FREE(ParseContextProperty, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");

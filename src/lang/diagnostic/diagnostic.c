@@ -189,7 +189,7 @@ lily_error_to_string(struct LilyError err)
         case LilyErrorMissFunctionName:
             return from__String("miss function name");
         case LilyErrorExpectedToken:
-            return format("expected `{S}`", err.s);
+            return format("expected {S}", err.s);
         case LilyErrorMissClosingBlock:
             return format("miss closing block, expected: {S}", err.s);
         case LilyErrorMisuseOfSpecialClosingBlock:
@@ -216,6 +216,10 @@ lily_error_to_string(struct LilyError err)
             return from__String("unexpected inheritance");
         case LilyErrorUnexpectedImplementation:
             return from__String("unexpected implementation");
+        case LilyErrorInvalidTokenInTagBody:
+            return from__String("invalid token in tag body");
+        case LilyErrorMissNameOnPropertyOrMethod:
+            return from__String("miss name on property or method");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -294,6 +298,10 @@ get_code_of_lily_error(struct LilyError err)
             return "0026";
         case LilyErrorUnexpectedImplementation:
             return "0027";
+        case LilyErrorInvalidTokenInTagBody:
+            return "0028";
+        case LilyErrorMissNameOnPropertyOrMethod:
+            return "0029";
         default:
             UNREACHABLE("unknown lily error kind");
     }

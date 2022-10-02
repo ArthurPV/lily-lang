@@ -100,7 +100,7 @@ int test_keyword() {
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner->tokens, 43))->kind,
                    TokenKindMutKw);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner->tokens, 44))->kind,
-                   TokenKindBlockKw);
+                   TokenKindBeginKw);
 
     FREE(Scanner, scanner);
 

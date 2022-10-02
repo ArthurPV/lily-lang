@@ -244,8 +244,8 @@ get_keyword(const Str id)
         return TokenKindInKw;
     if (!strcmp(id, "mut"))
         return TokenKindMutKw;
-    if (!strcmp(id, "block"))
-        return TokenKindBlockKw;
+    if (!strcmp(id, "begin"))
+        return TokenKindBeginKw;
     return TokenKindIdentifier;
 }
 

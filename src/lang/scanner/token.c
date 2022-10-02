@@ -327,8 +327,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("in");
         case TokenKindMutKw:
             return from__String("mut");
-        case TokenKindBlockKw:
-            return from__String("block");
+        case TokenKindBeginKw:
+            return from__String("begin");
         case TokenKindStringLit:
             return format("\"{S}\"", self.lit);
         case TokenKindCharLit:

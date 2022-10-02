@@ -189,6 +189,75 @@ __new__ClassParseContext();
 void
 __free__ClassParseContext(struct ClassParseContext *self);
 
+typedef struct TagParseContext
+{
+    bool has_generic_params;
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *body;           // struct Vec<struct Token&>*
+} TagParseContext;
+
+/**
+ *
+ * @brief Contruct the TagParseContext type.
+ */
+struct TagParseContext *
+__new__TagParseContext();
+
+/**
+ *
+ * @brief Free the TagParseContext type.
+ */
+void
+__free__TagParseContext(struct TagParseContext *self);
+
+typedef struct MethodParseContext
+{
+    bool is_pub;
+    bool is_async;
+    bool has_generic_params;
+    bool has_params;
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *params;         // struct Vec<struct Token&>*
+    struct Vec *body;           // struct Vec<struct Token&>*
+} MethodParseContext;
+
+/**
+ *
+ * @brief Contruct the MethodParseContext type.
+ */
+struct MethodParseContext *
+__new__MethodParseContext();
+
+/**
+ *
+ * @brief Free the MethodParseContext type.
+ */
+void
+__free__MethodParseContext(struct MethodParseContext *self);
+
+typedef struct PropertyParseContext
+{
+    bool is_pub;
+    struct String *name;   // struct String&
+    struct Vec *data_type; // struct Vec<struct Token&>*
+} PropertyParseContext;
+
+/**
+ *
+ * @brief Contruct the PropertyParseContext type.
+ */
+struct PropertyParseContext *
+__new__PropertyParseContext();
+
+/**
+ *
+ * @brief Free the PropertyParseContext type.
+ */
+void
+__free__PropertyParseContext(struct PropertyParseContext *self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,
@@ -198,7 +267,9 @@ enum ParseContextKind
     ParseContextKindEnumObject,
     ParseContextKindRecordObject,
     ParseContextKindTrait,
-    ParseContextKindClass
+    ParseContextKindClass,
+    ParseContextKindMethod,
+    ParseContextKindProperty
 };
 
 typedef struct ParseContext
@@ -213,6 +284,8 @@ typedef struct ParseContext
         struct AliasParseContext *alias;
         struct TraitParseContext *trait;
         struct ClassParseContext *class;
+        struct MethodParseContext *method;
+        struct PropertyParseContext *property;
     } value;
 } ParseContext;
 
@@ -260,6 +333,20 @@ __new__ParseContextClass(struct ClassParseContext *class);
 
 /**
  *
+ * @brief Contruct the ParseContext type (Method variant).
+ */
+struct ParseContext *
+__new__ParseContextMethod(struct MethodParseContext *method);
+
+/**
+ *
+ * @brief Contruct the ParseContext type (Property variant).
+ */
+struct ParseContext *
+__new__ParseContextProperty(struct PropertyParseContext *property);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -299,6 +386,20 @@ __free__ParseContextTrait(struct ParseContext *self);
  */
 void
 __free__ParseContextClass(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Method variant).
+ */
+void
+__free__ParseContextMethod(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Property variant).
+ */
+void
+__free__ParseContextProperty(struct ParseContext *self);
 
 /**
  *

@@ -109,7 +109,7 @@ enum TokenKind {
     TokenKindImplKw,
     TokenKindInKw,
     TokenKindMutKw,
-    TokenKindBlockKw,
+    TokenKindBeginKw,
     TokenKindStringLit,
     TokenKindCharLit,
     TokenKindBitStringLit,
