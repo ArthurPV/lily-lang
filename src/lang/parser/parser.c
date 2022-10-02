@@ -10,11 +10,11 @@ static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
 skip_to_next_block(struct ParseBlock *self);
-static inline struct String *
+static struct String *
 get_type_name(struct ParseBlock *self);
 static void
 get_type_context(struct ParseBlock *self, bool is_pub);
-static inline struct Vec *
+static struct Vec *
 get_generic_params_type(struct ParseBlock *self);
 static inline bool
 valid_fun_body_item(struct FunParseContext *self,
@@ -33,19 +33,19 @@ valid_token_in_enum_variants(struct EnumParseContext *self,
 static void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
-static struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
                                struct String *detail_msg,
                                struct Option *help);
-static struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
-static struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -180,7 +180,7 @@ run__ParseBlock(struct ParseBlock *self)
     }
 }
 
-void
+static inline void
 next_token_pb(struct ParseBlock *self)
 {
     if (self->current->kind != TokenKindEof) {
@@ -190,7 +190,7 @@ next_token_pb(struct ParseBlock *self)
     }
 }
 
-void
+static inline void
 skip_to_next_block(struct ParseBlock *self)
 {
     while (self->current->kind != TokenKindFunKw &&
@@ -212,7 +212,7 @@ skip_to_next_block(struct ParseBlock *self)
         next_token_pb(self);
 }
 
-struct String *
+static struct String *
 get_type_name(struct ParseBlock *self)
 {
     next_token_pb(self);
@@ -235,11 +235,12 @@ get_type_name(struct ParseBlock *self)
     return &*self->current->lit;
 }
 
-void
+static void
 get_type_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_type_name(self);
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
+    bool has_generic_params = false;
 
     if (((struct Token *)get__Vec(*self->scanner->tokens, self->pos + 1))
             ->kind == TokenKindLHook ||
@@ -253,6 +254,9 @@ get_type_context(struct ParseBlock *self, bool is_pub)
 
         FREE(Vec, content);
     }
+
+    if (len__Vec(*generic_params) != 0)
+        has_generic_params = true;
 
     if (self->current->kind != TokenKindColon) {
         struct Diagnostic *err =
@@ -278,6 +282,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             enum_parse_context->name = name;
             enum_parse_context->generic_params = generic_params;
             enum_parse_context->is_pub = is_pub;
+            enum_parse_context->has_generic_params = has_generic_params;
 
             get_enum_parse_context(enum_parse_context, self);
 
@@ -309,7 +314,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
     }
 }
 
-struct Vec *
+static struct Vec *
 get_generic_params_type(struct ParseBlock *self)
 {
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
@@ -361,7 +366,7 @@ __new__FunParseContext()
     return self;
 }
 
-bool
+static inline bool
 valid_fun_body_item(struct FunParseContext *self,
                     struct ParseBlock *parse_block,
                     bool already_invalid)
@@ -413,7 +418,7 @@ valid_fun_body_item(struct FunParseContext *self,
     }
 }
 
-void
+static void
 get_body_fun_parse_context(struct FunParseContext *self,
                            struct ParseBlock *parse_block)
 {
@@ -474,7 +479,7 @@ get_body_fun_parse_context(struct FunParseContext *self,
     next_token_pb(parse_block);
 }
 
-void
+static void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block)
 {
@@ -644,7 +649,7 @@ __new__EnumParseContext()
     return self;
 }
 
-void
+static void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block)
 {
@@ -676,11 +681,15 @@ get_enum_parse_context(struct EnumParseContext *self,
             } else {
                 next_token_pb(parse_block);
             }
+
+            self->is_error = true;
         } else {
             while (parse_block->current->kind != TokenKindRParen) {
                 push__Vec(self->data_type, &*parse_block->current);
                 next_token_pb(parse_block);
             }
+
+            self->has_data_type = true;
 
             next_token_pb(parse_block);
         }
@@ -722,7 +731,7 @@ get_enum_parse_context(struct EnumParseContext *self,
     }
 }
 
-bool
+static inline bool
 valid_token_in_enum_variants(struct EnumParseContext *self,
                              struct ParseBlock *parse_block,
                              bool already_invalid)
@@ -775,7 +784,26 @@ __free__EnumParseContext(struct EnumParseContext *self)
     free(self);
 }
 
-struct Diagnostic *
+struct RecordParseContext *
+__new__RecordParseContext() {
+    struct RecordParseContext *self = malloc(sizeof(struct RecordParseContext));
+    self->is_pub = false;
+    self->has_generic_params = false;
+    self->has_data_type = false;
+    self->name = NULL;
+    self->generic_params = NEW(Vec, sizeof(struct Token));
+    self->fields = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+void
+__free__RecordParseContext(struct RecordParseContext *self) {
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->fields);
+    free(self);
+}
+
+static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
@@ -787,7 +815,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
       DiagnosticWithErr, err, loc, *self->scanner->src->file, detail_msg, help);
 }
 
-struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
@@ -803,7 +831,7 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                help);
 }
 
-static struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -836,6 +864,14 @@ __new__ParseContextEnum(struct EnumParseContext *enum_)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextRecord(struct RecordParseContext *record) {
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindRecord;
+    self->value.record = record;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -851,6 +887,12 @@ __free__ParseContextEnum(struct ParseContext *self)
 }
 
 void
+__free__ParseContextRecord(struct ParseContext *self) {
+    FREE(RecordParseContext, self->value.record);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -859,6 +901,9 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
         case ParseContextKindEnum:
             FREE(ParseContextEnum, self);
+            break;
+        case ParseContextKindRecord:
+            FREE(ParseContextRecord, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");

@@ -23,9 +23,9 @@ static inline void
 jump(struct Scanner *self, Usize n);
 static inline void
 previous_char(struct Scanner *self);
-static void
+static inline void
 start_token(struct Scanner *self);
-static void
+static inline void
 end_token(struct Scanner *self);
 static struct Option *
 peek_char(struct Scanner self, Usize n);
@@ -63,7 +63,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct Location loc,
                                  struct String *detail_msg,
                                  struct Option *help);
-static void
+static inline void
 expected_char(struct Scanner *self, struct Diagnostic *dgn, char *expected);
 static struct Result *
 get_escape(struct Scanner *self, char *previous);
@@ -153,7 +153,7 @@ __new__Scanner(struct Source *src)
     return self;
 }
 
-enum TokenKind
+static enum TokenKind
 get_keyword(const Str id)
 {
     if (!strcmp(id, "fun"))
@@ -249,7 +249,7 @@ get_keyword(const Str id)
     return TokenKindIdentifier;
 }
 
-void
+static inline void
 next_char(struct Scanner *self)
 {
     if (self->src->pos < len__String(*self->src->file->content) - 1) {
@@ -264,7 +264,7 @@ next_char(struct Scanner *self)
     }
 }
 
-void
+static inline void
 skip_space(struct Scanner *self)
 {
     if ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
@@ -275,7 +275,7 @@ skip_space(struct Scanner *self)
     }
 }
 
-void
+static inline void
 jump(struct Scanner *self, Usize n)
 {
     if (n > 0) {
@@ -284,7 +284,7 @@ jump(struct Scanner *self, Usize n)
     }
 }
 
-void
+static inline void
 previous_char(struct Scanner *self)
 {
     self->col--;
@@ -292,21 +292,21 @@ previous_char(struct Scanner *self)
     self->src->c = get__String(*self->src->file->content, self->src->pos);
 }
 
-void
+static inline void
 start_token(struct Scanner *self)
 {
     self->loc->s_line = self->line;
     self->loc->s_col = self->col;
 }
 
-void
+static inline void
 end_token(struct Scanner *self)
 {
     self->loc->e_line = self->line;
     self->loc->e_col = self->col;
 }
 
-struct Option *
+static struct Option *
 peek_char(struct Scanner self, Usize n)
 {
     if (self.src->pos + n < len__String(*self.src->file->content) - 1) {
@@ -315,7 +315,7 @@ peek_char(struct Scanner self, Usize n)
     return None();
 }
 
-void
+static void
 next_char_by_token(struct Scanner *self, struct Token tok)
 {
     switch (tok.kind) {
@@ -396,20 +396,20 @@ next_char_by_token(struct Scanner *self, struct Token tok)
     }
 }
 
-void
+static inline void
 push_token(struct Scanner *self, struct Token *tok)
 {
     push__Vec(self->tokens, tok);
 }
 
-bool
+static inline bool
 is_digit(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'9') ||
            self.src->c == (char *)'_';
 }
 
-bool
+static inline bool
 is_ident(struct Scanner self)
 {
     return (self.src->c >= (char *)'a' && self.src->c <= (char *)'z') ||
@@ -417,7 +417,7 @@ is_ident(struct Scanner self)
            self.src->c == (char *)'_' || is_digit(self);
 }
 
-bool
+static inline bool
 is_hex(struct Scanner self)
 {
     return is_digit(self) ||
@@ -425,21 +425,21 @@ is_hex(struct Scanner self)
            (self.src->c >= (char *)'A' && self.src->c <= (char *)'F');
 }
 
-bool
+static inline bool
 is_oct(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'7') ||
            self.src->c == (char *)'_';
 }
 
-bool
+static inline bool
 is_bin(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'1') ||
            self.src->c == (char *)'_';
 }
 
-bool
+static inline bool
 is_num(struct Scanner self)
 {
     struct Option *next_one = peek_char(self, 1);
@@ -453,7 +453,7 @@ is_num(struct Scanner self)
     return res;
 }
 
-struct Diagnostic *
+static struct Diagnostic *
 __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct LilyError *err,
                                 struct Location loc,
@@ -464,7 +464,7 @@ __new__DiagnosticWithErrScanner(struct Scanner *self,
     return NEW(DiagnosticWithErr, err, loc, *self->src->file, detail_msg, help);
 }
 
-struct Diagnostic *
+static struct Diagnostic *
 __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct LilyWarning *warn,
                                  struct Location loc,
@@ -475,7 +475,7 @@ __new__DiagnosticWithWarnScanner(struct Scanner *self,
       DiagnosticWithWarn, warn, loc, *self->src->file, detail_msg, help);
 }
 
-struct Diagnostic *
+static struct Diagnostic *
 __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct String *note,
                                  struct Location loc,
@@ -486,7 +486,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
       DiagnosticWithNote, note, loc, *self->src->file, detail_msg, help);
 }
 
-void
+static inline void
 expected_char(struct Scanner *self, struct Diagnostic *dgn, char *expected)
 {
     if (expected == (char *)'\\' && self->src->c == (char *)'n')
@@ -495,7 +495,7 @@ expected_char(struct Scanner *self, struct Diagnostic *dgn, char *expected)
         emit__Diagnostic(dgn);
 }
 
-struct Result *
+static struct Result *
 get_escape(struct Scanner *self, char *previous)
 {
     struct Result *res = NULL;
@@ -547,7 +547,7 @@ get_escape(struct Scanner *self, char *previous)
     return res;
 }
 
-enum TokenKind
+static enum TokenKind
 scan_comment_one(struct Scanner *self)
 {
     while (self->src->c != (char *)'\n') {
@@ -557,7 +557,7 @@ scan_comment_one(struct Scanner *self)
     return TokenKindOneComment;
 }
 
-struct Result *
+static struct Result *
 scan_comment_multi(struct Scanner *self)
 {
     struct Location location_error = {};
@@ -583,7 +583,7 @@ scan_comment_multi(struct Scanner *self)
     return Ok((int *)TokenKindMultiComment);
 }
 
-struct String *
+static struct String *
 scan_comment_doc(struct Scanner *self)
 {
     struct String *doc = NEW(String);
@@ -608,7 +608,7 @@ scan_comment_doc(struct Scanner *self)
     return doc;
 }
 
-struct String *
+static struct String *
 scan_identifier(struct Scanner *self)
 {
     struct String *id = NEW(String);
@@ -624,7 +624,7 @@ scan_identifier(struct Scanner *self)
     return id;
 }
 
-struct Result *
+static struct Result *
 scan_char(struct Scanner *self, bool is_bit)
 {
     struct Location loc_error = {};
@@ -676,7 +676,7 @@ scan_char(struct Scanner *self, bool is_bit)
     }
 }
 
-struct Result *
+static struct Result *
 scan_string(struct Scanner *self)
 {
     struct Location location_error = {};
@@ -714,7 +714,7 @@ scan_string(struct Scanner *self)
     return Ok(s);
 }
 
-struct Result *
+static struct Result *
 scan_hex(struct Scanner *self)
 {
     struct Location loc_error = {};
@@ -753,7 +753,7 @@ scan_hex(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, hex));
 }
 
-struct Result *
+static struct Result *
 scan_oct(struct Scanner *self)
 {
     struct Location loc_error = {};
@@ -792,7 +792,7 @@ scan_oct(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, oct));
 }
 
-struct Result *
+static struct Result *
 scan_bin(struct Scanner *self)
 {
 
@@ -832,7 +832,7 @@ scan_bin(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, bin));
 }
 
-struct Result *
+static struct Result *
 scan_num(struct Scanner *self)
 {
     struct Location *num_location = NEW(Location);
@@ -906,7 +906,7 @@ scan_num(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, num_location, num));
 }
 
-struct Result *
+static struct Result *
 get_all_num(struct Scanner *self)
 {
     struct Result *res = NULL;
@@ -926,14 +926,14 @@ get_all_num(struct Scanner *self)
     return res;
 }
 
-bool
+static inline bool
 skip_and_verify(struct Scanner *self, const char *target)
 {
     skip_space(self);
     return self->src->c != target;
 }
 
-struct Result *
+static struct Result *
 get_closing(struct Scanner *self, char *target)
 {
     struct Location location_error = {};
@@ -988,7 +988,7 @@ get_closing(struct Scanner *self, char *target)
         UNREACHABLE("unknown target");
 }
 
-struct Result *
+static struct Result *
 get_token(struct Scanner *self)
 {
     struct Option *c2 = peek_char(*self, 1);
@@ -1425,23 +1425,24 @@ run__Scanner(struct Scanner *self)
                     case TokenKindBang:
                     case TokenKindInterrogation:
                     case TokenKindAmpersand: {
-                        token_with_len_1: {
-                            end_token(self);
+                    token_with_len_1 : {
+                        end_token(self);
 
-                            if (token_ok->loc == NULL) {
-                                struct Location *copy = copy__Location(self->loc);
+                        if (token_ok->loc == NULL) {
+                            struct Location *copy = copy__Location(self->loc);
 
-                                token_ok->loc = copy;
-                            }
-
-                            next_char_by_token(self, *token_ok);
+                            token_ok->loc = copy;
                         }
 
-                        break;
+                        next_char_by_token(self, *token_ok);
+                    }
+
+                    break;
                     }
                     case TokenKindIntLit:
                     case TokenKindIdentifier: {
-                        struct String *token_string = token_kind_to_string__Token(*token_ok);
+                        struct String *token_string =
+                          token_kind_to_string__Token(*token_ok);
 
                         if (len__String(*token_string) == 1) {
                             FREE(String, token_string);
@@ -1454,17 +1455,16 @@ run__Scanner(struct Scanner *self)
                         break;
                     }
                     default: {
-                        token_with_len_over_1: {
-                            next_char_by_token(self, *token_ok);
-                            end_token(self);
+                    token_with_len_over_1 : {
+                        next_char_by_token(self, *token_ok);
+                        end_token(self);
 
-                            if (token_ok->loc == NULL) {
-                                struct Location *copy = copy__Location(self->loc);
+                        if (token_ok->loc == NULL) {
+                            struct Location *copy = copy__Location(self->loc);
 
-                                token_ok->loc = copy;
-                            }
+                            token_ok->loc = copy;
                         }
-                        break;
+                    } break;
                     }
                 }
 
