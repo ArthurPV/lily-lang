@@ -1,4 +1,67 @@
-#include <string.h>
+/*
+  ____
+ / ___|    ___    __ _   _ __    _ __     ___   _ __
+ \___ \   / __|  / _` | | '_ \  | '_ \   / _ \ | '__|
+  ___) | | (__  | (_| | | | | | | | | | |  __/ | |
+ |____/   \___|  \__,_| |_| |_| |_| |_|  \___| |_|
+
+The scanner phase turns the characters into tokens.
+
+Features:
+
+1. The scanner handles other types of errors such as the failure
+to close parentheses, brackets and braces.
+
+Example: (
+
+Output:
+./Example.lily:1:1: error[0009]: unmatched closing
+  |
+1 | (
+  | ^
+help: consider add closing: `)`, `}` or `]`
+
+2. The scanner manages to get escapes in string or in char.
+
+Example: "\n"
+
+Output: no errors
+
+Example: "\w"
+
+Output:
+./Example.lily:1:3: error[0012]: invalid escape
+  |
+1 | "\w"
+  |   ^
+
+3. The scanner also manages the analysis of documentation comments.
+
+4. The scanner also handles all syntactic errors in the literals.
+
+    4.1 The scanner also handles the following syntax for floats.
+
+    Example: 4.
+    Output: no errors
+
+Example:
+"hello"
+3.3
+4.
+3e+3
+3E+3
+22
+0xff
+0xFF
+0o23
+0b0101
+'c'
+'\n'
+"\n"
+
+Output: no errors
+
+ */
 
 #include <base/file.h>
 #include <base/format.h>
@@ -11,6 +74,7 @@
 #include <lang/diagnostic/summary.h>
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
+#include <string.h>
 
 #define IS_DIGIT \
     '0'          \
@@ -69,61 +133,105 @@
       : case 'U' \
       : case 'V' : case 'W' : case 'X' : case 'Y' : case 'Z' : case '_'
 
+// Convert Str id in TokenKind.
 static enum TokenKind
 get_keyword(const Str id);
 
+// Advance one position in the file content.
 static inline void
 next_char(struct Scanner *self);
+
 static inline void
 skip_space(struct Scanner *self);
+
+// next_char n times
 static inline void
 jump(struct Scanner *self, Usize n);
+
+// Back one position in the file content.
 static inline void
 previous_char(struct Scanner *self);
+
+// Assign start_line (s_line) and start_column (s_col) to the current line and
+// column.
 static inline void
 start_token(struct Scanner *self);
+
+// Assign end_line (e_line) and end_column (e_col) to the current line and
+// column.
 static inline void
 end_token(struct Scanner *self);
+
+// Peek to the next n char.
 static inline char *
 peek_char(struct Scanner self, Usize n);
+
+// Advance in the file content according to the Token.
 static void
 next_char_by_token(struct Scanner *self, struct Token tok);
+
+// Push token in self->tokens.
 static inline void
 push_token(struct Scanner *self, struct Token *tok);
+
+// Valid if the current char corresponds to a digit.
 static inline bool
 is_digit(struct Scanner self);
+
+// Valid if the current char corresponds to an identifier.
 static inline bool
 is_ident(struct Scanner self);
+
+// Valid if the current char corresponds to a hexadecimal integer syntax.
 static inline bool
 is_hex(struct Scanner self);
+
+// Valid if the current char corresponds to an octal integer syntax.
 static inline bool
 is_oct(struct Scanner self);
+
+// Valid if the current char corresponds to a binary integer syntax.
 static inline bool
 is_bin(struct Scanner self);
+
+// Valid if the current char corresponds to a number (float or other integer)
+// syntax.
 static inline bool
 is_num(struct Scanner self);
+
+// Constructs error Diagnostic for the scanner phase.
 static struct Diagnostic *
 __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct LilyError *err,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
+
+// Constructs warning Diagnostic for the scanner phase.
 static struct Diagnostic *
 __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct LilyWarning *warn,
                                  struct Location loc,
                                  struct String *detail_msg,
                                  struct Option *help);
+
+// Constructs note Diagnostic for the scanner phase.
 static struct Diagnostic *
 __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct String *note,
                                  struct Location loc,
                                  struct String *detail_msg,
                                  struct Option *help);
+
+// Emits an error if the expected char doesn't match to the current char.
+// Not used for the moment.
 static inline void
 expected_char(struct Scanner *self, struct Diagnostic *dgn, char *expected);
+
+// Get escape in char or string literal
 static struct Result *
 get_escape(struct Scanner *self, char *previous);
+
 static enum TokenKind
 scan_comment_one(struct Scanner *self);
 static struct Result *
@@ -144,10 +252,16 @@ static struct Result *
 scan_bin(struct Scanner *self);
 static struct Result *
 scan_num(struct Scanner *self);
+
+// Scan all numbers (integer or float literal).
 static struct Result *
-get_all_num(struct Scanner *self);
+get_all_nums(struct Scanner *self);
+
+// Verify if the targeted char match to the current char and skips (skip:
+// call next_char) if is different.
 static inline bool
 skip_and_verify(struct Scanner *self, const char *target);
+
 static struct Result *
 get_closing(struct Scanner *self, char *target);
 static struct Result *
@@ -310,9 +424,8 @@ next_char(struct Scanner *self)
         if (self->src->c == (char *)'\n') {
             self->line++;
             self->col = 1;
-        } else {
+        } else
             self->col++;
-        }
         self->src->pos++;
         self->src->c = get__String(*self->src->file.content, self->src->pos);
     }
@@ -323,9 +436,8 @@ skip_space(struct Scanner *self)
 {
     while ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
             self->src->c == (char *)'\r' || self->src->c == (char *)' ') &&
-           self->src->pos < len__String(*self->src->file.content) - 1) {
+           self->src->pos < len__String(*self->src->file.content) - 1)
         next_char(self);
-    }
 }
 
 static inline void
@@ -360,9 +472,9 @@ end_token(struct Scanner *self)
 static inline char *
 peek_char(struct Scanner self, Usize n)
 {
-    if (self.src->pos + n < len__String(*self.src->file.content) - 1) {
+    if (self.src->pos + n < len__String(*self.src->file.content) - 1)
         return get__String(*self.src->file.content, self.src->pos + n);
-    }
+
     return NULL;
 }
 
@@ -610,18 +722,18 @@ scan_comment_one(struct Scanner *self)
 static struct Result *
 scan_comment_multi(struct Scanner *self)
 {
-    struct Location location_error = NEW(Location);
+    struct Location loc_error = NEW(Location);
 
-    start__Location(&location_error, self->line, self->col);
+    start__Location(&loc_error, self->line, self->col);
 
     while (self->src->c != (char *)'*' || peek_char(*self, 1) != (char *)'.') {
         if (self->src->pos >= len__String(*self->src->file.content) - 2) {
-            end__Location(&location_error, self->line, self->col);
+            end__Location(&loc_error, self->line, self->col);
 
             return Err(NEW(DiagnosticWithErrScanner,
                            self,
                            NEW(LilyError, LilyErrorUnclosedCommentMultiLine),
-                           location_error,
+                           loc_error,
                            format(""),
                            None()));
         }
@@ -629,6 +741,7 @@ scan_comment_multi(struct Scanner *self)
     }
 
     jump(self, 2);
+
     return Ok((int *)TokenKindMultiComment);
 }
 
@@ -956,7 +1069,7 @@ scan_num(struct Scanner *self)
 }
 
 static struct Result *
-get_all_num(struct Scanner *self)
+get_all_nums(struct Scanner *self)
 {
     struct Result *res = NULL;
 
@@ -1291,6 +1404,8 @@ get_token(struct Scanner *self)
 
                 bool is_eof = false;
 
+                TODO("Get flags");
+
                 // GET FLAGS
                 // ...
 
@@ -1372,7 +1487,7 @@ get_token(struct Scanner *self)
             break;
 
         case IS_DIGIT:
-            return get_all_num(self);
+            return get_all_nums(self);
 
         case '\"': {
             struct Result *string = scan_string(self);

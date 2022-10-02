@@ -1,20 +1,15 @@
-#include <string.h>
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/new.h>
 #include <base/string.h>
 #include <lang/scanner/token.h>
+#include <string.h>
 
 struct Location
 __new__Location()
 {
-    struct Location self = {
-        .s_line = 1,
-        .s_col = 1,
-        .e_line = 1,
-        .e_col = 1
-    };
-    
+    struct Location self = { .s_line = 1, .s_col = 1, .e_line = 1, .e_col = 1 };
+
     return self;
 }
 
@@ -43,7 +38,9 @@ to_string__Location(struct Location self)
                   self.e_col);
 }
 
-struct Location * copy__Location(struct Location *self) {
+struct Location *
+copy__Location(struct Location *self)
+{
     struct Location *copy = malloc(sizeof(struct Location));
 
     memcpy(copy, self, sizeof(struct Location));
@@ -79,7 +76,9 @@ to_string__Doc(struct Doc self)
     }
 }
 
-void __free__Doc(struct Doc *self) {
+void
+__free__Doc(struct Doc *self)
+{
     if (self->s)
         FREE(String, self->s);
 
@@ -370,7 +369,9 @@ to_string__Token(struct Token self)
                   to_string__Location(*self.loc));
 }
 
-struct Token *copy__Token(struct Token *self) {
+struct Token *
+copy__Token(struct Token *self)
+{
     struct Token *copy = malloc(sizeof(struct Token));
 
     memcpy(copy, self, sizeof(struct Token));
@@ -379,24 +380,31 @@ struct Token *copy__Token(struct Token *self) {
 }
 
 void
-__free__Token(struct Token *self) {
+__free__Token(struct Token *self)
+{
     free(self->loc);
     free(self);
 }
 
-void __free__TokenLit(struct Token *self) {
+void
+__free__TokenLit(struct Token *self)
+{
     FREE(String, self->lit);
     free(self->loc);
     free(self);
 }
 
-void __free__TokenDoc(struct Token *self) {
+void
+__free__TokenDoc(struct Token *self)
+{
     FREE(Doc, self->doc);
     free(self->loc);
     free(self);
 }
 
-void __free__TokenAll(struct Token *self) {
+void
+__free__TokenAll(struct Token *self)
+{
     switch (self->kind) {
         case TokenKindIdentifier:
         case TokenKindIntLit:

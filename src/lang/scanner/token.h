@@ -3,7 +3,8 @@
 
 #include <base/types.h>
 
-enum TokenKind {
+enum TokenKind
+{
     TokenKindDot,
     TokenKindDotDotDot,
     TokenKindComma,
@@ -166,7 +167,8 @@ to_string__Location(struct Location self);
  *
  * @brief Copy location pointer.
  */
-struct Location * copy__Location(struct Location *self);
+struct Location *
+copy__Location(struct Location *self);
 
 /**
  *
@@ -208,7 +210,8 @@ to_string__Doc(struct Doc self);
  *
  * @brief Free Doc type.
  */
-void __free__Doc(struct Doc *self);
+void
+__free__Doc(struct Doc *self);
 
 typedef struct Token
 {
@@ -260,7 +263,8 @@ to_string__Token(struct Token self);
  *
  * @brief Copy the Token type.
  */
-struct Token *copy__Token(struct Token *self);
+struct Token *
+copy__Token(struct Token *self);
 
 /**
  *
@@ -273,18 +277,21 @@ __free__Token(struct Token *self);
  *
  * @brief Free Token type with Literal.
  */
-void __free__TokenLit(struct Token *self);
+void
+__free__TokenLit(struct Token *self);
 
 /**
  *
  * @brief Free Token type with Doc.
  */
-void __free__TokenDoc(struct Token *self);
+void
+__free__TokenDoc(struct Token *self);
 
 /**
  *
  * @brief Free Token (all variants).
  */
-void __free__TokenAll(struct Token *self);
+void
+__free__TokenAll(struct Token *self);
 
 #endif // LILY_TOKEN_H
