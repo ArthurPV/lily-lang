@@ -6,6 +6,7 @@
 typedef struct Typecheck
 {
     struct Parser parser;
+    struct Decl *decl;
     Usize pos;
     Usize count_error;
     Usize count_warning;

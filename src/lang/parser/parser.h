@@ -602,7 +602,7 @@ typedef struct Parser
     struct ParseBlock parse_block;
     Usize pos;
     struct ParseContext *current;
-    struct Vec *decls;
+    struct Vec *decls; // struct Vec<struct Decl*>*
 } Parser;
 
 /**

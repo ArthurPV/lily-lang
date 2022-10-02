@@ -5,6 +5,8 @@
 #include <lang/builtin/builtin_c.h>
 #include <lang/parser/ast.h>
 
+static void
+push_all_symbols(struct Typecheck *self);
 static inline struct DataType *
 get_data_type_of_expr_symbol(struct ExprSymbol *symb);
 static struct SymbolTable *
@@ -26,6 +28,8 @@ __new__Typecheck(struct Parser parser)
 {
     struct Typecheck self = {
         .parser = parser,
+        .decl =
+          len__Vec(*parser.decls) == 0 ? NULL : get__Vec(*parser.decls, 0),
         .pos = 0,
         .count_error = 0,
         .count_warning = 0,
@@ -40,6 +44,7 @@ __new__Typecheck(struct Parser parser)
         .current_trait_id = 0,
         .current_record_obj_id = 0,
         .current_enum_obj_id = 0,
+        .builtins = Load_C_builtins(),
         .funs = NULL,
         .consts = NULL,
         .aliases = NULL,
@@ -50,7 +55,6 @@ __new__Typecheck(struct Parser parser)
         .traits = NULL,
         .records_obj = NULL,
         .enums_obj = NULL,
-        .builtins = Load_C_builtins(),
     };
 
     return self;
@@ -59,6 +63,7 @@ __new__Typecheck(struct Parser parser)
 void
 run__Typecheck(struct Typecheck *self)
 {
+    push_all_symbols(self);
 }
 
 void
@@ -139,7 +144,6 @@ __free__Typecheck(struct Typecheck self)
         FREE(Vec, self.classes);
     }
 
-
     if (self.traits != NULL) {
         for (Usize i = len__Vec(*self.traits); i--;)
             FREE(TraitSymbol, get__Vec(*self.traits, i));
@@ -148,6 +152,118 @@ __free__Typecheck(struct Typecheck self)
     }
 
     FREE(Parser, self.parser);
+}
+
+#define NEXT_DECL()                                                            \
+    self->pos += 1;                                                            \
+    self->decl = self->pos < len__Vec(*self->parser.decls)                     \
+                   ? ((struct Decl *)get__Vec(*self->parser.decls, self->pos)) \
+                   : NULL
+
+#define ALLOC_FUNS()        \
+    if (self->funs == NULL) \
+    self->funs = NEW(Vec, sizeof(struct FunSymbol))
+
+#define ALLOC_CONSTS()        \
+    if (self->consts == NULL) \
+    self->consts = NEW(Vec, sizeof(struct ConstantSymbol))
+
+#define ALLOC_MODULES()        \
+    if (self->modules == NULL) \
+    self->modules = NEW(Vec, sizeof(struct ModuleSymbol))
+
+#define ALLOC_ALIASES()      \
+    if (self->aliases == NULL) \
+    self->aliases = NEW(Vec, sizeof(struct AliasSymbol))
+
+#define ALLOC_RECORDS()        \
+    if (self->records == NULL) \
+    self->records = NEW(Vec, sizeof(struct RecordSymbol))
+
+#define ALLOC_RECORDS_OBJ()        \
+    if (self->records_obj == NULL) \
+    self->records_obj = NEW(Vec, sizeof(struct RecordObjSymbol))
+
+#define ALLOC_ENUMS()        \
+    if (self->enums == NULL) \
+    self->enums = NEW(Vec, sizeof(struct EnumSymbol))
+
+#define ALLOC_ENUMS_OBJ()        \
+    if (self->enums_obj == NULL) \
+    self->enums_obj = NEW(Vec, sizeof(struct EnumObjSymbol))
+
+#define ALLOC_ERRORS()        \
+    if (self->errors == NULL) \
+    self->errors = NEW(Vec, sizeof(struct ErrorSymbol))
+
+#define ALLOC_CLASSES()        \
+    if (self->classes == NULL) \
+    self->classes = NEW(Vec, sizeof(struct ClassSymbol))
+
+#define ALLOC_TRAITS()        \
+    if (self->traits == NULL) \
+    self->traits = NEW(Vec, sizeof(struct TraitSymbol))
+
+static void
+push_all_symbols(struct Typecheck *self)
+{
+    while (self->pos < len__Vec(*self->parser.decls)) {
+        switch (self->decl->kind) {
+            case DeclKindFun:
+                ALLOC_FUNS();
+                push__Vec(self->funs, NEW(FunSymbol, self->decl));
+                break;
+            case DeclKindConstant:
+                ALLOC_CONSTS();
+                push__Vec(self->consts, NEW(ConstantSymbol, self->decl));
+                break;
+            case DeclKindModule:
+                ALLOC_MODULES();
+                push__Vec(self->modules, NEW(ModuleSymbol, self->decl));
+                break;
+            case DeclKindAlias:
+                ALLOC_ALIASES();
+                push__Vec(self->aliases, NEW(AliasSymbol, self->decl));
+                break;
+            case DeclKindRecord:
+                if (self->decl->value.record->is_object) {
+                    ALLOC_RECORDS_OBJ();
+                    push__Vec(self->records_obj, NEW(RecordObjSymbol, self->decl));
+                } else {
+                    ALLOC_RECORDS();
+                    push__Vec(self->records, NEW(RecordSymbol, self->decl));
+                }
+                break;
+            case DeclKindEnum:
+                if (self->decl->value.enum_->is_object) {
+                    ALLOC_ENUMS_OBJ();
+                    push__Vec(self->enums_obj, NEW(EnumObjSymbol, self->decl));
+                } else {
+                    ALLOC_ENUMS();
+                    push__Vec(self->enums, NEW(EnumSymbol, self->decl));
+                }
+                break;
+            case DeclKindError:
+                ALLOC_ERRORS();
+                push__Vec(self->errors, NEW(ErrorSymbol, self->decl));
+                break;
+            case DeclKindClass:
+                ALLOC_CLASSES();
+                push__Vec(self->classes, NEW(ClassSymbol, self->decl));
+                break;
+            case DeclKindTrait:
+                ALLOC_TRAITS();
+                push__Vec(self->traits, NEW(TraitSymbol, self->decl));
+                break;
+            case DeclKindTag:
+            case DeclKindImport:
+                break;
+            default:
+                UNREACHABLE("unknown decl kind");
+        }
+
+        NEXT_DECL();
+    }
 }
 
 static struct SymbolTable *

@@ -58,6 +58,8 @@ main(int argc, char **argv)
 
                 struct Typecheck tc = NEW(Typecheck, parser);
 
+                run__Typecheck(&tc);
+
                 struct Generate gen = NEW(Generate, tc);
 
                 write_main_function(&gen);
