@@ -775,7 +775,7 @@ scan_hex(struct Scanner *self)
     Str hex_str = to_Str__String(*hex);
 
     if (!strcmp(hex_str, "0x")) {
-        end__Location(&loc_error, self->line, self->col);
+        end__Location(&loc_error, self->line, self->col - 1);
 
         free(hex_str);
 
@@ -942,14 +942,10 @@ scan_num(struct Scanner *self)
               Some(format("add digit after `-` or `+` in scientific number"))));
         }
 
-        struct Location *copy = copy__Location(&num_location);
-
-        return Ok(NEW(TokenLit, TokenKindFloatLit, copy, num));
+        return Ok(NEW(TokenLit, TokenKindFloatLit, NULL, num));
     }
 
-    struct Location *copy = copy__Location(&num_location);
-
-    return Ok(NEW(TokenLit, TokenKindIntLit, copy, num));
+    return Ok(NEW(TokenLit, TokenKindIntLit, NULL, num));
 }
 
 static struct Result *
@@ -979,21 +975,17 @@ skip_and_verify(struct Scanner *self, const char *target)
 static struct Result *
 get_closing(struct Scanner *self, char *target)
 {
-    struct Location location_error = {};
-
     skip_space(self);
 
+    struct Location loc = self->loc;
+
     while (skip_and_verify(self, target)) {
-        start__Location(&location_error, self->line, self->col);
-
         if (self->src->pos >= len__String(*self->src->file.content) - 1) {
-            end__Location(&location_error, self->line, self->col);
-
             return Err(
               NEW(DiagnosticWithErrScanner,
                   self,
                   NEW(LilyError, LilyErrorUnmatchedClosing),
-                  location_error,
+                  loc,
                   format(""),
                   Some(format("consider add closing: `)`, `}` or `]`"))));
         }
@@ -1563,7 +1555,9 @@ run__Scanner(struct Scanner *self)
                     default: {
                     token_with_len_over_1 : {
                         next_char_by_token(self, *token_ok);
+                        previous_char(self);
                         end_token(self);
+                        next_char(self);
 
                         if (token_ok->loc == NULL) {
                             struct Location *copy = copy__Location(&self->loc);

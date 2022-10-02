@@ -237,6 +237,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("invalid attribute in this block");
         case LilyErrorBadUsageOfObject:
             return from__String("bad usage of object");
+        case LilyErrorExpectedExpression:
+            return from__String("expected expression");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -359,6 +361,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0047";
         case LilyErrorBadUsageOfObject:
             return "0048";
+        case LilyErrorExpectedExpression:
+            return "0049";
         default:
             UNREACHABLE("unknown lily error kind");
     }

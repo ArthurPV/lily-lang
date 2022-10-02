@@ -267,7 +267,6 @@ typedef struct VariableDecl
     struct String *name; // struct String&
     struct Option *data_type;
     struct Expr *expr;
-    struct Location loc;
 } VariableDecl;
 
 /**
@@ -277,8 +276,7 @@ typedef struct VariableDecl
 struct VariableDecl
 __new__VariableDecl(struct String *name,
                     struct Option *data_type,
-                    struct Expr *expr,
-                    struct Location loc);
+                    struct Expr *expr);
 
 struct String *
 to_string__VariableDecl(struct VariableDecl self);

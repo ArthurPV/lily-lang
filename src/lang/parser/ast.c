@@ -437,11 +437,10 @@ __free__GenericAll(struct Generic *self)
 struct VariableDecl
 __new__VariableDecl(struct String *name,
                     struct Option *data_type,
-                    struct Expr *expr,
-                    struct Location loc)
+                    struct Expr *expr)
 {
     struct VariableDecl self = {
-        .name = name, .data_type = data_type, .expr = expr, .loc = loc
+        .name = name, .data_type = data_type, .expr = expr
     };
 
     return self;

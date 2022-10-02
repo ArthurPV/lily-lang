@@ -339,6 +339,10 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
+parse_variable(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc);
+static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static inline int *
 parse_unary_op(enum TokenKind kind);
@@ -3447,6 +3451,47 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 static struct Expr *
+parse_variable(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc)
+{
+    struct String *name = &*parse_decl->previous->lit;
+    struct DataType *data_type = NULL;
+
+    if (is_data_type(parse_decl)) {
+        data_type = parse_data_type(self, parse_decl);
+    }
+
+    if (data_type == NULL)
+        next_token(parse_decl);
+    else {
+        EXPECTED_TOKEN(parse_decl, TokenKindColonEq, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         from__String(""),
+                                         None());
+
+            err->err->s = from__String("`:=`");
+
+            emit__Diagnostic(err);
+        });
+    }
+
+    struct Expr *expr = parse_expr(self, parse_decl);
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    if (data_type == NULL)
+        return NEW(ExprVariable, NEW(VariableDecl, name, None(), expr), loc);
+    else
+        return NEW(
+          ExprVariable, NEW(VariableDecl, name, Some(data_type), expr), loc);
+}
+
+static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Expr *expr = NULL;
@@ -3558,7 +3603,14 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                           loc);
                         break;
                     }
+                    case TokenKindColonEq:
+                        return parse_variable(self, parse_decl, loc);
                     default:
+                        if (is_data_type(parse_decl) &&
+                            parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+                            return parse_variable(self, parse_decl, loc);
+                        }
+
                         end__Location(&loc,
                                       parse_decl->previous->loc->e_line,
                                       parse_decl->previous->loc->e_col);
@@ -3935,6 +3987,7 @@ parse_variant_expr(struct Parser self,
                    struct Location loc)
 {
     if (parse_decl->current->kind == TokenKindColon) {
+        next_token(parse_decl);
         struct Expr *expr = parse_expr(self, parse_decl);
 
         end__Location(&loc,
@@ -3943,6 +3996,7 @@ parse_variant_expr(struct Parser self,
 
         return NEW(ExprVariant, NEW(Variant, id, Some(expr)), loc);
     } else { // anyone else token is unreachable
+        next_token(parse_decl);
         end__Location(&loc,
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
@@ -4013,18 +4067,21 @@ parse_fun_call_expr(struct Parser self,
             }
         }
 
-        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
-                                         &self.parse_block,
-                                         NEW(LilyError, LilyErrorExpectedToken),
-                                         *parse_decl->current->loc,
-                                         format(""),
-                                         None());
+        if (parse_decl->current->kind != TokenKindRParen) {
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
 
-            err->err->s = from__String("`,`");
+                err->err->s = from__String("`,`");
 
-            emit__Diagnostic(err);
-        });
+                emit__Diagnostic(err);
+            });
+        }
     });
 
     end__Location(
@@ -4093,18 +4150,21 @@ parse_record_call_expr(struct Parser self,
                           copy__Location(&loc_field)));
         }
 
-        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
-                                         &self.parse_block,
-                                         NEW(LilyError, LilyErrorExpectedToken),
-                                         *parse_decl->current->loc,
-                                         format(""),
-                                         None());
+        if (parse_decl->current->kind != TokenKindRBrace) {
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
 
-            err->err->s = from__String("`,`");
+                err->err->s = from__String("`,`");
 
-            emit__Diagnostic(err);
-        });
+                emit__Diagnostic(err);
+            });
+        }
     });
 
     end__Location(
@@ -4170,7 +4230,8 @@ parse_identifier_access(struct Parser self,
                         struct Location loc,
                         struct Vec *ids)
 {
-    while (parse_decl->current->kind == TokenKindDot) {
+    while (parse_decl->current->kind == TokenKindDot &&
+           parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         next_token(parse_decl);
 
         switch (parse_decl->current->kind) {
@@ -4182,8 +4243,19 @@ parse_identifier_access(struct Parser self,
                 next_token(parse_decl);
 
                 break;
-            default:
-                assert(0 && "error");
+            default: {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`ID`");
+
+                emit__Diagnostic(err);
+            }
         }
     }
 

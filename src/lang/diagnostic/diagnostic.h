@@ -93,7 +93,8 @@ enum LilyErrorKind
     LilyErrorExpectedRightValue,
     LilyErrorUnexpectedExpression,
     LilyErrorInvalidAttributeInThisBlock,
-    LilyErrorBadUsageOfObject
+    LilyErrorBadUsageOfObject,
+    LilyErrorExpectedExpression
 };
 
 typedef struct LilyError
