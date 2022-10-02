@@ -2448,6 +2448,13 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc);
 
 /**
  *
+ * @brief Convert ClassBodyItem in String.
+ */
+struct String *
+get_name__ClassBodyItem(struct ClassBodyItem *self);
+
+/**
+ *
  * @brief Free the ClassBodyItem type (Property variant).
  */
 inline void

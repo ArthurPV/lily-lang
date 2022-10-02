@@ -257,6 +257,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("expected enum or record object");
 		case LilyErrorDuplicateDeclaration:
 			return from__String("duplicate declaration");
+		case LilyErrorDuplicateVariant:
+			return from__String("duplicate variant");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -403,6 +405,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0059";
 		case LilyErrorDuplicateDeclaration:
 			return "0060";
+		case LilyErrorDuplicateVariant:
+			return "0061";
         default:
             UNREACHABLE("unknown lily error kind");
     }
