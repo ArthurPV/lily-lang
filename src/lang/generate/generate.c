@@ -34,7 +34,7 @@ write_on_file__Generate(struct Generate self)
         free(output_str);
     }
 
-#ifdef lILY_WINDOWS_OS
+#ifdef LILY_WINDOWS_OS
 #else
     {
         Usize exe_size = snprintf(NULL, 0, "%s", fw) - 6;
