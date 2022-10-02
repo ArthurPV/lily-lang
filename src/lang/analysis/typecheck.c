@@ -1443,7 +1443,7 @@ get_data_type_of_expression(struct Typecheck *self,
         case ExprKindWildcard:
             UNREACHABLE("wildcard variant is not used");
         case ExprKindLiteral:
-            TODO("get data type of literal");
+            return expr->value.literal.data_type;
         case ExprKindVariable:
             UNREACHABLE("variant variant is not used");
         case ExprKindGrouping:
