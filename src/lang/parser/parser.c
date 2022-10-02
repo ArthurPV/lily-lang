@@ -4809,7 +4809,7 @@ parse_enum_declaration(struct Parser *self)
         struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.variants);
         variants = NEW(Vec, sizeof(struct VariantEnum));
 
-        while (parse.pos < len__Vec(*enum_parse_context.variants)) {
+        while (parse.pos < len__Vec(*parse.tokens)) {
             struct Location loc = NEW(Location);
             struct String *variant_name = NULL;
             struct Option *data_type = NULL;
@@ -4868,6 +4868,76 @@ parse_enum_declaration(struct Parser *self)
 static struct RecordDecl *
 parse_record_declaration(struct Parser *self)
 {
+    struct RecordParseContext record_parse_context =
+      self->current->value.record;
+    struct Vec *generic_params = NULL;
+    struct Vec *fields = NULL;
+    bool is_object =
+      self->current->kind == ParseContextKindRecordObject ? true : false;
+
+    if (record_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, record_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (len__Vec(*record_parse_context.fields) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, record_parse_context.fields);
+        fields = NEW(Vec, sizeof(struct FieldRecord));
+
+        while (parse.pos < len__Vec(*parse.tokens)) {
+            struct String *field_name = NULL;
+            struct DataType *data_type = NULL;
+            struct Option *value = NULL;
+            bool is_pub = false;
+            struct Location loc = NEW(Location);
+
+            start__Location(
+              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+            if (parse.current->kind == TokenKindPubKw) {
+                is_pub = true;
+                next_token(&parse);
+            }
+
+            if (parse.current->kind == TokenKindIdentifier) {
+                field_name = &*parse.current->lit;
+                next_token(&parse);
+            } else
+                assert(0 && "error");
+
+            if (is_data_type(&parse)) {
+                data_type = parse_data_type(*self, &parse);
+            } else
+                assert(0 && "error");
+
+            if (parse.current->kind == TokenKindColonEq) {
+                value = Some(parse_expr(*self, &parse));
+            } else
+                value = None();
+
+            if (parse.current->kind != TokenKindComma &&
+                parse.pos != len__Vec(*parse.tokens)) {
+                assert(0 && "error");
+            } else
+                next_token(&parse);
+
+            end__Location(
+              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+            push__Vec(
+              fields,
+              NEW(FieldRecord, field_name, data_type, value, is_pub, loc));
+        }
+    }
+
+    return NEW(RecordDecl,
+               record_parse_context.name,
+               generic_params,
+               fields,
+               record_parse_context.is_pub,
+               is_object);
 }
 
 static struct AliasDecl *
@@ -4915,22 +4985,22 @@ parse_declaration(struct Parser *self)
               NEW(DeclFun, self->current->loc, parse_fun_declaration(self)));
             break;
 
+        case ParseContextKindEnumObject:
         case ParseContextKindEnum:
             push__Vec(
               self->decls,
               NEW(DeclEnum, self->current->loc, parse_enum_declaration(self)));
             break;
 
+        case ParseContextKindRecordObject:
         case ParseContextKindRecord:
+            push__Vec(self->decls,
+                      NEW(DeclRecord,
+                          self->current->loc,
+                          parse_record_declaration(self)));
             break;
 
         case ParseContextKindAlias:
-            break;
-
-        case ParseContextKindEnumObject:
-            break;
-
-        case ParseContextKindRecordObject:
             break;
 
         case ParseContextKindTrait:

@@ -2642,7 +2642,6 @@ __new__FieldRecord(struct String *name,
 void
 __free__FieldRecord(struct FieldRecord *self)
 {
-    FREE(String, self->name);
     FREE(DataTypeAll, self->data_type);
 
     if (is_Some__Option(self->value))
@@ -2671,17 +2670,20 @@ __new__RecordDecl(struct String *name,
 void
 __free__RecordDecl(struct RecordDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
+    if (self->fields != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->fields); i++)
+            FREE(FieldRecord, get__Vec(*self->fields, i));
 
-    for (Usize i = 0; i < len__Vec(*self->fields); i++)
-        FREE(FieldRecord, get__Vec(*self->fields, i));
+        FREE(Vec, self->fields);
+    }
 
-    FREE(Vec, self->fields);
     free(self);
 }
 

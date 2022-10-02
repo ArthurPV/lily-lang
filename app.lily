@@ -7,6 +7,11 @@ type Letter: enum =
 	B i32
 end
 
+type Person: record =
+	name Str,
+	age Uint8
+end
+
 fun main =
 	x := 20
 	if x == 0 do

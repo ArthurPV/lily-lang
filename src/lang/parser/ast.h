@@ -1908,7 +1908,7 @@ __free__AliasDecl(struct AliasDecl *self);
 
 typedef struct FieldRecord
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct DataType *data_type;
     struct Option *value; // struct Option<struct Expr*>*
     bool is_pub;
@@ -1935,7 +1935,7 @@ __free__FieldRecord(struct FieldRecord *self);
 
 typedef struct RecordDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *fields;         // struct Vec<struct FieldRecord*>*
     bool is_pub;
