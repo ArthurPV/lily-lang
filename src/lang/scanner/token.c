@@ -131,6 +131,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("::");
         case TokenKindBar:
             return from__String("|");
+        case TokenKindBarEq:
+            return from__String("|=");
         case TokenKindArrow:
             return from__String("->");
         case TokenKindInverseArrow:
@@ -233,6 +235,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("?");
         case TokenKindAmpersand:
             return from__String("&");
+        case TokenKindAmpersandEq:
+            return from__String("&=");
         case TokenKindDotStar:
             return from__String(".*");
         case TokenKindDotInterrogation:

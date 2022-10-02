@@ -463,7 +463,7 @@ __free__LiteralAll(struct Literal self);
 
 enum UnaryOpKind
 {
-    UnaryOpKindNegative,
+    UnaryOpKindNegative = 1,
     UnaryOpKindNot,
     UnaryOpKindReference,
 };
@@ -497,7 +497,7 @@ __free__UnaryOp(struct UnaryOp self);
 
 enum BinaryOpKind
 {
-    BinaryOpKindAdd,
+    BinaryOpKindAdd = 1,
     BinaryOpKindSub,
     BinaryOpKindMul,
     BinaryOpKindDiv,

@@ -238,9 +238,14 @@ get_import_parse_context(struct ImportParseContext *self,
                          struct ParseBlock *parse_block);
 static inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid);
+static inline bool
+valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid);
 static void
 get_constant_parse_context(struct ConstantParseContext *self,
                            struct ParseBlock *parse_block);
+static void
+get_error_parse_context(struct ErrorParseContext *self,
+                        struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -273,13 +278,17 @@ static struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
+static inline int *
+parse_unary_op(struct Parser self, struct ParseDecl *parse_decl);
+static inline int *
+parse_binary_op(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Stmt *
 parse_return_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc);
-static struct Stmt *
+static struct IfCond
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
               struct Location loc);
@@ -419,6 +428,13 @@ get_block(struct ParseBlock *self)
                     constant_parse_context.name = &*self->current->lit;
 
                     get_constant_parse_context(&constant_parse_context, self);
+                    end__Location(&loc,
+                                  self->current->loc->s_line,
+                                  self->current->loc->s_col);
+
+                    push__Vec(
+                      self->blocks,
+                      NEW(ParseContextConstant, constant_parse_context, loc));
 
                     break;
                 }
@@ -542,6 +558,11 @@ get_block(struct ParseBlock *self)
             constant_parse_context.name = &*self->current->lit;
 
             get_constant_parse_context(&constant_parse_context, self);
+            end__Location(
+              &loc, self->current->loc->s_line, self->current->loc->s_col);
+
+            push__Vec(self->blocks,
+                      NEW(ParseContextConstant, constant_parse_context, loc));
 
             break;
         }
@@ -1093,6 +1114,8 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
                 next_token_pb(parse_block);
             }
         }
+
+        PUSH_BODY();
 
         Usize end_line = parse_block->current->loc->e_line;
 
@@ -2149,6 +2172,47 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
+static inline bool
+valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid)
+{
+    switch (parse_block->current->kind) {
+        case TokenKindObjectKw:
+        case TokenKindFunKw:
+        case TokenKindPubKw:
+        case TokenKindErrorKw:
+        case TokenKindTagKw:
+        case TokenKindModuleKw:
+        case TokenKindMacroKw:
+        case TokenKindAsyncKw:
+        case TokenKindClassKw:
+        case TokenKindRecordKw:
+        case TokenKindTypeKw:
+        case TokenKindEnumKw:
+        case TokenKindAliasKw:
+        case TokenKindImplKw:
+        case TokenKindTraitKw:
+        case TokenKindReturnKw: {
+            if (!already_invalid) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_block->current->loc,
+                      format("invalid token in constant expression"),
+                      None());
+
+                err->err->s = from__String("`;`");
+
+                emit__Diagnostic(err);
+            }
+            return false;
+        }
+
+        default:
+            return true;
+    }
+}
+
 static void
 get_constant_parse_context(struct ConstantParseContext *self,
                            struct ParseBlock *parse_block)
@@ -2188,13 +2252,20 @@ get_constant_parse_context(struct ConstantParseContext *self,
     } else
         next_token_pb(parse_block);
 
+    bool bad_token = false;
+
     while (parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        push__Vec(self->expr, &*parse_block->current);
-        next_token_pb(parse_block);
+        if (valid_constant_expr(parse_block, bad_token)) {
+            push__Vec(self->expr, &*parse_block->current);
+            next_token_pb(parse_block);
+        } else {
+            bad_token = true;
+            next_token_pb(parse_block);
+        }
     }
 
-    VERIFY_EOF(parse_block, false, "`;`");
+    VERIFY_EOF(parse_block, bad_token, "`;`");
     next_token_pb(parse_block);
 }
 
@@ -2203,6 +2274,14 @@ __free__ConstantParseContext(struct ConstantParseContext self)
 {
     FREE(Vec, self.data_type);
     FREE(Vec, self.expr);
+}
+
+struct ErrorParseContext
+__new__ErrorParseContext()
+{
+    struct ErrorParseContext self = { .is_pub = false, .name = NULL };
+
+    return self;
 }
 
 static inline struct Diagnostic *
@@ -2347,6 +2426,25 @@ __new__ParseContextImport(struct ImportParseContext import, struct Location loc)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextConstant(struct ConstantParseContext constant,
+                            struct Location loc)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindConstant;
+    self->value.constant = constant;
+    return self;
+}
+
+struct ParseContext *
+__new__ParseContextError(struct ErrorParseContext error, struct Location loc)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindError;
+    self->value.error = error;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -2410,6 +2508,13 @@ __free__ParseContextImport(struct ParseContext *self)
 }
 
 void
+__free__ParseContextConstant(struct ParseContext *self)
+{
+    FREE(ConstantParseContext, self->value.constant);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -2449,6 +2554,14 @@ __free__ParseContextAll(struct ParseContext *self)
 
         case ParseContextKindImport:
             FREE(ParseContextImport, self);
+            break;
+
+        case ParseContextKindConstant:
+            FREE(ParseContextConstant, self);
+            break;
+
+        case ParseContextKindError:
+            free(self);
             break;
 
         default:
@@ -3127,6 +3240,113 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     return expr;
 }
 
+static inline int *
+parse_unary_op(struct Parser self, struct ParseDecl *parse_decl)
+{
+    switch (parse_decl->current->kind) {
+        case TokenKindMinus:
+            return (int *)UnaryOpKindNegative;
+        case TokenKindNotKw:
+            return (int *)UnaryOpKindNot;
+        case TokenKindAmpersand:
+            return (int *)UnaryOpKindReference;
+        default:
+            return NULL;
+    }
+}
+
+static inline int *
+parse_binary_op(struct Parser self, struct ParseDecl *parse_decl) {
+    switch (parse_decl->current->kind) {
+        case TokenKindPlus:
+            return (int *)BinaryOpKindAdd;
+        case TokenKindMinus:
+            return (int *)BinaryOpKindSub;
+        case TokenKindStar:
+            return (int *)BinaryOpKindMul;
+        case TokenKindSlash:
+            return (int *)BinaryOpKindDiv;
+        case TokenKindPercentage:
+            return (int *)BinaryOpKindMod;
+        case TokenKindDotDot:
+            return (int *)BinaryOpKindRange;
+        case TokenKindLShift:
+            return (int *)BinaryOpKindLt;
+        case TokenKindRShift:
+            return (int *)BinaryOpKindGt;
+        case TokenKindLShiftEq:
+            return (int *)BinaryOpKindLe;
+        case TokenKindRShiftEq:
+            return (int *)BinaryOpKindGe;
+        case TokenKindEqEq:
+            return (int *)BinaryOpKindEq;
+        case TokenKindNotEq:
+            return (int *)BinaryOpKindNe;
+        case TokenKindAndKw:
+            return (int *)BinaryOpKindAnd;
+        case TokenKindOrKw:
+            return (int *)BinaryOpKindOr;
+        case TokenKindXorKw:
+            return (int *)BinaryOpKindXor;
+        case TokenKindEq:
+            return (int *)BinaryOpKindAssign;
+        case TokenKindPlusEq:
+            return (int *)BinaryOpKindAddAssign;
+        case TokenKindMinusEq:
+            return (int *)BinaryOpKindSubAssign;
+        case TokenKindStarEq:
+            return (int *)BinaryOpKindMulAssign;
+        case TokenKindSlashEq:
+            return (int *)BinaryOpKindDivAssign;
+        case TokenKindPercentageEq:
+            return (int *)BinaryOpKindModAssign;
+        case TokenKindHatEq:
+            return (int *)BinaryOpKindConcatAssign;
+        case TokenKindLShiftLShiftEq:
+            return (int *)BinaryOpKindBitLShiftAssign;
+        case TokenKindRShiftRShiftEq:
+            return (int *)BinaryOpKindBitRShiftAssign;
+        case TokenKindBarEq:
+            return (int *)BinaryOpKindBitOrAssign;
+        case TokenKindXorEq:
+            return (int *)BinaryOpKindXorAssign;
+        case TokenKindAmpersandEq:
+            return (int *)BinaryOpKindBitAndAssign;
+        case TokenKindWaveEq:
+            return (int *)BinaryOpKindBitNotAssign;
+        case TokenKindPlusPlusEq:
+            return (int *)BinaryOpKindMergeAssign;
+        case TokenKindMinusMinusEq:
+            return (int *)BinaryOpKindUnmergeAssign;
+        case TokenKindStarStarEq:
+            return (int *)BinaryOpKindExponentAssign;
+        case TokenKindBarRShift:
+            return (int *)BinaryOpKindChain;
+        case TokenKindPlusPlus:
+            return (int *)BinaryOpKindMerge;
+        case TokenKindMinusMinus:
+            return (int *)BinaryOpKindUnmerge;
+        case TokenKindDollar:
+            return (int *)BinaryOpKindRepeat;
+        case TokenKindHat:
+            return (int *)BinaryOpKindConcat;
+        case TokenKindLShiftLShift:
+            return (int *)BinaryOpKindBitLShift;
+        case TokenKindRShiftRShift:
+            return (int *)BinaryOpKindBitRShift;
+        case TokenKindBar:
+            return (int *)BinaryOpKindBitOr;
+        case TokenKindAmpersand:
+            return (int *)BinaryOpKindBitAnd;
+        case TokenKindWave:
+            return (int *)BinaryOpKindBitNot;
+        case TokenKindStarStar:
+            return (int *)BinaryOpKindExponent;
+        default:
+            return NULL;
+    }
+}
+
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
@@ -3146,11 +3366,37 @@ parse_return_stmt(struct Parser self,
     return NEW(StmtReturn, loc, expr);
 }
 
-static struct Stmt *
+static struct IfCond
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
               struct Location loc)
 {
+    struct Expr *if_cond = NULL;
+    struct Vec *if_body = NULL;
+
+    next_token(parse_decl);
+
+    if_cond = parse_expr(self, parse_decl);
+
+    EXPECTED_TOKEN(parse_decl, TokenKindDoKw, {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorExpectedToken),
+                                     *parse_decl->current->loc,
+                                     format(""),
+                                     None());
+
+        err->err->s = from__String("`do`");
+
+        emit__Diagnostic(err);
+    });
+
+    while (parse_decl->current->kind != TokenKindEndKw &&
+           parse_decl->current->kind != TokenKindSemicolon) {
+        TODO("");
+    }
+
+    TODO("");
 }
 
 static struct Stmt *

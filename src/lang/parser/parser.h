@@ -296,6 +296,19 @@ __new__ConstantParseContext();
 void
 __free__ConstantParseContext(struct ConstantParseContext self);
 
+typedef struct ErrorParseContext
+{
+    bool is_pub;
+    struct String *name; // struct String&
+} ErrorParseContext;
+
+/**
+ *
+ * @brief Construct the ErrorParseContext type.
+ */
+struct ErrorParseContext
+__new__ErrorParseContext();
+
 enum ParseContextKind
 {
     ParseContextKindFun,
@@ -308,7 +321,9 @@ enum ParseContextKind
     ParseContextKindClass,
     ParseContextKindMethod,
     ParseContextKindProperty,
-    ParseContextKindImport
+    ParseContextKindImport,
+    ParseContextKindConstant,
+    ParseContextKindError
 };
 
 typedef struct ParseContext
@@ -327,6 +342,8 @@ typedef struct ParseContext
         struct MethodParseContext method;
         struct PropertyParseContext property;
         struct ImportParseContext import;
+        struct ConstantParseContext constant;
+        struct ErrorParseContext error;
     } value;
 } ParseContext;
 
@@ -402,6 +419,21 @@ __new__ParseContextImport(struct ImportParseContext import,
 
 /**
  *
+ * @brief Contruct the ParseContext type (Constant variant).
+ */
+struct ParseContext *
+__new__ParseContextConstant(struct ConstantParseContext constant,
+                            struct Location loc);
+
+/**
+ *
+ * @brief Contruct the ParseContext type (Error variant).
+ */
+struct ParseContext *
+__new__ParseContextError(struct ErrorParseContext error, struct Location loc);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -462,6 +494,13 @@ __free__ParseContextProperty(struct ParseContext *self);
  */
 void
 __free__ParseContextImport(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Constant variant).
+ */
+void
+__free__ParseContextConstant(struct ParseContext *self);
 
 /**
  *

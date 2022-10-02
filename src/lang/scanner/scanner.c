@@ -1074,6 +1074,8 @@ get_token(struct Scanner *self)
         case '|':
             if (c2 == (char *)'>')
                 kind = TokenKindBarRShift;
+            else if (c2 == (char *)'=')
+                kind = TokenKindBarEq;
             else
                 kind = TokenKindBar;
             break;
@@ -1320,7 +1322,10 @@ get_token(struct Scanner *self)
             break;
 
         case '&':
-            kind = TokenKindAmpersand;
+            if (c2 == (char*)'=')
+                kind = TokenKindAmpersandEq;
+            else
+                kind = TokenKindAmpersand;
             break;
 
         case IS_DIGIT:
