@@ -1732,7 +1732,7 @@ __free__StmtAll(struct Stmt *self);
 
 typedef struct FunDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Vec
       *tags; // struct Vec<struct Tuple<struct String*, struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>*

@@ -290,6 +290,7 @@ enum ParseContextKind
 typedef struct ParseContext
 {
     enum ParseContextKind kind;
+    struct Location loc;
 
     union
     {
@@ -310,62 +311,70 @@ typedef struct ParseContext
  * @brief Contruct the ParseContext type (Fun variant).
  */
 struct ParseContext *
-__new__ParseContextFun(struct FunParseContext fun);
+__new__ParseContextFun(struct FunParseContext fun, struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Enum variant).
  */
 struct ParseContext *
-__new__ParseContextEnum(struct EnumParseContext enum_, bool is_object);
+__new__ParseContextEnum(struct EnumParseContext enum_,
+                        struct Location loc,
+                        bool is_object);
 
 /**
  *
  * @brief Contruct the ParseContext type (Record variant).
  */
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext record, bool is_object);
+__new__ParseContextRecord(struct RecordParseContext record,
+                          struct Location loc,
+                          bool is_object);
 
 /**
  *
  * @brief Contruct the ParseContext type (Alias variant).
  */
 struct ParseContext *
-__new__ParseContextAlias(struct AliasParseContext alias);
+__new__ParseContextAlias(struct AliasParseContext alias, struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Trait variant).
  */
 struct ParseContext *
-__new__ParseContextTrait(struct TraitParseContext trait);
+__new__ParseContextTrait(struct TraitParseContext trait, struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Class variant).
  */
-struct ParseContext *__new__ParseContextClass(struct ClassParseContext class);
+struct ParseContext *
+__new__ParseContextClass(struct ClassParseContext class, struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Method variant).
  */
 struct ParseContext *
-__new__ParseContextMethod(struct MethodParseContext method);
+__new__ParseContextMethod(struct MethodParseContext method,
+                          struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Property variant).
  */
 struct ParseContext *
-__new__ParseContextProperty(struct PropertyParseContext property);
+__new__ParseContextProperty(struct PropertyParseContext property,
+                            struct Location loc);
 
 /**
  *
  * @brief Contruct the ParseContext type (Import variant).
  */
 struct ParseContext *
-__new__ParseContextImport(struct ImportParseContext import);
+__new__ParseContextImport(struct ImportParseContext import,
+                          struct Location loc);
 
 /**
  *
@@ -437,11 +446,12 @@ __free__ParseContextImport(struct ParseContext *self);
 void
 __free__ParseContextAll(struct ParseContext *self);
 
-typedef struct ParseDecl {
+typedef struct ParseDecl
+{
     Usize pos;
-    struct Token *current; // struct Token&
+    struct Token *current;  // struct Token&
     struct Token *previous; // struct Token&
-    struct Vec *tokens; // struct Vec<struct Token&>*
+    struct Vec *tokens;     // struct Vec<struct Token&>*
 } ParseDecl;
 
 /**

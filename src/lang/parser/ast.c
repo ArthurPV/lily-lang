@@ -1647,7 +1647,7 @@ __free__FunParamDefault(struct FunParam *self)
 {
     FREE(String, self->name);
     FREE(DataTypeAll, self->param_data_type->items[0]);
-    FREE(Location, self->param_data_type->items[1]);
+    free(self->param_data_type->items[1]);
     FREE(Tuple, self->param_data_type);
     FREE(ExprAll, self->value.default_);
     free(self);
@@ -1658,7 +1658,7 @@ __free__FunParamNormal(struct FunParam *self)
 {
     FREE(String, self->name);
     FREE(DataTypeAll, self->param_data_type->items[0]);
-    FREE(Location, self->param_data_type->items[1]);
+    free(self->param_data_type->items[1]);
     FREE(Tuple, self->param_data_type);
     free(self);
 }
@@ -2489,31 +2489,40 @@ __new__FunDecl(struct String *name,
 void
 __free__FunDecl(struct FunDecl *self)
 {
-    FREE(String, self->name);
+    if (self->tags != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->tags); i++) {
+            struct Tuple *temporary = (struct Tuple *)get__Vec(*self->tags, i);
+            FREE(String, (struct String *)temporary->items[0]);
+            FREE(Tuple, (struct Tuple *)get__Vec(*self->tags, i));
+        }
 
-    for (Usize i = 0; i < len__Vec(*self->tags); i++) {
-        struct Tuple *temporary = (struct Tuple *)get__Vec(*self->tags, i);
-        FREE(String, (struct String *)temporary->items[0]);
-        FREE(Tuple, (struct Tuple *)get__Vec(*self->tags, i));
+        FREE(Vec, self->tags);
     }
 
-    FREE(Vec, self->tags);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
+    if (self->params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->params); i++)
+            FREE(FunParamAll, get__Vec(*self->params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->params); i++)
-        FREE(FunParamAll, get__Vec(*self->params, i));
+        FREE(Vec, self->params);
+    }
 
-    FREE(Vec, self->params);
-    FREE(DataTypeAll, self->return_type);
+    if (self->return_type != NULL)
+        FREE(DataTypeAll, self->return_type);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
-        FREE(FunBodyItemAll, get__Vec(*self->body, i));
+    if (self->body != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->body); i++)
+            FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
-    FREE(Vec, self->body);
+        FREE(Vec, self->body);
+    }
+
     free(self);
 }
 
