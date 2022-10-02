@@ -416,7 +416,9 @@ parse_import_stmt(struct Parser self,
 static struct Vec *
 parse_fun_body(struct Parser self, struct ParseDecl *parse_decl);
 static struct Vec *
-parse_fun_params(struct Parser self, struct ParseDecl *parse_decl);
+parse_fun_params(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 bool is_method);
 static struct FunDecl *
 parse_fun_declaration(struct Parser *self);
 static struct EnumDecl *
@@ -4636,9 +4638,12 @@ parse_import_stmt(struct Parser self,
 
 // struct Vec<struct FunParam*>*
 static struct Vec *
-parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
+parse_fun_params(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 bool is_method)
 {
     struct Vec *params = NEW(Vec, sizeof(struct FunParam));
+    bool has_self_param = false;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         struct Location loc = NEW(Location);
@@ -4651,91 +4656,128 @@ parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
                         parse_decl->current->loc->s_line,
                         parse_decl->current->loc->s_col);
 
-        if (parse_decl->current->kind != TokenKindIdentifier) {
-            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
-                                         &self.parse_block,
-                                         NEW(LilyError, LilyErrorMissParamName),
-                                         *parse_decl->previous->loc,
-                                         from__String(""),
-                                         None());
-
-            emit__Diagnostic(err);
-
-            if (parse_decl->pos + 1 == len__Vec(*parse_decl->tokens))
-                next_token(parse_decl);
-        } else {
-            name = &*parse_decl->current->lit;
+        if (parse_decl->current->kind == TokenKindSelfKw && is_method &&
+            !has_self_param && parse_decl->pos == 0) {
+            has_self_param = true;
 
             next_token(parse_decl);
-        }
 
-        if (is_data_type(parse_decl)) {
-            start__Location(&loc_data_type,
-                            parse_decl->current->loc->s_line,
-                            parse_decl->current->loc->s_col);
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
 
-            data_type = parse_data_type(self, parse_decl);
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
 
-            end__Location(&loc_data_type,
-                          parse_decl->current->loc->s_line,
-                          parse_decl->current->loc->s_col);
-        }
+                err->err->s = from__String("`,` or `:=`");
 
-        switch (parse_decl->current->kind) {
-            case TokenKindColonEq:
+                emit__Diagnostic(err);
+            });
+
+            push__Vec(params, NEW(FunParamSelf, loc));
+        } else if (parse_decl->current->kind == TokenKindSelfKw && !is_method)
+            assert(0 && "error");
+        else if (parse_decl->current->kind == TokenKindSelfKw && has_self_param)
+            assert(0 && "error");
+        else if (parse_decl->current->kind == TokenKindSelfKw &&
+                 parse_decl->pos != 0)
+            assert(0 && "error");
+        else {
+            if (parse_decl->current->kind != TokenKindIdentifier) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorMissParamName),
+                      *parse_decl->previous->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+
+                if (parse_decl->pos + 1 == len__Vec(*parse_decl->tokens))
+                    next_token(parse_decl);
+            } else {
+                name = &*parse_decl->current->lit;
+
                 next_token(parse_decl);
+            }
 
-                default_value = parse_expr(self, parse_decl);
+            if (is_data_type(parse_decl)) {
+                start__Location(&loc_data_type,
+                                parse_decl->current->loc->s_line,
+                                parse_decl->current->loc->s_col);
 
-                break;
-            default:
-                break;
+                data_type = parse_data_type(self, parse_decl);
+
+                end__Location(&loc_data_type,
+                              parse_decl->current->loc->s_line,
+                              parse_decl->current->loc->s_col);
+            }
+
+            switch (parse_decl->current->kind) {
+                case TokenKindColonEq:
+                    next_token(parse_decl);
+
+                    default_value = parse_expr(self, parse_decl);
+
+                    break;
+                default:
+                    break;
+            }
+
+            if (data_type == NULL && default_value == NULL)
+                end__Location(&loc,
+                              parse_decl->current->loc->e_line,
+                              parse_decl->current->loc->e_col);
+            else
+                end__Location(&loc,
+                              parse_decl->current->loc->s_line,
+                              parse_decl->current->loc->s_col);
+
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`,` or `:=`");
+
+                emit__Diagnostic(err);
+            });
+
+            if (default_value == NULL && data_type == NULL)
+                push__Vec(params, NEW(FunParamNormal, name, None(), loc));
+            else if (default_value == NULL)
+                push__Vec(
+                  params,
+                  NEW(FunParamNormal,
+                      name,
+                      Some(NEW(
+                        Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                      loc));
+            else if (default_value != NULL && data_type == NULL)
+                push__Vec(
+                  params,
+                  NEW(FunParamDefault, name, None(), loc, default_value));
+            else
+                push__Vec(
+                  params,
+                  NEW(FunParamDefault,
+                      name,
+                      Some(NEW(
+                        Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                      loc,
+                      default_value));
         }
-
-        if (data_type == NULL && default_value == NULL)
-            end__Location(&loc,
-                          parse_decl->current->loc->e_line,
-                          parse_decl->current->loc->e_col);
-        else
-            end__Location(&loc,
-                          parse_decl->current->loc->s_line,
-                          parse_decl->current->loc->s_col);
-
-        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
-                                         &self.parse_block,
-                                         NEW(LilyError, LilyErrorExpectedToken),
-                                         *parse_decl->current->loc,
-                                         format(""),
-                                         None());
-
-            err->err->s = from__String("`,` or `:=`");
-
-            emit__Diagnostic(err);
-        });
-
-        if (default_value == NULL && data_type == NULL)
-            push__Vec(params, NEW(FunParamNormal, name, None(), loc));
-        else if (default_value == NULL)
-            push__Vec(
-              params,
-              NEW(
-                FunParamNormal,
-                name,
-                Some(NEW(Tuple, 2, data_type, copy__Location(&loc_data_type))),
-                loc));
-        else if (default_value != NULL && data_type == NULL)
-            push__Vec(params,
-                      NEW(FunParamDefault, name, None(), loc, default_value));
-        else
-            push__Vec(
-              params,
-              NEW(
-                FunParamDefault,
-                name,
-                Some(NEW(Tuple, 2, data_type, copy__Location(&loc_data_type))),
-                loc,
-                default_value));
     }
 
     return params;
@@ -4780,7 +4822,7 @@ parse_fun_declaration(struct Parser *self)
     if (fun_parse_context.has_params) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.params);
 
-        params = parse_fun_params(*self, &parse);
+        params = parse_fun_params(*self, &parse, false);
     }
 
     if (fun_parse_context.has_return_type) {
@@ -5282,16 +5324,11 @@ parse_method_declaration(struct Parser *self,
     if (method_parse_context.has_params) {
         struct ParseDecl parse = NEW(ParseDecl, method_parse_context.params);
 
-        params = parse_fun_params(*self, &parse);
+        params = parse_fun_params(*self, &parse, true);
 
         has_first_self_param =
-          ((struct FunParam *)get__Vec(*params, 0))->param_data_type->some !=
-              NULL
-            ? ((struct DataType *)((struct FunParam *)get__Vec(*params, 0))
-                 ->param_data_type->some)
-                    ->kind == DataTypeKindSelf
-                ? true
-                : false
+          ((struct FunParam *)get__Vec(*params, 0))->kind == FunParamKindSelf
+            ? true
             : false;
     }
 
@@ -5342,6 +5379,37 @@ parse_import_declaration(struct Parser *self)
 static struct ConstantDecl *
 parse_constant_declaration(struct Parser *self)
 {
+    struct ConstantParseContext constant_parse_context =
+      self->current->value.constant;
+    struct Option *data_type = NULL;
+    struct Expr *expr = NULL;
+
+    if (len__Vec(*constant_parse_context.data_type) > 0) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, constant_parse_context.data_type);
+
+        data_type = Some(parse_data_type(*self, &parse));
+
+        if (parse.pos != len__Vec(*parse.tokens))
+            assert(0 && "error");
+    } else
+        data_type = None();
+
+    if (len__Vec(*constant_parse_context.expr) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, constant_parse_context.expr);
+
+        expr = parse_expr(*self, &parse);
+
+        if (parse.pos != len__Vec(*parse.tokens))
+            assert(0 && "error");
+    } else
+        assert(0 && "error");
+
+    return NEW(ConstantDecl,
+               constant_parse_context.name,
+               data_type,
+               expr,
+               constant_parse_context.is_pub);
 }
 
 static struct ErrorDecl *
@@ -5394,12 +5462,20 @@ parse_declaration(struct Parser *self)
             break;
 
         case ParseContextKindClass:
+            push__Vec(self->decls,
+                      NEW(DeclClass,
+                          self->current->loc,
+                          parse_class_declaration(self)));
             break;
 
         case ParseContextKindImport:
             break;
 
         case ParseContextKindConstant:
+            push__Vec(self->decls,
+                      NEW(DeclConstant,
+                          self->current->loc,
+                          parse_constant_declaration(self)));
             break;
 
         case ParseContextKindError:

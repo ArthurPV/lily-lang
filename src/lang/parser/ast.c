@@ -1593,6 +1593,16 @@ __new__FunParamNormal(struct String *name,
     return self;
 }
 
+struct FunParam *
+__new__FunParamSelf(struct Location loc)
+{
+    struct FunParam *self = malloc(sizeof(struct FunParam));
+    self->kind = FunParamKindSelf;
+    self->param_data_type = NULL;
+    self->loc = loc;
+    return self;
+}
+
 struct String *
 to_string__FunParam(struct FunParam self)
 {
@@ -1647,6 +1657,12 @@ __free__FunParamNormal(struct FunParam *self)
 }
 
 void
+__free__FunParamSelf(struct FunParam *self)
+{
+    free(self);
+}
+
+void
 __free__FunParamAll(struct FunParam *self)
 {
     switch (self->kind) {
@@ -1655,6 +1671,9 @@ __free__FunParamAll(struct FunParam *self)
             break;
         case FunParamKindDefault:
             FREE(FunParamDefault, self);
+            break;
+        case FunParamKindSelf:
+            FREE(FunParamSelf, self);
             break;
         default:
             UNREACHABLE("unknown fun param kind");
@@ -2802,7 +2821,6 @@ __new__PropertyDecl(struct String *name,
 void
 __free__PropertyDecl(struct PropertyDecl *self)
 {
-    FREE(String, self->name);
     FREE(DataTypeAll, self->data_type);
     free(self);
 }

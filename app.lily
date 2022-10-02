@@ -22,6 +22,9 @@ end
 object Person: class =
 	@name Str;
 	@age Uint8;
+
+	@get_name(self) = self.name;
+	@get_age(self) = self.age;
 end
 
 fun main =

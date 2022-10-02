@@ -1125,7 +1125,8 @@ __free__ExprAll(struct Expr *self);
 enum FunParamKind
 {
     FunParamKindDefault,
-    FunParamKindNormal
+    FunParamKindNormal,
+    FunParamKindSelf
 };
 
 typedef struct FunParamCall
@@ -1184,10 +1185,14 @@ __free__FunParamCallAll(struct FunParamCall *self);
 typedef struct FunParam
 {
     enum FunParamKind kind;
-    struct String *name;            // struct String&
     struct Option *param_data_type; // struct Option<struct Tuple<struct
                                     // DataType*, struct Location*>*>*
     struct Location loc;
+
+    union
+    {
+        struct String *name; // struct String&
+    };
 
     union
     {
@@ -1215,6 +1220,12 @@ __new__FunParamNormal(struct String *name,
                       struct Location loc);
 
 /**
+ * @brief Construct FunParam type (Self variant).
+ */
+struct FunParam *
+__new__FunParamSelf(struct Location loc);
+
+/**
  *
  * @brief Convert FunParam in String.
  */
@@ -1234,6 +1245,13 @@ __free__FunParamDefault(struct FunParam *self);
  */
 void
 __free__FunParamNormal(struct FunParam *self);
+
+/**
+ *
+ * @brief Free the FunParam type (Self variant).
+ */
+void
+__free__FunParamSelf(struct FunParam *self);
 
 /**
  *
