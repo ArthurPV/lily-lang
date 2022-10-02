@@ -270,15 +270,47 @@ __free__GenericSymbolRestrictedDataType(struct Generic *self);
 void
 __free__GenericSymbolAll(struct Generic *self);
 
+typedef struct FunParamSymbol
+{
+    enum FunParamKind kind;
+    struct Tuple *param_data_type; // struct Tuple<struct DataTypeSymbol*,
+                                   // struct Location&>*
+    struct Location loc;
+
+    union
+    {
+        struct String *name; // struct String&
+    };
+
+    union
+    {
+        struct ExprSymbol *default_;
+    };
+} FunParamSymbol;
+
+/**
+ *
+ * @brief Construct the FunParamSymbol type.
+ */
+struct FunParamSymbol *
+__new__FunParamSymbol(struct FunParam *param);
+
+/**
+ *
+ * @brief Free the FunParamSymbol type.
+ */
+void
+__free__FunParamSymbol(struct FunParamSymbol *self);
+
 typedef struct FunSymbol
 {
     struct String *name;        // struct String&
-    struct Vec *taged_type;     // struct Vec<struct SymbolTable*>*
+    struct Vec *tagged_type;    // struct Vec<struct SymbolTable*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct Vec *params;         // struct Vec<struct FunParam*>&
+    struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
     enum Visibility visibility;
     bool is_async;
-    struct DataType *return_type;
+    struct DataTypeSymbol *return_type;
     struct Vec *body;      // struct Vec<struct SymbolTable*>*
     struct Scope *scope;   // struct Scope&
     struct Decl *fun_decl; // struct Decl&
@@ -349,9 +381,9 @@ typedef struct AliasSymbol
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct DataType *data_type; // struct DataType&
-    struct Scope *scope;        // struct Scope&
-    struct Decl *alias_decl;    // struct Decl&
+    struct DataTypeSymbol *data_type;
+    struct Scope *scope;     // struct Scope&
+    struct Decl *alias_decl; // struct Decl&
     enum Visibility visibility;
 } AliasSymbol;
 
@@ -371,9 +403,309 @@ __free__AliasSymbol(struct AliasSymbol *self);
 
 typedef struct FieldRecordSymbol
 {
-    struct String *name;        // struct String&
-    struct DataType *data_type; // struct DataType&
+    struct String *name; // struct String&
+    struct DataTypeSymbol *data_type;
+    struct ExprSymbol *value;
+    enum Visibility visibility;
+    struct Location loc;
 } FieldRecordSymbol;
+
+/**
+ *
+ * @brief Construct the FieldRecordSymbol type.
+ */
+struct FieldRecordSymbol *
+__new__FieldRecordSymbol(struct FieldRecord *field_record);
+
+/**
+ *
+ * @brief Free the FieldRecordSymbol type.
+ */
+void
+__free__FieldRecordSymbol(struct FieldRecordSymbol *self);
+
+typedef struct RecordSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *fields;         // struct Vec<struct FieldRecordSymbol*>*
+    struct Scope *scope;        // struct Scope&
+    struct Decl *record_decl;   // struct Decl&
+    enum Visibility visibility;
+} RecordSymbol;
+
+/**
+ *
+ * @brief Construct the RecordSymbol type.
+ */
+struct RecordSymbol *
+__new__RecordSymbol(struct Decl *record_decl);
+
+/**
+ *
+ * @brief Free the RecordSymbol type.
+ */
+void
+__free__RecordSymbol(struct RecordSymbol *self);
+
+typedef struct RecordObjSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *fields;         // struct Vec<struct FieldRecordSymbol*>*
+    struct Vec *attached;       // struct Vec<struct SymbolTable*>*
+    struct Scope *scope;        // struct Scope&
+    struct Decl *record_decl;   // struct Decl&
+    enum Visibility visibility;
+} RecordObjSymbol;
+
+/**
+ *
+ * @brief Construct the RecordObjSymbol type.
+ */
+struct RecordObjSymbol *
+__new__RecordObjSymbol(struct Decl *record_decl);
+
+/**
+ *
+ * @brief Free the RecordObjSymbol type.
+ */
+void
+__free__RecordObjSymbol(struct RecordObjSymbol *self);
+
+typedef struct VariantEnumSymbol
+{
+    struct String *name; // struct String&
+    struct DataTypeSymbol *data_type;
+    struct Location loc;
+} VariantEnumSymbol;
+
+/**
+ *
+ * @brief Construct the VariantEnumSymbol type.
+ */
+struct VariantEnumSymbol *
+__new__VariantEnumSymbol(struct VariantEnum *variant_enum);
+
+/**
+ *
+ * @brief Free the VariantEnumSymbol type.
+ */
+inline void
+__free__VariantEnumSymbol(struct VariantEnumSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->data_type);
+    free(self);
+}
+
+typedef struct EnumSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *variants;       // struct Vec<struct VariantEnumSymbol*>*
+    struct DataTypeSymbol *type_value;
+    struct Scope *scope;
+    struct Decl *enum_decl; // struct Decl&
+    enum Visibility visibility;
+    bool is_error;
+} EnumSymbol;
+
+/**
+ *
+ * @brief Construct the EnumSymbol type.
+ */
+struct EnumSymbol *
+__new__EnumSymbol(struct Decl *enum_decl);
+
+/**
+ *
+ * @brief Free the EnumSymbol type.
+ */
+void
+__free__EnumSymbol(struct EnumSymbol *self);
+
+typedef struct EnumObjSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *variants;       // struct Vec<struct VariantEnumSymbol*>*
+    struct Vec *attached;       // struct Vec<struct SymbolTable*>*
+    struct DataTypeSymbol *type_value;
+    struct Scope *scope;
+    struct Decl *enum_decl; // struct Decl&
+    enum Visibility visibility;
+    bool is_error;
+} EnumObjSymbol;
+
+/**
+ *
+ * @brief Construct the EnumObjSymbol type.
+ */
+struct EnumObjSymbol *
+__new__EnumObjSymbol(struct Decl *enum_decl);
+
+/**
+ *
+ * @brief Free the EnumObjSymbol type.
+ */
+void
+__free__EnumObjSymbol(struct EnumObjSymbol *self);
+
+typedef struct ErrorSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // srtruct Vec<struct Generic*>&
+    struct DataTypeSymbol *data_type;
+    struct Scope *scope;
+    struct Decl *error_decl; // struct Decl&
+    enum Visibility visibility;
+} ErrorSymbol;
+
+/**
+ *
+ * @brief Construct the ErrorSymbol type.
+ */
+struct ErrorSymbol *
+__new__ErrorSymbol(struct Decl *error_decl);
+
+/**
+ *
+ * @brief Free the ErrorSymbol type.
+ */
+inline void
+__free__ErrorSymbol(struct ErrorSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->data_type);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+typedef struct MethodSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
+    struct DataTypeSymbol *return_type;
+    struct Vec *body;                  // structg Vec<struct SymbolTable*>*
+    struct Scope *scope;               // struct Scope&
+    struct ClassBodyItem *method_decl; // struct ClassBodyItem&
+    enum Visibility visibility;
+    bool has_first_self_param;
+    bool is_async;
+} MethodSymbol;
+
+/**
+ *
+ * @brief Construct the MethodSymbol type.
+ */
+struct MethodSymbol *
+__new__MethodSymbol(struct ClassBodyItem *method_decl);
+
+/**
+ *
+ * @brief Free the MethodSymbol type.
+ */
+void
+__free__MethodSymbol(struct MethodSymbol *self);
+
+typedef struct PropertySymbol
+{
+    struct String *name;
+    struct DataTypeSymbol *data_type;
+    struct Scope *scope;                 // struct Scope&
+    struct ClassBodyItem *property_decl; // struct ClassBodyItem&
+    enum Visibility visibility;
+} PropertySymbol;
+
+/**
+ *
+ * @brief Construct the PropertySymbol type.
+ */
+struct PropertySymbol *
+__new__PropertySymbol(struct ClassBodyItem *property_decl);
+
+/**
+ *
+ * @brief Free the PropertySymbol type.
+ */
+void
+__free__PropertySymbol(struct PropertySymbol *self);
+
+typedef struct ClassSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *inheritance;    // struct Vec<struct DataTypeSymbol*>*
+    struct Vec *impl;           // struct Vec<struct DataTypeSymbol*>*
+    struct Vec *body;           // struct Vec<struct SymbolTable*>*
+    struct Scope *scope;        // struct Scope&
+    struct Decl *class_decl;    // struct Decl&
+    enum Visibility visibility;
+} ClassSymbol;
+
+/**
+ *
+ * @brief Construct the ClassSymbol type.
+ */
+struct ClassSymbol *
+__new__ClassSymbol(struct Decl *class_decl);
+
+/**
+ *
+ * @brief Free the ClassSymbol type.
+ */
+void
+__free__ClassSymbol(struct ClassSymbol *self);
+
+typedef struct PrototypeSymbol
+{
+    struct String *name;     // struct String&
+    struct Vec *params_type; // struct Vec<struct DataTypeSymbol*>*
+    struct DataTypeSymbol *return_type;
+    struct Scope *scope;                  // struct Scope&
+    struct TraitBodyItem *prototype_decl; // struct TraitBodyItem&
+    bool is_async;
+    bool has_first_self_param;
+} PrototypeSymbol;
+
+/**
+ *
+ * @brief Construct the PrototypeSymbol type.
+ */
+struct PrototypeSymbol *
+__new__PrototypeSymbol(struct TraitBodyItem *prototype_decl);
+
+/**
+ *
+ * @brief Free the PrototypeSymbol type.
+ */
+void
+__free__PrototypeSymbol(struct PrototypeSymbol *self);
+
+typedef struct TraitSymbol
+{
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>&
+    struct Vec *inh;            // struct Vec<struct DataTypeSymbol*>*
+    struct Vec *body;           // struct Vec<struct SymbolTable*>*
+    struct Scope *scope;        // struct Scope&
+    struct Decl *trait_decl;    // struct Decl&
+    enum Visibility visibility;
+} TraitSymbol;
+
+/**
+ *
+ * @brief Construct the TraitSymbol type.
+ */
+struct TraitSymbol *
+__new__TraitSymbol(struct Decl *trait_decl);
+
+/**
+ *
+ * @brief Free the TraitSymbol type.
+ */
+void
+__free__TraitSymbol(struct TraitSymbol *self);
 
 enum LiteralSymbolKind
 {
@@ -1599,22 +1931,31 @@ enum SymbolTableKind
     SymbolTableKindError,
     SymbolTableKindClass,
     SymbolTableKindTrait,
-    SymbolTableKindRecordObject,
-    SymbolTableKindEnumObject,
-    SymbolTableKindTag,
-    SymbolTableKindVariable,
-    SymbolTableKindExpr
+    SymbolTableKindRecordObj,
+    SymbolTableKindEnumObj,
+    SymbolTableKindExpr,
+    SymbolTableKindStmt
 };
 
 typedef struct SymbolTable
 {
     enum SymbolTableKind kind;
-    struct Location loc;
 
     union
     {
         struct FunSymbol *fun;
+        struct ConstantSymbol *constant;
+        struct ModuleSymbol *module;
+        struct AliasSymbol *alias;
+        struct RecordSymbol *record;
+        struct RecordObjSymbol *record_obj;
+        struct EnumSymbol *enum_;
+        struct EnumObjSymbol *enum_obj;
+        struct ErrorSymbol *error;
+        struct ClassSymbol *class;
+        struct TraitSymbol *trait;
         struct ExprSymbol *expr;
+        struct StmtSymbol stmt;
     } value;
 } SymbolTable;
 
@@ -1623,14 +1964,91 @@ typedef struct SymbolTable
  * @brief Construct the SymbolTable type (Fun variant).
  */
 struct SymbolTable *
-__new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl);
+__new__SymbolTableFun(struct FunSymbol *fun);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Constant variant).
+ */
+struct SymbolTable *
+__new__SymbolTableConstant(struct ConstantSymbol *constant);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Module variant).
+ */
+struct SymbolTable *
+__new__SymbolTableModule(struct ModuleSymbol *module);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Alias variant).
+ */
+struct SymbolTable *
+__new__SymbolTableAlias(struct AliasSymbol *alias);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Record variant).
+ */
+struct SymbolTable *
+__new__SymbolTableRecord(struct RecordSymbol *record);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (RecordObj variant).
+ */
+struct SymbolTable *
+__new__SymbolTableRecordObj(struct RecordObjSymbol *record_obj);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Enum variant).
+ */
+struct SymbolTable *
+__new__SymbolTableEnum(struct EnumSymbol *enum_);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (EnumObj variant).
+ */
+struct SymbolTable *
+__new__SymbolTableEnumObj(struct EnumObjSymbol *enum_obj);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Error variant).
+ */
+struct SymbolTable *
+__new__SymbolTableError(struct ErrorSymbol *error);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Class variant).
+ */
+struct SymbolTable *
+__new__SymbolTableClass(struct ClassSymbol *class);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Trait variant).
+ */
+struct SymbolTable *
+__new__SymbolTableTrait(struct TraitSymbol *trait);
 
 /**
  *
  * @brief Construct the SymbolTable type (Expr variant).
  */
 struct SymbolTable *
-__new__SymbolTableExpr(struct ExprSymbol *expr, struct Expr *expr_ast);
+__new__SymbolTableExpr(struct ExprSymbol *expr);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Stmt variant).
+ */
+struct SymbolTable *
+__new__SymbolTableStmt(struct StmtSymbol stmt);
 
 /**
  *
@@ -1645,12 +2063,133 @@ __free__SymbolTableFun(struct SymbolTable *self)
 
 /**
  *
+ * @brief Free the SymbolTable type (Constant variant).
+ */
+inline void
+__free__SymbolTableConstant(struct SymbolTable *self)
+{
+    FREE(ConstantSymbol, self->value.constant);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Module variant).
+ */
+inline void
+__free__SymbolTableModule(struct SymbolTable *self)
+{
+    FREE(ModuleSymbol, self->value.module);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Alias variant).
+ */
+inline void
+__free__SymbolTableAlias(struct SymbolTable *self)
+{
+    FREE(AliasSymbol, self->value.alias);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Record variant).
+ */
+inline void
+__free__SymbolTableRecord(struct SymbolTable *self)
+{
+    FREE(RecordSymbol, self->value.record);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (RecordObj variant).
+ */
+inline void
+__free__SymbolTableRecordObj(struct SymbolTable *self)
+{
+    FREE(RecordObjSymbol, self->value.record_obj);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Enum variant).
+ */
+inline void
+__free__SymbolTableEnum(struct SymbolTable *self)
+{
+    FREE(EnumSymbol, self->value.enum_);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (EnumObj variant).
+ */
+inline void
+__free__SymbolTableEnumObj(struct SymbolTable *self)
+{
+    FREE(EnumObjSymbol, self->value.enum_obj);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Error variant).
+ */
+inline void
+__free__SymbolTableError(struct SymbolTable *self)
+{
+    FREE(ErrorSymbol, self->value.error);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Class variant).
+ */
+inline void
+__free__SymbolTableClass(struct SymbolTable *self)
+{
+    FREE(ClassSymbol, self->value.class);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Trait variant).
+ */
+inline void
+__free__SymbolTableTrait(struct SymbolTable *self)
+{
+    FREE(TraitSymbol, self->value.trait);
+    free(self);
+}
+
+/**
+ *
  * @brief Free the SymbolTable type (Expr variant).
  */
 inline void
 __free__SymbolTableExpr(struct SymbolTable *self)
 {
     FREE(ExprSymbolAll, self->value.expr);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Stmt variant).
+ */
+inline void
+__free__SymbolTableStmt(struct SymbolTable *self)
+{
+    FREE(StmtSymbolAll, self->value.stmt);
     free(self);
 }
 

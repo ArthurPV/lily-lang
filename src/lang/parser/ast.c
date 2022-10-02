@@ -2742,13 +2742,15 @@ struct TraitDecl *
 __new__TraitDecl(struct String *name,
                  struct Vec *generic_params,
                  struct Vec *inh,
-                 struct Vec *body)
+                 struct Vec *body,
+                 bool is_pub)
 {
     struct TraitDecl *self = malloc(sizeof(struct TraitDecl));
     self->name = name;
     self->generic_params = generic_params;
     self->inh = inh;
     self->body = body;
+    self->is_pub = is_pub;
     return self;
 }
 

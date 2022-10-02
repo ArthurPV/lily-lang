@@ -5413,7 +5413,7 @@ parse_trait_declaration(struct Parser *self,
         }
     }
 
-    return NEW(TraitDecl, trait_parse_context.name, generic_params, inh, body);
+    return NEW(TraitDecl, trait_parse_context.name, generic_params, inh, body, trait_parse_context.is_pub);
 }
 
 static struct Vec *

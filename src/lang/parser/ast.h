@@ -1800,7 +1800,7 @@ typedef struct FunParamCall
 
     union
     {
-        struct String *name;
+        struct String *name; // struct String&
     };
 } FunParamCall;
 
@@ -2238,7 +2238,7 @@ enum ClassBodyItemKind
 
 typedef struct PropertyDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct DataType *data_type;
     bool is_pub;
 } PropertyDecl;
@@ -2262,7 +2262,7 @@ __free__PropertyDecl(struct PropertyDecl *self);
 typedef struct MethodDecl
 {
     struct String *name;        // struct String&
-    struct Vec *generic_params; // struct Vec<struct Generic*>
+    struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *params;         // struct Vec<struct FunParam*>*
     struct DataType *return_type;
     struct Vec *body; // struct Vec<struct FunBodyItem*>*
@@ -2490,6 +2490,7 @@ typedef struct TraitDecl
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *inh;            // struct Vec<struct DataType*>*
     struct Vec *body;           // struct Vec<struct TraitBodyItem*>*
+    bool is_pub;
 } TraitDecl;
 
 /**
@@ -2500,7 +2501,8 @@ struct TraitDecl *
 __new__TraitDecl(struct String *name,
                  struct Vec *generic_params,
                  struct Vec *inh,
-                 struct Vec *body);
+                 struct Vec *body,
+                 bool is_pub);
 
 /**
  *

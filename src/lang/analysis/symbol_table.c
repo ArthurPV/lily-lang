@@ -693,29 +693,70 @@ __free__StmtSymbolAll(struct StmtSymbol self)
     }
 }
 
+struct FunParamSymbol *
+__new__FunParamSymbol(struct FunParam *param)
+{
+    struct FunParamSymbol *self = malloc(sizeof(struct FunParamSymbol));
+    self->kind = param->kind;
+    self->param_data_type = NULL;
+    self->loc = param->loc;
+    self->name = param->name;
+    self->default_ = NULL;
+    return self;
+}
+
+void
+__free__FunParamSymbol(struct FunParamSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->param_data_type->items[0]);
+    FREE(Tuple, self->param_data_type);
+
+    if (self->kind == FunParamKindDefault)
+        FREE(ExprSymbolAll, self->default_);
+
+    free(self);
+}
+
 struct FunSymbol *
 __new__FunSymbol(struct Decl *fun_decl)
 {
     struct FunSymbol *self = malloc(sizeof(struct FunSymbol));
     self->name = &*fun_decl->value.fun->name;
-    self->taged_type = NEW(Vec, sizeof(struct SymbolTable));
+    self->tagged_type = NULL;
     self->generic_params = &*fun_decl->value.fun->generic_params;
-    self->params = &*fun_decl->value.fun->params;
+    self->params = NULL;
     self->visibility = VISIBILITY(fun_decl->value.fun);
     self->is_async = fun_decl->value.fun->is_async;
-    self->return_type = fun_decl->value.fun->return_type;
-    self->body = NEW(Vec, sizeof(struct SymbolTable));
+    self->return_type = NULL;
+    self->body = NULL;
     self->scope = NULL;
     self->fun_decl = &*fun_decl;
-
     return self;
 }
 
 void
 __free__FunSymbol(struct FunSymbol *self)
 {
-    FREE(Vec, self->taged_type);
-    FREE(Vec, self->body);
+    if (self->tagged_type != NULL)
+        FREE(Vec, self->tagged_type);
+
+    if (self->params != NULL) {
+        for (Usize i = len__Vec(*self->params); i--;)
+            FREE(FunParamSymbol, get__Vec(*self->params, i));
+
+        FREE(Vec, self->params);
+    }
+
+    if (self->return_type != NULL)
+        FREE(DataTypeSymbolAll, self->return_type);
+
+    if (self->body != NULL) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+        FREE(Vec, self->body);
+    }
+
     FREE(Scope, *self->scope);
     free(self);
 }
@@ -770,7 +811,7 @@ __new__AliasSymbol(struct Decl *alias_decl)
     struct AliasSymbol *self = malloc(sizeof(struct AliasSymbol));
     self->name = alias_decl->value.alias->name;
     self->generic_params = alias_decl->value.alias->generic_params;
-    self->data_type = alias_decl->value.alias->data_type;
+    self->data_type = NULL;
     self->scope = NULL;
     self->alias_decl = alias_decl;
     self->visibility = VISIBILITY(alias_decl->value.alias);
@@ -780,6 +821,352 @@ __new__AliasSymbol(struct Decl *alias_decl)
 void
 __free__AliasSymbol(struct AliasSymbol *self)
 {
+    FREE(DataTypeSymbolAll, self->data_type);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct FieldRecordSymbol *
+__new__FieldRecordSymbol(struct FieldRecord *field_record)
+{
+    struct FieldRecordSymbol *self = malloc(sizeof(struct FieldRecordSymbol));
+    self->name = &*field_record->name;
+    self->data_type = NULL;
+    self->value = NULL;
+    self->visibility = VISIBILITY(field_record);
+    self->loc = field_record->loc;
+    return self;
+}
+
+void
+__free__FieldRecordSymbol(struct FieldRecordSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->data_type);
+    FREE(ExprSymbolAll, self->value);
+    free(self);
+}
+
+struct RecordSymbol *
+__new__RecordSymbol(struct Decl *record_decl)
+{
+    struct RecordSymbol *self = malloc(sizeof(struct RecordSymbol));
+    self->name = record_decl->value.record->name;
+    self->generic_params = record_decl->value.record->generic_params;
+    self->fields = NULL;
+    self->scope = NULL;
+    self->visibility = VISIBILITY(record_decl->value.record);
+    self->record_decl = record_decl;
+    return self;
+}
+
+void
+__free__RecordSymbol(struct RecordSymbol *self)
+{
+    if (self->fields != NULL) {
+        for (Usize i = len__Vec(*self->fields); i--;)
+            FREE(FieldRecordSymbol, get__Vec(*self->fields, i));
+
+        FREE(Vec, self->fields);
+    }
+
+    FREE(Scope, *self->scope);
+
+    free(self);
+}
+
+struct RecordObjSymbol *
+__new__RecordObjSymbol(struct Decl *record_decl)
+{
+    struct RecordObjSymbol *self = malloc(sizeof(struct RecordObjSymbol));
+    self->name = record_decl->value.record->name;
+    self->generic_params = record_decl->value.record->generic_params;
+    self->fields = NULL;
+    self->attached = NULL;
+    self->scope = NULL;
+    self->visibility = VISIBILITY(record_decl->value.record);
+    self->record_decl = record_decl;
+    return self;
+}
+
+void
+__free__RecordObjSymbol(struct RecordObjSymbol *self)
+{
+    if (self->fields != NULL) {
+        for (Usize i = len__Vec(*self->fields); i--;)
+            FREE(FieldRecordSymbol, get__Vec(*self->fields, i));
+
+        FREE(Vec, self->fields);
+    }
+
+    if (self->attached != NULL) {
+        for (Usize i = len__Vec(*self->attached); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->attached, i));
+
+        FREE(Vec, self->attached);
+    }
+
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct VariantEnumSymbol *
+__new__VariantEnumSymbol(struct VariantEnum *variant_enum)
+{
+    struct VariantEnumSymbol *self = malloc(sizeof(struct VariantEnumSymbol));
+    self->name = variant_enum->name;
+    self->data_type = NULL;
+    self->loc = variant_enum->loc;
+    return self;
+}
+
+struct EnumSymbol *
+__new__EnumSymbol(struct Decl *enum_decl)
+{
+    struct EnumSymbol *self = malloc(sizeof(struct EnumSymbol));
+    self->name = enum_decl->value.enum_->name;
+    self->generic_params = enum_decl->value.enum_->generic_params;
+    self->variants = NULL;
+    self->type_value = NULL;
+    self->scope = NULL;
+    self->enum_decl = enum_decl;
+    self->visibility = VISIBILITY(enum_decl->value.enum_);
+    self->is_error = enum_decl->value.enum_->is_error;
+    return self;
+}
+
+void
+__free__EnumSymbol(struct EnumSymbol *self)
+{
+    if (self->variants != NULL) {
+        for (Usize i = len__Vec(*self->variants); i--;)
+            FREE(VariantEnumSymbol, get__Vec(*self->variants, i));
+
+        FREE(Vec, self->variants);
+    }
+
+    if (self->type_value != NULL)
+        FREE(DataTypeSymbolAll, self->type_value);
+
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct EnumObjSymbol *
+__new__EnumObjSymbol(struct Decl *enum_decl)
+{
+    struct EnumObjSymbol *self = malloc(sizeof(struct EnumObjSymbol));
+    self->name = &*enum_decl->value.enum_->name;
+    self->generic_params = enum_decl->value.enum_->generic_params;
+    self->variants = NULL;
+    self->attached = NULL;
+    self->type_value = NULL;
+    self->scope = NULL;
+    self->enum_decl = enum_decl;
+    self->visibility = VISIBILITY(enum_decl->value.enum_);
+    self->is_error = enum_decl->value.enum_->is_error;
+    return self;
+}
+
+void
+__free__EnumObjSymbol(struct EnumObjSymbol *self)
+{
+    if (self->variants != NULL) {
+        for (Usize i = len__Vec(*self->variants); i--;)
+            FREE(VariantEnumSymbol, get__Vec(*self->variants, i));
+
+        FREE(Vec, self->variants);
+    }
+
+    if (self->attached != NULL) {
+        for (Usize i = len__Vec(*self->attached); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->attached, i));
+
+        FREE(Vec, self->attached);
+    }
+
+    FREE(DataTypeSymbol, self->type_value);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct ErrorSymbol *
+__new__ErrorSymbol(struct Decl *error_decl)
+{
+    struct ErrorSymbol *self = malloc(sizeof(struct ErrorSymbol));
+    self->name = error_decl->value.error->name;
+    self->generic_params = error_decl->value.error->generic_params;
+    self->data_type = NULL;
+    self->scope = NULL;
+    self->error_decl = error_decl;
+    self->visibility = VISIBILITY(error_decl->value.error);
+    return self;
+}
+
+struct MethodSymbol *
+__new__MethodSymbol(struct ClassBodyItem *method_decl)
+{
+    struct MethodSymbol *self = malloc(sizeof(struct MethodSymbol));
+    self->name = method_decl->value.method->name;
+    self->generic_params = method_decl->value.method->generic_params;
+    self->params = NULL;
+    self->return_type = NULL;
+    self->body = NULL;
+    self->scope = NULL;
+    self->method_decl = method_decl;
+    self->visibility = VISIBILITY(method_decl->value.method);
+    self->has_first_self_param =
+      method_decl->value.method->has_first_self_param;
+    self->is_async = method_decl->value.method->is_async;
+    return self;
+}
+
+void
+__free__MethodSymbol(struct MethodSymbol *self)
+{
+    if (self->params != NULL) {
+        for (Usize i = len__Vec(*self->params); i--;)
+            FREE(FunParamSymbol, get__Vec(*self->params, i));
+
+        FREE(Vec, self->params);
+    }
+
+    if (self->return_type != NULL)
+        FREE(DataTypeSymbolAll, self->return_type);
+
+    if (self->body != NULL) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+        FREE(Vec, self->body);
+    }
+
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct PropertySymbol *
+__new__PropertySymbol(struct ClassBodyItem *property_decl)
+{
+    struct PropertySymbol *self = malloc(sizeof(struct PropertySymbol));
+    self->name = property_decl->value.property->name;
+    self->data_type = NULL;
+    self->scope = NULL;
+    self->property_decl = property_decl;
+    self->visibility = VISIBILITY(property_decl->value.property);
+    return self;
+}
+
+void
+__free__PropertySymbol(struct PropertySymbol *self)
+{
+    if (self->data_type != NULL)
+        FREE(DataTypeSymbolAll, self->data_type);
+
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct ClassSymbol *
+__new__ClassSymbol(struct Decl *class_decl)
+{
+    struct ClassSymbol *self = malloc(sizeof(struct ClassSymbol));
+    self->name = class_decl->value.class->name;
+    self->generic_params = class_decl->value.class->generic_params;
+    self->inheritance = NULL;
+    self->impl = NULL;
+    self->body = NULL;
+    self->scope = NULL;
+    self->class_decl = class_decl;
+    self->visibility = VISIBILITY(class_decl->value.class);
+    return self;
+}
+
+void
+__free__ClassSymbol(struct ClassSymbol *self)
+{
+    if (self->inheritance != NULL) {
+        for (Usize i = len__Vec(*self->inheritance); i--;)
+            FREE(DataTypeSymbolAll, get__Vec(*self->inheritance, i));
+
+        FREE(Vec, self->inheritance);
+    }
+
+    if (self->impl != NULL) {
+        for (Usize i = len__Vec(*self->impl); i--;)
+            FREE(DataTypeSymbolAll, get__Vec(*self->impl, i));
+
+        FREE(Vec, self->impl);
+    }
+
+    if (self->body != NULL) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+        FREE(Vec, self->body);
+    }
+
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct PrototypeSymbol *
+__new__PrototypeSymbol(struct TraitBodyItem *prototype_decl)
+{
+    struct PrototypeSymbol *self = malloc(sizeof(struct PrototypeSymbol));
+    self->name = prototype_decl->value.prototype->name;
+    self->params_type = NULL;
+    self->return_type = NULL;
+    self->scope = NULL;
+    self->prototype_decl = prototype_decl;
+    self->is_async = prototype_decl->value.prototype->is_async;
+    self->has_first_self_param =
+      prototype_decl->value.prototype->has_first_self_param;
+    return self;
+}
+
+void
+__free__PrototypeSymbol(struct PrototypeSymbol *self)
+{
+    for (Usize i = len__Vec(*self->params_type); i--;)
+        FREE(DataTypeSymbolAll, get__Vec(*self->params_type, i));
+
+    FREE(Vec, self->params_type);
+    FREE(DataTypeSymbolAll, self->return_type);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct TraitSymbol *
+__new__TraitSymbol(struct Decl *trait_decl)
+{
+    struct TraitSymbol *self = malloc(sizeof(struct TraitSymbol));
+    self->name = trait_decl->value.trait->name;
+    self->generic_params = trait_decl->value.trait->generic_params;
+    self->inh = NULL;
+    self->body = NULL;
+    self->scope = NULL;
+    self->trait_decl = trait_decl;
+    self->visibility = VISIBILITY(trait_decl->value.trait);
+    return self;
+}
+
+void
+__free__TraitSymbol(struct TraitSymbol *self)
+{
+    if (self->inh != NULL) {
+        for (Usize i = len__Vec(*self->inh); i--;)
+            FREE(DataTypeSymbolAll, get__Vec(*self->inh, i));
+
+        FREE(Vec, self->inh);
+    }
+
+    if (self->body != NULL) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+        FREE(Vec, self->body);
+    }
+
     FREE(Scope, *self->scope);
     free(self);
 }
@@ -867,20 +1254,119 @@ __free__FunCallSymbol(struct FunCallSymbol self)
 }
 
 struct SymbolTable *
-__new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl)
+__new__SymbolTableFun(struct FunSymbol *fun)
 {
     struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
-    self->kind = SymbolTableKindFun, self->loc = fun_decl->loc;
+    self->kind = SymbolTableKindFun;
     self->value.fun = fun;
     return self;
 }
 
 struct SymbolTable *
-__new__SymbolTableExpr(struct ExprSymbol *expr, struct Expr *expr_ast)
+__new__SymbolTableConstant(struct ConstantSymbol *constant)
 {
     struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
-    self->kind = SymbolTableKindExpr, self->loc = expr_ast->loc;
+    self->kind = SymbolTableKindConstant;
+    self->value.constant = constant;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableModule(struct ModuleSymbol *module)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindModule;
+    self->value.module = module;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableAlias(struct AliasSymbol *alias)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindAlias;
+    self->value.alias = alias;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableRecord(struct RecordSymbol *record)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindRecord;
+    self->value.record = record;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableRecordObj(struct RecordObjSymbol *record_obj)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindRecordObj;
+    self->value.record_obj = record_obj;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableEnum(struct EnumSymbol *enum_)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindEnum;
+    self->value.enum_ = enum_;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableEnumObj(struct EnumObjSymbol *enum_obj)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindEnumObj;
+    self->value.enum_obj = enum_obj;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableError(struct ErrorSymbol *error)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindError;
+    self->value.error = error;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableClass(struct ClassSymbol *class)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindClass;
+    self->value.class = class;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableTrait(struct TraitSymbol *trait)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindTrait;
+    self->value.trait = trait;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableExpr(struct ExprSymbol *expr)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindExpr;
     self->value.expr = expr;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableStmt(struct StmtSymbol stmt)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindStmt;
+    self->value.stmt = stmt;
     return self;
 }
 
@@ -891,10 +1377,43 @@ __free__SymbolTableAll(struct SymbolTable *self)
         case SymbolTableKindFun:
             FREE(SymbolTableFun, self);
             break;
+        case SymbolTableKindConstant:
+            FREE(SymbolTableConstant, self);
+            break;
+        case SymbolTableKindModule:
+            FREE(SymbolTableModule, self);
+            break;
+        case SymbolTableKindAlias:
+            FREE(SymbolTableAlias, self);
+            break;
+        case SymbolTableKindRecord:
+            FREE(SymbolTableRecord, self);
+            break;
+        case SymbolTableKindRecordObj:
+            FREE(SymbolTableRecordObj, self);
+            break;
+        case SymbolTableKindEnum:
+            FREE(SymbolTableEnum, self);
+            break;
+        case SymbolTableKindEnumObj:
+            FREE(SymbolTableEnumObj, self);
+            break;
+        case SymbolTableKindError:
+            FREE(SymbolTableError, self);
+            break;
+        case SymbolTableKindClass:
+            FREE(SymbolTableClass, self);
+            break;
+        case SymbolTableKindTrait:
+            FREE(SymbolTableTrait, self);
+            break;
         case SymbolTableKindExpr:
             FREE(SymbolTableExpr, self);
             break;
+        case SymbolTableKindStmt:
+            FREE(SymbolTableStmt, self);
+            break;
         default:
-            TODO("");
+            UNREACHABLE("unknown symbol table kind");
     }
 }
