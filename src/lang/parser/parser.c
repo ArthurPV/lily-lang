@@ -1429,8 +1429,12 @@ get_class_parse_context(struct ClassParseContext *self,
                 next_token_pb(parse_block);
 
                 goto method_or_property;
-            } else
-                assert(0 && "error");
+            } else {
+                struct Diagnostic *err = NEW(DiagnosticWithErrParser, parse_block, NEW(LilyError, LilyErrorInvalidClassItem), *parse_block->current->loc, format("expected `@`, `import`, `pub` or `async` for begin each declaration in class"), None());
+
+                emit__Diagnostic(err);
+                skip_to_next_block(parse_block);
+            }
         } else {
             bad_token = true;
             next_token_pb(parse_block);
@@ -1495,19 +1499,7 @@ get_class_parse_context(struct ClassParseContext *self,
     }
 
     method : {
-        PARSE_GENERIC_PARAMS(method_parse_context);
-        PARSE_PARAMS(method_parse_context);
-
-        EXPECTED_TOKEN(parse_block, TokenKindEq, {
-            struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
-
-            err->err->s = from__String("`=`");
-
-            emit__Diagnostic(err);
-        });
-
-        get_body_parse_context(method_parse_context, parse_block, false);
-
+        get_method_parse_context(method_parse_context, parse_block);
         push__Vec(self->body, NEW(ParseContextMethod, method_parse_context));
 
         goto exit;
@@ -1517,15 +1509,7 @@ get_class_parse_context(struct ClassParseContext *self,
     }
 
 property : {
-    while (parse_block->current->kind != TokenKindSemicolon &&
-           parse_block->current->kind != TokenKindEof) {
-        push__Vec(property_parse_context->data_type, &*parse_block->current);
-        next_token_pb(parse_block);
-    }
-
-    VERIFY_EOF(parse_block, bad_token, "`;`");
-    next_token_pb(parse_block);
-
+    get_property_parse_context(property_parse_context, parse_block);
     push__Vec(self->body, NEW(ParseContextProperty, property_parse_context));
 
     goto exit;
@@ -1656,6 +1640,18 @@ static void
 get_method_parse_context(struct MethodParseContext *self,
                          struct ParseBlock *parse_block)
 {
+    PARSE_GENERIC_PARAMS(self);
+    PARSE_PARAMS(self);
+
+    EXPECTED_TOKEN(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+
+        err->err->s = from__String("`=`");
+
+        emit__Diagnostic(err);
+    });
+
+    get_body_parse_context(self, parse_block, false);
 }
 
 void
@@ -1682,6 +1678,16 @@ static void
 get_property_parse_context(struct PropertyParseContext *self,
                            struct ParseBlock *parse_block)
 {
+    bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindSemicolon &&
+           parse_block->current->kind != TokenKindEof) {
+        push__Vec(self->data_type, &*parse_block->current);
+        next_token_pb(parse_block);
+    }
+
+    VERIFY_EOF(parse_block, bad_token, "`;`");
+    next_token_pb(parse_block);
 }
 
 void
@@ -1930,7 +1936,7 @@ run__Parser(struct Parser *self)
     pthread_t threads[len__Vec(*self->parse_block->blocks)];
     int res;
 
-    for (Usize i = 0; i < len__Vec(*self->parse_block->blocks); i++) {
+    for (Usize i = len__Vec(*self->parse_block->blocks); i--;) {
         res = pthread_create(&threads[i], NULL, printHello, (void *)i);
 
         assert(res == 0 && "internal error in thread");
@@ -1948,7 +1954,7 @@ printHelloWT(void *count)
 void
 run_without_multi_thread__Parser(struct Parser *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->parse_block->blocks); i++) {
+    for (Usize i = len__Vec(*self->parse_block->blocks); i--;) {
         printHelloWT((Usize *)i);
     }
 }

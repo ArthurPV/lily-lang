@@ -60,11 +60,10 @@ apply_color(enum DiagnosticKind kind, const Str s)
 }
 
 struct Detail *
-__new__Detail(struct String *msg, struct Location loc, struct Vec *lines)
+__new__Detail(struct String *msg, struct Vec *lines)
 {
     struct Detail *self = malloc(sizeof(struct Detail));
     self->msg = msg;
-    self->loc = loc;
     self->lines = lines;
     return self;
 }
@@ -220,6 +219,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("invalid token in tag body");
         case LilyErrorMissNameOnPropertyOrMethod:
             return from__String("miss name on property or method");
+        case LilyErrorInvalidClassItem:
+            return from__String("invalid class item");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -302,6 +303,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0028";
         case LilyErrorMissNameOnPropertyOrMethod:
             return "0029";
+        case LilyErrorInvalidClassItem:
+            return "0030";
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -398,13 +401,13 @@ __new__DiagnosticWithErr(struct LilyError *err,
         void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
 
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     } else {
         void *lines_temp[2] = { get_line(*self, loc.s_line),
                                 get_line(*self, loc.e_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
 
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     }
 
     return self;
@@ -427,12 +430,12 @@ __new__DiagnosticWithWarn(struct LilyWarning *warn,
     if (loc.s_line == loc.e_line) {
         void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     } else {
         void *lines_temp[2] = { get_line(*self, loc.s_line),
                                 get_line(*self, loc.e_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     }
 
     return self;
@@ -455,12 +458,12 @@ __new__DiagnosticWithNote(struct String *note,
     if (loc.s_line == loc.e_line) {
         void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     } else {
         void *lines_temp[2] = { get_line(*self, loc.s_line),
                                 get_line(*self, loc.e_line) }; // VERIFY LEAK
         struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
-        self->detail = NEW(Detail, detail_msg, loc, lines);
+        self->detail = NEW(Detail, detail_msg, lines);
     }
 
     return self;

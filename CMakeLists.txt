@@ -3,7 +3,7 @@ project(lily C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_INCLUDE_PATH src)
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I src")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -O -O2 -O3")
 
 set(BASE_SRC
         src/base/algorithm.c

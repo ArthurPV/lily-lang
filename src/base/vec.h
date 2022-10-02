@@ -33,13 +33,15 @@ from__Vec(void **items, Usize item_size, Usize len);
  *
  * @return Vec.
  */
-struct Vec* create__Vec(void *item, Usize item_size, Usize len);
+struct Vec *
+create__Vec(void *item, Usize item_size, Usize len);
 
 /**
- * 
+ *
  * @brief Resize allocated memory.
  */
-void resize__Vec(struct Vec *self);
+void
+resize__Vec(struct Vec *self);
 
 /**
  *

@@ -18,7 +18,6 @@ enum DiagnosticKind
 typedef struct Detail
 {
     struct String *msg;
-    struct Location loc;
     struct Vec *lines;
 } Detail;
 
@@ -27,7 +26,7 @@ typedef struct Detail
  * @brief Construct Detail type.
  */
 struct Detail *
-__new__Detail(struct String *msg, struct Location loc, struct Vec *lines);
+__new__Detail(struct String *msg, struct Vec *lines);
 
 /**
  *
@@ -78,6 +77,7 @@ enum LilyErrorKind
     LilyErrorUnexpectedImplementation,
     LilyErrorInvalidTokenInTagBody,
     LilyErrorMissNameOnPropertyOrMethod,
+    LilyErrorInvalidClassItem
 };
 
 typedef struct LilyError

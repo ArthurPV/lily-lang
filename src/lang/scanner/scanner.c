@@ -324,21 +324,18 @@ next_char(struct Scanner *self)
 static inline void
 skip_space(struct Scanner *self)
 {
-    if ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
+    while ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
          self->src->c == (char *)'\r' || self->src->c == (char *)' ') &&
         self->src->pos < len__String(*self->src->file->content) - 1) {
         next_char(self);
-        skip_space(self);
     }
 }
 
 static inline void
 jump(struct Scanner *self, Usize n)
 {
-    if (n > 0) {
+    for (; n--;)
         next_char(self);
-        jump(self, n - 1);
-    }
 }
 
 static inline void
@@ -1035,14 +1032,16 @@ get_closing(struct Scanner *self, char *target)
 
     start_token(self);
 
-    if (target == (char *)')')
-        return Ok(NEW(Token, TokenKindRParen, NULL));
-    else if (target == (char *)'}')
-        return Ok(NEW(Token, TokenKindRBrace, NULL));
-    else if (target == (char *)']')
-        return Ok(NEW(Token, TokenKindRHook, NULL));
-    else
-        UNREACHABLE("unknown target");
+    switch ((UPtr)target) {
+        case ')':
+            return Ok(NEW(Token, TokenKindRParen, NULL));
+        case '}':
+            return Ok(NEW(Token, TokenKindRBrace, NULL));
+        case ']':
+            return Ok(NEW(Token, TokenKindRHook, NULL));
+        default:
+            UNREACHABLE("unknown target");
+    }
 }
 
 static struct Result *
@@ -1067,9 +1066,11 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindDot;
             break;
+
         case ',':
             kind = TokenKindComma;
             break;
+
         case ':':
             if (eq__Option(*c2, (char *)'='))
                 kind = TokenKindColonEq;
@@ -1078,15 +1079,18 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindColon;
             break;
+
         case '|':
             if (eq__Option(*c2, (char *)'>'))
                 kind = TokenKindBarRShift;
             else
                 kind = TokenKindBar;
             break;
+
         case '@':
             kind = TokenKindAt;
             break;
+
         case '(': {
             struct Token *tok = NEW(Token, TokenKindLParen, NULL);
 
@@ -1100,6 +1104,7 @@ get_token(struct Scanner *self)
 
             return get_closing(self, (char *)')');
         }
+
         case ')': {
             end_token(self);
 
@@ -1113,6 +1118,7 @@ get_token(struct Scanner *self)
                            format(""),
                            Some(format("remove this `)`"))));
         }
+
         case '{': {
             struct Token *tok = NEW(Token, TokenKindLBrace, NULL);
 
@@ -1126,6 +1132,7 @@ get_token(struct Scanner *self)
 
             return get_closing(self, (char *)'}');
         }
+
         case '}': {
             end_token(self);
 
@@ -1139,6 +1146,7 @@ get_token(struct Scanner *self)
                            format(""),
                            Some(format("remove this `}`"))));
         }
+
         case '[': {
             struct Token *tok = NEW(Token, TokenKindLHook, NULL);
 
@@ -1152,6 +1160,7 @@ get_token(struct Scanner *self)
 
             return get_closing(self, (char *)']');
         }
+
         case ']': {
             end_token(self);
 
@@ -1165,18 +1174,23 @@ get_token(struct Scanner *self)
                            format(""),
                            Some(format("remove this `]`"))));
         }
+
         case '#':
             kind = TokenKindHashtag;
             break;
+
         case ';':
             kind = TokenKindSemicolon;
             break;
+
         case '$':
             kind = TokenKindDollar;
             break;
+
         case '`':
             kind = TokenKindBacktrick;
             break;
+
         case '+':
             if (eq__Option(*c2, (char *)'+') && eq__Option(*c3, (char *)'='))
                 kind = TokenKindPlusPlusEq;
@@ -1187,12 +1201,14 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindPlus;
             break;
+
         case '~':
             if (eq__Option(*c2, (char *)'='))
                 kind = TokenKindWaveEq;
             else
                 kind = TokenKindWave;
             break;
+
         case '-':
             if (eq__Option(*c2, (char *)'-') && eq__Option(*c3, (char *)'='))
                 kind = TokenKindMinusMinusEq;
@@ -1205,6 +1221,7 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindMinus;
             break;
+
         case '*':
             if (eq__Option(*c2, (char *)'*') && eq__Option(*c3, (char *)'='))
                 kind = TokenKindStarStarEq;
@@ -1215,6 +1232,7 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindStar;
             break;
+
         case '/':
             if (eq__Option(*c2, (char *)'/') && eq__Option(*c3, (char *)'/')) {
                 jump(self, 3);
@@ -1287,18 +1305,21 @@ get_token(struct Scanner *self)
             } else
                 kind = TokenKindSlash;
             break;
+
         case '%':
             if (eq__Option(*c2, (char *)'='))
                 kind = TokenKindPercentageEq;
             else
                 kind = TokenKindPercentage;
             break;
+
         case '^':
             if (eq__Option(*c2, (char *)'='))
                 kind = TokenKindHatEq;
             else
                 kind = TokenKindHat;
             break;
+
         case '=':
             if (eq__Option(*c2, (char *)'='))
                 kind = TokenKindEqEq;
@@ -1307,6 +1328,7 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindEq;
             break;
+
         case '<':
             if (eq__Option(*c2, (char *)'<') && eq__Option(*c3, (char *)'='))
                 kind = TokenKindLShiftLShiftEq;
@@ -1319,6 +1341,7 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindLShift;
             break;
+
         case '>':
             if (eq__Option(*c2, (char *)'>') && eq__Option(*c3, (char *)'='))
                 kind = TokenKindRShiftRShiftEq;
@@ -1329,20 +1352,25 @@ get_token(struct Scanner *self)
             else
                 kind = TokenKindRShift;
             break;
+
         case '!':
             kind = TokenKindBang;
             break;
+
         case '?':
             kind = TokenKindInterrogation;
             break;
+
         case '&':
             kind = TokenKindAmpersand;
             break;
+
         case IS_DIGIT:
             FREE(Option, c2);
             FREE(Option, c3);
 
             return get_all_num(self);
+
         case '\"': {
             struct Result *string = scan_string(self);
             struct String *string_ok = NULL;
@@ -1364,12 +1392,14 @@ get_token(struct Scanner *self)
                 return Ok(NEW(TokenLit, TokenKindStringLit, copy, string_ok));
             }
         }
+
         case '\'': {
             FREE(Option, c2);
             FREE(Option, c3);
 
             return scan_char(self, false);
         }
+
         case IS_ID: {
             if (self->src->c == (char*)'b' && eq__Option(*c2, (char *)'\"')) {
                 next_char(self);
@@ -1448,6 +1478,7 @@ get_token(struct Scanner *self)
                 }
             }
         }
+
         default: {
             FREE(Option, c2);
             FREE(Option, c3);
