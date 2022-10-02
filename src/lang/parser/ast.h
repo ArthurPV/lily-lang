@@ -35,6 +35,7 @@ enum DataTypeKind
     DataTypeKindOptional,
     DataTypeKindUnit,
     DataTypeKindException,
+    DataTypeKindMut,
     DataTypeKindLambda,
     DataTypeKindArray,
     DataTypeKindTuple,
@@ -50,9 +51,9 @@ typedef struct DataType
         struct DataType *ref;
         struct DataType *optional;
         struct DataType *exception;
+        struct DataType *mut;
         struct Tuple *lambda; // struct Tuple<struct Vec*, struct DataType*>*
-        struct Tuple *array;  // struct Tuple<struct Option<struct DataType*>*,
-                              // struct Option<Usize*>*>*
+        struct Tuple *array;  // struct Tuple<struct DataType*, Usize*>*
         struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct Vec<struct DataType*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
@@ -95,6 +96,13 @@ __new__DataTypeException(struct DataType *exception);
 
 /**
  *
+ * @brief Construct DataType type (Mut variant).
+ */
+struct DataType *
+__new__DataTypeMut(struct DataType *mut);
+
+/**
+ *
  * @brief Construct DataType type (Lambda variant).
  */
 struct DataType *
@@ -105,7 +113,7 @@ __new__DataTypeLambda(struct Vec *params, struct DataType *return_type);
  * @brief Construct DataType type (Array variant).
  */
 struct DataType *
-__new__DataTypeArray(struct Option *data_type, struct Option *size);
+__new__DataTypeArray(struct DataType *data_type, Usize *size);
 
 /**
  *
@@ -169,6 +177,13 @@ __free__DataTypeOptional(struct DataType *self);
  */
 void
 __free__DataTypeException(struct DataType *self);
+
+/**
+ *
+ * @brief Free DataType type (Mut variant).
+ */
+void
+__free__DataTypeMut(struct DataType *self);
 
 /**
  *

@@ -792,9 +792,8 @@ run__ParseBlock(struct ParseBlock *self)
     }
 
     if (count_error > 0) {
-        emit__Summary(count_error,
-                      count_warning,
-                      "the parse block phase has been failed");
+        emit__Summary(
+          count_error, count_warning, "the parse block phase has been failed");
         exit(1);
     }
 }
@@ -975,7 +974,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
     PARSE_GENERIC_TYPE_AND_OBJECT(self);
 
-    struct Location loc_impl = {};
+    struct Location loc_impl = NEW(Location);
 
     start__Location(
       &loc_impl, self->current->loc->s_line, self->current->loc->s_col);
@@ -998,7 +997,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
       ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
         ->loc->s_col);
 
-    struct Location loc_inh = {};
+    struct Location loc_inh = NEW(Location);
 
     start__Location(
       &loc_inh, self->current->loc->s_line, self->current->loc->s_col);
@@ -1404,7 +1403,7 @@ get_fun_parse_context(struct FunParseContext *self,
         }
 
         if (self->has_tags) {
-            struct Location loc_warn = {};
+            struct Location loc_warn = NEW(Location);
 
             start__Location(&loc_warn,
                             parse_block->current->loc->s_line,
@@ -1630,6 +1629,7 @@ valid_token_in_enum_variants(struct ParseBlock *parse_block,
         case TokenKindBang:
         case TokenKindDot:
         case TokenKindIdentifier:
+        case TokenKindMutKw:
             return true;
 
         default: {
@@ -1689,6 +1689,7 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
         case TokenKindComma:
         case TokenKindIdentifier:
         case TokenKindDot:
+        case TokenKindMutKw:
             return true;
 
         default: {
@@ -1777,6 +1778,7 @@ valid_token_in_alias_data_type(struct ParseBlock *parse_block,
         case TokenKindBang:
         case TokenKindComma:
         case TokenKindIdentifier:
+        case TokenKindMutKw:
             return true;
 
         default: {
@@ -1880,6 +1882,7 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindDot:
         case TokenKindIdentifier:
         case TokenKindSelfKw:
+        case TokenKindMutKw:
             return true;
 
         default: {
@@ -3076,6 +3079,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
     switch (parse_decl->previous->kind) {
         case TokenKindSelfKw:
             return NEW(DataType, DataTypeKindSelf);
+        case TokenKindMutKw:
+            return NEW(DataTypeMut, parse_data_type(self, parse_decl));
         case TokenKindIdentifier: {
             Str identifier_str = to_Str__String(*parse_decl->previous->lit);
 
@@ -3279,13 +3284,11 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             if (is_data_type(parse_decl)) {
                 if (size == NULL)
-                    data_type = NEW(DataTypeArray,
-                                    Some(parse_data_type(self, parse_decl)),
-                                    None());
+                    data_type = NEW(
+                      DataTypeArray, parse_data_type(self, parse_decl), NULL);
                 else
-                    data_type = NEW(DataTypeArray,
-                                    Some(parse_data_type(self, parse_decl)),
-                                    Some(size));
+                    data_type = NEW(
+                      DataTypeArray, parse_data_type(self, parse_decl), NULL);
             } else {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,

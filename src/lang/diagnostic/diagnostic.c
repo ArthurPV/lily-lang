@@ -253,6 +253,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("the self param must be in first");
         case LilyErrorUnknownDataType:
             return format("unknown data type: `{S}`", err.s);
+        case LilyErrorExpectedEnumObjectOrRecordObject:
+            return from__String("expected enum or record object");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -395,6 +397,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0057";
         case LilyErrorUnknownDataType:
             return "0058";
+        case LilyErrorExpectedEnumObjectOrRecordObject:
+            return "0059";
         default:
             UNREACHABLE("unknown lily error kind");
     }

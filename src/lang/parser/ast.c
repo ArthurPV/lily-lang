@@ -49,6 +49,15 @@ __new__DataTypeException(struct DataType *exception)
 }
 
 struct DataType *
+__new__DataTypeMut(struct DataType *mut)
+{
+    struct DataType *self = malloc(sizeof(struct DataType));
+    self->kind = DataTypeKindMut;
+    self->value.mut = mut;
+    return self;
+}
+
+struct DataType *
 __new__DataTypeLambda(struct Vec *params, struct DataType *return_type)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
@@ -58,7 +67,7 @@ __new__DataTypeLambda(struct Vec *params, struct DataType *return_type)
 }
 
 struct DataType *
-__new__DataTypeArray(struct Option *data_type, struct Option *size)
+__new__DataTypeArray(struct DataType *data_type, Usize *size)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindArray;
@@ -281,6 +290,13 @@ __free__DataTypeException(struct DataType *self)
 }
 
 void
+__free__DataTypeMut(struct DataType *self)
+{
+    FREE(DataTypeAll, self->value.mut);
+    free(self);
+}
+
+void
 __free__DataTypeLambda(struct DataType *self)
 {
     struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
@@ -297,13 +313,9 @@ __free__DataTypeLambda(struct DataType *self)
 void
 __free__DataTypeArray(struct DataType *self)
 {
-    struct Option *temporary = (struct Option *)self->value.array->items[0];
+    if (self->value.array->items[0] != NULL)
+        FREE(DataTypeAll, (struct DataType *)self->value.array->items[0]);
 
-    if (is_Some__Option(temporary))
-        FREE(DataTypeAll, (struct DataType *)temporary->some);
-
-    FREE(Option, self->value.array->items[0]);
-    FREE(Option, self->value.array->items[1]);
     FREE(Tuple, self->value.array);
     free(self);
 }
@@ -349,6 +361,9 @@ __free__DataTypeAll(struct DataType *self)
             break;
         case DataTypeKindException:
             FREE(DataTypeException, self);
+            break;
+        case DataTypeKindMut:
+            FREE(DataTypeMut, self);
             break;
         case DataTypeKindLambda:
             FREE(DataTypeLambda, self);

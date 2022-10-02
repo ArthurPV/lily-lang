@@ -79,13 +79,14 @@ enum Visibility
 typedef struct DataTypeSymbol
 {
     enum DataTypeKind kind;
-    struct Scope *scope; // struct Scope&
+    struct Scope *scope;
     union
     {
         struct DataTypeSymbol *ptr;
         struct DataTypeSymbol *ref;
         struct DataTypeSymbol *optional;
         struct DataTypeSymbol *exception;
+        struct DataTypeSymbol *mut;
         struct Tuple
           *lambda; // struct Tuple<struct Vec*, struct DataTypeSymbol*>*
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
@@ -131,6 +132,13 @@ __new__DataTypeSymbolException(struct DataTypeSymbol *exception);
 
 /**
  *
+ * @brief Construct the DataTypeSymbol type (Mut variant).
+ */
+struct DataTypeSymbol *
+__new__DataTypeSymbolMut(struct DataTypeSymbol *mut);
+
+/**
+ *
  * @brief Construct the DataTypeSymbol type (Lambda variant).
  */
 struct DataTypeSymbol *
@@ -143,7 +151,7 @@ __new__DataTypeSymbolLambda(struct Vec *params,
  */
 struct DataTypeSymbol *
 __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
-                           struct Option *size);
+                           Usize *size);
 
 /**
  *
@@ -223,6 +231,17 @@ __free__DataTypeSymbolException(struct DataTypeSymbol *self)
 
 /**
  *
+ * @brief Free the DataTypeSymbol type (Mut variant).
+ */
+inline void
+__free__DataTypeSymbolMut(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.mut);
+    free(self);
+}
+
+/**
+ *
  * @brief Free the DataTypeSymbol type (Lambda variant).
  */
 void
@@ -249,6 +268,9 @@ __free__DataTypeSymbolCustom(struct DataTypeSymbol *self);
 inline void
 __free__DataTypeSymbolTuple(struct DataTypeSymbol *self)
 {
+    for (Usize i = len__Vec(*self->value.tuple); i--;)
+        FREE(DataTypeSymbolAll, get__Vec(*self->value.tuple, i));
+
     FREE(Vec, self->value.tuple);
     free(self);
 }

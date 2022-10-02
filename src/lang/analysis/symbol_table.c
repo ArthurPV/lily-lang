@@ -51,6 +51,16 @@ __new__DataTypeSymbolException(struct DataTypeSymbol *exception)
 }
 
 struct DataTypeSymbol *
+__new__DataTypeSymbolMut(struct DataTypeSymbol *mut)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindMut;
+    self->scope = NULL;
+    self->value.mut = mut;
+    return self;
+}
+
+struct DataTypeSymbol *
 __new__DataTypeSymbolLambda(struct Vec *params,
                             struct DataTypeSymbol *return_type)
 {
@@ -63,7 +73,7 @@ __new__DataTypeSymbolLambda(struct Vec *params,
 
 struct DataTypeSymbol *
 __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
-                           struct Option *size)
+                           Usize *size)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindArray;
@@ -108,6 +118,9 @@ __free__DataTypeSymbolAll(struct DataTypeSymbol *self)
         case DataTypeKindException:
             FREE(DataTypeSymbolException, self);
             break;
+        case DataTypeKindMut:
+            FREE(DataTypeSymbolMut, self);
+            break;
         case DataTypeKindLambda:
             FREE(DataTypeSymbolLambda, self);
             break;
@@ -148,6 +161,9 @@ __free__DataTypeSymbolArray(struct DataTypeSymbol *self)
 void
 __free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
 {
+    if (self->scope != NULL)
+        FREE(Scope, self->scope);
+
     if (self->value.custom != NULL) {
         for (Usize i = len__Vec(*self->value.custom); i--;)
             FREE(DataTypeSymbolAll, get__Vec(*self->value.custom, i));
