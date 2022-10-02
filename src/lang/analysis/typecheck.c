@@ -983,7 +983,7 @@ check_record(struct Typecheck *self,
                           false))
                         assert(0 && "error: duplicate generic param name");
 
-                // Push generic params of enum_decl in enum_->generic_params
+                // Push generic params of record_decl in record->generic_params
                 switch (
                   ((struct Generic *)get__Vec(
                      *record->record_decl->value.record->generic_params, i))
@@ -1011,7 +1011,7 @@ check_record(struct Typecheck *self,
         if (record->record_decl->value.record->fields) {
             record->fields = NEW(Vec, sizeof(struct VariantEnumSymbol));
 
-            // Check if enum's variant name is duplicate
+            // Check if record's variant name is duplicate
             for (Usize i = 0;
                  i < len__Vec(*record->record_decl->value.record->fields);
                  i++) {
@@ -1028,7 +1028,7 @@ check_record(struct Typecheck *self,
                           false))
                         assert(0 && "error: duplicate variant name");
 
-                // Push variant enum in enum_->variants
+                // Push variant enum in record->variants
                 if (((struct FieldRecord *)get__Vec(
                        *record->record_decl->value.record->fields, i))
                       ->data_type) {
@@ -1053,56 +1053,68 @@ check_error(struct Typecheck *self,
             struct Vec *scope_id,
             bool is_global)
 {
-    error->scope = NEW(Scope,
-                       self->parser.parse_block.scanner.src->file.name,
-                       error->name,
-                       scope_id,
-                       ScopeItemKindError,
-                       error->visibility ? ScopeKindGlobal : ScopeKindLocal);
+    if (!error->scope) {
+        error->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              error->name,
+              scope_id,
+              ScopeItemKindError,
+              error->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
-    // Check generic params
-    if (error->error_decl->value.error->generic_params) {
-        error->generic_params = NEW(Vec, sizeof(struct Generic));
+        // Check generic params
+        if (error->error_decl->value.error->generic_params) {
+            error->generic_params = NEW(Vec, sizeof(struct Generic));
 
-        // Check if generic param name is duplicate
-        for (Usize i = 0;
-             i < len__Vec(*error->error_decl->value.error->generic_params);
-             i++) {
-            for (Usize j = i + 1;
-                 j < len__Vec(*error->error_decl->value.error->generic_params);
-                 j++)
-                if (eq__String(
-                      get_name__Generic(get__Vec(
-                        *error->error_decl->value.error->generic_params, i)),
-                      get_name__Generic(get__Vec(
-                        *error->error_decl->value.error->generic_params, j)),
-                      false))
-                    assert(0 && "error: duplicate generic param name");
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*error->error_decl->value.error->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j <
+                     len__Vec(*error->error_decl->value.error->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *error->error_decl->value.error->generic_params,
+                            i)),
+                          get_name__Generic(get__Vec(
+                            *error->error_decl->value.error->generic_params,
+                            j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
 
-            // Push generic params of enum_decl in enum_->generic_params
-            switch (((struct Generic *)get__Vec(
-                       *error->error_decl->value.error->generic_params, i))
-                      ->kind) {
-                case GenericKindDataType:
-                    push__Vec(
-                      error->generic_params,
-                      NEW(
-                        GenericDataType,
-                        get_name__Generic(get__Vec(
-                          *error->error_decl->value.error->generic_params, i)),
-                        ((struct Generic *)get__Vec(
+                // Push generic params of error in error->generic_params
+                switch (((struct Generic *)get__Vec(
                            *error->error_decl->value.error->generic_params, i))
-                          ->loc));
-                    break;
-                case GenericKindRestrictedDataType:
-                    TODO("check data type");
-                    break;
+                          ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(
+                          error->generic_params,
+                          NEW(
+                            GenericDataType,
+                            get_name__Generic(get__Vec(
+                              *error->error_decl->value.error->generic_params,
+                              i)),
+                            ((struct Generic *)get__Vec(
+                               *error->error_decl->value.error->generic_params,
+                               i))
+                              ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
             }
         }
-    }
 
-    if (is_global)
-        ++count_error_id;
+        if (error->error_decl->value.error->data_type) {
+            TODO("check data type");
+        }
+
+        if (is_global)
+            ++count_error_id;
+    }
 }
 
 static void
@@ -1111,6 +1123,27 @@ check_enum_obj(struct Typecheck *self,
                struct Vec *scope_id,
                bool is_global)
 {
+    if (!enum_obj->scope) {
+        enum_obj->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              enum_obj->name,
+              scope_id,
+              ScopeItemKindEnumObj,
+              enum_obj->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        if (enum_obj->enum_decl->value.enum_->generic_params) {
+        }
+
+        if (enum_obj->enum_decl->value.enum_->type_value) {
+        }
+
+        if (enum_obj->enum_decl->value.enum_->variants) {
+        }
+
+        if (is_global)
+            ++count_enum_obj_id;
+    }
 }
 
 static void
@@ -1119,6 +1152,28 @@ check_record_obj(struct Typecheck *self,
                  struct Vec *scope_id,
                  bool is_global)
 {
+    if (!record_obj->scope) {
+        record_obj->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              record_obj->name,
+              scope_id,
+              ScopeItemKindRecordObj,
+              record_obj->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        if (record_obj->record_decl->value.record->generic_params) {
+        }
+
+        if (record_obj->record_decl->value.record->fields) {
+        }
+
+        // Search tag
+        {
+        }
+
+        if (is_global)
+            ++count_record_obj_id;
+    }
 }
 
 static void
@@ -1127,6 +1182,24 @@ check_class(struct Typecheck *self,
             struct Vec *scope_id,
             bool is_global)
 {
+    if (!class->scope) {
+        class->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              class->name,
+              scope_id,
+              ScopeItemKindClass,
+              class->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        if (class->class_decl->value.class->generic_params) {
+        }
+
+        if (class->class_decl->value.class->body) {
+        }
+
+        if (is_global)
+            ++count_class_id;
+    }
 }
 
 static void
@@ -1135,6 +1208,18 @@ check_trait(struct Typecheck *self,
             struct Vec *scope_id,
             bool is_global)
 {
+    if (!trait->scope) {
+        trait->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              trait->name,
+              scope_id,
+              ScopeItemKindTrait,
+              trait->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        if (is_global)
+            ++count_trait_id;
+    }
 }
 
 static void
