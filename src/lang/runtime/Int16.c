@@ -1,4 +1,4 @@
-#include <lang/runtime/Int8.h>
+#include <lang/runtime/Int16.h>
 #include <stdio.h>
 
 LILY_API I16
@@ -13,10 +13,7 @@ LILY_API I16
 sub__Int16(MutI16 x, MutI16 y)
 {
 
-    if (x >= -32768 && x <= 32767) {
-        RUNTIME_ERROR(
-          "Int8 must greater equal than -32768 and less equal than 32767");
-    } else if (y == 0)
+    if (y == 0)
         return x;
 
     x = x ^ y;
@@ -50,7 +47,7 @@ div__Int16(I16 x, I16 y)
 LILY_API I16
 mod__Int16(I16 x, I16 y)
 {
-    return (div__Int16(add__Int8(x, x), y)) & y;
+    return (div__Int16(add__Int16(x, x), y)) & y;
 }
 
 LILY_API I16
@@ -173,4 +170,29 @@ LILY_API Unit
 bit_xor_assign__Int16(MutI16 *x, I16 y)
 {
     *x = bit_xor__Int16(*x, y);
+}
+
+LILY_API struct Range range__Int16(MutI16 x, MutI16 y)
+{
+    return __new__Range(&x, &y);
+}
+
+LILY_API Bool lt__Int16(I16 x, I16 y)
+{
+    return x < y;
+}
+
+LILY_API Bool gt__Int16(I16 x, I16 y)
+{
+    return x > y;
+}
+
+LILY_API Bool le__Int16(I16 x, I16 y)
+{
+    return x <= y;
+}
+
+LILY_API Bool ge__Int16(I16 x, I16 y)
+{
+    return x >= y;
 }

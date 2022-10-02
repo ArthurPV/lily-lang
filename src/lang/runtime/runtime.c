@@ -28,3 +28,13 @@ get__Optional(struct Optional self)
 
     return self.val;
 }
+
+LILY_API struct Range __new__Range(void *start, void *end)
+{
+    struct Range self = {
+        .start = start,
+        .end = end
+    };
+
+    return self;
+}

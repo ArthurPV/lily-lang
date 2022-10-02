@@ -9,6 +9,12 @@ extern "C"
 {
 #endif
 
+#define VERIFY_I8(res, x, y)                              \
+    if ((x > 0 && y > 0 && (int8_t)(uintptr_t)res < 0) || \
+        (x < 0 && y < 0 && (int8_t)(uintptr_t)res > 0)) { \
+        RUNTIME_ERROR("Int8 overflow: -128..127");        \
+    }
+
     LILY_API I8 add__Int8(MutI8 x, MutI8 y);
     LILY_API I8 sub__Int8(MutI8 x, MutI8 y);
     LILY_API I8 mul__Int8(I8 x, I8 y);
@@ -36,6 +42,11 @@ extern "C"
     LILY_API Bool eq__Int8(I8 x, I8 y);
     LILY_API Bool ne__Int8(I8 x, I8 y);
     LILY_API I8 neg__Int8(I8 x);
+    LILY_API struct Range range__Int8(I8 x, I8 y);
+    LILY_API Bool lt__Int8(I8 x, I8 y);
+    LILY_API Bool gt__Int8(I8 x, I8 y);
+    LILY_API Bool le__Int8(I8 x, I8 y);
+    LILY_API Bool ge__Int8(I8 x, I8 y);
 
 #if defined(__cplusplus)
 }

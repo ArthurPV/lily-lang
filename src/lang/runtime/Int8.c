@@ -12,11 +12,7 @@ add__Int8(MutI8 x, MutI8 y)
 LILY_API I8
 sub__Int8(MutI8 x, MutI8 y)
 {
-
-    if (x >= -128 && x <= 127) {
-        RUNTIME_ERROR(
-          "Int8 must greater equal than -256 and less equal than 255");
-    } else if (y == 0)
+    if (y == 0)
         return x;
 
     x = x ^ y;
@@ -175,17 +171,50 @@ bit_xor_assign__Int8(MutI8 *x, I8 y)
     *x = bit_xor__Int8(*x, y);
 }
 
-LILY_API Bool eq__Int8(I8 x, I8 y)
+LILY_API Bool
+eq__Int8(I8 x, I8 y)
 {
     return x == y;
 }
 
-LILY_API Bool ne__Int8(I8 x, I8 y)
+LILY_API Bool
+ne__Int8(I8 x, I8 y)
 {
     return x != y;
 }
 
-LILY_API I8 neg__Int8(I8 x)
+LILY_API I8
+neg__Int8(I8 x)
 {
     return -x;
+}
+
+LILY_API struct Range
+range__Int8(MutI8 x, MutI8 y)
+{
+    return __new__Range(&x, &y);
+}
+
+LILY_API Bool
+lt__Int8(I8 x, I8 y)
+{
+    return x < y;
+}
+
+LILY_API Bool
+gt__Int8(I8 x, I8 y)
+{
+    return x > y;
+}
+
+LILY_API Bool
+le__Int8(I8 x, I8 y)
+{
+    return x <= y;
+}
+
+LILY_API Bool
+ge__Int8(I8 x, I8 y)
+{
+    return x >= y;
 }

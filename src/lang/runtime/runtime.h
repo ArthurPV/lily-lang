@@ -88,6 +88,14 @@ extern "C"
     typedef Optional MutOp;
     typedef const Optional Op;
 
+    typedef struct Range
+    {
+        void *start;
+        void *end;
+    } Range;
+
+    LILY_API struct Range __new__Range(void *start, void *end);
+
 #if defined(__cplusplus)
 }
 #endif
