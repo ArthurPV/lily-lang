@@ -2,36 +2,42 @@
 
 ## Table of contents
 
-- [Introduction](###Introduction)
-- [Hello World](###Hello-World)
-- [Comments](###Comments)
-- [Values](###Values)
-- [Variables](###Variables)
-- [Integers](###Integers)
-- [Floats](###Floats)
-- [Operators](###Operators)
-- [Arrays](###Arrays)
-- [fun](###fun)
-- [alias](###alias)
-- [record (type)](###record-(type))
-- [enum (type)](###enum-(type))
-- [record (object)](###record-(object))
-- [enum (object)](###enum-(object))
-- [class](###class)
-- [trait](###trait)
-- [match](###match)
-- [while](###while)
-- [for](###for)
-- [if](###if)
-- [try](###try)
-- [errror](###error)
-- [Optionals](###Optionals)
-- [Generics](###Generics)
-- [async](###async)
+- <a href="#introduction">Introduction</a>
+- <a href="#hello-world">Hello World</a>
+- <a href="#comments"><Comments</a>
+- <a href="#values">Values</a>
+- <a href="#variables">Variables</a>
+- <a href="#integers">Integers</a>
+- <a href="#floats">Floats</a>
+- <a href="#operators">Operators</a>
+- <a href="#arrays">Arrays</a>
+- <a href="#fun">Fun</a>
+- <a href="#alias">Alias</a>
+- <a href="#record-type">Record (type)</a>
+- <a href="#enum-type">Enum (type)</a>
+- <a href="#record-object">Record (object)</a>
+- <a href="#enum-object">Enum (object)</a>
+- <a href="#class">Class</a>
+- <a href="#trait">Trait</a>
+- <a href="#match">Match</a>
+- <a href="#while">While</a>
+- <a href="#for">For</a>
+- <a href="#if">If</a>
+- <a href="#try">Try</a>
+- <a href="#error">Error</a>
+- <a href="#optionals">Optionals</a>
+- <a href="#generics">Generics</a>
+- <a href="#async">async</a>
+
+<section id="introduction">
 
 ### Introduction
 
 Lily is a general-purpose programming language.
+
+</section>
+
+<section id="hello-world">
 
 ### Hello World
 
@@ -42,6 +48,10 @@ fun main =
 	io.println("Hello, World!")
 end
 ```
+
+</section>
+
+<section id="comments">
 
 ### Comments
 
@@ -69,3 +79,5 @@ fun main =
 	io.println("Add: {d}", [add(2, 3)])
 end
 ```
+
+</section>
