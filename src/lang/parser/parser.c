@@ -3260,7 +3260,13 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                           loc);
                         break;
                     case TokenKindLHook:
-                        TODO("");
+                        expr = parse_array_access_expr(
+                          self,
+                          parse_decl,
+                          NEW(ExprIdentifier,
+                              &*parse_decl->previous->lit,
+                              *parse_decl->previous->loc),
+                          loc);
                         break;
                     case TokenKindHashtag: {
                         next_token(parse_decl);
@@ -3772,6 +3778,31 @@ parse_array_access_expr(struct Parser self,
                         struct Expr *id,
                         struct Location loc)
 {
+    struct Vec *access = NEW(Vec, sizeof(struct Expr));
+
+    while (parse_decl->current->kind == TokenKindLHook) {
+        next_token(parse_decl);
+
+        push__Vec(access, parse_expr(self, parse_decl));
+
+        EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         format(""),
+                                         None());
+
+            err->err->s = from__String("`]`");
+
+            emit__Diagnostic(err);
+        });
+    }
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(ExprArrayAccess, NEW(ArrayAccess, id, access), loc);
 }
 
 static struct Expr *
