@@ -89,7 +89,8 @@ enum LilyErrorKind
     LilyErrorOperatorIdentifierCannotBeAKeyword,
     LilyErrorMissFieldCallName,
     LilyErrorMissErrorName,
-    LilyErrorMissModuleName
+    LilyErrorMissModuleName,
+    LilyErrorExpectedRightValue
 };
 
 typedef struct LilyError

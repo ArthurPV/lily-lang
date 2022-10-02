@@ -229,6 +229,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("miss error name");
         case LilyErrorMissModuleName:
             return from__String("miss module name");
+        case LilyErrorExpectedRightValue:
+            return from__String("expected right value");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -343,6 +345,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0043";
         case LilyErrorMissModuleName:
             return "0044";
+        case LilyErrorExpectedRightValue:
+            return "0045";
         default:
             UNREACHABLE("unknown lily error kind");
     }

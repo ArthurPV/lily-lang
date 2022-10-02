@@ -279,9 +279,9 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static inline int *
-parse_unary_op(struct ParseDecl parse_decl);
+parse_unary_op(enum TokenKind kind);
 static inline int *
-parse_binary_op(struct ParseDecl parse_decl);
+parse_binary_op(enum TokenKind kind);
 static struct Expr *
 parse_variant_expr(struct Parser self,
                    struct ParseDecl *parse_decl,
@@ -457,13 +457,16 @@ get_block(struct ParseBlock *self, bool in_module)
                 }
 
                 case TokenKindModuleKw: {
-                    struct ModuleParseContext module_parse_context = NEW(ModuleParseContext);
+                    struct ModuleParseContext module_parse_context =
+                      NEW(ModuleParseContext);
 
                     module_parse_context.is_pub = true;
 
                     get_module_parse_context(&module_parse_context, self);
-                    end__Location(&loc, self->current->loc->s_line, self->current->loc->s_col);
-    
+                    end__Location(&loc,
+                                  self->current->loc->s_line,
+                                  self->current->loc->s_col);
+
                     return NEW(ParseContextModule, module_parse_context, loc);
                 }
 
@@ -478,7 +481,8 @@ get_block(struct ParseBlock *self, bool in_module)
                                   self->current->loc->s_line,
                                   self->current->loc->s_col);
 
-                    return NEW(ParseContextConstant, constant_parse_context, loc);
+                    return NEW(
+                      ParseContextConstant, constant_parse_context, loc);
                 }
 
                 default: {
@@ -530,10 +534,12 @@ get_block(struct ParseBlock *self, bool in_module)
         }
 
         case TokenKindModuleKw: {
-            struct ModuleParseContext module_parse_context = NEW(ModuleParseContext);
+            struct ModuleParseContext module_parse_context =
+              NEW(ModuleParseContext);
 
             get_module_parse_context(&module_parse_context, self);
-            end__Location(&loc, self->current->loc->s_line, self->current->loc->s_col);
+            end__Location(
+              &loc, self->current->loc->s_line, self->current->loc->s_col);
 
             return NEW(ParseContextModule, module_parse_context, loc);
         }
@@ -606,7 +612,8 @@ get_block(struct ParseBlock *self, bool in_module)
             next_token_pb(self);
 
         exit : {
-        } return NULL;
+        }
+            return NULL;
         }
 
         case TokenKindIdentifier: {
@@ -2338,13 +2345,12 @@ get_error_parse_context(struct ErrorParseContext *self,
     next_token_pb(parse_block);
 
     if (parse_block->current->kind != TokenKindIdentifier) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissErrorName),
-              *parse_block->current->loc,
-              format(""),
-              None());
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorMissErrorName),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     None());
 
         emit__Diagnostic(err);
     } else
@@ -2371,13 +2377,12 @@ get_module_parse_context(struct ModuleParseContext *self,
     next_token_pb(parse_block);
 
     if (parse_block->current->kind != TokenKindIdentifier) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissModuleName),
-              *parse_block->current->loc,
-              format(""),
-              None());
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorMissModuleName),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     None());
 
         emit__Diagnostic(err);
     } else {
@@ -2387,20 +2392,20 @@ get_module_parse_context(struct ModuleParseContext *self,
     }
 
     EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorExpectedToken),
-              *parse_block->current->loc,
-              format(""),
-              None());
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorExpectedToken),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     None());
 
         err->err->s = from__String("`=`");
 
         emit__Diagnostic(err);
     });
 
-    while (parse_block->current->kind != TokenKindEndKw && parse_block->current->kind != TokenKindEof) {
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
         struct ParseContext *block = get_block(parse_block, true);
 
         if (block != NULL)
@@ -3267,7 +3272,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindCharLit:
+        case TokenKindCharLit: {
             const Str char_str = to_Str__String(*parse_decl->previous->lit);
 
             literal = NEW(LiteralChar, char_str[0]);
@@ -3275,6 +3280,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             free(char_str);
 
             break;
+        }
 
         case TokenKindFloatLit: {
             const Str float_str = to_Str__String(*parse_decl->previous->lit);
@@ -3290,12 +3296,13 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             assert(0 && "todo");
             break;
 
-        case TokenKindStringLit:
+        case TokenKindStringLit: {
             const Str str = to_Str__String(*parse_decl->previous->lit);
 
             literal = NEW(LiteralStr, str);
 
             break;
+        }
 
         case TokenKindBitStringLit:
             assert(0 && "todo");
@@ -3329,10 +3336,23 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     start__Location(
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
-    int *unary_op = parse_unary_op(*parse_decl);
+    int *unary_op = parse_unary_op(parse_decl->current->kind);
 
     if (unary_op != NULL) {
         next_token(parse_decl);
+
+        if (parse_decl->pos == len__Vec(*parse_decl->tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorExpectedRightValue),
+                  *parse_decl->current->loc,
+                  from__String("unary operator must take right value"),
+                  None());
+
+            emit__Diagnostic(err);
+            exit(1);
+        }
 
         struct Expr *right = parse_primary_expr(self, parse_decl);
 
@@ -3548,11 +3568,35 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
         case TokenKindFalseKw:
             expr = parse_literal_expr(self, parse_decl);
             break;
-        default:
-            assert(0 && "error");
+        default: {
+            if (parse_binary_op(parse_decl->previous->kind)) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedRightValue),
+                      *parse_decl->current->loc,
+                      from__String("binary operator must take right value"),
+                      None());
+
+                emit__Diagnostic(err);
+                exit(1);
+            } else if (parse_unary_op(parse_decl->previous->kind)) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedRightValue),
+                      *parse_decl->current->loc,
+                      from__String("unary operator must take right value"),
+                      None());
+
+                emit__Diagnostic(err);
+                exit(1);
+            } else
+                assert(0 && "error");
+        }
     }
 
-    int *binary_op = parse_binary_op(*parse_decl);
+    int *binary_op = parse_binary_op(parse_decl->current->kind);
 
     if (binary_op != NULL) {
         next_token(parse_decl);
@@ -3573,9 +3617,9 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 static inline int *
-parse_unary_op(struct ParseDecl parse_decl)
+parse_unary_op(enum TokenKind kind)
 {
-    switch (parse_decl.current->kind) {
+    switch (kind) {
         case TokenKindMinus:
             return (int *)UnaryOpKindNegative;
 
@@ -3591,9 +3635,9 @@ parse_unary_op(struct ParseDecl parse_decl)
 }
 
 static inline int *
-parse_binary_op(struct ParseDecl parse_decl)
+parse_binary_op(enum TokenKind kind)
 {
-    switch (parse_decl.current->kind) {
+    switch (kind) {
         case TokenKindPlus:
             return (int *)BinaryOpKindAdd;
 
