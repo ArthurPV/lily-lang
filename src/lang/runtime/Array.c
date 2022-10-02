@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-struct Array
+LILY_API struct Array
 new__Array()
 {
     struct Array arr = { .items = malloc(sizeof(struct Generic) * 8),
@@ -13,7 +13,7 @@ new__Array()
     return arr;
 }
 
-struct Array
+LILY_API struct Array
 init__Array(Usize n, ...)
 {
     struct Array arr = new__Array();
@@ -29,7 +29,7 @@ init__Array(Usize n, ...)
     return arr;
 }
 
-Unit
+LILY_API Unit
 push__Array(struct Array *arr, struct Generic *item)
 {
     if (arr->len == arr->capacity) {
@@ -41,7 +41,7 @@ push__Array(struct Array *arr, struct Generic *item)
     arr->items[arr->len++] = item;
 }
 
-struct Array *
+LILY_API struct Array *
 copy__Array(struct Array arr)
 {
     struct Array *copy = malloc(sizeof(struct Array));
@@ -51,13 +51,13 @@ copy__Array(struct Array arr)
     return copy;
 }
 
-Usize
+LILY_API Usize
 len__Array(struct Array arr)
 {
     return arr.len;
 }
 
-Usize
+LILY_API Usize
 capacity__Array(struct Array arr)
 {
     return arr.capacity;
