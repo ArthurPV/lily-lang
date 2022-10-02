@@ -112,7 +112,7 @@ typedef struct DataTypeSymbol
         struct DataTypeSymbol *exception;
         struct DataTypeSymbol *mut;
         struct Tuple
-          *lambda; // struct Tuple<struct Vec*, struct DataTypeSymbol*>*
+          *lambda; // struct Tuple<struct Vec<struct DataTypeSymbol*>*, struct DataTypeSymbol*>*
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
         struct Vec *custom; // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*

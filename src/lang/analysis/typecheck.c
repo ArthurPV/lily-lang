@@ -856,7 +856,7 @@ check_data_type(struct Typecheck *self,
                     Usize *id_traits =
                       id_enums == NULL && id_records == NULL &&
                           id_enums_obj == NULL && id_records_obj == NULL &&
-                          id_classes
+                          id_classes == NULL
                         ? search_in_traits_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1164,9 +1164,32 @@ check_data_type(struct Typecheck *self,
                                            local_data_type,
                                            false,
                                            false));
-            case DataTypeKindLambda:
-                TODO("check lambda type");
-                return NEW(DataTypeSymbolLambda, NULL, NULL);
+            case DataTypeKindLambda: {
+                struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+                for (Usize i = len__Vec(
+                       *(struct Vec *)data_type->value.lambda->items[0]);
+                     i--;)
+                    push__Vec(
+                      params,
+                      check_data_type(
+                        self,
+                        data_type_loc,
+                        get__Vec(
+                          *(struct Vec *)data_type->value.lambda->items[0], i),
+                        local_data_type,
+                        false,
+                        false));
+
+                return NEW(DataTypeSymbolLambda,
+                           params,
+                           check_data_type(self,
+                                           data_type_loc,
+                                           data_type->value.lambda->items[1],
+                                           local_data_type,
+                                           false,
+                                           false));
+            }
             case DataTypeKindArray:
                 return NEW(DataTypeSymbolArray,
                            check_data_type(self,
