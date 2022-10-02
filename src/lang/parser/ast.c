@@ -1110,16 +1110,6 @@ __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc)
 }
 
 struct Expr *
-__new__ExprSelfAccess(struct Vec *self_access, struct Location loc)
-{
-    struct Expr *self = malloc(sizeof(struct Expr));
-    self->kind = ExprKindSelfAccess;
-    self->loc = loc;
-    self->value.self_access = self_access;
-    return self;
-}
-
-struct Expr *
 __new__ExprArrayAccess(struct ArrayAccess array_access, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
@@ -1318,16 +1308,6 @@ __free__ExprIdentifierAccess(struct Expr *self)
 }
 
 void
-__free__ExprSelfAccess(struct Expr *self)
-{
-    for (Usize i = 0; i < len__Vec(*self->value.self_access); i++)
-        FREE(ExprAll, get__Vec(*self->value.self_access, i));
-
-    FREE(Vec, self->value.self_access);
-    free(self);
-}
-
-void
 __free__ExprArrayAccess(struct Expr *self)
 {
     FREE(ArrayAccess, self->value.array_access);
@@ -1461,9 +1441,6 @@ __free__ExprAll(struct Expr *self)
             break;
         case ExprKindIdentifierAccess:
             FREE(ExprIdentifierAccess, self);
-            break;
-        case ExprKindSelfAccess:
-            FREE(ExprSelfAccess, self);
             break;
         case ExprKindArrayAccess:
             FREE(ExprArrayAccess, self);

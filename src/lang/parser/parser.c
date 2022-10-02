@@ -310,7 +310,8 @@ parse_tuple_access_expr(struct Parser self,
 static struct Expr *
 parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
-                        struct Location loc);
+                        struct Location loc,
+                        struct Vec *ids);
 static struct Expr *
 parse_self_access(struct Parser self,
                   struct ParseDecl *parse_decl,
@@ -3439,9 +3440,19 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                 expr = NEW(Expr, ExprKindWildcard, loc);
             } else {
                 switch (parse_decl->current->kind) {
-                    case TokenKindDot:
-                        TODO("");
+                    case TokenKindDot: {
+                        struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+                        push__Vec(ids,
+                                  NEW(ExprIdentifier,
+                                      &*parse_decl->previous->lit,
+                                      *parse_decl->previous->loc));
+
+                        expr =
+                          parse_identifier_access(self, parse_decl, loc, ids);
+
                         break;
+                    }
                     case TokenKindColon:
                     case TokenKindColonColon:
                         expr =
@@ -3506,8 +3517,27 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindSelfKw:
+        case TokenKindSelfKw: {
+            switch (parse_decl->current->kind) {
+                case TokenKindDot: {
+                    struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+                    push__Vec(
+                      ids, NEW(Expr, ExprKindSelf, *parse_decl->previous->loc));
+
+                    expr = parse_identifier_access(self, parse_decl, loc, ids);
+
+                    break;
+                }
+
+                default:
+                    expr = NEW(Expr, ExprKindSelf, *parse_decl->previous->loc);
+
+                    break;
+            }
+
             break;
+        }
 
         case TokenKindLParen: {
             if (parse_decl->current->kind == TokenKindRParen) {
@@ -4079,15 +4109,9 @@ parse_tuple_access_expr(struct Parser self,
 static struct Expr *
 parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
-                        struct Location loc)
+                        struct Location loc,
+                        struct Vec *ids)
 {
-    struct Vec *ids = NEW(Vec, sizeof(struct Expr));
-
-    push__Vec(ids,
-              NEW(ExprIdentifier,
-                  &*parse_decl->previous->lit,
-                  *parse_decl->previous->loc));
-
     while (parse_decl->current->kind == TokenKindDot) {
         next_token(parse_decl);
 

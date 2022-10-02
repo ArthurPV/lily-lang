@@ -748,7 +748,6 @@ enum ExprKind
     ExprKindRecordCall,
     ExprKindIdentifier,
     ExprKindIdentifierAccess,
-    ExprKindSelfAccess,
     ExprKindArrayAccess,
     ExprKindTupleAccess,
     ExprKindLambda,
@@ -782,7 +781,6 @@ typedef struct Expr
         struct RecordCall record_call;
         struct String *identifier;     // struct String&
         struct Vec *identifier_access; // struct Vec<struct Expr*>*
-        struct Vec *self_access;       // struct Vec<struct Expr*>*
         struct ArrayAccess array_access;
         struct TupleAccess tuple_access;
         struct Lambda lambda;
@@ -847,12 +845,6 @@ __new__ExprIdentifier(struct String *identifier, struct Location loc);
  */
 struct Expr *
 __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc);
-
-/**
- * @brief Construct the Expr type (SelfAccess variant).
- */
-struct Expr *
-__new__ExprSelfAccess(struct Vec *self_access, struct Location loc);
 
 /**
  *
