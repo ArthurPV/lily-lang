@@ -419,6 +419,24 @@ static struct Vec *
 parse_fun_params(struct Parser self, struct ParseDecl *parse_decl);
 static struct FunDecl *
 parse_fun_declaration(struct Parser *self);
+static struct EnumDecl *
+parse_enum_declaration(struct Parser *self);
+static struct RecordDecl *
+parse_record_declaration(struct Parser *self);
+static struct AliasDecl *
+parse_alias_declaration(struct Parser *self);
+static struct TraitDecl *
+parse_trait_declaration(struct Parser *self);
+static struct ClassDecl *
+parse_class_declaration(struct Parser *self);
+static struct ImportStmt *
+parse_import_declaration(struct Parser *self);
+static struct ConstantDecl *
+parse_constant_declaration(struct Parser *self);
+static struct ErrorDecl *
+parse_error_declaration(struct Parser *self);
+static struct ModuleDecl *
+parse_module_declaration(struct Parser *self);
 static void
 parse_declaration(struct Parser *self);
 
@@ -3511,10 +3529,12 @@ parse_variable(struct Parser self,
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
     if (data_type == NULL)
-        return NEW(ExprVariable, NEW(VariableDecl, name, None(), expr, is_mut), loc);
-    else
         return NEW(
-          ExprVariable, NEW(VariableDecl, name, Some(data_type), expr, is_mut), loc);
+          ExprVariable, NEW(VariableDecl, name, None(), expr, is_mut), loc);
+    else
+        return NEW(ExprVariable,
+                   NEW(VariableDecl, name, Some(data_type), expr, is_mut),
+                   loc);
 }
 
 static struct Expr *
@@ -4761,6 +4781,130 @@ parse_fun_declaration(struct Parser *self)
                fun_parse_context.is_async);
 }
 
+static struct EnumDecl *
+parse_enum_declaration(struct Parser *self)
+{
+    struct EnumParseContext enum_parse_context = self->current->value.enum_;
+    struct Vec *generic_params = NULL;
+    struct Option *type_value = NULL;
+    struct Vec *variants = NULL;
+    bool is_object =
+      self->current->kind == ParseContextKindEnumObject ? true : false;
+
+    if (enum_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, enum_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (enum_parse_context.has_data_type) {
+        struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.data_type);
+
+        type_value = Some(parse_data_type(*self, &parse));
+    } else
+        type_value = None();
+
+    if (len__Vec(*enum_parse_context.variants) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.variants);
+        variants = NEW(Vec, sizeof(struct VariantEnum));
+
+        while (parse.pos < len__Vec(*enum_parse_context.variants)) {
+            struct Location loc = NEW(Location);
+            struct String *variant_name = NULL;
+            struct Option *data_type = NULL;
+
+            start__Location(
+              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+            if (parse.current->kind == TokenKindIdentifier) {
+                variant_name = &*parse.current->lit;
+                next_token(&parse);
+            } else
+                assert(0 && "error");
+
+            if (parse.current->kind != TokenKindComma &&
+                parse.pos != len__Vec(*parse.tokens)) {
+                data_type = Some(parse_data_type(*self, &parse));
+
+                if (parse.current->kind != TokenKindComma &&
+                    parse.pos != len__Vec(*parse.tokens)) {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`,`");
+
+                    emit__Diagnostic(err);
+                } else
+                    next_token(&parse);
+            } else {
+                data_type = None();
+
+                next_token(&parse);
+            }
+
+            end__Location(
+              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+            push__Vec(variants, NEW(VariantEnum, variant_name, data_type, loc));
+        }
+    }
+
+    return NEW(EnumDecl,
+               enum_parse_context.name,
+               generic_params,
+               variants,
+               type_value,
+               enum_parse_context.is_pub,
+               is_object,
+               enum_parse_context.is_error);
+}
+
+static struct RecordDecl *
+parse_record_declaration(struct Parser *self)
+{
+}
+
+static struct AliasDecl *
+parse_alias_declaration(struct Parser *self)
+{
+}
+
+static struct TraitDecl *
+parse_trait_declaration(struct Parser *self)
+{
+}
+
+static struct ClassDecl *
+parse_class_declaration(struct Parser *self)
+{
+}
+
+static struct ImportStmt *
+parse_import_declaration(struct Parser *self)
+{
+}
+
+static struct ConstantDecl *
+parse_constant_declaration(struct Parser *self)
+{
+}
+
+static struct ErrorDecl *
+parse_error_declaration(struct Parser *self)
+{
+}
+
+static struct ModuleDecl *
+parse_module_declaration(struct Parser *self)
+{
+}
+
 static void
 parse_declaration(struct Parser *self)
 {
@@ -4771,11 +4915,44 @@ parse_declaration(struct Parser *self)
               NEW(DeclFun, self->current->loc, parse_fun_declaration(self)));
             break;
 
+        case ParseContextKindEnum:
+            push__Vec(
+              self->decls,
+              NEW(DeclEnum, self->current->loc, parse_enum_declaration(self)));
+            break;
+
+        case ParseContextKindRecord:
+            break;
+
+        case ParseContextKindAlias:
+            break;
+
+        case ParseContextKindEnumObject:
+            break;
+
+        case ParseContextKindRecordObject:
+            break;
+
+        case ParseContextKindTrait:
+            break;
+
         case ParseContextKindClass:
             break;
 
+        case ParseContextKindImport:
+            break;
+
+        case ParseContextKindConstant:
+            break;
+
+        case ParseContextKindError:
+            break;
+
+        case ParseContextKindModule:
+            break;
+
         default:
-            UNREACHABLE("unknown parse context kind");
+            break;
     }
 }
 

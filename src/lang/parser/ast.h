@@ -1962,7 +1962,7 @@ __free__RecordDecl(struct RecordDecl *self);
 
 typedef struct VariantEnum
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Option *data_type; // struct Option<struct DataType*>*
     struct Location loc;
 } VariantEnum;
@@ -1985,7 +1985,7 @@ __free__VariantEnum(struct VariantEnum *self);
 
 typedef struct EnumDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *variants;       // struct Vec<struct VariantEnum*>*
     struct Option *type_value;  // struct Option<struct DataType*>*

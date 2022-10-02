@@ -2700,8 +2700,6 @@ __new__VariantEnum(struct String *name,
 void
 __free__VariantEnum(struct VariantEnum *self)
 {
-    FREE(String, self->name);
-
     if (is_Some__Option(self->data_type))
         FREE(DataTypeAll, get__Option(self->data_type));
 
@@ -2732,16 +2730,19 @@ __new__EnumDecl(struct String *name,
 void
 __free__EnumDecl(struct EnumDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
+    
+    if (self->variants != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->variants); i++)
+            FREE(VariantEnum, get__Vec(*self->variants, i));
 
-    for (Usize i = 0; i < len__Vec(*self->variants); i++)
-        FREE(VariantEnum, get__Vec(*self->variants, i));
-
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->variants);
+        FREE(Vec, self->variants);
+    }
 
     if (is_Some__Option(self->type_value))
         FREE(DataTypeAll, get__Option(self->type_value));

@@ -2,6 +2,11 @@ fun add(x, y) = return x+y;
 
 fun is_zero(x) = if x == 0 do true;;
 
+type Letter: enum =
+	A i32,
+	B i32
+end
+
 fun main =
 	x := 20
 	if x == 0 do
