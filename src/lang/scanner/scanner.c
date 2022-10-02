@@ -431,6 +431,7 @@ next_char_by_token(struct Scanner *self, struct Token tok)
         case TokenKindIdentifier:
             next_char(self);
             return;
+
         default: {
             struct String *tok_string = token_kind_to_string__Token(tok);
 
@@ -1022,10 +1023,13 @@ get_closing(struct Scanner *self, char *target)
     switch ((UPtr)target) {
         case ')':
             return Ok(NEW(Token, TokenKindRParen, NULL));
+
         case '}':
             return Ok(NEW(Token, TokenKindRBrace, NULL));
+
         case ']':
             return Ok(NEW(Token, TokenKindRHook, NULL));
+
         default:
             UNREACHABLE("unknown target");
     }

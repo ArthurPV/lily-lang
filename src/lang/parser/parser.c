@@ -362,6 +362,7 @@ get_block(struct ParseBlock *self)
 
                     break;
                 }
+
                 case TokenKindAsyncKw: {
                     next_token_pb(self);
 
@@ -394,18 +395,23 @@ get_block(struct ParseBlock *self)
 
                     break;
                 }
+
                 case TokenKindTypeKw:
                     get_type_context(self, true);
                     break;
+
                 case TokenKindObjectKw:
                     get_object_context(self, true);
                     break;
+
                 case TokenKindTagKw:
                     TODO("");
                     break;
+
                 case TokenKindErrorKw:
                     TODO("");
                     break;
+
                 case TokenKindIdentifier: {
                     struct ConstantParseContext constant_parse_context =
                       NEW(ConstantParseContext);
@@ -416,6 +422,7 @@ get_block(struct ParseBlock *self)
 
                     break;
                 }
+
                 default: {
                     struct Diagnostic *err =
                       NEW(DiagnosticWithErrParser,
@@ -435,6 +442,7 @@ get_block(struct ParseBlock *self)
             }
 
             break;
+
         case TokenKindFunKw: {
             struct FunParseContext fun_parse_context = NEW(FunParseContext);
 
@@ -450,12 +458,15 @@ get_block(struct ParseBlock *self)
         }
         case TokenKindTagKw:
             break;
+
         case TokenKindTypeKw:
             get_type_context(self, false);
             break;
+
         case TokenKindObjectKw:
             get_object_context(self, false);
             break;
+
         case TokenKindBang: {
             next_token_pb(self);
 
@@ -523,6 +534,7 @@ get_block(struct ParseBlock *self)
         exit : {
         } break;
         }
+
         case TokenKindIdentifier: {
             struct ConstantParseContext constant_parse_context =
               NEW(ConstantParseContext);
@@ -533,6 +545,7 @@ get_block(struct ParseBlock *self)
 
             break;
         }
+
         default: {
             struct Diagnostic *err = NEW(
               DiagnosticWithErrParser,
@@ -654,6 +667,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         case TokenKindRecordKw:
             struct RecordParseContext record_parse_context =
               NEW(RecordParseContext);
@@ -672,6 +686,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
               NEW(ParseContextRecord, record_parse_context, loc, false));
 
             break;
+
         case TokenKindAliasKw: {
             struct AliasParseContext alias_parse_context =
               NEW(AliasParseContext);
@@ -690,6 +705,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         default: {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
@@ -868,6 +884,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         case TokenKindRecordKw: {
             struct RecordParseContext record_parse_context =
               NEW(RecordParseContext);
@@ -886,6 +903,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         case TokenKindTraitKw: {
             struct TraitParseContext trait_parse_context =
               NEW(TraitParseContext);
@@ -905,6 +923,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         case TokenKindClassKw: {
             struct ClassParseContext class_parse_context =
               NEW(ClassParseContext);
@@ -931,6 +950,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
+
         default:
             assert(0 && "error");
     }
@@ -1033,6 +1053,7 @@ valid_body_item(struct ParseBlock *parse_block,
 
             return false;
         }
+
         default:
             return true;
     }
@@ -1232,12 +1253,15 @@ get_fun_parse_context(struct FunParseContext *self,
             case TokenKindEndKw:
                 err->err->s = from__String("end");
                 break;
+
             case TokenKindSemicolon:
                 err->err->s = from__String(";");
                 break;
+
             case TokenKindEof:
                 err->err->s = from__String("Eof");
                 break;
+
             default:
                 break;
         }
@@ -1362,6 +1386,7 @@ valid_token_in_enum_variants(struct ParseBlock *parse_block,
         case TokenKindDot:
         case TokenKindIdentifier:
             return true;
+
         default: {
             if (!already_invalid) {
                 struct Diagnostic *err =
@@ -1420,6 +1445,7 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
         case TokenKindIdentifier:
         case TokenKindDot:
             return true;
+
         default: {
             if (!already_invalid) {
                 struct Diagnostic *err = NEW(
@@ -1507,6 +1533,7 @@ valid_token_in_alias_data_type(struct ParseBlock *parse_block,
         case TokenKindComma:
         case TokenKindIdentifier:
             return true;
+
         default: {
             if (!already_invalid) {
                 struct Diagnostic *err = NEW(
@@ -1597,6 +1624,7 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindDot:
         case TokenKindIdentifier:
             return true;
+
         default: {
             if (!already_invalid) {
                 struct Diagnostic *err = NEW(
@@ -2101,6 +2129,7 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindIdentifier:
         case TokenKindComma:
             return true;
+
         default: {
             if (!already_invalid) {
                 struct Diagnostic *err =
@@ -2387,32 +2416,41 @@ __free__ParseContextAll(struct ParseContext *self)
         case ParseContextKindFun:
             FREE(ParseContextFun, self);
             break;
+
         case ParseContextKindEnum:
         case ParseContextKindEnumObject:
             FREE(ParseContextEnum, self);
             break;
+
         case ParseContextKindRecord:
         case ParseContextKindRecordObject:
             FREE(ParseContextRecord, self);
             break;
+
         case ParseContextKindAlias:
             FREE(ParseContextAlias, self);
             break;
+
         case ParseContextKindTrait:
             FREE(ParseContextTrait, self);
             break;
+
         case ParseContextKindClass:
             FREE(ParseContextClass, self);
             break;
+
         case ParseContextKindMethod:
             FREE(ParseContextMethod, self);
             break;
+
         case ParseContextKindProperty:
             FREE(ParseContextProperty, self);
             break;
+
         case ParseContextKindImport:
             FREE(ParseContextImport, self);
             break;
+
         default:
             UNREACHABLE("unknown parse context kind");
     }
@@ -2470,6 +2508,7 @@ is_data_type(struct ParseDecl *self)
         case TokenKindLParen:
         case TokenKindHat:
             return true;
+
         default:
             return false;
     }
@@ -2488,42 +2527,61 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             if (!strcmp(identifier_str, "Int8"))
                 data_type = NEW(DataType, DataTypeKindI8);
+
             else if (!strcmp(identifier_str, "Int16"))
                 data_type = NEW(DataType, DataTypeKindI16);
+
             else if (!strcmp(identifier_str, "Int32"))
                 data_type = NEW(DataType, DataTypeKindI32);
+
             else if (!strcmp(identifier_str, "Int64"))
                 data_type = NEW(DataType, DataTypeKindI64);
+
             else if (!strcmp(identifier_str, "Int128"))
                 data_type = NEW(DataType, DataTypeKindI128);
+
             else if (!strcmp(identifier_str, "Uint8"))
                 data_type = NEW(DataType, DataTypeKindU8);
+
             else if (!strcmp(identifier_str, "Uint16"))
                 data_type = NEW(DataType, DataTypeKindU16);
+
             else if (!strcmp(identifier_str, "Uint32"))
                 data_type = NEW(DataType, DataTypeKindU32);
+
             else if (!strcmp(identifier_str, "Uint64"))
                 data_type = NEW(DataType, DataTypeKindU64);
+
             else if (!strcmp(identifier_str, "Uint128"))
                 data_type = NEW(DataType, DataTypeKindU128);
+
             else if (!strcmp(identifier_str, "Isize"))
                 data_type = NEW(DataType, DataTypeKindIsize);
+
             else if (!strcmp(identifier_str, "Usize"))
                 data_type = NEW(DataType, DataTypeKindUsize);
+
             else if (!strcmp(identifier_str, "Float32"))
                 data_type = NEW(DataType, DataTypeKindF32);
+
             else if (!strcmp(identifier_str, "Float64"))
                 data_type = NEW(DataType, DataTypeKindF64);
+
             else if (!strcmp(identifier_str, "Bool"))
                 data_type = NEW(DataType, DataTypeKindBool);
+
             else if (!strcmp(identifier_str, "Char"))
                 data_type = NEW(DataType, DataTypeKindChar);
+
             else if (!strcmp(identifier_str, "Str"))
                 data_type = NEW(DataType, DataTypeKindStr);
+
             else if (!strcmp(identifier_str, "Any"))
                 data_type = NEW(DataType, DataTypeKindAny);
+
             else if (!strcmp(identifier_str, "Unit"))
                 data_type = NEW(DataType, DataTypeKindUnit);
+
             else {
                 if (parse_decl->current->kind == TokenKindLHook) {
                     struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
@@ -2573,6 +2631,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindLHook: {
             Usize *size = NULL;
             bool is_wildcard = false;
@@ -2671,6 +2730,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindLParen: {
             struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
 
@@ -2696,19 +2756,24 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindHat:
             data_type = NEW(DataTypePtr, parse_data_type(self, parse_decl));
             break;
+
         case TokenKindInterrogation:
             data_type =
               NEW(DataTypeOptional, parse_data_type(self, parse_decl));
             break;
+
         case TokenKindBang:
             data_type =
               NEW(DataTypeException, parse_data_type(self, parse_decl));
             break;
+
         case TokenKindAmpersand:
             data_type = NEW(DataTypeRef, parse_data_type(self, parse_decl));
+
         case TokenKindBar: {
             next_token(parse_decl);
 
@@ -2749,6 +2814,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         default:
             break;
     }
@@ -2843,7 +2909,10 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
                     push__Vec(generic_params,
                               NEW(GenericDataType, data_type, loc));
                 }
+
+                break;
             }
+
             default: {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -2856,6 +2925,8 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
                 err->err->s = token_kind_to_string__Token(*parse_decl->current);
 
                 emit__Diagnostic(err);
+
+                break;
             }
         }
 
@@ -2921,6 +2992,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindCharLit:
             const Str char_str = to_Str__String(*parse_decl->previous->lit);
 
@@ -2929,6 +3001,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             free(char_str);
 
             break;
+
         case TokenKindFloatLit: {
             const Str float_str = to_Str__String(*parse_decl->previous->lit);
 
@@ -2938,24 +3011,30 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindBitCharLit:
             assert(0 && "todo");
             break;
+
         case TokenKindStringLit:
             const Str str = to_Str__String(*parse_decl->previous->lit);
 
             literal = NEW(LiteralStr, str);
 
             break;
+
         case TokenKindBitStringLit:
             assert(0 && "todo");
             break;
+
         case TokenKindTrueKw:
             literal = NEW(LiteralBool, true);
             break;
+
         case TokenKindFalseKw:
             literal = NEW(LiteralBool, false);
             break;
+
         default:
             UNREACHABLE("");
     }
@@ -2982,18 +3061,25 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     switch (parse_decl->previous->kind) {
         case TokenKindIdentifier:
             break;
+
         case TokenKindSelfKw:
             break;
+
         case TokenKindLParen:
             break;
+
         case TokenKindLHook:
             break;
+
         case TokenKindTryKw:
             break;
+
         case TokenKindIfKw:
             break;
+
         case TokenKindBeginKw:
             break;
+
         case TokenKindAmpersand: {
             struct Expr *expr_ref = parse_expr(self, parse_decl);
 
@@ -3005,6 +3091,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
         case TokenKindUndefKw:
             end__Location(&loc,
                           parse_decl->previous->loc->e_line,
@@ -3013,6 +3100,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             expr = NEW(Expr, ExprKindUndef, loc);
 
             break;
+
         case TokenKindNilKw:
             end__Location(&loc,
                           parse_decl->previous->loc->e_line,
@@ -3021,6 +3109,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             expr = NEW(Expr, ExprKindNil, loc);
 
             break;
+
         case TokenKindIntLit:
         case TokenKindCharLit:
         case TokenKindFloatLit:
@@ -3231,6 +3320,7 @@ parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
             case TokenKindWhileKw:
                 assert(0 && "todo");
                 break;
+
             default:
                 push__Vec(body,
                           NEW(FunBodyItemExpr, parse_expr(self, parse_decl)));
@@ -3315,8 +3405,10 @@ parse_declaration(struct Parser *self)
               self->decls,
               NEW(DeclFun, self->current->loc, parse_fun_declaration(self)));
             break;
+
         case ParseContextKindClass:
             break;
+
         default:
             UNREACHABLE("unknown parse context kind");
     }
