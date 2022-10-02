@@ -41,6 +41,14 @@ static Int128 MaxInt32 = 0x7FFFFFFF;
 static Int128 MinInt64 = -0x8000000000000000;
 static Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 
+static struct SearchModuleContext
+{
+    bool search_type;
+    bool search_fun;
+    bool search_variant;
+    bool search_value;
+} SearchModuleContext;
+
 static inline struct Diagnostic *
 __new__DiagnosticWithErrTypecheck(struct Typecheck *self,
                                   struct LilyError *err,
@@ -63,6 +71,10 @@ static void
 push_all_symbols(struct Typecheck *self);
 static void
 check_symbols(struct Typecheck *self);
+static struct Vec *
+search_in_modules_from_name(struct Typecheck *self,
+                            struct Vec *name,
+                            struct SearchModuleContext search_module_context);
 static Usize *
 search_in_enums_from_name(struct Typecheck *self, struct String *name);
 static Usize *
@@ -442,6 +454,117 @@ check_symbols(struct Typecheck *self)
 
         NEXT_DECL();
     }
+}
+
+static struct Vec *
+search_in_modules_from_name(struct Typecheck *self,
+                            struct Vec *name,
+                            struct SearchModuleContext search_module_context)
+{
+    if (self->modules != NULL)
+        return NULL;
+
+    struct Vec *ids = NEW(Vec, sizeof(Usize));
+
+    for (Usize i = len__Vec(*self->modules); i--;)
+        if (eq__String(
+              get__Vec(*name, 0),
+              ((struct ModuleSymbol *)get__Vec(*self->modules, i))->name,
+              false)) {
+            push__Vec(ids, (Usize *)i);
+            break;
+        }
+
+    if (len__Vec(*ids) == 0) {
+        FREE(Vec, ids);
+        assert(0 && "error");
+        return NULL;
+    }
+
+#define CHECK_ID(decl)                                 \
+    if (eq__String(current_name, decl->name, false)) { \
+        *id = j;                                       \
+        push__Vec(ids, id);                            \
+    }                                                  \
+    if (len__Vec(*name) != i)                          \
+        assert(0 && "error");                          \
+    break;
+
+    struct Decl *current_module =
+      get__Vec(*self->parser.decls, *(Usize *)get__Vec(*ids, 0));
+    struct String *current_name = NULL;
+
+    for (Usize i = 1; i < len__Vec(*name); i++) {
+        current_name = get__Vec(*name, i);
+
+        if (((struct ModuleBodyItem *)get__Vec(
+               *current_module->value.module->body, 0))
+              ->kind == ModuleBodyItemKindDecl) {
+            struct Decl *current_decl =
+              ((struct ModuleBodyItem *)get__Vec(
+                 *current_module->value.module->body,
+                 len__Vec(*current_module->value.module->body) - 1))
+                ->value.decl;
+            Usize *id = NULL;
+            bool entry_in_module = false;
+
+            for (Usize j = len__Vec(*current_module->value.module->body);
+                 j--;) {
+                switch (current_decl->kind) {
+                    case DeclKindRecord:
+                        CHECK_ID(current_decl->value.record);
+                    case DeclKindEnum:
+                        CHECK_ID(current_decl->value.enum_);
+                    case DeclKindClass:
+                        CHECK_ID(current_decl->value.class);
+                    case DeclKindTrait:
+                        CHECK_ID(current_decl->value.trait);
+                    case DeclKindFun:
+                        CHECK_ID(current_decl->value.fun);
+                    case DeclKindError:
+                        CHECK_ID(current_decl->value.error);
+                    case DeclKindAlias:
+                        CHECK_ID(current_decl->value.alias);
+                    case DeclKindConstant:
+                        CHECK_ID(current_decl->value.constant);
+                    case DeclKindModule:
+                        if (eq__String(current_decl->value.module->name,
+                                       current_name,
+                                       false)) {
+                            entry_in_module = true;
+                            *id = j;
+                            current_module = current_decl;
+
+                            push__Vec(ids, id);
+                        }
+                        break;
+                    case DeclKindTag:
+                        break;
+                    case DeclKindImport:
+                        UNREACHABLE("");
+                }
+
+                if (id != NULL || entry_in_module)
+                    break;
+
+                current_decl = ((struct ModuleBodyItem *)get__Vec(
+                                  *current_module->value.module->body, j))
+                                 ->value.decl;
+            }
+
+            if (id == NULL) {
+                assert(0 && "error");
+                return NULL;
+            }
+        }
+    }
+
+    if (len__Vec(*ids) != len__Vec(*name)) {
+        assert(0 && "error");
+        return NULL;
+    }
+
+    return ids;
 }
 
 static Usize *
