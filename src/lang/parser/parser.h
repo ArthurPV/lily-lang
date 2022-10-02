@@ -79,14 +79,14 @@ typedef struct EnumParseContext
 
 /**
  *
- * @brief Construct the FunParseContext type.
+ * @brief Construct the EnumParseContext type.
  */
 struct EnumParseContext *
 __new__EnumParseContext();
 
 /**
  *
- * @brief Free the FunParseContext type.
+ * @brief Free the EnumParseContext type.
  */
 void
 __free__EnumParseContext(struct EnumParseContext *self);
@@ -115,11 +115,38 @@ __new__RecordParseContext();
 void
 __free__RecordParseContext(struct RecordParseContext *self);
 
+typedef struct EnumObjectParseContext
+{
+    bool is_pub;
+    bool has_generic_params;
+    bool has_data_type;
+    bool is_error;
+    struct String *name;        // struct String&
+    struct Vec *data_type;      // struct Vec<struct Token&>*
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *variants;       // struct Vec<struct Token&>*
+} EnumObjectParseContext;
+
+/**
+ *
+ * @brief Construct the EnumObjectParseContext type.
+ */
+struct EnumObjectParseContext *
+__new__EnumObjectParseContext();
+
+/**
+ *
+ * @brief Free the EnumObjectParseContext type.
+ */
+void
+__free__EnumObjectParseContext(struct EnumObjectParseContext *self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,
     ParseContextKindEnum,
-    ParseContextKindRecord
+    ParseContextKindRecord,
+    ParseContextKindEnumObject
 };
 
 typedef struct ParseContext
@@ -131,6 +158,7 @@ typedef struct ParseContext
         struct FunParseContext *fun;
         struct EnumParseContext *enum_;
         struct RecordParseContext *record;
+        struct EnumObjectParseContext *enum_object;
     } value;
 } ParseContext;
 
@@ -157,6 +185,13 @@ __new__ParseContextRecord(struct RecordParseContext *record);
 
 /**
  *
+ * @brief Contruct the ParseContext type (EnumObject variant).
+ */
+struct ParseContext *
+__new__ParseContextEnumObject(struct EnumObjectParseContext *enum_object);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -175,6 +210,13 @@ __free__ParseContextEnum(struct ParseContext *self);
  */
 void
 __free__ParseContextRecord(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (EnumObject variant).
+ */
+void
+__free__ParseContextEnumObject(struct ParseContext *self);
 
 /**
  *

@@ -3,12 +3,12 @@ fun sub(x, y) = x-y;
 fun mul(x, y) = x*y;
 
 type Name: enum(error) =
-	F,
+	F
 	G
 end
 
 type Person: record =
-	name: string,
+	name: string
 	age: u32
 end
 

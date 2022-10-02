@@ -24,6 +24,76 @@
         format(""),                                          \
         None());
 
+#define PARSE_ENUM_DATA_TYPE(self, parse_block)                                \
+    if (parse_block->current->kind == TokenKindLParen) {                       \
+        next_token_pb(parse_block);                                            \
+                                                                               \
+        if (parse_block->current->kind == TokenKindErrorKw) {                  \
+            self->is_error = true;                                             \
+                                                                               \
+            next_token_pb(parse_block);                                        \
+                                                                               \
+            if (parse_block->current->kind != TokenKindRParen) {               \
+                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, ')'); \
+                                                                               \
+                err->err->s = from__String(")");                               \
+                                                                               \
+                emit__Diagnostic(err);                                         \
+            } else {                                                           \
+                next_token_pb(parse_block);                                    \
+            }                                                                  \
+                                                                               \
+            self->is_error = true;                                             \
+        } else {                                                               \
+            while (parse_block->current->kind != TokenKindRParen) {            \
+                push__Vec(self->data_type, &*parse_block->current);            \
+                next_token_pb(parse_block);                                    \
+            }                                                                  \
+                                                                               \
+            self->has_data_type = true;                                        \
+                                                                               \
+            next_token_pb(parse_block);                                        \
+        }                                                                      \
+    }
+
+#define PARSE_ENUM_VARIANTS(self, parse_block, bad_token)               \
+    if (parse_block->current->kind != TokenKindEq) {                    \
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');  \
+                                                                        \
+        err->err->s = from__String("=");                                \
+                                                                        \
+        emit__Diagnostic(err);                                          \
+    } else                                                              \
+        next_token_pb(parse_block);                                     \
+                                                                        \
+    while (parse_block->current->kind != TokenKindEndKw &&              \
+           parse_block->current->kind != TokenKindEof) {                \
+        if (valid_token_in_enum_variants(parse_block, bad_token)) {     \
+            push__Vec(self->variants, &*parse_block->current);          \
+            next_token_pb(parse_block);                                 \
+        } else {                                                        \
+            bad_token = true;                                           \
+            next_token_pb(parse_block);                                 \
+        }                                                               \
+    }                                                                   \
+                                                                        \
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {     \
+        struct Diagnostic *err =                                        \
+          NEW(DiagnosticWithErrParser,                                  \
+              parse_block,                                              \
+              NEW(LilyError, LilyErrorMissClosingBlock),                \
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens, \
+                                         parse_block->pos - 1))         \
+                 ->loc,                                                 \
+              format("expected closing block here"),                    \
+              None());                                                  \
+                                                                        \
+        err->err->s = from__String("`end`");                            \
+                                                                        \
+        emit__Diagnostic(err);                                          \
+    } else                                                              \
+        next_token_pb(parse_block);
+
 static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
@@ -45,19 +115,20 @@ static void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block);
 static inline bool
-valid_token_in_enum_variants(struct EnumParseContext *self,
-                             struct ParseBlock *parse_block,
+valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid);
 static void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
 static inline bool
-valid_token_in_record_fields(struct RecordParseContext *self,
-                             struct ParseBlock *parse_block,
+valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid);
 static void
 get_record_parse_context(struct RecordParseContext *self,
                          struct ParseBlock *parse_block);
+static void
+get_enum_object_parse_context(struct EnumObjectParseContext *self,
+                              struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -674,81 +745,16 @@ get_enum_parse_context(struct EnumParseContext *self,
     next_token_pb(parse_block);
 
     // 1. DataType
-    if (parse_block->current->kind == TokenKindLParen) {
-        next_token_pb(parse_block);
-
-        if (parse_block->current->kind == TokenKindErrorKw) {
-            self->is_error = true;
-
-            next_token_pb(parse_block);
-
-            if (parse_block->current->kind != TokenKindRParen) {
-                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, ')');
-
-                err->err->s = from__String(")");
-
-                emit__Diagnostic(err);
-            } else {
-                next_token_pb(parse_block);
-            }
-
-            self->is_error = true;
-        } else {
-            while (parse_block->current->kind != TokenKindRParen) {
-                push__Vec(self->data_type, &*parse_block->current);
-                next_token_pb(parse_block);
-            }
-
-            self->has_data_type = true;
-
-            next_token_pb(parse_block);
-        }
-    }
+    PARSE_ENUM_DATA_TYPE(self, parse_block);
 
     // 2. Variants
-    if (parse_block->current->kind != TokenKindEq) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
-
-        err->err->s = from__String("=");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
-
     bool bad_token = false;
 
-    while (parse_block->current->kind != TokenKindEndKw &&
-           parse_block->current->kind != TokenKindEof) {
-        if (valid_token_in_enum_variants(self, parse_block, bad_token)) {
-            push__Vec(self->variants, &*parse_block->current);
-            next_token_pb(parse_block);
-        } else {
-            bad_token = true;
-            next_token_pb(parse_block);
-        }
-    }
-
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`end`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    PARSE_ENUM_VARIANTS(self, parse_block, bad_token);
 }
 
 static inline bool
-valid_token_in_enum_variants(struct EnumParseContext *self,
-                             struct ParseBlock *parse_block,
+valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -807,8 +813,7 @@ __new__RecordParseContext()
 }
 
 static inline bool
-valid_token_in_record_fields(struct RecordParseContext *self,
-                             struct ParseBlock *parse_block,
+valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -864,7 +869,7 @@ get_record_parse_context(struct RecordParseContext *self,
 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_token_in_record_fields(self, parse_block, bad_token)) {
+        if (valid_token_in_record_fields(parse_block, bad_token)) {
             push__Vec(self->fields, &*parse_block->current);
             next_token_pb(parse_block);
         } else {
@@ -896,6 +901,46 @@ __free__RecordParseContext(struct RecordParseContext *self)
 {
     FREE(Vec, self->generic_params);
     FREE(Vec, self->fields);
+    free(self);
+}
+
+struct EnumObjectParseContext *
+__new__EnumObjectParseContext()
+{
+    struct EnumObjectParseContext *self =
+      malloc(sizeof(struct EnumObjectParseContext));
+    self->is_pub = false;
+    self->has_generic_params = false;
+    self->has_data_type = false;
+    self->is_error = false;
+    self->name = NULL;
+    self->data_type = NULL;
+    self->generic_params = NULL;
+    self->variants = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static void
+get_enum_object_parse_context(struct EnumObjectParseContext *self,
+                              struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    // 1. DataType
+    PARSE_ENUM_DATA_TYPE(self, parse_block);
+
+    // 2. Variants
+    bool bad_token = false;
+
+    PARSE_ENUM_VARIANTS(self, parse_block, bad_token);
+}
+
+void
+__free__EnumObjectParseContext(struct EnumObjectParseContext *self)
+{
+    FREE(Vec, self->data_type);
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->variants);
     free(self);
 }
 
@@ -969,6 +1014,15 @@ __new__ParseContextRecord(struct RecordParseContext *record)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextEnumObject(struct EnumObjectParseContext *enum_object)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindEnumObject;
+    self->value.enum_object = enum_object;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -991,6 +1045,13 @@ __free__ParseContextRecord(struct ParseContext *self)
 }
 
 void
+__free__ParseContextEnumObject(struct ParseContext *self)
+{
+    FREE(EnumObjectParseContext, self->value.enum_object);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -1002,6 +1063,9 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
         case ParseContextKindRecord:
             FREE(ParseContextRecord, self);
+            break;
+        case ParseContextKindEnumObject:
+            FREE(ParseContextEnumObject, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");
