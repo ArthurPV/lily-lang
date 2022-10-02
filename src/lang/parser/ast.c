@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2022 ArthurPV
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/str.h>
@@ -2938,16 +2962,24 @@ __free__ClassDecl(struct ClassDecl *self)
         FREE(Vec, self->generic_params);
     }
 
-    if (self->generic_params) {
-        for (Usize i = len__Vec(*self->inheritance); i--;)
-            FREE(DataTypeAll, get__Vec(*self->inheritance, i));
+    if (self->inheritance) {
+        for (Usize i = len__Vec(*self->inheritance); i--;) {
+            FREE(DataTypeAll,
+                 ((struct Tuple *)get__Vec(*self->inheritance, i))->items[0]);
+            free(((struct Tuple *)get__Vec(*self->inheritance, i))->items[1]);
+            FREE(Tuple, get__Vec(*self->inheritance, i));
+        }
 
         FREE(Vec, self->inheritance);
     }
 
-    if (self->generic_params) {
-        for (Usize i = len__Vec(*self->impl); i--;)
-            FREE(DataTypeAll, get__Vec(*self->impl, i));
+    if (self->impl) {
+        for (Usize i = len__Vec(*self->impl); i--;) {
+            FREE(DataTypeAll,
+                 ((struct Tuple *)get__Vec(*self->impl, i))->items[0]);
+            free(((struct Tuple *)get__Vec(*self->impl, i))->items[1]);
+            FREE(Tuple, get__Vec(*self->impl, i));
+        }
 
         FREE(Vec, self->impl);
     }
@@ -3051,8 +3083,12 @@ __free__TraitDecl(struct TraitDecl *self)
     }
 
     if (self->inh) {
-        for (Usize i = len__Vec(*self->inh); i--;)
-            FREE(DataTypeAll, get__Vec(*self->inh, i));
+        for (Usize i = len__Vec(*self->inh); i--;) {
+            FREE(DataTypeAll,
+                 ((struct Tuple *)get__Vec(*self->inh, i))->items[0]);
+            free(((struct Tuple *)get__Vec(*self->inh, i))->items[1]);
+            FREE(Tuple, get__Vec(*self->inh, i));
+        }
 
         FREE(Vec, self->inh);
     }
