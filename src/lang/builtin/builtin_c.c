@@ -43,6 +43,10 @@ static struct Builtin *
 Load_Optional_module();
 static struct Builtin *
 Load_Ptr_module();
+static struct Builtin *
+Load_Tuple_module();
+static struct Builtin *
+Load_Array_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
 
@@ -5870,11 +5874,114 @@ Load_Ptr_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ptr", items));
 }
 
+static struct Builtin *
+Load_Tuple_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          3,
+          NEW(DataTypeTuple,
+              init__Vec(
+                sizeof(struct DataType),
+                1,
+                NEW(DataTypeCustom,
+                    init__Vec(sizeof(struct String), 1, from__String("T...")),
+                    NULL))),
+          NEW(DataTypeTuple,
+              init__Vec(
+                sizeof(struct DataType),
+                1,
+                NEW(DataTypeCustom,
+                    init__Vec(sizeof(struct String), 1, from__String("T...")),
+                    NULL))),
+          NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          3,
+          NEW(DataTypeTuple,
+              init__Vec(
+                sizeof(struct DataType),
+                1,
+                NEW(DataTypeCustom,
+                    init__Vec(sizeof(struct String), 1, from__String("T...")),
+                    NULL))),
+          NEW(DataTypeTuple,
+              init__Vec(
+                sizeof(struct DataType),
+                1,
+                NEW(DataTypeCustom,
+                    init__Vec(sizeof(struct String), 1, from__String("T...")),
+                    NULL))),
+          NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Tuple", items));
+}
+
+static struct Builtin *
+Load_Array_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(3,
+               NEW(DataTypeArray,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL),
+                   NULL),
+               NEW(DataTypeArray,
+                   NEW(DataTypeCustom,
+                       init__Vec(sizeof(struct String), 1, from__String("T")),
+                       NULL),
+                   NULL),
+               NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataType));
+
+        PARAMS(
+          3,
+          NEW(DataTypeArray,
+              NEW(DataTypeCustom,
+                  init__Vec(sizeof(struct String), 1, from__String("T...")),
+                  NULL),
+              NULL),
+          NEW(DataTypeArray,
+              NEW(DataTypeCustom,
+                  init__Vec(sizeof(struct String), 1, from__String("T...")),
+                  NULL),
+              NULL),
+          NEW(DataType, DataTypeKindBool));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Array", items));
+}
+
 struct Vec *
 Load_C_builtins()
 {
     return init__Vec(sizeof(struct Builtin),
-                     19,
+                     21,
                      Load_Int8_module(),
                      Load_Int16_module(),
                      Load_Int32_module(),
@@ -5893,5 +6000,7 @@ Load_C_builtins()
                      Load_Isize_module(),
                      Load_Usize_module(),
                      Load_Optional_module(),
-                     Load_Ptr_module());
+                     Load_Ptr_module(),
+                     Load_Tuple_module(),
+                     Load_Array_module());
 }
