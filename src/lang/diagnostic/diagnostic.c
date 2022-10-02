@@ -273,12 +273,17 @@ lily_error_to_string(struct LilyError err)
             return from__String("unknown doc flag");
         case LilyErrorExpectedCharacterInImportValue:
             return from__String("expected character in import value");
-		case LilyErrorEmptyImportValue:
-			return from__String("empty import value");
-		case LilyErrorNotExpectedImportValue:
-			return from__String("not expected import value");
-		case LilyErrorDependencyCycleOnImportValue:
-			return from__String("dependency cycle on import value");
+        case LilyErrorEmptyImportValue:
+            return from__String("empty import value");
+        case LilyErrorNotExpectedImportValue:
+            return from__String("not expected import value");
+        case LilyErrorDependencyCycleOnImportValue:
+            return from__String("dependency cycle on import value");
+        case LilyErrorExpectedFinalAccessInImportValue:
+            return from__String("expected final access in import value");
+        case LilyErrorImportValueAccessIsNotFound:
+            return from__String(
+              "import value access is not found in the specified path");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -439,12 +444,16 @@ get_code_of_lily_error(struct LilyError err)
             return "0066";
         case LilyErrorExpectedCharacterInImportValue:
             return "0067";
-		case LilyErrorEmptyImportValue:
-			return "0068";
-		case LilyErrorNotExpectedImportValue:
-			return "0069";
-		case LilyErrorDependencyCycleOnImportValue:
-			return "0070";
+        case LilyErrorEmptyImportValue:
+            return "0068";
+        case LilyErrorNotExpectedImportValue:
+            return "0069";
+        case LilyErrorDependencyCycleOnImportValue:
+            return "0070";
+        case LilyErrorExpectedFinalAccessInImportValue:
+            return "0071";
+        case LilyErrorImportValueAccessIsNotFound:
+            return "0072";
         default:
             UNREACHABLE("unknown lily error kind");
     }

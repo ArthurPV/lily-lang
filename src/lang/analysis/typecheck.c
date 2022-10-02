@@ -114,6 +114,14 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                                    struct Option *help);
 static void
 resolve_global_import(struct Typecheck *self);
+static void
+  * // when the import_value pos == 1 it return struct Tuple<struct Decl&,
+    // void&>* and when import_value pos > 1 it return struct SymbolTable&
+  search_access_from_buffer(struct Typecheck *self,
+                            struct SymbolTable *symb,
+                            struct Typecheck *buffer,
+                            struct String *access,
+                            struct Location loc);
 static struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
@@ -206,38 +214,28 @@ static struct Scope *
 search_with_search_module_context(struct Typecheck *self,
                                   struct Vec *name,
                                   struct SearchContext search_module_context);
+static struct ConstantSymbol *
+search_in_consts_from_name(struct Typecheck *self, struct String *name);
 static struct ModuleSymbol *
-search_in_modules_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc);
+search_in_modules_from_name(struct Typecheck *self, struct String *name);
 static struct FunSymbol *
-search_in_funs_from_name(struct Typecheck *self,
-                         struct String *name,
-                         struct Location loc);
+search_in_funs_from_name(struct Typecheck *self, struct String *name);
+static struct AliasSymbol *
+search_in_aliases_from_name(struct Typecheck *self, struct String *name);
 static struct EnumSymbol *
-search_in_enums_from_name(struct Typecheck *self,
-                          struct String *name,
-                          struct Location loc);
+search_in_enums_from_name(struct Typecheck *self, struct String *name);
 static struct RecordSymbol *
-search_in_records_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc);
+search_in_records_from_name(struct Typecheck *self, struct String *name);
 static struct EnumObjSymbol *
-search_in_enums_obj_from_name(struct Typecheck *self,
-                              struct String *name,
-                              struct Location loc);
+search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
 static struct RecordObjSymbol *
-search_in_records_obj_from_name(struct Typecheck *self,
-                                struct String *name,
-                                struct Location loc);
+search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
 static struct ClassSymbol *
-search_in_classes_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc);
+search_in_classes_from_name(struct Typecheck *self, struct String *name);
 static struct TraitSymbol *
-search_in_traits_from_name(struct Typecheck *self,
-                           struct String *name,
-                           struct Location loc);
+search_in_traits_from_name(struct Typecheck *self, struct String *name);
+static struct ErrorSymbol *
+search_in_errors_from_name(struct Typecheck *self, struct String *name);
 static struct SymbolTable *
 search_module_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
@@ -336,7 +334,7 @@ __new__Typecheck(struct Parser parser)
         .parser = parser,
         .decl =
           len__Vec(*parser.decls) == 0 ? NULL : get__Vec(*parser.decls, 0),
-        .buffer = NEW(Vec, sizeof(struct Typecheck)),
+        .buffers = NEW(Vec, sizeof(struct Typecheck)),
         .builtins = Load_C_builtins(),
         .import_values = NEW(Vec, sizeof(struct SymbolTable)),
         .funs = NULL,
@@ -371,12 +369,12 @@ run__Typecheck(struct Typecheck *self, struct Vec *primary_buffer)
 void
 __free__Typecheck(struct Typecheck self)
 {
-    for (Usize i = len__Vec(*self.buffer); i--;) {
-        FREE(Typecheck, *(struct Typecheck *)get__Vec(*self.buffer, i));
-        free(get__Vec(*self.buffer, i));
+    for (Usize i = len__Vec(*self.buffers); i--;) {
+        FREE(Typecheck, *(struct Typecheck *)get__Vec(*self.buffers, i));
+        free(get__Vec(*self.buffers, i));
     }
 
-    FREE(Vec, self.buffer);
+    FREE(Vec, self.buffers);
 
     for (Usize i = len__Vec(*self.builtins); i--;)
         FREE(BuiltinAll, get__Vec(*self.builtins, i));
@@ -551,6 +549,198 @@ resolve_global_import(struct Typecheck *self)
                          ((struct Decl *)get__Vec(*imports, i))->value.import));
 }
 
+static void *
+search_access_from_buffer(struct Typecheck *self,
+                          struct SymbolTable *symb,
+                          struct Typecheck *buffer,
+                          struct String *access,
+                          struct Location loc)
+{
+    if (buffer) {
+        struct Decl *decl = NULL;
+        void *symb = NULL;
+
+        for (Usize i = len__Vec(*buffer->parser.decls); i--;) {
+            if (eq__String(access,
+                           get_name__Decl(get__Vec(*buffer->parser.decls, i)),
+                           false)) {
+                decl = get__Vec(*buffer->parser.decls, i);
+
+                if (decl->kind != DeclKindTag)
+                    break;
+                else
+                    decl = NULL;
+            }
+        }
+
+        if (!decl) {
+            assert(0 && "error");
+            SUMMARY();
+        }
+
+        switch (decl->kind) {
+            case DeclKindFun:
+                symb = search_in_funs_from_name(buffer, access);
+
+                break;
+            case DeclKindConstant:
+                symb = search_in_consts_from_name(buffer, access);
+
+                break;
+            case DeclKindModule:
+                symb = search_in_modules_from_name(buffer, access);
+
+                break;
+            case DeclKindAlias:
+                symb = search_in_aliases_from_name(buffer, access);
+
+                break;
+            case DeclKindEnum:
+                if (decl->value.enum_->is_object)
+                    symb = search_in_enums_obj_from_name(buffer, access);
+                else
+                    symb = search_in_enums_from_name(buffer, access);
+
+                break;
+            case DeclKindRecord:
+                if (decl->value.record->is_object)
+                    symb = search_in_records_obj_from_name(buffer, access);
+                else
+                    symb = search_in_records_from_name(buffer, access);
+
+                break;
+            case DeclKindError:
+                symb = search_in_errors_from_name(buffer, access);
+
+                break;
+            case DeclKindClass:
+                symb = search_in_classes_from_name(buffer, access);
+
+                break;
+            case DeclKindTrait:
+                symb = search_in_traits_from_name(buffer, access);
+
+                break;
+            default:
+                UNREACHABLE("it's impossible to found this decl kind");
+        }
+
+        return NEW(Tuple, 2, decl, symb);
+    } else if (symb) {
+#define ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND()                         \
+    {                                                                  \
+        struct Diagnostic *error =                                     \
+          NEW(DiagnosticWithErrTypecheck,                              \
+              self,                                                    \
+              NEW(LilyError, LilyErrorImportValueAccessIsNotFound),    \
+              loc,                                                     \
+              from__String(""),                                        \
+              Some(format("remove the access named: `{S}`", access))); \
+                                                                       \
+        emit__Diagnostic(error);                                       \
+    }
+
+        switch (symb->kind) {
+            case SymbolTableKindModule:
+                for (Usize i = len__Vec(*symb->value.module->body); i--;) {
+                    if (eq__String(get_name__SymbolTable(
+                                     get__Vec(*symb->value.module->body, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.module->body, i);
+                }
+
+                ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND();
+
+                return NULL;
+            case SymbolTableKindEnum:
+                for (Usize i = len__Vec(*symb->value.enum_->variants); i--;) {
+                    if (eq__String(get_name__SymbolTable(
+                                     get__Vec(*symb->value.enum_->variants, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.enum_->variants, i);
+                }
+
+                ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND();
+
+                return NULL;
+            case SymbolTableKindClass:
+                for (Usize i = len__Vec(*symb->value.class->body); i--;) {
+                    if (eq__String(get_name__SymbolTable(
+                                     get__Vec(*symb->value.class->body, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.class->body, i);
+                }
+
+                ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND();
+
+                return NULL;
+            case SymbolTableKindRecordObj:
+                for (Usize i = len__Vec(*symb->value.record_obj->attached);
+                     i--;) {
+                    if (eq__String(get_name__SymbolTable(get__Vec(
+                                     *symb->value.record_obj->attached, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.record_obj->attached, i);
+                }
+
+                ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND();
+
+                return NULL;
+            case SymbolTableKindEnumObj:
+                for (Usize i = len__Vec(*symb->value.enum_obj->variants);
+                     i--;) {
+                    if (eq__String(get_name__SymbolTable(get__Vec(
+                                     *symb->value.enum_obj->variants, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.enum_obj->variants, i);
+                }
+
+                for (Usize i = len__Vec(*symb->value.enum_obj->attached);
+                     i--;) {
+                    if (eq__String(get_name__SymbolTable(get__Vec(
+                                     *symb->value.enum_obj->attached, i)),
+                                   access,
+                                   false))
+                        return get__Vec(*symb->value.enum_obj->attached, i);
+                }
+
+                ERR_IMPORT_VALUE_ACCESS_IS_NOT_FOUND();
+
+                return NULL;
+            case SymbolTableKindFun:
+            case SymbolTableKindConstant:
+            case SymbolTableKindAlias:
+            case SymbolTableKindRecord:
+            case SymbolTableKindError:
+            case SymbolTableKindTrait:
+            case SymbolTableKindVariant:
+            case SymbolTableKindProperty:
+            case SymbolTableKindMethod: {
+                struct Diagnostic *error =
+                  NEW(DiagnosticWithErrTypecheck,
+                      self,
+                      NEW(LilyError, LilyErrorExpectedFinalAccessInImportValue),
+                      loc,
+                      from__String(""),
+                      Some(from__String(
+                        "remove the last access of this import value")));
+
+                emit__Diagnostic(error);
+
+                return NULL;
+            }
+            default:
+                UNREACHABLE("");
+        }
+    } else
+        UNREACHABLE("symb and buffer dont't be equal to NULL in the same time");
+}
+
 static struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
@@ -558,6 +748,7 @@ resolve_import(struct Typecheck *self,
 {
     struct String *path = NULL;
     Str path_str = NULL;
+    struct Vec *import_decls = NEW(Vec, sizeof(struct Decl));
 
     switch (((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, 0))
               ->kind) {
@@ -645,7 +836,7 @@ resolve_import(struct Typecheck *self,
         }
     }
 
-	// This error is fatal
+    // This error is fatal
     if (!strcmp(path_str, self->parser.parse_block.scanner.src->file.name)) {
         struct Diagnostic *error =
           NEW(DiagnosticWithErrTypecheck,
@@ -675,22 +866,136 @@ resolve_import(struct Typecheck *self,
 
     struct Typecheck tc = NEW(Typecheck, parser);
 
-    run__Typecheck(&tc, self->buffer);
+    run__Typecheck(&tc, self->buffers);
 
     struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
 
     memcpy(tc_copy, &tc, sizeof(struct Typecheck));
-    push__Vec(self->buffer, tc_copy);
+    push__Vec(self->buffers, tc_copy);
 
     if (path)
         FREE(String, path);
 
     FREE(Typecheck, tc);
 
+    struct SymbolTable *current_symb = NULL;
+
     for (Usize i = 1; i < len__Vec(*import_stmt->import_value); i++) {
+        switch (
+          ((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, i))
+            ->kind) {
+            case ImportStmtValueKindAccess: {
+                if (i == 1) {
+                    struct Tuple *res = search_access_from_buffer(
+                      self,
+                      NULL,
+                      tc_copy,
+                      ((struct ImportStmtValue *)get__Vec(
+                         *import_stmt->import_value, i))
+                        ->value.access,
+                      import_loc);
+
+                    struct SymbolTable *symb = NULL;
+
+                    switch (((struct Decl *)res->items[0])->kind) {
+                        case DeclKindFun:
+                            symb = NEW(SymbolTableFun, res->items[1]);
+
+                            break;
+                        case DeclKindConstant:
+                            symb = NEW(SymbolTableConstant, res->items[1]);
+
+                            break;
+                        case DeclKindModule:
+                            symb = NEW(SymbolTableModule, res->items[1]);
+
+                            break;
+                        case DeclKindAlias:
+                            symb = NEW(SymbolTableAlias, res->items[1]);
+
+                            break;
+                        case DeclKindRecord:
+                            if (((struct Decl *)res->items[0])
+                                  ->value.record->is_object)
+                                symb = NEW(SymbolTableRecordObj, res->items[1]);
+                            else
+                                symb = NEW(SymbolTableRecord, res->items[1]);
+
+                            break;
+                        case DeclKindEnum:
+                            if (((struct Decl *)res->items[0])
+                                  ->value.enum_->is_object)
+                                symb = NEW(SymbolTableEnumObj, res->items[1]);
+                            else
+                                symb = NEW(SymbolTableEnum, res->items[1]);
+
+                            break;
+                        case DeclKindError:
+                            symb = NEW(SymbolTableError, res->items[1]);
+
+                            break;
+                        case DeclKindClass:
+                            symb = NEW(SymbolTableClass, res->items[1]);
+
+                            break;
+                        case DeclKindTrait:
+                            symb = NEW(SymbolTableTrait, res->items[1]);
+
+                            break;
+                        default:
+                            UNREACHABLE("");
+                    }
+
+                    if (!symb)
+                        goto exit;
+
+                    if (++i < len__Vec(*import_stmt->import_value)) {
+                        current_symb = search_access_from_buffer(
+                          self,
+                          symb,
+                          NULL,
+                          ((struct ImportStmtValue *)get__Vec(
+                             *import_stmt->import_value, i))
+                            ->value.access,
+                          import_loc);
+
+                        free(symb);
+                    } else
+                        current_symb = symb;
+                } else {
+                    current_symb = search_access_from_buffer(
+                      self,
+                      current_symb,
+                      NULL,
+                      ((struct ImportStmtValue *)get__Vec(
+                         *import_stmt->import_value, i))
+                        ->value.access,
+                      import_loc);
+                }
+            }
+            case ImportStmtValueKindSelector:
+                TODO("selector");
+            default:
+                UNREACHABLE(
+                  "found @core, @std or @builtin import value is impossible");
+        }
+
+        if (!current_symb)
+            goto exit;
     }
 
 exit : {
+    if ((len__Vec(*import_stmt->import_value) == 2 ||
+         (len__Vec(*import_stmt->import_value) == 3 &&
+          ((struct ImportStmtValue *)get__Vec(
+             *import_stmt->import_value,
+             len__Vec(*import_stmt->import_value) - 1))
+              ->kind == ImportStmtValueKindWildcard)) &&
+        current_symb) {
+        free(current_symb);
+    }
+
+    return import_decls;
 }
 }
 
@@ -2460,10 +2765,28 @@ search_from_access(struct Typecheck *self,
     }
 }
 
+static struct ConstantSymbol *
+search_in_consts_from_name(struct Typecheck *self, struct String *name)
+{
+    if (!self->consts)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->consts); i--;) {
+        if (eq__String(
+              name,
+              ((struct ConstantSymbol *)get__Vec(*self->consts, i))->name,
+              false)) {
+            check_constant(self, get__Vec(*self->consts, i), i, NULL);
+
+            return get__Vec(*self->consts, i);
+        }
+    }
+
+    return NULL;
+}
+
 static struct ModuleSymbol *
-search_in_modules_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc)
+search_in_modules_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->modules)
         return NULL;
@@ -2483,9 +2806,7 @@ search_in_modules_from_name(struct Typecheck *self,
 }
 
 static struct FunSymbol *
-search_in_funs_from_name(struct Typecheck *self,
-                         struct String *name,
-                         struct Location loc)
+search_in_funs_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->modules)
         return NULL;
@@ -2503,10 +2824,28 @@ search_in_funs_from_name(struct Typecheck *self,
     return NULL;
 }
 
+static struct AliasSymbol *
+search_in_aliases_from_name(struct Typecheck *self, struct String *name)
+{
+    if (!self->aliases)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->aliases); i--;) {
+        if (eq__String(
+              name,
+              ((struct AliasSymbol *)get__Vec(*self->aliases, i))->name,
+              false)) {
+            check_alias(self, get__Vec(*self->aliases, i), i, NULL);
+
+            return get__Vec(*self->aliases, i);
+        }
+    }
+
+    return NULL;
+}
+
 static struct EnumSymbol *
-search_in_enums_from_name(struct Typecheck *self,
-                          struct String *name,
-                          struct Location loc)
+search_in_enums_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->enums)
         return NULL;
@@ -2525,9 +2864,7 @@ search_in_enums_from_name(struct Typecheck *self,
 }
 
 static struct RecordSymbol *
-search_in_records_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc)
+search_in_records_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->records)
         return NULL;
@@ -2547,9 +2884,7 @@ search_in_records_from_name(struct Typecheck *self,
 }
 
 static struct EnumObjSymbol *
-search_in_enums_obj_from_name(struct Typecheck *self,
-                              struct String *name,
-                              struct Location loc)
+search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->enums_obj)
         return NULL;
@@ -2569,9 +2904,7 @@ search_in_enums_obj_from_name(struct Typecheck *self,
 }
 
 static struct RecordObjSymbol *
-search_in_records_obj_from_name(struct Typecheck *self,
-                                struct String *name,
-                                struct Location loc)
+search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->records_obj)
         return NULL;
@@ -2591,9 +2924,7 @@ search_in_records_obj_from_name(struct Typecheck *self,
 }
 
 static struct ClassSymbol *
-search_in_classes_from_name(struct Typecheck *self,
-                            struct String *name,
-                            struct Location loc)
+search_in_classes_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->classes)
         return NULL;
@@ -2613,9 +2944,7 @@ search_in_classes_from_name(struct Typecheck *self,
 }
 
 static struct TraitSymbol *
-search_in_traits_from_name(struct Typecheck *self,
-                           struct String *name,
-                           struct Location loc)
+search_in_traits_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->traits)
         return NULL;
@@ -2627,6 +2956,25 @@ search_in_traits_from_name(struct Typecheck *self,
             check_trait(self, get__Vec(*self->traits, i), i, NULL);
 
             return get__Vec(*self->traits, i);
+        }
+    }
+
+    return NULL;
+}
+
+static struct ErrorSymbol *
+search_in_errors_from_name(struct Typecheck *self, struct String *name)
+{
+    if (!self->errors)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->errors); i--;) {
+        if (eq__String(name,
+                       ((struct ErrorSymbol *)get__Vec(*self->errors, i))->name,
+                       false)) {
+            check_error(self, get__Vec(*self->errors, i), i, NULL);
+
+            return get__Vec(*self->errors, i);
         }
     }
 
@@ -2933,16 +3281,14 @@ check_data_type(
                           self,
                           get__Vec(
                             (*(struct Vec *)data_type->value.custom->items[0]),
-                            0),
-                          data_type_loc);
+                            0));
                         struct RecordSymbol *record =
                           !enum_
                             ? search_in_records_from_name(
                                 self,
                                 get__Vec((*(struct Vec *)
                                              data_type->value.custom->items[0]),
-                                         0),
-                                data_type_loc)
+                                         0))
                             : NULL;
                         struct EnumObjSymbol *enum_obj =
                           !record && !enum_
@@ -2950,8 +3296,7 @@ check_data_type(
                                 self,
                                 get__Vec((*(struct Vec *)
                                              data_type->value.custom->items[0]),
-                                         0),
-                                data_type_loc)
+                                         0))
                             : NULL;
                         struct RecordObjSymbol *record_obj =
                           !enum_ && !record && !enum_obj
@@ -2959,8 +3304,7 @@ check_data_type(
                                 self,
                                 get__Vec((*(struct Vec *)
                                              data_type->value.custom->items[0]),
-                                         0),
-                                data_type_loc)
+                                         0))
                             : NULL;
                         struct ClassSymbol *class =
                           !enum_ && !record && !enum_obj && !record_obj
@@ -2968,8 +3312,7 @@ check_data_type(
                                 self,
                                 get__Vec((*(struct Vec *)
                                              data_type->value.custom->items[0]),
-                                         0),
-                                data_type_loc)
+                                         0))
                             : NULL;
                         struct TraitSymbol *trait =
                           !enum_ && !record && !enum_obj && !record_obj &&
@@ -2978,8 +3321,7 @@ check_data_type(
                                 self,
                                 get__Vec((*(struct Vec *)
                                              data_type->value.custom->items[0]),
-                                         0),
-                                data_type_loc)
+                                         0))
                             : NULL;
                         struct Vec *generic_params = NULL;
 

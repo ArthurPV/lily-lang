@@ -1519,6 +1519,24 @@ __new__SymbolTableField(struct FieldRecordSymbol *field)
     return self;
 }
 
+struct SymbolTable *
+__new__SymbolTableProperty(struct PropertySymbol *property)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindProperty;
+    self->value.property = property;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableMethod(struct MethodSymbol *method)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindMethod;
+    self->value.method = method;
+    return self;
+}
+
 struct String *
 get_name__SymbolTable(struct SymbolTable *self)
 {
@@ -1627,6 +1645,12 @@ __free__SymbolTableAll(struct SymbolTable *self)
             break;
         case SymbolTableKindField:
             FREE(SymbolTableField, self);
+            break;
+        case SymbolTableKindProperty:
+            FREE(SymbolTableProperty, self);
+            break;
+        case SymbolTableKindMethod:
+            FREE(SymbolTableMethod, self);
             break;
         default:
             UNREACHABLE("unknown symbol table kind");

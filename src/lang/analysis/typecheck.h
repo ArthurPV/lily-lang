@@ -31,7 +31,7 @@ typedef struct Typecheck
 {
     struct Parser parser;
     struct Decl *decl;
-    struct Vec *buffer;        // struct Vec<struct Typecheck*>*
+    struct Vec *buffers;       // struct Vec<struct Typecheck*>*
     struct Vec *builtins;      // struct Vec<struct Builtin*>*
     struct Vec *import_values; // struct Vec<struct SymbolTable*>*
     struct Vec *funs;          // struct Vec<struct FunSymbol*>*

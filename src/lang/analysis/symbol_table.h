@@ -2145,7 +2145,9 @@ enum SymbolTableKind
     SymbolTableKindExpr,
     SymbolTableKindStmt,
     SymbolTableKindVariant,
-    SymbolTableKindField
+    SymbolTableKindField,
+	SymbolTableKindProperty,
+	SymbolTableKindMethod
 };
 
 typedef struct SymbolTable
@@ -2169,6 +2171,8 @@ typedef struct SymbolTable
         struct StmtSymbol stmt;
         struct VariantEnumSymbol *variant;
         struct FieldRecordSymbol *field;
+		struct PropertySymbol *property;
+		struct MethodSymbol *method;
     } value;
 } SymbolTable;
 
@@ -2276,6 +2280,20 @@ __new__SymbolTableVariant(struct VariantEnumSymbol *variant);
  */
 struct SymbolTable *
 __new__SymbolTableField(struct FieldRecordSymbol *field);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Property variant).
+ */
+struct SymbolTable *
+__new__SymbolTableProperty(struct PropertySymbol *property);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Method variant).
+ */
+struct SymbolTable *
+__new__SymbolTableMethod(struct MethodSymbol *method);
 
 /**
  *
@@ -2434,6 +2452,10 @@ __free__SymbolTableStmt(struct SymbolTable *self)
     free(self);
 }
 
+/**
+ *
+ * @brief Free the SymbolTable type (Variant variant).
+ */
 inline void
 __free__SymbolTableVariant(struct SymbolTable *self)
 {
@@ -2441,10 +2463,36 @@ __free__SymbolTableVariant(struct SymbolTable *self)
     free(self);
 }
 
+/**
+ *
+ * @brief Free the SymbolTable type (Field variant).
+ */
 inline void
 __free__SymbolTableField(struct SymbolTable *self)
 {
     FREE(FieldRecordSymbol, self->value.field);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Property variant).
+ */
+inline void
+__free__SymbolTableProperty(struct SymbolTable *self)
+{
+    FREE(PropertySymbol, self->value.property);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the SymbolTable type (Method variant).
+ */
+inline void
+__free__SymbolTableMethod(struct SymbolTable *self)
+{
+    FREE(MethodSymbol, self->value.method);
     free(self);
 }
 
