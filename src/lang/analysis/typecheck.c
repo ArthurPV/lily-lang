@@ -314,7 +314,8 @@ search_in_fun_local_value(struct Vec *local_value, struct String *id);
 static struct Scope *
 search_value_in_function(struct Typecheck *self,
                          struct Vec *local_value,
-                         struct String *id);
+                         struct String *id,
+                         struct Vec *id_access);
 static struct DataTypeSymbol *
 check_if_defined_data_type_is_equal_to_infered_data_type(
   struct Typecheck *self,
@@ -4131,15 +4132,19 @@ search_in_fun_local_value(struct Vec *local_value, struct String *id)
 static struct Scope *
 search_value_in_function(struct Typecheck *self,
                          struct Vec *local_value,
-                         struct String *id)
+                         struct String *id,
+                         struct Vec *id_access)
 {
-    struct Scope *found_local_value =
-      search_in_fun_local_value(local_value, id);
+    if (id) {
+        struct Scope *found_local_value =
+          search_in_fun_local_value(local_value, id);
 
-    if (!found_local_value) {
-        assert(0 && "error");
-    } else if (found_local_value)
-        return found_local_value;
+        if (!found_local_value) {
+            assert(0 && "error");
+        } else if (found_local_value)
+            return found_local_value;
+    } else if (id_access) {
+    }
 
     return NULL;
 }
@@ -4499,18 +4504,68 @@ check_expression(struct Typecheck *self,
         }
         case ExprKindRecordCall:
             TODO("check record call");
-        case ExprKindIdentifier: {
-            struct Scope *value = search_value_in_function(
-              self, local_value, expr->value.identifier);
-
-            TODO("check data_type");
-
-            return NEW(ExprSymbolIdentifier, *expr, value, NULL);
-        }
+        case ExprKindIdentifier:
+            return NEW(ExprSymbolIdentifier,
+                       *expr,
+                       search_value_in_function(
+                         self, local_value, expr->value.identifier, NULL),
+                       infer_expression(self,
+                                        fun,
+                                        expr,
+                                        local_value,
+                                        local_data_type,
+                                        defined_data_type,
+                                        is_return_type));
         case ExprKindIdentifierAccess:
-            TODO("check identifier access");
-        case ExprKindArrayAccess:
-            TODO("check array access");
+            return NEW(
+              ExprSymbolIdentifierAccess,
+              *expr,
+              search_value_in_function(
+                self, local_value, NULL, expr->value.identifier_access),
+              infer_expression(self,
+                               fun,
+                               expr,
+                               local_value,
+                               local_data_type,
+                               defined_data_type,
+                               is_return_type));
+        case ExprKindArrayAccess: {
+            struct Expr *identifier_access_expr =
+              NEW(ExprIdentifierAccess,
+                  copy__Vec(expr->value.array_access.access),
+                  expr->loc);
+            struct DataTypeSymbol *defined_data_type_identifier_access_symb =
+              defined_data_type ? NEW(DataTypeSymbolArray,
+                                      copy__DataTypeSymbol(defined_data_type),
+                                      NULL)
+                                : NEW(DataTypeSymbolArray, NULL, NULL);
+            struct ExprSymbol *identifier_access_symb =
+              check_expression(self,
+                               fun,
+                               identifier_access_expr,
+                               local_value,
+                               local_data_type,
+                               defined_data_type_identifier_access_symb,
+                               is_return_type);
+
+            struct ExprSymbol *res =
+              NEW(ExprSymbolArrayAccess,
+                  *expr,
+                  copy__Scope(identifier_access_symb->value.identifier_access),
+                  infer_expression(self,
+                                   fun,
+                                   expr,
+                                   local_value,
+                                   local_data_type,
+                                   defined_data_type,
+                                   is_return_type));
+
+            FREE(ExprAll, identifier_access_expr);
+            FREE(DataTypeSymbolAll, defined_data_type_identifier_access_symb);
+            FREE(ExprSymbolAll, identifier_access_symb);
+
+            return res;
+        }
         case ExprKindTupleAccess:
             TODO("check tuple access");
         case ExprKindLambda:

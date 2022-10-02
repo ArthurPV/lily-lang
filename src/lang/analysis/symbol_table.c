@@ -296,15 +296,6 @@ __free__RecordCallSymbol(struct RecordCallSymbol self)
 }
 
 void
-__free__ArrayAccessSymbol(struct ArrayAccessSymbol self)
-{
-    for (Usize i = len__Vec(*self.access); i--;)
-        FREE(ExprSymbolAll, get__Vec(*self.access, i));
-
-    FREE(Vec, self.access);
-}
-
-void
 __free__TupleAccessSymbol(struct TupleAccessSymbol self)
 {
     for (Usize i = len__Vec(*self.access); i--;)
@@ -422,7 +413,7 @@ __new__ExprSymbolGlobalAccess(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-                             struct ArrayAccessSymbol array_access,
+                             struct Scope *array_access,
                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));

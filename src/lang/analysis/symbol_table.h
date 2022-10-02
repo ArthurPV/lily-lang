@@ -282,6 +282,7 @@ __free__DataTypeSymbolAll(struct DataTypeSymbol *self);
 inline void
 __free__DataTypeSymbol(struct DataTypeSymbol *self)
 {
+	FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1294,31 +1295,6 @@ __new__RecordCallSymbol(struct Scope id, struct Vec *fields)
 void
 __free__RecordCallSymbol(struct RecordCallSymbol self);
 
-typedef struct ArrayAccessSymbol
-{
-    struct Scope id;
-    struct Vec *access; // struct Vec<struct ExprSymbol*>*
-} ArrayAccessSymbol;
-
-/**
- *
- * @brief Construct the ArrayAccessSymbol type.
- */
-inline struct ArrayAccessSymbol
-__new__ArrayAccessSymbol(struct Scope id, struct Vec *access)
-{
-    struct ArrayAccessSymbol self = { .id = id, .access = access };
-
-    return self;
-}
-
-/**
- *
- * @brief Free the ArrayAccessSymbol type.
- */
-void
-__free__ArrayAccessSymbol(struct ArrayAccessSymbol self);
-
 typedef struct TupleAccessSymbol
 {
     struct Scope id;
@@ -1392,7 +1368,7 @@ typedef struct ExprSymbol
         struct Scope *identifier;
         struct Scope *identifier_access;
         struct Scope *global_access;
-        struct ArrayAccessSymbol array_access;
+        struct Scope *array_access;
         struct TupleAccessSymbol tuple_access;
         struct LambdaSymbol lambda;
         struct Tuple *array; // struct Tuple<struct Vec<struct ExprSymbol*>*,
@@ -1479,7 +1455,7 @@ __new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access, str
  */
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-                             struct ArrayAccessSymbol array_access,
+							 struct Scope *array_access,
 							 struct DataTypeSymbol *data_type);
 
 /**
@@ -1665,7 +1641,7 @@ __free__ExprSymbolGlobalAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 {
-    FREE(ArrayAccessSymbol, self->value.array_access);
+	FREE(Scope, self->value.array_access);
     free(self);
 }
 
