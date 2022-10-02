@@ -164,19 +164,19 @@
     }                                                      \
     next_token(parse_decl);
 
-static void
-get_block(struct ParseBlock *self);
+static struct ParseContext *
+get_block(struct ParseBlock *self, bool in_module);
 static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
 skip_to_next_block(struct ParseBlock *self);
 static struct String *
 get_type_name(struct ParseBlock *self);
-static void
+static struct ParseContext *
 get_type_context(struct ParseBlock *self, bool is_pub);
 static struct String *
 get_object_name(struct ParseBlock *self);
-static void
+static struct ParseContext *
 get_object_context(struct ParseBlock *self, bool is_pub);
 static struct Vec *
 get_generic_params(struct ParseBlock *self);
@@ -243,6 +243,9 @@ get_constant_parse_context(struct ConstantParseContext *self,
 static void
 get_error_parse_context(struct ErrorParseContext *self,
                         struct ParseBlock *parse_block);
+static void
+get_module_parse_context(struct ModuleParseContext *self,
+                         struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -372,8 +375,8 @@ __new__ParseBlock(struct Scanner scanner)
     return self;
 }
 
-static void
-get_block(struct ParseBlock *self)
+static struct ParseContext *
+get_block(struct ParseBlock *self, bool in_module)
 {
     struct Location loc = NEW(Location);
 
@@ -396,10 +399,7 @@ get_block(struct ParseBlock *self)
                                   self->current->loc->s_line,
                                   self->current->loc->s_col);
 
-                    push__Vec(self->blocks,
-                              NEW(ParseContextFun, fun_parse_context, loc));
-
-                    break;
+                    return NEW(ParseContextFun, fun_parse_context, loc);
                 }
 
                 case TokenKindAsyncKw: {
@@ -429,27 +429,32 @@ get_block(struct ParseBlock *self)
                                   self->current->loc->s_line,
                                   self->current->loc->s_col);
 
-                    push__Vec(self->blocks,
-                              NEW(ParseContextFun, fun_parse_context, loc));
-
-                    break;
+                    return NEW(ParseContextFun, fun_parse_context, loc);
                 }
 
                 case TokenKindTypeKw:
-                    get_type_context(self, true);
-                    break;
+                    return get_type_context(self, true);
 
                 case TokenKindObjectKw:
-                    get_object_context(self, true);
-                    break;
+                    return get_object_context(self, true);
 
                 case TokenKindTagKw:
                     TODO("");
                     break;
 
-                case TokenKindErrorKw:
-                    TODO("");
-                    break;
+                case TokenKindErrorKw: {
+                    struct ErrorParseContext error_parse_context =
+                      NEW(ErrorParseContext);
+
+                    error_parse_context.is_pub = true;
+
+                    get_error_parse_context(&error_parse_context, self);
+                    end__Location(&loc,
+                                  self->current->loc->s_line,
+                                  self->current->loc->s_col);
+
+                    return NEW(ParseContextError, error_parse_context, loc);
+                }
 
                 case TokenKindIdentifier: {
                     struct ConstantParseContext constant_parse_context =
@@ -462,11 +467,7 @@ get_block(struct ParseBlock *self)
                                   self->current->loc->s_line,
                                   self->current->loc->s_col);
 
-                    push__Vec(
-                      self->blocks,
-                      NEW(ParseContextConstant, constant_parse_context, loc));
-
-                    break;
+                    return NEW(ParseContextConstant, constant_parse_context, loc);
                 }
 
                 default: {
@@ -483,11 +484,9 @@ get_block(struct ParseBlock *self)
                     emit__Diagnostic(err);
                     skip_to_next_block(self);
 
-                    break;
+                    return NULL;
                 }
             }
-
-            break;
 
         case TokenKindFunKw: {
             struct FunParseContext fun_parse_context = NEW(FunParseContext);
@@ -497,24 +496,33 @@ get_block(struct ParseBlock *self)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextFun, fun_parse_context, loc));
-
-            break;
+            return NEW(ParseContextFun, fun_parse_context, loc);
         }
         case TokenKindTagKw:
             break;
 
         case TokenKindTypeKw:
-            get_type_context(self, false);
-            break;
+            return get_type_context(self, false);
 
         case TokenKindObjectKw:
-            get_object_context(self, false);
-            break;
+            return get_object_context(self, false);
+
+        case TokenKindErrorKw: {
+            struct ErrorParseContext error_parse_context =
+              NEW(ErrorParseContext);
+
+            get_error_parse_context(&error_parse_context, self);
+            end__Location(
+              &loc, self->current->loc->s_line, self->current->loc->s_col);
+
+            return NEW(ParseContextError, error_parse_context, loc);
+        }
 
         case TokenKindBang: {
             next_token_pb(self);
+
+            if (in_module)
+                assert(0 && "error");
 
             if (self->current->kind != TokenKindLHook) {
                 EXPECTED_TOKEN_PB(self, TokenKindLHook, {
@@ -578,7 +586,7 @@ get_block(struct ParseBlock *self)
             next_token_pb(self);
 
         exit : {
-        } break;
+        } return NULL;
         }
 
         case TokenKindIdentifier: {
@@ -591,10 +599,7 @@ get_block(struct ParseBlock *self)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextConstant, constant_parse_context, loc));
-
-            break;
+            return NEW(ParseContextConstant, constant_parse_context, loc);
         }
 
         default: {
@@ -612,7 +617,7 @@ get_block(struct ParseBlock *self)
             emit__Diagnostic(err);
             skip_to_next_block(self);
 
-            break;
+            return NULL;
         }
     }
 }
@@ -627,7 +632,10 @@ run__ParseBlock(struct ParseBlock *self)
     // block
 
     while (self->current->kind != TokenKindEof) {
-        get_block(self);
+        struct ParseContext *block = get_block(self, false);
+
+        if (block != NULL)
+            push__Vec(self->blocks, block);
     }
 }
 
@@ -686,7 +694,7 @@ get_type_name(struct ParseBlock *self)
     return &*self->current->lit;
 }
 
-static void
+static struct ParseContext *
 get_type_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_type_name(self);
@@ -713,13 +721,10 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextEnum, enum_parse_context, loc, false));
-
-            break;
+            return NEW(ParseContextEnum, enum_parse_context, loc, false);
         }
 
-        case TokenKindRecordKw:
+        case TokenKindRecordKw: {
             struct RecordParseContext record_parse_context =
               NEW(RecordParseContext);
 
@@ -732,11 +737,8 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(
-              self->blocks,
-              NEW(ParseContextRecord, record_parse_context, loc, false));
-
-            break;
+            return NEW(ParseContextRecord, record_parse_context, loc, false);
+        }
 
         case TokenKindAliasKw: {
             struct AliasParseContext alias_parse_context =
@@ -751,10 +753,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextAlias, alias_parse_context, loc));
-
-            break;
+            return NEW(ParseContextAlias, alias_parse_context, loc);
         }
 
         default: {
@@ -774,7 +773,9 @@ get_type_context(struct ParseBlock *self, bool is_pub)
 
             skip_to_next_block(self);
 
-            break;
+            FREE(Vec, generic_params);
+
+            return NULL;
         }
     }
 }
@@ -802,7 +803,7 @@ get_object_name(struct ParseBlock *self)
     return &*self->current->lit;
 }
 
-static void
+static struct ParseContext *
 get_object_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_object_name(self);
@@ -930,10 +931,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextEnum, enum_parse_context, loc, true));
-
-            break;
+            return NEW(ParseContextEnum, enum_parse_context, loc, true);
         }
 
         case TokenKindRecordKw: {
@@ -949,10 +947,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextRecord, record_parse_context, loc, true));
-
-            break;
+            return NEW(ParseContextRecord, record_parse_context, loc, true);
         }
 
         case TokenKindTraitKw: {
@@ -969,10 +964,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextTrait, trait_parse_context, loc));
-
-            break;
+            return NEW(ParseContextTrait, trait_parse_context, loc);
         }
 
         case TokenKindClassKw: {
@@ -996,14 +988,15 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             end__Location(
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
-            push__Vec(self->blocks,
-                      NEW(ParseContextClass, class_parse_context, loc));
-
-            break;
+            return NEW(ParseContextClass, class_parse_context, loc);
         }
 
         default:
             assert(0 && "error");
+            FREE(Vec, impl);
+            FREE(Vec, inh);
+            FREE(Vec, generic_params);
+            return NULL;
     }
 }
 
@@ -2318,6 +2311,65 @@ __new__ErrorParseContext()
     return self;
 }
 
+static void
+get_error_parse_context(struct ErrorParseContext *self,
+                        struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    if (parse_block->current->kind != TokenKindIdentifier) {
+        assert(0 && "error");
+    } else
+        self->name = &*parse_block->current->lit;
+
+    next_token_pb(parse_block);
+}
+
+struct ModuleParseContext
+__new__ModuleParseContext()
+{
+    struct ModuleParseContext self = { .is_pub = false,
+                                       .name = NULL,
+                                       .body = NEW(
+                                         Vec, sizeof(struct ParseContext)) };
+
+    return self;
+}
+
+static void
+get_module_parse_context(struct ModuleParseContext *self,
+                         struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    if (parse_block->current->kind != TokenKindIdentifier) {
+        assert(0 && "error");
+    } else
+        self->name = &*parse_block->current->lit;
+
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        assert(0 && "error");
+    });
+
+    while (parse_block->current->kind != TokenKindEq) {
+        struct ParseContext *block = get_block(self, true);
+
+        if (block != NULL)
+            push__Vec(self->body, block);
+    }
+
+    VERIFY_EOF(parse_block, false, "`end`");
+}
+
+void
+__free__ModuleParseContext(struct ModuleParseContext self)
+{
+    for (Usize i = 0; i < len__Vec(*self.body); i++)
+        FREE(ParseContextAll, get__Vec(*self.body, i));
+
+    FREE(Vec, self.body);
+}
+
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -3202,9 +3254,8 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     struct Expr *expr = NULL;
     struct Location loc = NEW(Location);
 
-    start__Location(&loc,
-                    parse_decl->current->loc->s_line,
-                    parse_decl->current->loc->s_col);
+    start__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
     int *unary_op = parse_unary_op(*parse_decl);
 
@@ -3217,8 +3268,9 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
-        return NEW(
-          ExprUnaryOp, NEW(UnaryOp, (enum UnaryOpKind)(UPtr)(unary_op), right), loc);
+        return NEW(ExprUnaryOp,
+                   NEW(UnaryOp, (enum UnaryOpKind)(UPtr)(unary_op), right),
+                   loc);
     }
 
     next_token(parse_decl);
@@ -3439,9 +3491,10 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
-        return NEW(ExprBinaryOp,
-                   NEW(BinaryOp, (enum BinaryOpKind)(UPtr)(binary_op), expr, right),
-                   loc);
+        return NEW(
+          ExprBinaryOp,
+          NEW(BinaryOp, (enum BinaryOpKind)(UPtr)(binary_op), expr, right),
+          loc);
     }
 
     return expr;

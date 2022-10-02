@@ -21,7 +21,7 @@ enum Visibility
 {
     VisibilityPublic,
     VisibilityPrivate
-} Visibility;
+};
 
 typedef struct FunSymbol
 {
@@ -41,7 +41,7 @@ typedef struct FunSymbol
  *
  * @brief Construct the FunSymbol type.
  */
-struct FunSymbol
+struct FunSymbol *
 __new__FunSymbol(struct Decl *fun_decl, const Str filename, Usize id);
 
 /**
@@ -49,7 +49,7 @@ __new__FunSymbol(struct Decl *fun_decl, const Str filename, Usize id);
  * @brief Free the FunSymbol type.
  */
 void
-__free__FunSymbol(struct FunSymbol self);
+__free__FunSymbol(struct FunSymbol *self);
 
 typedef struct UnaryOpSymbol
 {
@@ -166,7 +166,7 @@ typedef struct SymbolTable
 
     union
     {
-        struct FunSymbol fun;
+        struct FunSymbol *fun;
     } value;
 } SymbolTable;
 
@@ -175,7 +175,7 @@ typedef struct SymbolTable
  * @brief Construct the SymbolTable type (Fun variant).
  */
 struct SymbolTable *
-__new__SymbolTableFun(struct FunSymbol fun, struct Decl *fun_decl);
+__new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl);
 
 /**
  *

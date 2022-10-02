@@ -14,6 +14,7 @@
 #include <lang/scanner/token.h>
 #include <lang/scanner/scanner.h>
 #include <lang/parser/parser.h>
+#include <lang/analysis/typecheck.h>
 
 int main() {
 //    struct Vec *v = NEW(Vec, sizeof(int*));
@@ -346,6 +347,8 @@ int main() {
     struct Parser parser = NEW(Parser, parse_block);
 
     run__Parser(&parser);
+
+    struct Typecheck tc = NEW(Typecheck, parser);
     // run_without_multi_thread__Parser(&parser);
 
 //    int *v11_temp[9] = {(int*)1, (int*)2, (int*)3, (int*)4, (int*)5, (int*)6, (int*)7, (int*)8};
@@ -392,6 +395,6 @@ int main() {
 //    FREE(Vec, s15_splited);
 //    FREE(String, s16);
 //    FREE(Vec, st);
-    FREE(Parser, parser);
+    FREE(Typecheck, tc);
 //    FREE(Vec, v11);
 }

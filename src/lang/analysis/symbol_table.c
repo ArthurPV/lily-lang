@@ -8,7 +8,7 @@ __new__Scope(const Str filename, Usize id)
     return self;
 }
 
-struct FunSymbol
+struct FunSymbol *
 __new__FunSymbol(struct Decl *fun_decl, const Str filename, Usize id)
 {
     enum Visibility v;
@@ -18,27 +18,27 @@ __new__FunSymbol(struct Decl *fun_decl, const Str filename, Usize id)
     else
         v = VisibilityPrivate;
 
-    struct FunSymbol self = { .name = &*fun_decl->value.fun->name,
-                              .taged_type =
-                                NEW(Vec, sizeof(struct SymbolTable)),
-                              .generic_params =
-                                &*fun_decl->value.fun->generic_params,
-                              .params = &*fun_decl->value.fun->params,
-                              .visibility = v,
-                              .is_async = fun_decl->value.fun->is_async,
-                              .return_type = fun_decl->value.fun->return_type,
-                              .body = NEW(Vec, sizeof(struct SymbolTable)),
-                              .scope = NEW(Scope, filename, id),
-                              .fun_decl = &*fun_decl };
+    struct FunSymbol *self = malloc(sizeof(struct FunSymbol));
+    self->name = &*fun_decl->value.fun->name;
+    self->taged_type = NEW(Vec, sizeof(struct SymbolTable));
+    self->generic_params = &*fun_decl->value.fun->generic_params;
+    self->params = &*fun_decl->value.fun->params;
+    self->visibility = v;
+    self->is_async = fun_decl->value.fun->is_async;
+    self->return_type = fun_decl->value.fun->return_type;
+    self->body = NEW(Vec, sizeof(struct SymbolTable));
+    self->scope = NEW(Scope, filename, id);
+    self->fun_decl = &*fun_decl;
 
     return self;
 }
 
 void
-__free__FunSymbol(struct FunSymbol self)
+__free__FunSymbol(struct FunSymbol *self)
 {
-    FREE(Vec, self.taged_type);
-    FREE(Vec, self.body);
+    FREE(Vec, self->taged_type);
+    FREE(Vec, self->body);
+    free(self);
 }
 
 struct UnaryOpSymbol
@@ -108,7 +108,7 @@ __free__ExprSymbolAll(struct ExprSymbol self)
 }
 
 struct SymbolTable *
-__new__SymbolTableFun(struct FunSymbol fun, struct Decl *fun_decl)
+__new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl)
 {
     struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
     self->kind = SymbolTableKindFun, self->loc = fun_decl->loc;

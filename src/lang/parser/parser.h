@@ -310,6 +310,27 @@ typedef struct ErrorParseContext
 struct ErrorParseContext
 __new__ErrorParseContext();
 
+typedef struct ModuleParseContext
+{
+    bool is_pub;
+    struct String *name; // struct String&
+    struct Vec *body;    // struct Vec<struct ParseContext*>*
+} ModuleParseContext;
+
+/**
+ *
+ * @brief Construct the ModuleParseContext type.
+ */
+struct ModuleParseContext
+__new__ModuleParseContext();
+
+/**
+ *
+ * @brief Free the ModuleParseContext type.
+ */
+void
+__free__ModuleParseContext(struct ModuleParseContext self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,
