@@ -4959,7 +4959,7 @@ parse_fun_declaration(struct Parser *self,
     struct Vec *tags = NULL;
     struct Vec *generic_params = NULL;
     struct Vec *params = NULL;
-    struct DataType *return_type = NULL;
+    struct Tuple *return_type = NULL;
     struct Vec *body = NULL;
 
     if (fun_parse_context.has_tags) {
@@ -4983,8 +4983,19 @@ parse_fun_declaration(struct Parser *self,
 
     if (fun_parse_context.has_return_type) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.return_type);
+        struct Location loc = NEW(Location);
+        struct DataType *dt = NULL;
 
-        return_type = parse_data_type(*self, &parse);
+        start__Location(&loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+        dt = parse_data_type(*self, &parse);
+
+        if (len__Vec(*parse.tokens) == 1)
+            end__Location(&loc, parse.current->loc->e_line, parse.current->loc->e_col);
+        else
+            end__Location(&loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+        return_type = NEW(Tuple, 2, dt, copy__Location(&loc));
 
         if (parse.pos != len__Vec(*parse.tokens)) {
             struct Diagnostic *err =

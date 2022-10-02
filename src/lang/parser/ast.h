@@ -1954,7 +1954,7 @@ typedef struct FunDecl
       *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *params;         // struct Vec<struct FunParam*>*
-    struct DataType *return_type;
+    struct Tuple *return_type; // struct Tuple<struct DataType*, struct Location*>*
     struct Vec *body; // struct Vec<struct FunBodyItem*>*
     bool is_pub;
     bool is_async;
@@ -1969,7 +1969,7 @@ __new__FunDecl(struct String *name,
                struct Vec *tags,
                struct Vec *generic_params,
                struct Vec *params,
-               struct DataType *return_type,
+               struct Tuple *return_type,
                struct Vec *body,
                bool is_pub,
                bool is_async);

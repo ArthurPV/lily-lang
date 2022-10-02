@@ -545,7 +545,17 @@ check_symbols(struct Typecheck *self)
                 }
 
                 if (fun_decl->return_type != NULL) {
-                    TODO("return type");
+                    struct DataTypeSymbol *dts = check_data_type(
+                      self,
+                      *(struct Location *)fun_decl->return_type->items[1],
+                      fun_decl->return_type->items[0],
+                      local_data_type,
+                      false,
+                      false);
+
+                    if (dts != NULL)
+                        return_type = dts;
+
                     SUMMARY();
                 }
 

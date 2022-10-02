@@ -2182,7 +2182,7 @@ __new__FunDecl(struct String *name,
                struct Vec *tags,
                struct Vec *generic_params,
                struct Vec *params,
-               struct DataType *return_type,
+               struct Tuple *return_type,
                struct Vec *body,
                bool is_pub,
                bool is_async)
@@ -2227,8 +2227,11 @@ __free__FunDecl(struct FunDecl *self)
         FREE(Vec, self->params);
     }
 
-    if (self->return_type != NULL)
-        FREE(DataTypeAll, self->return_type);
+    if (self->return_type != NULL) {
+        FREE(DataTypeAll, self->return_type->items[0]);
+        free(self->return_type->items[1]);
+        FREE(Tuple, self->return_type);
+    }
 
     if (self->body != NULL) {
         for (Usize i = len__Vec(*self->body); i--;)
