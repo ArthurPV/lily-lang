@@ -2,7 +2,6 @@
 #define LILY_RUNTIME_GENERIC_H
 
 #include <lang/runtime/Array.h>
-#include <lang/runtime/List.h>
 #include <lang/runtime/runtime.h>
 
 #if defined(__cplusplus)
@@ -38,7 +37,6 @@ extern "C"
             struct Exception ext;       // Exception
             const struct Generic *imut; // Imutable[T]
             struct Array *array;        // Array[T]
-            struct List *list;          // List[T]
         };
     } Generic;
 

@@ -43,9 +43,8 @@ set(RUNTIME_SRC
         src/lang/runtime/Allocator.c
         src/lang/runtime/Array.c
         src/lang/runtime/io.c
-	      src/lang/runtime/generic.c
+	    src/lang/runtime/generic.c
         src/lang/runtime/runtime.c
-	      src/lang/runtime/List.c
         src/lang/runtime/Int8.c
         src/lang/runtime/Int16.c
         src/lang/runtime/Int32.c
