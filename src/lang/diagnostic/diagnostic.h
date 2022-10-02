@@ -82,7 +82,8 @@ enum LilyErrorKind
     LilyErrorMissAsValue,
     LilyErrorUnexpectedTokenForBeginingInGlobal,
     LilyErrorUnknownAttribute,
-    LilyErrorExpectedAttribute
+    LilyErrorExpectedAttribute,
+    LilyErrorMissDataType
 };
 
 typedef struct LilyError
@@ -116,7 +117,7 @@ enum LilyWarningKind
 {
     LilyWarningUnusedParen,
     LilyWarningIgnoredTags,
-    LilyWarningIgnoredGenericParams
+    LilyWarningIgnoredGenericParams,
 };
 
 typedef struct LilyWarning

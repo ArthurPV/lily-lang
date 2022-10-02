@@ -300,8 +300,6 @@ __free__DataTypeArray(struct DataType *self)
 void
 __free__DataTypeCustom(struct DataType *self)
 {
-    FREE(String, self->value.custom->items[0]);
-
     if (is_Some__Option(self->value.custom->items[1])) {
         struct Vec *temporary =
           (struct Vec *)get__Option(self->value.custom->items[1]);

@@ -145,7 +145,6 @@ detail_to_string(struct Detail self,
         FREE(String, repeat2);
         FREE(String, repeat3);
         FREE(String, repeat4);
-        FREE(String, line);
     } else {
         TODO("diagnostic with more one line");
     }
@@ -231,6 +230,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("unknown attribute");
         case LilyErrorExpectedAttribute:
             return from__String("expected attribute");
+        case LilyErrorMissDataType:
+            return from__String("miss data type");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -325,6 +326,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0034";
         case LilyErrorExpectedAttribute:
             return "0035";
+        case LilyErrorMissDataType:
+            return "0036";
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -349,6 +352,10 @@ void
 __free__Detail(struct Detail *self)
 {
     FREE(String, self->msg);
+
+    for (Usize i = 0; i < len__Vec(*self->lines); i++)
+        FREE(String, get__Vec(*self->lines, i));
+
     FREE(Vec, self->lines);
     free(self);
 }
@@ -418,14 +425,14 @@ __new__DiagnosticWithErr(struct LilyError *err,
     self->help = help;
 
     if (loc.s_line == loc.e_line) {
-        void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
 
         self->detail = NEW(Detail, detail_msg, lines);
     } else {
-        void *lines_temp[2] = { get_line(*self, loc.s_line),
-                                get_line(*self, loc.e_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
+        push__Vec(lines, get_line(*self, loc.e_line));
 
         self->detail = NEW(Detail, detail_msg, lines);
     }
@@ -448,13 +455,15 @@ __new__DiagnosticWithWarn(struct LilyWarning *warn,
     self->help = help;
 
     if (loc.s_line == loc.e_line) {
-        void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
+
         self->detail = NEW(Detail, detail_msg, lines);
     } else {
-        void *lines_temp[2] = { get_line(*self, loc.s_line),
-                                get_line(*self, loc.e_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
+        push__Vec(lines, get_line(*self, loc.e_line));
+
         self->detail = NEW(Detail, detail_msg, lines);
     }
 
@@ -476,13 +485,15 @@ __new__DiagnosticWithNote(struct String *note,
     self->help = help;
 
     if (loc.s_line == loc.e_line) {
-        void *lines_temp[1] = { get_line(*self, loc.s_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 1);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
+
         self->detail = NEW(Detail, detail_msg, lines);
     } else {
-        void *lines_temp[2] = { get_line(*self, loc.s_line),
-                                get_line(*self, loc.e_line) }; // VERIFY LEAK
-        struct Vec *lines = from__Vec(lines_temp, sizeof(struct String *), 2);
+        struct Vec *lines = NEW(Vec, sizeof(struct String));
+        push__Vec(lines, get_line(*self, loc.s_line));
+        push__Vec(lines, get_line(*self, loc.e_line));
+
         self->detail = NEW(Detail, detail_msg, lines);
     }
 
@@ -607,17 +618,27 @@ emit_warning__Diagnostic(struct Diagnostic *self,
            "only DiagnosticKindWarning variant is accepted");
 
     Str code = get_code_of_lily_warning(*self->warn);
-
     bool same_code = false;
+
     for (Usize i = 0; i < len__Vec(*warning_disable_codes); i++) {
-        if (code == (Str)get__Vec(*warning_disable_codes, i)) {
+        Str disable_code = to_Str__String(*(struct String*)get__Vec(*warning_disable_codes, i));
+
+        if (!strcmp(code, disable_code)) {
             same_code = true;
+            free(disable_code);
+
             break;
         }
+
+        free(disable_code);
     }
 
-    if (!same_code) {
+    if (!same_code)
         emit__Diagnostic(self);
+    else {
+        // for (Usize i = 0; i < len__Vec(*self->detail->lines); i++)
+        //     FREE(String, get__Vec(*self->detail->lines, i));
+        FREE(Diagnostic, self);
     }
 }
 

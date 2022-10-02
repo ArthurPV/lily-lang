@@ -1,9 +1,11 @@
 #include <assert.h>
 #include <base/format.h>
 #include <base/macros.h>
+#include <base/platform.h>
 #include <lang/diagnostic/diagnostic.h>
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/parser.h>
+#include <string.h>
 
 #define EXPECTED_TOKEN_ERR(parse_block, expected) \
     NEW(DiagnosticWithErrParser,                  \
@@ -50,11 +52,11 @@
     } else if (self->current->kind == TokenKindColon && !is_object)      \
         next_token_pb(self);
 
-#define EXPECTED_TOKEN(parse_block, token_kind, err) \
-    if (parse_block->current->kind != token_kind) {  \
-        err;                                         \
-    } else                                           \
-        next_token_pb(parse_block);
+#define EXPECTED_TOKEN(self, token_kind, err) \
+    if (self->current->kind != token_kind) {  \
+        err;                                  \
+    } else                                    \
+        next_token_pb(self);
 
 #define VERIFY_EOF(parse_block, bad_token, expected)                   \
     if (parse_block->current->kind == TokenKindEof && !bad_token) {    \
@@ -83,15 +85,17 @@
             next_token_pb(parse_block);                                        \
         }                                                                      \
                                                                                \
-        struct Diagnostic *warn =                                              \
-          NEW(DiagnosticWithWarnParser,                                        \
+        if (len__Vec(*self->generic_params) == 0) {                            \
+            struct Diagnostic *warn = NEW(                                     \
+              DiagnosticWithWarnParser,                                        \
               parse_block,                                                     \
               NEW(LilyWarning, LilyWarningIgnoredGenericParams),               \
               *parse_block->current->loc,                                      \
               format("the generic params are ignored because they are empty"), \
               None());                                                         \
                                                                                \
-        emit_warning__Diagnostic(warn, parse_block->disable_warning);          \
+            emit_warning__Diagnostic(warn, parse_block->disable_warning);      \
+        }                                                                      \
                                                                                \
         if (len__Vec(*self->generic_params) != 0)                              \
             self->has_generic_params = true;                                   \
@@ -132,6 +136,27 @@
                                                                               \
     if (parse_block->current->kind == TokenKindSemicolon)                     \
         next_token_pb(parse_block);
+
+#define PARSE_PAREN(parse_decl, block)                     \
+    next_token(parse_decl);                                \
+    while (parse_decl->current->kind != TokenKindRParen) { \
+        block;                                             \
+    }                                                      \
+    next_token(parse_decl);
+
+#define PARSE_HOOK(parse_decl, block)                     \
+    next_token(parse_decl);                               \
+    while (parse_decl->current->kind != TokenKindRHook) { \
+        block;                                            \
+    }                                                     \
+    next_token(parse_decl);
+
+#define PARSE_BRACE(parse_decl, block)                     \
+    next_token(parse_decl);                                \
+    while (parse_decl->current->kind != TokenKindRBrace) { \
+        block;                                             \
+    }                                                      \
+    next_token(parse_decl);
 
 static void
 get_block(struct ParseBlock *self);
@@ -220,8 +245,14 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
+static inline void
+next_token(struct ParseDecl *self);
+static inline bool
+is_data_type(struct ParseDecl *self);
+static struct DataType *
+parse_data_type(struct Parser self, struct ParseDecl *parse_decl);
 static struct Vec *
-parse_generic_params(struct Parser *self, struct Vec *generic_params);
+parse_generic_params(struct Parser *self, struct Vec *generic_params_token);
 static void
 parse_fun_declaration(struct Parser *self);
 static void
@@ -2108,19 +2139,294 @@ __new__Parser(struct ParseBlock parse_block)
     return self;
 }
 
-#include <base/print.h>
-
-void *
-printHello(void *count)
+struct ParseDecl
+__new__ParseDecl(struct Vec *tokens)
 {
-    Println("Hello {d}", (UPtr)count);
-    pthread_exit(NULL);
+    struct ParseDecl self = {
+        .pos = 0,
+        .current = len__Vec(*tokens) == 0 ? NULL : get__Vec(*tokens, 0),
+        .previous = len__Vec(*tokens) == 0 ? NULL : get__Vec(*tokens, 0),
+        .tokens = tokens
+    };
+
+    return self;
+}
+
+static inline void
+next_token(struct ParseDecl *self)
+{
+    self->pos += 1;
+    self->current = self->pos < len__Vec(*self->tokens)
+                      ? get__Vec(*self->tokens, self->pos)
+                      : NULL;
+    self->previous = get__Vec(*self->tokens, self->pos - 1);
+}
+
+static inline bool
+is_data_type(struct ParseDecl *self)
+{
+    switch (self->current->kind) {
+        case TokenKindAmpersand:
+        case TokenKindIdentifier:
+        case TokenKindInterrogation:
+        case TokenKindBang:
+        case TokenKindLHook:
+        case TokenKindLParen:
+        case TokenKindHat:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static struct DataType *
+parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
+{
+    next_token(parse_decl);
+
+    struct DataType *data_type = NULL;
+
+    switch (parse_decl->previous->kind) {
+        case TokenKindIdentifier: {
+            Str identifier_str = to_Str__String(*parse_decl->previous->lit);
+
+            if (!strcmp(identifier_str, "Int8"))
+                data_type = NEW(DataType, DataTypeKindI8);
+            else if (!strcmp(identifier_str, "Int16"))
+                data_type = NEW(DataType, DataTypeKindI16);
+            else if (!strcmp(identifier_str, "Int32"))
+                data_type = NEW(DataType, DataTypeKindI32);
+            else if (!strcmp(identifier_str, "Int64"))
+                data_type = NEW(DataType, DataTypeKindI64);
+            else if (!strcmp(identifier_str, "Int128"))
+                data_type = NEW(DataType, DataTypeKindI128);
+            else if (!strcmp(identifier_str, "Uint8"))
+                data_type = NEW(DataType, DataTypeKindU8);
+            else if (!strcmp(identifier_str, "Uint16"))
+                data_type = NEW(DataType, DataTypeKindU16);
+            else if (!strcmp(identifier_str, "Uint32"))
+                data_type = NEW(DataType, DataTypeKindU32);
+            else if (!strcmp(identifier_str, "Uint64"))
+                data_type = NEW(DataType, DataTypeKindU64);
+            else if (!strcmp(identifier_str, "Uint128"))
+                data_type = NEW(DataType, DataTypeKindU128);
+            else if (!strcmp(identifier_str, "Isize"))
+                data_type = NEW(DataType, DataTypeKindIsize);
+            else if (!strcmp(identifier_str, "Usize"))
+                data_type = NEW(DataType, DataTypeKindUsize);
+            else if (!strcmp(identifier_str, "Float32"))
+                data_type = NEW(DataType, DataTypeKindF32);
+            else if (!strcmp(identifier_str, "Float64"))
+                data_type = NEW(DataType, DataTypeKindF64);
+            else if (!strcmp(identifier_str, "Bool"))
+                data_type = NEW(DataType, DataTypeKindBool);
+            else if (!strcmp(identifier_str, "Char"))
+                data_type = NEW(DataType, DataTypeKindChar);
+            else if (!strcmp(identifier_str, "Str"))
+                data_type = NEW(DataType, DataTypeKindStr);
+            else if (!strcmp(identifier_str, "Any"))
+                data_type = NEW(DataType, DataTypeKindAny);
+            else if (!strcmp(identifier_str, "Unit"))
+                data_type = NEW(DataType, DataTypeKindUnit);
+            else {
+                if (parse_decl->current->kind == TokenKindLHook) {
+                    struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
+
+                    PARSE_HOOK(parse_decl, {
+                        push__Vec(data_types,
+                                  parse_data_type(self, parse_decl));
+
+                        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrParser,
+                                  &self.parse_block,
+                                  NEW(LilyError, LilyErrorExpectedToken),
+                                  *parse_decl->current->loc,
+                                  format(""),
+                                  None());
+
+                            err->err->s = from__String("`,`");
+
+                            emit__Diagnostic(err);
+                        });
+                    });
+
+                    if (len__Vec(*data_types) == 0) {
+                        struct Diagnostic *warn =
+                          NEW(DiagnosticWithWarnParser,
+                              &self.parse_block,
+                              NEW(LilyWarning, LilyWarningIgnoredGenericParams),
+                              *parse_decl->current->loc,
+                              format("the generic params are ignored because "
+                                     "they are empty"),
+                              None());
+
+                        emit_warning__Diagnostic(
+                          warn, self.parse_block.disable_warning);
+                    }
+
+                    data_type = NEW(DataTypeCustom,
+                                    &*parse_decl->current->lit,
+                                    Some(data_types));
+                } else
+                    data_type =
+                      NEW(DataTypeCustom, &*parse_decl->current->lit, None());
+            }
+
+            free(identifier_str);
+
+            break;
+        }
+        case TokenKindLHook: {
+            Usize *size = NULL;
+            bool is_wildcard = false;
+
+            next_token(parse_decl);
+
+            {
+                switch (parse_decl->current->kind) {
+                    case TokenKindIntLit: {
+                        Str size_str =
+                          to_Str__String(*parse_decl->current->lit);
+
+#ifdef LILY_WINDOWS_OS
+                        UInt64 size_u = _atoi64(size_str);
+
+                        *size = (Usize)size_u;
+#endif
+
+#ifdef LILY_LINUX_OS
+                        int size_u = atoi(size_str);
+
+                        *size = (Usize)size_u;
+#endif
+
+                        free(size_str);
+
+                        break;
+                    }
+                    case TokenKindIdentifier: {
+                        Str id_str = to_Str__String(*parse_decl->current->lit);
+
+                        if (!strcmp(id_str, "_"))
+                            is_wildcard = true;
+
+                        free(id_str);
+
+                        break;
+                    }
+                    case TokenKindRHook:
+                        break;
+                    default: {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrParser,
+                              &self.parse_block,
+                              NEW(LilyError, LilyErrorUnexpectedToken),
+                              *parse_decl->current->loc,
+                              format(""),
+                              None());
+
+                        err->err->s =
+                          token_kind_to_string__Token(*parse_decl->current);
+
+                        emit__Diagnostic(err);
+
+                        break;
+                    }
+                }
+            }
+
+            if (!is_wildcard && size == NULL) {
+                next_token(parse_decl);
+
+                EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`]`");
+
+                    emit__Diagnostic(err);
+                });
+            }
+
+            if (is_data_type(parse_decl)) {
+                if (size == NULL)
+                    data_type = NEW(DataTypeArray,
+                                    Some(parse_data_type(self, parse_decl)),
+                                    None());
+                else
+                    data_type = NEW(DataTypeArray,
+                                    Some(parse_data_type(self, parse_decl)),
+                                    Some(size));
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorMissDataType),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
+
+            break;
+        }
+        case TokenKindLParen: {
+            struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
+
+            PARSE_PAREN(parse_decl, {
+                push__Vec(data_types, parse_data_type(self, parse_decl));
+
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`,`");
+
+                    emit__Diagnostic(err);
+                });
+            });
+
+            data_type = NEW(DataTypeTuple, data_types);
+
+            break;
+        }
+        case TokenKindHat:
+            data_type = NEW(DataTypePtr, parse_data_type(self, parse_decl));
+            break;
+        case TokenKindInterrogation:
+            data_type =
+              NEW(DataTypeOptional, parse_data_type(self, parse_decl));
+            break;
+        case TokenKindBang:
+            data_type =
+              NEW(DataTypeException, parse_data_type(self, parse_decl));
+            break;
+        default:
+            break;
+    }
+
+    return data_type;
 }
 
 // struct Vec<struct Generic*>*
 static struct Vec *
-parse_generic_params(struct Parser *self, struct Vec *generic_params)
+parse_generic_params(struct Parser *self, struct Vec *generic_params_token)
 {
+    struct Vec *generic_params = NEW(Vec, sizeof(struct Generic));
+
+    return generic_params;
 }
 
 static void
@@ -2129,26 +2435,32 @@ parse_fun_declaration(struct Parser *self)
 }
 
 static void
-parse_declaration(struct Parser* self)
+parse_declaration(struct Parser *self)
 {
-    struct Parser *parser = (struct Parser*)self;
-
-    switch (parser->current->kind) {
+    switch (self->current->kind) {
         case ParseContextKindFun:
-            parse_fun_declaration(parser);
+            parse_fun_declaration(self);
+            break;
+        case ParseContextKindClass:
             break;
         default:
             UNREACHABLE("unknown parse context kind");
     }
 }
 
+#define NEXT_BLOCK()                                                \
+    self->pos += 1;                                                 \
+    self->current = self->pos < len__Vec(*self->parse_block.blocks) \
+                      ? ((struct ParseContext *)get__Vec(           \
+                          *self->parse_block.blocks, self->pos))    \
+                      : NULL
+
 void
 run__Parser(struct Parser *self)
 {
     while (self->pos < len__Vec(*self->parse_block.blocks)) {
         parse_declaration(self);
-
-        self->pos += 1;
+        NEXT_BLOCK();
     }
 }
 

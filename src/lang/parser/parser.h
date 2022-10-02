@@ -437,6 +437,20 @@ __free__ParseContextImport(struct ParseContext *self);
 void
 __free__ParseContextAll(struct ParseContext *self);
 
+typedef struct ParseDecl {
+    Usize pos;
+    struct Token *current; // struct Token&
+    struct Token *previous; // struct Token&
+    struct Vec *tokens; // struct Vec<struct Token&>*
+} ParseDecl;
+
+/**
+ *
+ * @brief Construct the ParseDecl type.
+ */
+struct ParseDecl
+__new__ParseDecl(struct Vec *tokens);
+
 typedef struct Parser
 {
     struct ParseBlock parse_block;
