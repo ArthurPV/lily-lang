@@ -8,9 +8,12 @@
 
 static inline void
 next_token_pb(struct ParseBlock *self);
-static inline void skip_to_next_block(struct ParseBlock *self);
+static inline void
+skip_to_next_block(struct ParseBlock *self);
 static inline struct String *
 get_type_name(struct ParseBlock *self);
+static void
+get_type_context(struct ParseBlock *self, bool is_pub);
 static inline struct Vec *
 get_generic_params_type(struct ParseBlock *self);
 static inline bool
@@ -116,73 +119,9 @@ run__ParseBlock(struct ParseBlock *self)
 
                         break;
                     }
-                    case TokenKindTypeKw: {
-                        struct String *name = get_type_name(self);
-                        struct Vec *generic_params =
-                          get_generic_params_type(self);
-
-                        if (self->current->kind != TokenKindColon) {
-                            struct Diagnostic *err =
-                              NEW(DiagnosticWithErrParser,
-                                  self,
-                                  NEW(LilyError, LilyErrorExpectedToken),
-                                  *self->current->loc,
-                                  format(""),
-                                  Some(format("expected `:`, found `{Sr}`",
-                                              token_kind_to_string__Token(
-                                                *self->current))));
-
-                            err->err->s = from__String(":");
-
-                            emit__Diagnostic(err);
-                        } else {
-                            next_token_pb(self);
-                        }
-
-                        switch (self->current->kind) {
-                            case TokenKindEnumKw: {
-                                struct EnumParseContext *enum_parse_context =
-                                  NEW(EnumParseContext);
-
-                                enum_parse_context->name = name;
-                                enum_parse_context->generic_params =
-                                  generic_params;
-                                enum_parse_context->is_pub = true;
-
-                                get_enum_parse_context(enum_parse_context,
-                                                       self);
-
-                                push__Vec(
-                                  self->blocks,
-                                  NEW(ParseContextEnum, enum_parse_context));
-
-                                break;
-                            }
-                            case TokenKindRecordKw:
-                                break;
-                            default: {
-                                struct Diagnostic *err = NEW(
-                                  DiagnosticWithErrParser,
-                                  self,
-                                  NEW(LilyError, LilyErrorBadUsageOfType),
-                                  *self->current->loc,
-                                  format(""),
-                                  Some(format(
-                                    "expected `enum` or `record`, found `{Sr}`",
-                                    token_kind_to_string__Token(
-                                      *self->current))));
-
-                                emit__Diagnostic(err);
-                                emit__Summary(self->count_error, self->count_warning, "the parser has been failed");
-
-                                exit(1);
-
-                                break;
-                            }
-                        }
-
+                    case TokenKindTypeKw:
+                        get_type_context(self, true);
                         break;
-                    }
                     case TokenKindObjectKw:
                         TODO("");
                         break;
@@ -204,7 +143,7 @@ run__ParseBlock(struct ParseBlock *self)
 
                         emit__Diagnostic(err);
                         skip_to_next_block(self);
-                    
+
                         break;
                     }
                 }
@@ -223,12 +162,75 @@ run__ParseBlock(struct ParseBlock *self)
                 break;
             }
             case TokenKindTagKw:
+                break;
             case TokenKindTypeKw:
+                get_type_context(self, false);
                 break;
             case TokenKindObjectKw:
                 break;
             default:
                 break;
+        }
+    }
+}
+
+void
+get_type_context(struct ParseBlock *self, bool is_pub)
+{
+    struct String *name = get_type_name(self);
+    struct Vec *generic_params = get_generic_params_type(self);
+
+    if (self->current->kind != TokenKindColon) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorExpectedToken),
+              *self->current->loc,
+              format(""),
+              Some(format("expected `:`, found `{Sr}`",
+                          token_kind_to_string__Token(*self->current))));
+
+        err->err->s = from__String(":");
+
+        emit__Diagnostic(err);
+    } else {
+        next_token_pb(self);
+    }
+
+    switch (self->current->kind) {
+        case TokenKindEnumKw: {
+            struct EnumParseContext *enum_parse_context = NEW(EnumParseContext);
+
+            enum_parse_context->name = name;
+            enum_parse_context->generic_params = generic_params;
+            enum_parse_context->is_pub = is_pub;
+
+            get_enum_parse_context(enum_parse_context, self);
+
+            push__Vec(self->blocks, NEW(ParseContextEnum, enum_parse_context));
+
+            break;
+        }
+        case TokenKindRecordKw:
+            break;
+        default: {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  self,
+                  NEW(LilyError, LilyErrorBadUsageOfType),
+                  *self->current->loc,
+                  format(""),
+                  Some(format("expected `enum` or `record`, found `{Sr}`",
+                              token_kind_to_string__Token(*self->current))));
+
+            emit__Diagnostic(err);
+            emit__Summary(self->count_error,
+                          self->count_warning,
+                          "the parser has been failed");
+
+            exit(1);
+
+            break;
         }
     }
 }
@@ -273,8 +275,11 @@ next_token_pb(struct ParseBlock *self)
     }
 }
 
-void skip_to_next_block(struct ParseBlock *self) {
-    while (self->current->kind != TokenKindEndKw && self->current->kind != TokenKindEof) {
+void
+skip_to_next_block(struct ParseBlock *self)
+{
+    while (self->current->kind != TokenKindEndKw &&
+           self->current->kind != TokenKindEof) {
         next_token_pb(self);
     }
 
