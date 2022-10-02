@@ -25,7 +25,9 @@
 #ifndef LILY_TYPES_H
 #define LILY_TYPES_H
 
+#if __clang_major__ < 15
 #include <stdint.h>
+#endif
 #include <stdlib.h>
 
 #if __clang_major__ >= 15

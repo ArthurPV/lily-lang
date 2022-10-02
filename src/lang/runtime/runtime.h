@@ -28,7 +28,9 @@
 #include <assert.h>
 #include <lang/runtime/api.h>
 #include <stdbool.h>
+#if __clang_major__ < 15
 #include <stdint.h>
+#endif
 #include <stdlib.h>
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -57,27 +59,53 @@ extern "C"
     typedef char *MutStr;
     typedef const char *Str;
 
-    typedef uint8_t MutU8;
-    typedef uint16_t MutU16;
-    typedef uint32_t MutU32;
-    typedef uint64_t MutU64;
+#if __clang_major__ >= 15
+    typedef unsigned _BitInt(8) MutU8;
+    typedef unsigned _BitInt(16) MutU16;
+    typedef unsigned _BitInt(32) MutU32;
+    typedef unsigned _BitInt(64) MutU64;
+    typedef unsigned _BitInt(128) MutU128;
 
-    typedef const uint8_t U8;
-    typedef const uint16_t U16;
-    typedef const uint32_t U32;
-    typedef const uint64_t U64;
+    typedef const unsigned _BitInt(8) U8;
+    typedef const unsigned _BitInt(16) U16;
+    typedef const unsigned _BitInt(32) U32;
+    typedef const unsigned _BitInt(64) U64;
+    typedef const unsigned _BitInt(128) U128;
 
-    typedef int8_t MutI8;
-    typedef int16_t MutI16;
-    typedef int32_t MutI32;
-    typedef int64_t MutI64;
-    typedef __int128_t MutI128;
+    typedef _BitInt(8) MutI8;
+    typedef _BitInt(16) MutI16;
+    typedef _BitInt(32) MutI32;
+    typedef _BitInt(64) MutI64;
+    typedef _BitInt(128) MutI128;
 
-    typedef const int8_t I8;
-    typedef const int16_t I16;
-    typedef const int32_t I32;
-    typedef const int64_t I64;
-    typedef const __int128_t I128;
+    typedef const _BitInt(8) I8;
+    typedef const _BitInt(16) I16;
+    typedef const _BitInt(32) I32;
+    typedef const _BitInt(64) I64;
+    typedef const _BitInt(128) I128;
+#else
+typedef uint8_t MutU8;
+typedef uint16_t MutU16;
+typedef uint32_t MutU32;
+typedef uint64_t MutU64;
+
+typedef const uint8_t U8;
+typedef const uint16_t U16;
+typedef const uint32_t U32;
+typedef const uint64_t U64;
+
+typedef int8_t MutI8;
+typedef int16_t MutI16;
+typedef int32_t MutI32;
+typedef int64_t MutI64;
+typedef __int128_t MutI128;
+
+typedef const int8_t I8;
+typedef const int16_t I16;
+typedef const int32_t I32;
+typedef const int64_t I64;
+typedef const __int128_t I128;
+#endif
 
     typedef char MutChar;
     typedef const char Char;
