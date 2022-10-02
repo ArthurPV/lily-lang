@@ -101,11 +101,26 @@ __free__BinaryOpSymbol(struct BinaryOpSymbol self);
 
 typedef struct FunCallSymbol
 {
+    bool is_builtin;
     struct Scope loc;
     struct DataType *data_type;
     struct Vec *params; // struct Vec<struct Tuple<struct SymbolFunParamCall*,
                         // struct Location&>*>*
 } FunCallSymbol;
+
+/**
+ *
+ * @brief Construct the FunCallSymbol type.
+ */
+struct FunCallSymbol
+__new__FunCallSymbol(bool is_builtin, struct Scope loc, struct DataType *data_type, struct Vec *params);
+
+/**
+ *
+ * @brief Free the FunCallSymbol type.
+ */
+void
+__free__FunCallSymbol(struct FunCallSymbol self);
 
 typedef struct ExprSymbol
 {
@@ -124,7 +139,7 @@ typedef struct ExprSymbol
  *
  * @brief Construct the ExprSymbol type (Unary variant).
  */
-struct ExprSymbol
+struct ExprSymbol *
 __new__ExprSymbolUnary(struct Expr expr, struct UnaryOpSymbol unary_op);
 
 /**
@@ -132,14 +147,14 @@ __new__ExprSymbolUnary(struct Expr expr, struct UnaryOpSymbol unary_op);
  * @brief Free the ExprSymbol type (Unary variant).
  */
 void
-__free__ExprSymbolUnary(struct ExprSymbol self);
+__free__ExprSymbolUnary(struct ExprSymbol *self);
 
 /**
  *
  * @brief Free the ExprSymbol type (all variants).
  */
 void
-__free__ExprSymbolAll(struct ExprSymbol self);
+__free__ExprSymbolAll(struct ExprSymbol *self);
 
 enum SymbolTableKind
 {
@@ -167,6 +182,7 @@ typedef struct SymbolTable
     union
     {
         struct FunSymbol *fun;
+        struct ExprSymbol *expr;
     } value;
 } SymbolTable;
 
@@ -179,10 +195,24 @@ __new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl);
 
 /**
  *
+ * @brief Construct the SymbolTable type (Expr variant).
+ */
+struct SymbolTable *
+__new__SymbolTableExpr(struct ExprSymbol *expr, struct Expr *expr_ast);
+
+/**
+ *
  * @brief Free the SymbolTable type (Fun variant).
  */
 void
 __free__SymbolTableFun(struct SymbolTable *self);
+
+/**
+ *
+ * @brief Free the SymbolTable type (Expr variant).
+ */
+void
+__free__SymbolTableExpr(struct SymbolTable *self);
 
 /**
  *

@@ -79,26 +79,48 @@ __free__BinaryOpSymbol(struct BinaryOpSymbol self)
     FREE(DataTypeAll, self.data_type);
 }
 
-struct ExprSymbol
-__new__ExprSymbolUnary(struct Expr expr, struct UnaryOpSymbol unary_op)
+struct FunCallSymbol
+__new__FunCallSymbol(bool is_builtin, struct Scope loc, struct DataType *data_type, struct Vec *params)
 {
-    struct ExprSymbol self = { .kind = expr.kind,
-                               .loc = expr.loc,
-                               .value.unary_op = unary_op };
+    struct FunCallSymbol self = {
+        .is_builtin = is_builtin,
+        .loc = loc,
+        .data_type = data_type,
+        .params = params
+    };
 
     return self;
 }
 
 void
-__free__ExprSymbolUnary(struct ExprSymbol self)
+__free__FunCallSymbol(struct FunCallSymbol self)
 {
-    FREE(UnaryOpSymbol, self.value.unary_op);
+    FREE(DataTypeAll, self.data_type);
+    TODO("FREE all");
+    FREE(Vec, self.params);
+}
+
+struct ExprSymbol *
+__new__ExprSymbolUnary(struct Expr expr, struct UnaryOpSymbol unary_op)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.unary_op = unary_op;
+    return self;
 }
 
 void
-__free__ExprSymbolAll(struct ExprSymbol self)
+__free__ExprSymbolUnary(struct ExprSymbol *self)
 {
-    switch (self.kind) {
+    FREE(UnaryOpSymbol, self->value.unary_op);
+    free(self);
+}
+
+void
+__free__ExprSymbolAll(struct ExprSymbol *self)
+{
+    switch (self->kind) {
         case ExprKindUnaryOp:
             FREE(ExprSymbolUnary, self);
             break;
@@ -116,10 +138,26 @@ __new__SymbolTableFun(struct FunSymbol *fun, struct Decl *fun_decl)
     return self;
 }
 
+struct SymbolTable *
+__new__SymbolTableExpr(struct ExprSymbol *expr, struct Expr *expr_ast)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindExpr, self->loc = expr_ast->loc;
+    self->value.expr = expr;
+    return self;
+}
+
 void
 __free__SymbolTableFun(struct SymbolTable *self)
 {
     FREE(FunSymbol, self->value.fun);
+    free(self);
+}
+
+void
+__free__SymbolTableExpr(struct SymbolTable *self)
+{
+    FREE(ExprSymbolAll, self->value.expr);
     free(self);
 }
 
@@ -129,6 +167,9 @@ __free__SymbolTableAll(struct SymbolTable *self)
     switch (self->kind) {
         case SymbolTableKindFun:
             FREE(SymbolTableFun, self);
+            break;
+        case SymbolTableKindExpr:
+            FREE(SymbolTableExpr, self);
             break;
         default:
             TODO("");

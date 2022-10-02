@@ -6,6 +6,10 @@
 typedef struct Typecheck
 {
     struct Parser parser;
+    Usize pos;
+    Usize count_error;
+    Usize count_warning;
+    struct Vec *builtins;    // struct Vec<struct Builtin*>*
     struct Vec *funs;        // struct Vec<struct FunSymbol*>*
     struct Vec *consts;      // struct Vec<struct ConstSymbol*>*
     struct Vec *modules;     // struct Vec<struct ModuleSymbol*>*
@@ -25,6 +29,13 @@ typedef struct Typecheck
  */
 struct Typecheck
 __new__Typecheck(struct Parser parser);
+
+/**
+ *
+ * @brief Run the typecheck phase.
+ */
+void
+run__Typecheck(struct Typecheck *self);
 
 /**
  *

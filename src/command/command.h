@@ -1,0 +1,12 @@
+#ifndef LILY_COMMAND_H
+#define LILY_COMMAND_H
+
+#define BUILD_COMMAND 1
+#define COMPILE_COMMAND 2
+#define HELP_COMMAND 3
+#define INIT_COMMAND 4
+#define NEW_COMMAND 5
+#define VERSION_COMMAND 6
+#define UNKNOWN_COMMAND -1
+
+#endif // LILY_COMMAND_H

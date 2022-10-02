@@ -27,10 +27,19 @@ set(BASE_SRC
 set(LANG_SRC
         src/lang/analysis/symbol_table.c
         src/lang/analysis/typecheck.c
+        src/lang/builtin/builtin_c.c
+        src/lang/builtin/builtin.c
+        src/command/parse.c
         src/lang/diagnostic/diagnostic.c
         src/lang/diagnostic/summary.c
+        src/lang/generate/generate_c.c
+        src/lang/generate/generate.c
         src/lang/parser/ast.c
         src/lang/parser/parser.c
+        src/lang/runtime/io.c
+	src/lang/runtime/generic.c
+        src/lang/runtime/runtime.c
+	src/lang/runtime/vec.c
         src/lang/scanner/scanner.c
         src/lang/scanner/token.c)
 

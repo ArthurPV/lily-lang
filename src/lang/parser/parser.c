@@ -341,7 +341,8 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_variable(struct Parser self,
                struct ParseDecl *parse_decl,
-               struct Location loc);
+               struct Location loc,
+               bool is_mut);
 static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static inline int *
@@ -3475,7 +3476,8 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 static struct Expr *
 parse_variable(struct Parser self,
                struct ParseDecl *parse_decl,
-               struct Location loc)
+               struct Location loc,
+               bool is_mut)
 {
     struct String *name = &*parse_decl->previous->lit;
     struct DataType *data_type = NULL;
@@ -3507,10 +3509,10 @@ parse_variable(struct Parser self,
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
     if (data_type == NULL)
-        return NEW(ExprVariable, NEW(VariableDecl, name, None(), expr), loc);
+        return NEW(ExprVariable, NEW(VariableDecl, name, None(), expr, is_mut), loc);
     else
         return NEW(
-          ExprVariable, NEW(VariableDecl, name, Some(data_type), expr), loc);
+          ExprVariable, NEW(VariableDecl, name, Some(data_type), expr, is_mut), loc);
 }
 
 static struct Expr *
@@ -3626,11 +3628,13 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                         break;
                     }
                     case TokenKindColonEq:
-                        return parse_variable(self, parse_decl, loc);
+                        free(id_str);
+                        return parse_variable(self, parse_decl, loc, false);
                     default:
                         if (is_data_type(parse_decl) &&
                             parse_decl->pos < len__Vec(*parse_decl->tokens)) {
-                            return parse_variable(self, parse_decl, loc);
+                            free(id_str);
+                            return parse_variable(self, parse_decl, loc, false);
                         }
 
                         end__Location(&loc,
@@ -3648,6 +3652,9 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 
             break;
         }
+
+        case TokenKindMutKw:
+            return parse_variable(self, parse_decl, loc, true);
 
         case TokenKindSelfKw: {
             switch (parse_decl->current->kind) {

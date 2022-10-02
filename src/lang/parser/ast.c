@@ -1,3 +1,4 @@
+#include <string.h>
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/str.h>
@@ -235,6 +236,16 @@ to_string__DataType(struct DataType self)
     }
 }
 
+struct DataType *
+copy__DataType(struct DataType *self)
+{
+    struct DataType *copy = malloc(sizeof(struct DataType));
+
+    memcpy(copy, self, sizeof(struct DataType));
+
+    return copy;
+}
+
 void
 __free__DataType(struct DataType *self)
 {
@@ -437,10 +448,11 @@ __free__GenericAll(struct Generic *self)
 struct VariableDecl
 __new__VariableDecl(struct String *name,
                     struct Option *data_type,
-                    struct Expr *expr)
+                    struct Expr *expr,
+                    bool is_mut)
 {
     struct VariableDecl self = {
-        .name = name, .data_type = data_type, .expr = expr
+        .name = name, .data_type = data_type, .expr = expr, .is_mut = is_mut
     };
 
     return self;
