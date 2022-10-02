@@ -1,0 +1,50 @@
+![disable_core_import]
+
+import "@builtin.Int16.*"
+
+module Int16 =
+	/// @prot: Unit -> Int16
+	fun bitwidth = 16;
+
+	/// @prot: Unit -> Int16
+	fun min = -0x8000;
+
+	/// @prot: Unit -> Int16
+	fun max = 0x7FFF;
+
+	/// @prot: Unit -> Int16
+	fun zero = 0;
+
+	/// @prot: Unit -> Int16
+	fun one = 1;
+
+	/// @prot: Int16 -> Int16
+	fun neg(x) = if x > 0 do -x else x;;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun add(x, y) = x `+` y;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun sub(x, y) = x `-` y;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun mul(x, y) = x `*` y;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun div(x, y) = x `/` y;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun mod(x, y) = x `%` y;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun exp(x, y) = x `**` y;
+
+	/// @prot: Int16 -> Int16
+	fun abs(x) = -x;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun min(x, y) = if x < y do x else y;;
+
+	/// @prot: Int16 -> Int16 -> Int16
+	fun max(x, y) = if x > y do x else y;;
+end

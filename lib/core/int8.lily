@@ -1,0 +1,50 @@
+![disable_core_import]
+
+import "@builtin.Int8.*"
+
+module Int8 =
+	/// @prot: Unit -> Int8
+	fun bitwidth = 8;
+
+	/// @prot: Unit -> Int8
+	fun min = -0x80;
+
+	/// @prot: Unit -> Int8
+	fun max = 0xFF;
+
+	/// @prot: Unit -> Int8
+	fun zero = 0;
+
+	/// @prot: Unit -> Int8
+	fun one = 1;
+
+	/// @prot: Int8 -> Int8
+	fun neg(x) = if x > 0 do -x else x;;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun add(x, y) = x `+` y;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun sub(x, y) = x `-` y;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun mul(x, y) = x `*` y;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun div(x, y) = x `/` y;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun mod(x, y) = x `%` y;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun exp(x, y) = x `**` y;
+
+	/// @prot: Int8 -> Int8
+	fun abs(x) = -x;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun min(x, y) = if x < y do x else y;;
+
+	/// @prot: Int8 -> Int8 -> Int8
+	fun max(x, y) = if x > y do x else y;;
+end
