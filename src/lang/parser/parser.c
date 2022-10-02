@@ -189,11 +189,10 @@
               NEW(FunBodyItemStmt,                                             \
                   NEW(Stmt, StmtKindBreak, *parse_decl->previous->loc)));      \
             break;                                                             \
-        case TokenKindIfKw:                                                    \
-            push__Vec(                                                         \
-              body,                                                            \
-              NEW(FunBodyItemStmt,                                             \
-                  NEW(StmtIf, loc, parse_if_stmt(self, parse_decl, &loc))));   \
+        case TokenKindIfKw: {                                                  \
+            struct IfCond *if_ = parse_if_stmt(self, parse_decl, &loc);        \
+            push__Vec(body, NEW(FunBodyItemStmt, NEW(StmtIf, loc, if_)));      \
+        }                                                                      \
         case TokenKindForKw:                                                   \
         case TokenKindWhileKw:                                                 \
             assert(0 && "todo");                                               \
