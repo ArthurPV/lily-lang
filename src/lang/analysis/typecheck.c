@@ -617,7 +617,7 @@ check_enum(struct Typecheck *self,
             }
         }
 
-		++count_enum_id;
+        ++count_enum_id;
     }
 }
 
@@ -1028,7 +1028,21 @@ search_enum_in_scope(struct Typecheck *self,
                      struct Expr *id,
                      struct SymbolTable *scope)
 {
-    TODO("search_module_in_scope");
+    for (Usize i = len__Vec(*scope->value.enum_->variants); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           ((struct SymbolTable *)get__Vec(
+                              *scope->value.enum_->variants, i))
+                             ->value.variant->name,
+                           false))
+                return get__Vec(*scope->value.enum_->variants, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    assert(0 && "error: unknown variant");
+
+    return NULL;
 }
 
 static struct SymbolTable *
@@ -1036,7 +1050,21 @@ search_record_in_scope(struct Typecheck *self,
                        struct Expr *id,
                        struct SymbolTable *scope)
 {
-    TODO("search_module_in_scope");
+    for (Usize i = len__Vec(*scope->value.record->fields); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           ((struct SymbolTable *)get__Vec(
+                              *scope->value.record->fields, i))
+                             ->value.field->name,
+                           false))
+                return get__Vec(*scope->value.record->fields, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    assert(0 && "error: unknown field");
+
+    return NULL;
 }
 
 static struct SymbolTable *

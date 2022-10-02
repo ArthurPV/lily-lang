@@ -5,5 +5,4 @@ test:
 	@./build/scanner_test
 
 check_leaks:
-	@export DEBUGINFOD_URLS="https://debuginfod.archlinux.org"
-	valgrind --leak-check=full ./build/Debug/lily compile ./test.lily
+	export DEBUGINFOD_URLS="https://debuginfod.archlinux.org" && valgrind --leak-check=full ./build/Debug/lily compile ./test.lily
