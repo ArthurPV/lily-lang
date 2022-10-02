@@ -1,0 +1,48 @@
+![disable_core_import]
+
+module Int128 =
+	/// @prot: Unit -> Int128
+	fun bitwidth = 128;
+
+	/// @prot: Unit -> Int128
+	fun min = -1 << 127;
+
+	/// @prot: Unit -> Int128
+	fun max = (1 << 127) - 1;
+
+	/// @prot: Unit -> Int128
+	fun zero = 0;
+
+	/// @prot: Unit -> Int128
+	fun one = 1;
+
+	/// @prot: Int128 -> Int128
+	fun neg(x) = if x > 0 do -x else x;;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun add(x, y) = x + y;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun sub(x, y) = x - y;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun mul(x, y) = x * y;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun div(x, y) = x / y;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun mod(x, y) = x % y;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun exp(x, y) = x ** y;
+
+	/// @prot: Int128 -> Int128
+	fun abs(x) = -x;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun min(x, y) = if x < y do x else y;;
+
+	/// @prot: Int128 -> Int128 -> Int128
+	fun max(x, y) = if x > y do x else y;;
+end

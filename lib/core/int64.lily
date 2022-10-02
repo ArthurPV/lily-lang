@@ -1,0 +1,48 @@
+![disable_core_import]
+
+module Int64 =
+	/// @prot: Unit -> Int64
+	fun bitwidth = 64;
+
+	/// @prot: Unit -> Int64
+	fun min = -0x8000_0000_0000_0000;
+
+	/// @prot: Unit -> Int64
+	fun max = 0x7FFF_FFFF_FFFF_FFFF;
+
+	/// @prot: Unit -> Int64
+	fun zero = 0;
+
+	/// @prot: Unit -> Int64
+	fun one = 1;
+
+	/// @prot: Int64 -> Int64
+	fun neg(x) = if x > 0 do -x else x;;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun add(x, y) = x + y;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun sub(x, y) = x - y;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun mul(x, y) = x * y;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun div(x, y) = x / y;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun mod(x, y) = x % y;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun exp(x, y) = x ** y;
+
+	/// @prot: Int64 -> Int64
+	fun abs(x) = -x;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun min(x, y) = if x < y do x else y;;
+
+	/// @prot: Int64 -> Int64 -> Int64
+	fun max(x, y) = if x > y do x else y;;
+end

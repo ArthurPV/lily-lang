@@ -1,7 +1,5 @@
 ![disable_core_import]
 
-import "@builtin.Int32.*"
-
 module Int32 =
 	/// @prot: Unit -> Int32
 	fun bitwidth = 32;
@@ -22,22 +20,22 @@ module Int32 =
 	fun neg(x) = if x > 0 do -x else x;;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun add(x, y) = x `+` y;
+	fun add(x, y) = x + y;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun sub(x, y) = x `-` y;
+	fun sub(x, y) = x - y;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun mul(x, y) = x `*` y;
+	fun mul(x, y) = x * y;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun div(x, y) = x `/` y;
+	fun div(x, y) = x / y;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun mod(x, y) = x `%` y;
+	fun mod(x, y) = x % y;
 
 	/// @prot: Int32 -> Int32 -> Int32
-	fun exp(x, y) = x `**` y;
+	fun exp(x, y) = x ** y;
 
 	/// @prot: Int32 -> Int32
 	fun abs(x) = -x;
