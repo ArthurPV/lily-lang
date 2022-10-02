@@ -1136,7 +1136,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
 
         if (fun_decl->params) {
             params = NEW(Vec, sizeof(struct FunParamSymbol));
-            local_value = NEW(Vec, sizeof(struct Scope));
+            local_value = NEW(Vec, sizeof(struct Scope)); // TODO: Scope* -> Vec*
 
             for (Usize i = 0; i < len__Vec(*fun_decl->params); i++) {
                 struct FunParamSymbol *param =
