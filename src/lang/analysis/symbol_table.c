@@ -12,7 +12,8 @@ __new__Scope(const Str filename,
                           .name = name,
                           .id = id,
                           .item_kind = item_kind,
-                          .kind = kind };
+                          .kind = kind,
+                          .is_checked = false };
 
     return self;
 }

@@ -34,6 +34,7 @@ typedef struct Scope
     struct Vec *id;      // struct Vec<Usize*>*
     enum ScopeItemKind item_kind;
     enum ScopeKind kind;
+    bool is_checked;
 } ScopdId;
 
 /**
