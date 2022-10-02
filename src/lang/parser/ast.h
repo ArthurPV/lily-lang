@@ -397,56 +397,56 @@ typedef struct Literal
  *
  * @brief Construct Literal (Bool variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralBool(bool bool_);
 
 /**
  *
  * @brief Construct Literal (Char variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralChar(char char_);
 
 /**
  *
  * @brief Construct Literal (Int32 variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralInt32(Int32 int32);
 
 /**
  *
  * @brief Construct Literal (Int64 variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralInt64(Int64 int64);
 
 /**
  *
  * @brief Construct Literal (Int128 variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralInt128(Int128 int128);
 
 /**
  *
  * @brief Construct Literal (Float64 variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralFloat(Float64 float_);
 
 /**
  *
  * @brief Construct Literal (Str variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralStr(Str str);
 
 /**
  *
  * @brief Construct Literal (Unit variant).
  */
-struct Literal *
+struct Literal
 __new__LiteralUnit();
 
 /**
@@ -461,14 +461,14 @@ to_string__Literal(struct Literal self);
  * @brief Free the Literal type (Str variant).
  */
 void
-__free__LiteralStr(struct Literal *self);
+__free__LiteralStr(struct Literal self);
 
 /**
  *
  * @brief Free the Literal type (all variants).
  */
 void
-__free__LiteralAll(struct Literal *self);
+__free__LiteralAll(struct Literal self);
 
 enum UnaryOpKind
 {
@@ -487,7 +487,7 @@ typedef struct UnaryOp
  *
  * @brief Construct the UnaryOp type.
  */
-struct UnaryOp *
+struct UnaryOp
 __new__UnaryOp(enum UnaryOpKind kind, struct Expr *right);
 
 /**
@@ -502,7 +502,7 @@ to_string__UnaryOp(struct UnaryOp self);
  * @brief Free the UnaryOp type.
  */
 void
-__free__UnaryOp(struct UnaryOp *self);
+__free__UnaryOp(struct UnaryOp self);
 
 enum BinaryOpKind
 {
@@ -561,7 +561,7 @@ typedef struct BinaryOp
  *
  * @brief Construct the BinaryOp type.
  */
-struct BinaryOp *
+struct BinaryOp
 __new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right);
 
 /**
@@ -576,20 +576,20 @@ to_string__BinaryOp(struct BinaryOp self);
  * @brief Free the BinaryOp type.
  */
 void
-__free__BinaryOp(struct BinaryOp *self);
+__free__BinaryOp(struct BinaryOp self);
 
 typedef struct FunCall
 {
-    struct String *name;
-    struct Vec *params; // struct Vec<struct Tuple<struct FunParamCall*, struct
-                        // Location&>*>*
+    struct String *name; // struct String&
+    struct Vec *params;  // struct Vec<struct Tuple<struct FunParamCall*, struct
+                         // Location&>*>*
 } FunCall;
 
 /**
  *
  * @brief Construct the FunCall type.
  */
-struct FunCall *
+struct FunCall
 __new__FunCall(struct String *name, struct Vec *params);
 
 /**
@@ -604,11 +604,11 @@ to_string__FunCall(struct FunCall self);
  * @brief Free the FunCall type.
  */
 void
-__free__FunCall(struct FunCall *self);
+__free__FunCall(struct FunCall self);
 
 typedef struct FieldCall
 {
-    struct String *name;
+    struct String *name;  // struct String&
     struct Option *value; // struct Option<struct Expr*>*
 } FieldCall;
 
@@ -628,7 +628,7 @@ __free__FieldCall(struct FieldCall *self);
 
 typedef struct RecordCall
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Vec *
       fields; // struct Vec<struct Tuple<struct FieldCall*, struct Location&>*>*
 } RecordCall;
@@ -636,7 +636,7 @@ typedef struct RecordCall
 /**
  * @brief Construct the RecordCall type.
  */
-struct RecordCall *
+struct RecordCall
 __new__RecordCall(struct String *name, struct Vec *fields);
 
 /**
@@ -644,7 +644,7 @@ __new__RecordCall(struct String *name, struct Vec *fields);
  * @brief Free the RecordCall type.
  */
 void
-__free__RecordCall(struct RecordCall *self);
+__free__RecordCall(struct RecordCall self);
 
 typedef struct ArrayAccess
 {
@@ -656,7 +656,7 @@ typedef struct ArrayAccess
  *
  * @brief Construct the ArrayAccess type.
  */
-struct ArrayAccess *
+struct ArrayAccess
 __new__ArrayAccess(struct Expr *id, struct Vec *access);
 
 /**
@@ -664,7 +664,7 @@ __new__ArrayAccess(struct Expr *id, struct Vec *access);
  * @brief Free the ArrayAccess type.
  */
 void
-__free__ArrayAccess(struct ArrayAccess *self);
+__free__ArrayAccess(struct ArrayAccess self);
 
 typedef struct TupleAccess
 {
@@ -676,7 +676,7 @@ typedef struct TupleAccess
  *
  * @brief Construct the TupleAccess type.
  */
-struct TupleAccess *
+struct TupleAccess
 __new__TupleAccess(struct Expr *id, struct Vec *access);
 
 /**
@@ -684,7 +684,7 @@ __new__TupleAccess(struct Expr *id, struct Vec *access);
  * @brief Free the TupleAccess type.
  */
 void
-__free__TupleAccess(struct TupleAccess *self);
+__free__TupleAccess(struct TupleAccess self);
 
 typedef struct Lambda
 {
@@ -698,7 +698,7 @@ typedef struct Lambda
  *
  * @brief Construct the Lambda type.
  */
-struct Lambda *
+struct Lambda
 __new__Lambda(struct Vec *params,
               struct Option *return_type,
               struct Vec *body,
@@ -709,11 +709,11 @@ __new__Lambda(struct Vec *params,
  * @brief Free the Lambda type.
  */
 void
-__free__Lambda(struct Lambda *self);
+__free__Lambda(struct Lambda self);
 
 typedef struct Variant
 {
-    struct String *name;
+    struct String *name;  // struct String&
     struct Option *value; // struct Option<struct Expr*>*
 } Variant;
 
@@ -721,7 +721,7 @@ typedef struct Variant
  *
  * @brief Construct the Variant type.
  */
-struct Variant *
+struct Variant
 __new__Variant(struct String *name, struct Option *value);
 
 /**
@@ -729,7 +729,7 @@ __new__Variant(struct String *name, struct Option *value);
  * @brief Free the Variant type.
  */
 void
-__free__Variant(struct Variant *self);
+__free__Variant(struct Variant self);
 
 enum ExprKind
 {
@@ -766,28 +766,26 @@ typedef struct Expr
 
     union
     {
-        struct UnaryOp *unary_op;
-        struct BinaryOp *binary_op;
-        struct FunCall *fun_call;
-        struct RecordCall *record_call;
-        struct String *identifier;
+        struct UnaryOp unary_op;
+        struct BinaryOp binary_op;
+        struct FunCall fun_call;
+        struct RecordCall record_call;
+        struct String *identifier;     // struct String&
         struct Vec *identifier_access; // struct Vec<struct Expr*>*
         struct Vec *self_access;       // struct Vec<struct Expr*>*
-        struct ArrayAccess *array_access;
-        struct TupleAccess *tuple_access;
-        struct Lambda *lambda;
+        struct ArrayAccess array_access;
+        struct TupleAccess tuple_access;
+        struct Lambda lambda;
         struct Vec *array; // struct Vec<struct Expr*>*
         struct Vec *tuple; // struct Vec<struct Expr*>*
-        struct Variant *variant;
-        struct Expr *
-        try
-            ;
+        struct Variant variant;
+        struct Expr *try;
         struct IfCond *if_;
         struct Vec *block; // struct Vec<struct FunBodyItem*>*
         struct Expr *question_mark;
         struct Expr *dereference;
         struct Expr *ref;
-        struct Literal *literal;
+        struct Literal literal;
     } value;
 } Expr;
 
@@ -803,28 +801,28 @@ __new__Expr(enum ExprKind kind, struct Location loc);
  * @brief Construct the Expr type (UnaryOp variant).
  */
 struct Expr *
-__new__ExprUnaryOp(struct UnaryOp *unary_op, struct Location loc);
+__new__ExprUnaryOp(struct UnaryOp unary_op, struct Location loc);
 
 /**
  *
  * @brief Construct the Expr type (BinaryOp variant).
  */
 struct Expr *
-__new__ExprBinaryOp(struct BinaryOp *binary_op, struct Location loc);
+__new__ExprBinaryOp(struct BinaryOp binary_op, struct Location loc);
 
 /**
  *
  * @brief Construct the Expr type (FunCall variant).
  */
 struct Expr *
-__new__ExprFunCall(struct FunCall *fun_call, struct Location loc);
+__new__ExprFunCall(struct FunCall fun_call, struct Location loc);
 
 /**
  *
  * @brief Construct the Expr type (RecordCall variant).
  */
 struct Expr *
-__new__ExprRecordCall(struct RecordCall *record_call, struct Location loc);
+__new__ExprRecordCall(struct RecordCall record_call, struct Location loc);
 
 /**
  *
@@ -850,21 +848,21 @@ __new__ExprSelfAccess(struct Vec *self_access, struct Location loc);
  * @brief Construct the Expr type (ArrayAccess variant).
  */
 struct Expr *
-__new__ExprArrayAccess(struct ArrayAccess *array_access, struct Location loc);
+__new__ExprArrayAccess(struct ArrayAccess array_access, struct Location loc);
 
 /**
  *
  * @brief Construct the Expr type (TupleAccess variant).
  */
 struct Expr *
-__new__ExprTupleAccess(struct TupleAccess *tuple_access, struct Location loc);
+__new__ExprTupleAccess(struct TupleAccess tuple_access, struct Location loc);
 
 /**
  *
  * @brief Construct the Expr type (Lambda variant).
  */
 struct Expr *
-__new__ExprLambda(struct Lambda *lambda, struct Location loc);
+__new__ExprLambda(struct Lambda lambda, struct Location loc);
 
 /**
  * @brief Construct the Expr type (Array variant).
@@ -884,7 +882,7 @@ __new__ExprTuple(struct Vec *tuple, struct Location loc);
  * @brief Construct the Expr type (Variant variant).
  */
 struct Expr *
-__new__ExprVariant(struct Variant *variant, struct Location loc);
+__new__ExprVariant(struct Variant variant, struct Location loc);
 
 /**
  *
@@ -937,7 +935,7 @@ __new__ExprRef(struct Expr *ref, struct Location loc);
  * @brief Construct the Expr type (Literal variant).
  */
 struct Expr *
-__new__ExprLiteral(struct Literal *literal, struct Location loc);
+__new__ExprLiteral(struct Literal literal, struct Location loc);
 
 /**
  *
@@ -1595,9 +1593,7 @@ typedef struct Stmt
         struct Expr *return_;
         struct IfCond *if_;
         struct Expr *await;
-        struct TryStmt *
-        try
-            ;
+        struct TryStmt *try;
         struct MatchStmt *match;
         struct WhileStmt *while_;
         struct ForStmt *for_;

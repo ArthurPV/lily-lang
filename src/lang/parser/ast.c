@@ -412,7 +412,8 @@ __free__GenericRestrictedDataType(struct Generic *self)
     FREE(
       DataTypeAll,
       ((struct Tuple *)self->value.restricted_data_type->items[1])->items[0]);
-    free(((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
+    free(
+      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
     FREE(Tuple, self->value.restricted_data_type->items[1]);
     FREE(Tuple, self->value.restricted_data_type);
     free(self);
@@ -546,74 +547,67 @@ __free__FunBodyItemAll(struct FunBodyItem *self)
     }
 }
 
-struct Literal *
+struct Literal
 __new__LiteralBool(bool bool_)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindBool;
-    self->value.bool_ = bool_;
+    struct Literal self = { .kind = LiteralKindBool, .value.bool_ = bool_ };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralChar(char char_)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindChar;
-    self->value.char_ = char_;
+    struct Literal self = { .kind = LiteralKindChar, .value.char_ = char_ };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralInt32(Int32 int32)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindInt32;
-    self->value.int32 = int32;
+    struct Literal self = { .kind = LiteralKindInt32, .value.int32 = int32 };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralInt64(Int64 int64)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindInt64;
-    self->value.int64 = int64;
+    struct Literal self = { .kind = LiteralKindInt64, .value.int64 = int64 };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralInt128(Int128 int128)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindInt128;
-    self->value.int128 = int128;
+    struct Literal self = { .kind = LiteralKindInt128, .value.int128 = int128 };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralFloat(Float64 float_)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindFloat;
-    self->value.float_ = float_;
+    struct Literal self = { .kind = LiteralKindFloat, .value.float_ = float_ };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralStr(Str str)
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindStr;
-    self->value.str = str;
+    struct Literal self = { .kind = LiteralKindStr, .value.str = str };
+
     return self;
 }
 
-struct Literal *
+struct Literal
 __new__LiteralUnit()
 {
-    struct Literal *self = malloc(sizeof(struct Literal));
-    self->kind = LiteralKindUnit;
+    struct Literal self = { .kind = LiteralKindUnit };
+
     return self;
 }
 
@@ -641,31 +635,28 @@ to_string__Literal(struct Literal self)
 }
 
 void
-__free__LiteralStr(struct Literal *self)
+__free__LiteralStr(struct Literal self)
 {
-    free(self->value.str);
-    free(self);
+    free(self.value.str);
 }
 
 void
-__free__LiteralAll(struct Literal *self)
+__free__LiteralAll(struct Literal self)
 {
-    switch (self->kind) {
+    switch (self.kind) {
         case LiteralKindStr:
             FREE(LiteralStr, self);
             break;
         default:
-            free(self);
             break;
     }
 }
 
-struct UnaryOp *
+struct UnaryOp
 __new__UnaryOp(enum UnaryOpKind kind, struct Expr *right)
 {
-    struct UnaryOp *self = malloc(sizeof(struct UnaryOp));
-    self->kind = kind;
-    self->right = right;
+    struct UnaryOp self = { .kind = kind, .right = right };
+
     return self;
 }
 
@@ -683,19 +674,16 @@ to_string__UnaryOp(struct UnaryOp self)
 }
 
 void
-__free__UnaryOp(struct UnaryOp *self)
+__free__UnaryOp(struct UnaryOp self)
 {
-    FREE(ExprAll, self->right);
-    free(self);
+    FREE(ExprAll, self.right);
 }
 
-struct BinaryOp *
+struct BinaryOp
 __new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right)
 {
-    struct BinaryOp *self = malloc(sizeof(struct BinaryOp));
-    self->kind = kind;
-    self->left = left;
-    self->right = right;
+    struct BinaryOp self = { .kind = kind, .left = left, .right = right };
+
     return self;
 }
 
@@ -877,19 +865,17 @@ to_string__BinaryOp(struct BinaryOp self)
 }
 
 void
-__free__BinaryOp(struct BinaryOp *self)
+__free__BinaryOp(struct BinaryOp self)
 {
-    FREE(ExprAll, self->left);
-    FREE(ExprAll, self->right);
-    free(self);
+    FREE(ExprAll, self.left);
+    FREE(ExprAll, self.right);
 }
 
-struct FunCall *
+struct FunCall
 __new__FunCall(struct String *name, struct Vec *params)
 {
-    struct FunCall *self = malloc(sizeof(struct FunCall));
-    self->name = name;
-    self->params = params;
+    struct FunCall self = { .name = name, .params = params };
+
     return self;
 }
 
@@ -914,20 +900,17 @@ to_string__FunCall(struct FunCall self)
 }
 
 void
-__free__FunCall(struct FunCall *self)
+__free__FunCall(struct FunCall self)
 {
-    FREE(String, self->name);
-
-    for (Usize i = 0; i < len__Vec(*self->params); i++) {
+    for (Usize i = 0; i < len__Vec(*self.params); i++) {
         FREE(FunParamCallAll,
-             ((struct Tuple *)get__Vec(*self->params, i))->items[0]);
+             ((struct Tuple *)get__Vec(*self.params, i))->items[0]);
         //        FREE(Location, ((struct Tuple *)get__Vec(*self->params,
         //        i))->items[1]);
-        FREE(Tuple, ((struct Tuple *)get__Vec(*self->params, i)));
+        FREE(Tuple, ((struct Tuple *)get__Vec(*self.params, i)));
     }
 
-    FREE(Vec, self->params);
-    free(self);
+    FREE(Vec, self.params);
 }
 
 struct FieldCall *
@@ -942,135 +925,119 @@ __new__FieldCall(struct String *name, struct Option *value)
 void
 __free__FieldCall(struct FieldCall *self)
 {
-    FREE(String, self->name);
-
     if (is_Some__Option(self->value))
         FREE(ExprAll, get__Option(self->value));
 
     FREE(Option, self->value);
-    free(self);
 }
 
-struct RecordCall *
+struct RecordCall
 __new__RecordCall(struct String *name, struct Vec *fields)
 {
-    struct RecordCall *self = malloc(sizeof(struct RecordCall));
-    self->name = name;
-    self->fields = fields;
+    struct RecordCall self = { .name = name, .fields = fields };
+
     return self;
 }
 
 void
-__free__RecordCall(struct RecordCall *self)
+__free__RecordCall(struct RecordCall self)
 {
-    FREE(String, self->name);
-
-    for (Usize i = 0; i < len__Vec(*self->fields); i++) {
-        FREE(FieldCall, ((struct Tuple *)get__Vec(*self->fields, i))->items[0]);
+    for (Usize i = 0; i < len__Vec(*self.fields); i++) {
+        FREE(FieldCall, ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
         //        FREE(Location, ((struct Tuple *)get__Vec(*self->fields,
         //        i))->items[1]);
-        FREE(Tuple, ((struct Tuple *)get__Vec(*self->fields, i)));
+        FREE(Tuple, ((struct Tuple *)get__Vec(*self.fields, i)));
     }
 
-    FREE(Vec, self->fields);
-    free(self);
+    FREE(Vec, self.fields);
 }
 
-struct ArrayAccess *
+struct ArrayAccess
 __new__ArrayAccess(struct Expr *id, struct Vec *access)
 {
-    struct ArrayAccess *self = malloc(sizeof(struct ArrayAccess));
-    self->id = id;
-    self->access = access;
+    struct ArrayAccess self = { .id = id, .access = access };
+
     return self;
 }
 
 void
-__free__ArrayAccess(struct ArrayAccess *self)
+__free__ArrayAccess(struct ArrayAccess self)
 {
-    FREE(ExprAll, self->id);
+    FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self->access); i++)
-        FREE(ExprAll, get__Vec(*self->access, i));
+    for (Usize i = 0; i < len__Vec(*self.access); i++)
+        FREE(ExprAll, get__Vec(*self.access, i));
 
-    FREE(Vec, self->access);
-    free(self);
+    FREE(Vec, self.access);
 }
 
-struct TupleAccess *
+struct TupleAccess
 __new__TupleAccess(struct Expr *id, struct Vec *access)
 {
-    struct TupleAccess *self = malloc(sizeof(struct TupleAccess));
-    self->id = id;
-    self->access = access;
+    struct TupleAccess self = { .id = id, .access = access };
+
     return self;
 }
 
 void
-__free__TupleAccess(struct TupleAccess *self)
+__free__TupleAccess(struct TupleAccess self)
 {
-    FREE(ExprAll, self->id);
+    FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self->access); i++)
-        FREE(ExprAll, get__Vec(*self->access, i));
+    for (Usize i = 0; i < len__Vec(*self.access); i++)
+        FREE(ExprAll, get__Vec(*self.access, i));
 
-    FREE(Vec, self->access);
-    free(self);
+    FREE(Vec, self.access);
 }
 
-struct Lambda *
+struct Lambda
 __new__Lambda(struct Vec *params,
               struct Option *return_type,
               struct Vec *body,
               bool instantly_call)
 {
-    struct Lambda *self = malloc(sizeof(struct Lambda));
-    self->params = params;
-    self->return_type = return_type;
-    self->body = body;
-    self->instantly_call = instantly_call;
+    struct Lambda self = { .params = params,
+                           .return_type = return_type,
+                           .body = body,
+                           .instantly_call = instantly_call };
+
     return self;
 }
 
 void
-__free__Lambda(struct Lambda *self)
+__free__Lambda(struct Lambda self)
 {
-    for (Usize i = 0; i < len__Vec(*self->params); i++)
-        FREE(FunParamAll, get__Vec(*self->params, i));
+    for (Usize i = 0; i < len__Vec(*self.params); i++)
+        FREE(FunParamAll, get__Vec(*self.params, i));
 
-    FREE(Vec, self->params);
+    FREE(Vec, self.params);
 
-    if (is_Some__Option(self->return_type))
-        FREE(DataTypeAll, get__Option(self->return_type));
+    if (is_Some__Option(self.return_type))
+        FREE(DataTypeAll, get__Option(self.return_type));
 
-    FREE(Option, self->return_type);
+    FREE(Option, self.return_type);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
-        FREE(FunBodyItemAll, get__Vec(*self->body, i));
+    for (Usize i = 0; i < len__Vec(*self.body); i++)
+        FREE(FunBodyItemAll, get__Vec(*self.body, i));
 
-    FREE(Vec, self->body);
-    free(self);
+    FREE(Vec, self.body);
 }
 
-struct Variant *
+struct Variant
 __new__Variant(struct String *name, struct Option *value)
 {
-    struct Variant *self = malloc(sizeof(struct Variant));
-    self->name = name;
-    self->value = value;
+    struct Variant self = { .name = name, .value = value };
+
     return self;
 }
 
 void
-__free__Variant(struct Variant *self)
+__free__Variant(struct Variant self)
 {
-    FREE(String, self->name);
+    if (is_Some__Option(self.value))
+        FREE(ExprAll, get__Option(self.value));
 
-    if (is_Some__Option(self->value))
-        FREE(ExprAll, get__Option(self->value));
-
-    FREE(Option, self->value);
-    free(self);
+    FREE(Option, self.value);
 }
 
 struct Expr *
@@ -1083,7 +1050,7 @@ __new__Expr(enum ExprKind kind, struct Location loc)
 }
 
 struct Expr *
-__new__ExprUnaryOp(struct UnaryOp *unary_op, struct Location loc)
+__new__ExprUnaryOp(struct UnaryOp unary_op, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindUnaryOp;
@@ -1093,7 +1060,7 @@ __new__ExprUnaryOp(struct UnaryOp *unary_op, struct Location loc)
 }
 
 struct Expr *
-__new__ExprBinaryOp(struct BinaryOp *binary_op, struct Location loc)
+__new__ExprBinaryOp(struct BinaryOp binary_op, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindBinaryOp;
@@ -1103,7 +1070,7 @@ __new__ExprBinaryOp(struct BinaryOp *binary_op, struct Location loc)
 }
 
 struct Expr *
-__new__ExprFunCall(struct FunCall *fun_call, struct Location loc)
+__new__ExprFunCall(struct FunCall fun_call, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindFunCall;
@@ -1113,7 +1080,7 @@ __new__ExprFunCall(struct FunCall *fun_call, struct Location loc)
 }
 
 struct Expr *
-__new__ExprRecordCall(struct RecordCall *record_call, struct Location loc)
+__new__ExprRecordCall(struct RecordCall record_call, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindRecordCall;
@@ -1153,7 +1120,7 @@ __new__ExprSelfAccess(struct Vec *self_access, struct Location loc)
 }
 
 struct Expr *
-__new__ExprArrayAccess(struct ArrayAccess *array_access, struct Location loc)
+__new__ExprArrayAccess(struct ArrayAccess array_access, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindArrayAccess;
@@ -1163,7 +1130,7 @@ __new__ExprArrayAccess(struct ArrayAccess *array_access, struct Location loc)
 }
 
 struct Expr *
-__new__ExprTupleAccess(struct TupleAccess *tuple_access, struct Location loc)
+__new__ExprTupleAccess(struct TupleAccess tuple_access, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindTupleAccess;
@@ -1173,7 +1140,7 @@ __new__ExprTupleAccess(struct TupleAccess *tuple_access, struct Location loc)
 }
 
 struct Expr *
-__new__ExprLambda(struct Lambda *lambda, struct Location loc)
+__new__ExprLambda(struct Lambda lambda, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindLambda;
@@ -1203,7 +1170,7 @@ __new__ExprTuple(struct Vec *tuple, struct Location loc)
 }
 
 struct Expr *
-__new__ExprVariant(struct Variant *variant, struct Location loc)
+__new__ExprVariant(struct Variant variant, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindVariant;
@@ -1218,11 +1185,7 @@ __new__ExprTry(struct Expr *try, struct Location loc)
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindTry;
     self->loc = loc;
-    self->value.
-    try
-        =
-        try
-            ;
+    self->value.try = try;
     return self;
 }
 
@@ -1277,7 +1240,7 @@ __new__ExprRef(struct Expr *ref, struct Location loc)
 }
 
 struct Expr *
-__new__ExprLiteral(struct Literal *literal, struct Location loc)
+__new__ExprLiteral(struct Literal literal, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
     self->kind = ExprKindLiteral;
@@ -1292,7 +1255,7 @@ to_string__Expr(struct Expr self)
     switch (self.kind) {
         case ExprKindUnaryOp:
             return format("UnaryOp: {S}",
-                          to_string__UnaryOp(*self.value.unary_op));
+                          to_string__UnaryOp(self.value.unary_op));
         default:
             UNREACHABLE("unknown expr kind");
     }
@@ -1331,7 +1294,6 @@ __free__ExprRecordCall(struct Expr *self)
 void
 __free__ExprIdentifier(struct Expr *self)
 {
-    FREE(String, self->value.identifier);
     free(self);
 }
 
@@ -2310,11 +2272,7 @@ __new__StmtTry(struct Location loc, struct TryStmt *try)
     struct Stmt *self = malloc(sizeof(struct Stmt));
     self->kind = StmtKindTry;
     self->loc = loc;
-    self->value.
-    try
-        =
-        try
-            ;
+    self->value.try = try;
     return self;
 }
 

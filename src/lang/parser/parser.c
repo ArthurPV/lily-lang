@@ -2672,38 +2672,75 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 static struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
+    struct Location loc = NEW(Location);
+    struct Literal literal;
+
+    start__Location(&loc,
+                    parse_decl->previous->loc->s_line,
+                    parse_decl->previous->loc->s_col);
+
     switch (parse_decl->previous->kind) {
         case TokenKindIntLit: {
             const Str int_str = to_Str__String(*parse_decl->previous->lit);
             Int128 res = atoi_i128(int_str);
 
-            if (res > INT32_MIN && res <= INT32_MAX) {
-                assert(0 && "todo");
-            } else if (res > INT64_MIN && res <= INT64_MAX) {
-                assert(0 && "todo");
-            } else if (res > INT128_MIN && res <= INT128_MAX) {
-                assert(0 && "todo");
-            } else {
+            if (res > INT32_MIN && res <= INT32_MAX)
+                literal = NEW(LiteralInt32, (Int32)res);
+            else if (res > INT64_MIN && res <= INT64_MAX)
+                literal = NEW(LiteralInt64, (Int64)res);
+            else if (res > INT128_MIN && res <= INT128_MAX)
+                literal = NEW(LiteralInt128, res);
+            else
                 assert(0 && "error out of range");
-            }
 
             free(int_str);
 
             break;
         }
         case TokenKindCharLit:
+            const Str char_str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralChar, char_str[0]);
+
+            free(char_str);
+
             break;
-        case TokenKindFloatLit:
+        case TokenKindFloatLit: {
+            const Str float_str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralFloat, strtod(float_str, NULL));
+
+            free(float_str);
+
             break;
+        }
         case TokenKindBitCharLit:
+            assert(0 && "todo");
             break;
         case TokenKindStringLit:
+            const Str str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralStr, str);
+
             break;
         case TokenKindBitStringLit:
+            assert(0 && "todo");
+            break;
+        case TokenKindTrueKw:
+            literal = NEW(LiteralBool, true);
+            break;
+        case TokenKindFalseKw:
+            literal = NEW(LiteralBool, false);
             break;
         default:
             UNREACHABLE("");
     }
+
+    end__Location(&loc,
+                  parse_decl->previous->loc->e_line,
+                  parse_decl->previous->loc->e_col);
+
+    return NEW(ExprLiteral, literal, loc);
 }
 
 static struct Expr *
@@ -2712,6 +2749,11 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     next_token(parse_decl);
 
     struct Expr *expr = NULL;
+    struct Location loc = NEW(Location);
+
+    start__Location(&loc,
+                    parse_decl->previous->loc->s_line,
+                    parse_decl->previous->loc->s_col);
 
     switch (parse_decl->previous->kind) {
         case TokenKindIdentifier:
@@ -2728,11 +2770,32 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         case TokenKindBeginKw:
             break;
-        case TokenKindAmpersand:
+        case TokenKindAmpersand: {
+            struct Expr *expr_ref = parse_expr(self, parse_decl);
+            
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+            expr = NEW(ExprRef, expr_ref, loc);
+
             break;
+        }
         case TokenKindUndefKw:
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
+
+            expr = NEW(Expr, ExprKindUndef, loc);
+
             break;
         case TokenKindNilKw:
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
+
+            expr = NEW(Expr, ExprKindNil, loc);
+
             break;
         case TokenKindIntLit:
         case TokenKindCharLit:
@@ -2740,6 +2803,8 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
         case TokenKindBitCharLit:
         case TokenKindStringLit:
         case TokenKindBitStringLit:
+        case TokenKindTrueKw:
+        case TokenKindFalseKw:
             expr = parse_literal_expr(self, parse_decl);
             break;
         default:
