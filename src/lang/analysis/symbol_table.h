@@ -579,6 +579,13 @@ __new__BinaryOpSymbol(struct Expr binary_op,
 
 /**
  *
+ * @brief Convert BinaryOpKind to Str.
+ */
+const Str
+to_Str__BinaryOpSymbol(unsigned int kind);
+
+/**
+ *
  * @brief Free the BinaryOpSymbol type.
  */
 void

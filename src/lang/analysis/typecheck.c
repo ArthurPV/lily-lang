@@ -30,6 +30,7 @@ __new__Typecheck(struct Parser parser)
         .count_error = 0,
         .count_warning = 0,
         .funs = NEW(Vec, sizeof(struct FunSymbol)),
+        .builtins = Load_C_builtins(),
     };
 
     return self;
@@ -43,7 +44,12 @@ run__Typecheck(struct Typecheck *self)
 void
 __free__Typecheck(struct Typecheck self)
 {
-    for (Usize i = 0; i < len__Vec(*self.funs); i++)
+    for (Usize i = len__Vec(*self.builtins); i--;)
+        FREE(BuiltinAll, get__Vec(*self.builtins, i));
+
+    FREE(Vec, self.builtins);
+
+    for (Usize i = len__Vec(*self.funs); i--;)
         FREE(FunSymbol, (struct FunSymbol *)get__Vec(*self.funs, i));
 
     FREE(Vec, self.funs);

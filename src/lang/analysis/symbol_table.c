@@ -687,6 +687,19 @@ __new__BinaryOpSymbol(struct Expr binary_op,
     return self;
 }
 
+const Str
+to_Str__BinaryOpSymbol(unsigned int kind)
+{
+    if (kind > BinaryOpKindExponent)
+        return 0;
+
+    return "+\0-\0*\0/"
+           "\0%\0..\0<\0>\0<=\0>=\0==\0not=\0and\0or\0xor\0=\0+=\0-=\0*=\0/"
+           "=\0%=\0^=\0<<=\0>>=\0|=\0xor=\0&=\0~=\0++=\0--=\0|>\0++\0--\0$\0^"
+           "\0<<\0>>\0|\0&\0not\0**\0\0" +
+           3 * kind;
+}
+
 void
 __free__BinaryOpSymbol(struct BinaryOpSymbol self)
 {

@@ -1,5 +1,6 @@
 #include <base/new.h>
 #include <base/string.h>
+#include <base/macros.h>
 #include <base/vec.h>
 #include <lang/builtin/builtin.h>
 #include <lang/parser/ast.h>
@@ -17,7 +18,7 @@ __new__BuiltinFun(const Str name, struct Vec *params)
 void
 __free__BuiltinFun(struct BuiltinFun *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->params); i++)
+    for (Usize i = len__Vec(*self->params); i--;)
         FREE(DataTypeAll, get__Vec(*self->params, i));
 
     FREE(Vec, self->params);
@@ -36,7 +37,7 @@ __new__BuiltinModule(const Str name, struct Vec *items)
 void
 __free__BuiltinModule(struct BuiltinModule *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->items); i++)
+    for (Usize i = len__Vec(*self->items); i--;)
         FREE(BuiltinAll, get__Vec(*self->items, i));
 
     FREE(Vec, self->items);
@@ -85,5 +86,7 @@ __free__BuiltinAll(struct Builtin *self)
         case BuiltinKindModule:
             FREE(BuiltinModuleVar, self);
             break;
+        default:
+            UNREACHABLE("unknown builtin kind");
     }
 }

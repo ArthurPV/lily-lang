@@ -1,6 +1,8 @@
 #ifndef LILY_BUILTIN_H
 #define LILY_BUILTIN_H
 
+#include <base/types.h>
+
 enum BuiltinKind
 {
     BuiltinKindFun,
