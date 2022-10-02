@@ -56,10 +56,10 @@ typedef struct Scope
 {
     Str filename;
     struct String *name; // struct String&
-	Usize id;
+    Usize id;
     enum ScopeItemKind item_kind;
     enum ScopeKind kind;
-	struct Scope *previous;
+    struct Scope *previous;
 } ScopdId;
 
 /**
@@ -72,7 +72,7 @@ __new__Scope(const Str filename,
              Usize id,
              enum ScopeItemKind item_kind,
              enum ScopeKind kind,
-			 struct Scope *previous)
+             struct Scope *previous)
 {
     struct Scope *self = malloc(sizeof(struct Scope));
     self->filename = filename;
@@ -80,9 +80,16 @@ __new__Scope(const Str filename,
     self->id = id;
     self->item_kind = item_kind;
     self->kind = kind;
-	self->previous = previous;
+    self->previous = previous;
     return self;
 }
+
+/**
+ *
+ * @brief Copy the Scope type.
+ */
+struct Scope *
+copy__Scope(struct Scope *self);
 
 /**
  *

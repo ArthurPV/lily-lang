@@ -1,1 +1,4 @@
-fun add[T](x T) T = x;
+fun add(x) = x;
+
+fun add(x) = x;
+

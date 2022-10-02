@@ -1,4 +1,5 @@
 import "std.*" as std
+import "@builtin.*"
 
 A := 3;
 B := 120;

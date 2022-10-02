@@ -26,6 +26,16 @@
 #include <lang/analysis/symbol_table.h>
 #include <string.h>
 
+struct Scope *
+copy__Scope(struct Scope *self)
+{
+    struct Scope *copy = malloc(sizeof(struct Scope));
+
+    memcpy(copy, self, sizeof(struct Scope));
+
+    return copy;
+}
+
 void
 __free__LocalDataType(struct LocalDataType *self)
 {
@@ -223,9 +233,6 @@ __free__DataTypeSymbolArray(struct DataTypeSymbol *self)
 void
 __free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
 {
-    if (self->scope)
-        FREE(Scope, self->scope);
-
     if (self->custom_name)
         FREE(String, self->custom_name);
 

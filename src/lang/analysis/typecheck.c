@@ -104,6 +104,8 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                                    struct String *detail_msg,
                                    struct Option *help);
 static void
+verify_if_decl_is_duplicate(struct Typecheck self);
+static void
 push_all_symbols(struct Typecheck *self);
 static struct Vec *
 get_local_decl(struct Typecheck *self, struct Scope *scope);
@@ -175,22 +177,38 @@ static struct Scope *
 search_with_search_module_context(struct Typecheck *self,
                                   struct Vec *name,
                                   struct SearchContext search_module_context);
-static Usize *
-search_in_modules_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_funs_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_enums_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_records_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_classes_from_name(struct Typecheck *self, struct String *name);
-static Usize *
-search_in_traits_from_name(struct Typecheck *self, struct String *name);
+static struct ModuleSymbol *
+search_in_modules_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc);
+static struct FunSymbol *
+search_in_funs_from_name(struct Typecheck *self,
+                         struct String *name,
+                         struct Location loc);
+static struct EnumSymbol *
+search_in_enums_from_name(struct Typecheck *self,
+                          struct String *name,
+                          struct Location loc);
+static struct RecordSymbol *
+search_in_records_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc);
+static struct EnumObjSymbol *
+search_in_enums_obj_from_name(struct Typecheck *self,
+                              struct String *name,
+                              struct Location loc);
+static struct RecordObjSymbol *
+search_in_records_obj_from_name(struct Typecheck *self,
+                                struct String *name,
+                                struct Location loc);
+static struct ClassSymbol *
+search_in_classes_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc);
+static struct TraitSymbol *
+search_in_traits_from_name(struct Typecheck *self,
+                           struct String *name,
+                           struct Location loc);
 static struct SymbolTable *
 search_module_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
@@ -308,8 +326,10 @@ __new__Typecheck(struct Parser parser)
 void
 run__Typecheck(struct Typecheck *self)
 {
+    verify_if_decl_is_duplicate(*self);
     push_all_symbols(self);
     check_symbols(self);
+    SUMMARY();
 }
 
 void
@@ -445,6 +465,60 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                self->parser.parse_block.scanner.src->file,
                detail_msg,
                help);
+}
+
+static void
+verify_if_decl_is_duplicate(struct Typecheck self)
+{
+    for (Usize i = 0; i < len__Vec(*self.parser.decls); i++) {
+        for (Usize j = i + 1; j < len__Vec(*self.parser.decls); j++) {
+            if (eq__String(get_name__Decl(get__Vec(*self.parser.decls, i)),
+                           get_name__Decl(get__Vec(*self.parser.decls, j)),
+                           false)) {
+                struct Diagnostic *error =
+                  NEW(DiagnosticWithErrTypecheck,
+                      &self,
+                      NEW(LilyError, LilyErrorDuplicateDeclaration),
+                      ((struct Decl *)get__Vec(*self.parser.decls, j))->loc,
+                      from__String(""),
+                      Some(from__String("remove this declaration or move the "
+                                        "declaration in other scope")));
+
+                struct Diagnostic *note = NEW(
+                  DiagnosticWithNoteTypecheck,
+                  &self,
+                  format("this declaration is in conflict with a declaration "
+                         "declared at the location ({d}:{d})",
+                         ((struct Decl *)get__Vec(*self.parser.decls, j))
+                           ->loc.s_line,
+                         ((struct Decl *)get__Vec(*self.parser.decls, j))
+                           ->loc.s_col),
+                  ((struct Decl *)get__Vec(*self.parser.decls, i))->loc,
+                  from__String(""),
+                  None());
+
+                emit__Diagnostic(error);
+                emit__Diagnostic(note);
+            }
+        }
+
+        switch (((struct Decl *)get__Vec(*self.parser.decls, i))->kind) {
+            case DeclKindModule:
+                TODO("verify if declaration is duplicate in module");
+                break;
+            case DeclKindEnum:
+                TODO("verify if declaration is duplicate in enum");
+                break;
+            case DeclKindRecord:
+                TODO("verify if declaration is duplicate in record");
+                break;
+            case DeclKindClass:
+                TODO("verify if declaration is duplicate in class");
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 #define NEXT_DECL()                                                      \
@@ -1796,112 +1870,175 @@ search_from_access(struct Typecheck *self,
     }
 }
 
-static Usize *
-search_in_modules_from_name(struct Typecheck *self, struct String *name)
+static struct ModuleSymbol *
+search_in_modules_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc)
 {
     if (!self->modules)
         return NULL;
 
-    for (Usize i = len__Vec(*self->modules); i--;)
+    for (Usize i = len__Vec(*self->modules); i--;) {
         if (eq__String(
               name,
               ((struct ModuleSymbol *)get__Vec(*self->modules, i))->name,
-              false))
-            return (Usize *)i;
+              false)) {
+            check_module(self, get__Vec(*self->modules, i), i, NULL);
+
+            return get__Vec(*self->modules, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_enums_from_name(struct Typecheck *self, struct String *name)
+static struct FunSymbol *
+search_in_funs_from_name(struct Typecheck *self,
+                         struct String *name,
+                         struct Location loc)
+{
+    if (!self->modules)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->funs); i--;) {
+        if (eq__String(name,
+                       ((struct FunSymbol *)get__Vec(*self->funs, i))->name,
+                       false)) {
+            check_fun(self, get__Vec(*self->funs, i), i, NULL);
+
+            return get__Vec(*self->funs, i);
+        }
+    }
+
+    return NULL;
+}
+
+static struct EnumSymbol *
+search_in_enums_from_name(struct Typecheck *self,
+                          struct String *name,
+                          struct Location loc)
 {
     if (!self->enums)
         return NULL;
 
-    for (Usize i = len__Vec(*self->enums); i--;)
+    for (Usize i = len__Vec(*self->enums); i--;) {
         if (eq__String(name,
                        ((struct EnumSymbol *)get__Vec(*self->enums, i))->name,
-                       false))
-            return (Usize *)i;
+                       false)) {
+            check_enum(self, get__Vec(*self->enums, i), i, NULL);
+
+            return get__Vec(*self->enums, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_records_from_name(struct Typecheck *self, struct String *name)
+static struct RecordSymbol *
+search_in_records_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc)
 {
     if (!self->records)
         return NULL;
 
-    for (Usize i = len__Vec(*self->records); i--;)
+    for (Usize i = len__Vec(*self->records); i--;) {
         if (eq__String(
               name,
               ((struct RecordSymbol *)get__Vec(*self->records, i))->name,
-              false))
-            return (Usize *)i;
+              false)) {
+            check_record(self, get__Vec(*self->records, i), i, NULL);
+
+            return get__Vec(*self->records, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
+static struct EnumObjSymbol *
+search_in_enums_obj_from_name(struct Typecheck *self,
+                              struct String *name,
+                              struct Location loc)
 {
     if (!self->enums_obj)
         return NULL;
 
-    for (Usize i = len__Vec(*self->enums_obj); i--;)
+    for (Usize i = len__Vec(*self->enums_obj); i--;) {
         if (eq__String(
               name,
               ((struct EnumObjSymbol *)get__Vec(*self->enums_obj, i))->name,
-              false))
-            return (Usize *)i;
+              false)) {
+            check_enum_obj(self, get__Vec(*self->enums_obj, i), i, NULL);
+
+            return get__Vec(*self->enums_obj, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
+static struct RecordObjSymbol *
+search_in_records_obj_from_name(struct Typecheck *self,
+                                struct String *name,
+                                struct Location loc)
 {
     if (!self->records_obj)
         return NULL;
 
-    for (Usize i = len__Vec(*self->records_obj); i--;)
+    for (Usize i = len__Vec(*self->records_obj); i--;) {
         if (eq__String(
               name,
               ((struct RecordObjSymbol *)get__Vec(*self->records_obj, i))->name,
-              false))
-            return (Usize *)i;
+              false)) {
+            check_record_obj(self, get__Vec(*self->records_obj, i), i, NULL);
+
+            return get__Vec(*self->records_obj, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_classes_from_name(struct Typecheck *self, struct String *name)
+static struct ClassSymbol *
+search_in_classes_from_name(struct Typecheck *self,
+                            struct String *name,
+                            struct Location loc)
 {
     if (!self->classes)
         return NULL;
 
-    for (Usize i = len__Vec(*self->classes); i--;)
+    for (Usize i = len__Vec(*self->classes); i--;) {
         if (eq__String(
               name,
               ((struct ClassSymbol *)get__Vec(*self->classes, i))->name,
-              false))
-            return (Usize *)i;
+              false)) {
+            check_class(self, get__Vec(*self->classes, i), i, NULL);
+
+            return get__Vec(*self->classes, i);
+        }
+    }
 
     return NULL;
 }
 
-static Usize *
-search_in_traits_from_name(struct Typecheck *self, struct String *name)
+static struct TraitSymbol *
+search_in_traits_from_name(struct Typecheck *self,
+                           struct String *name,
+                           struct Location loc)
 {
     if (!self->traits)
         return NULL;
 
-    for (Usize i = len__Vec(*self->traits); i--;)
+    for (Usize i = len__Vec(*self->traits); i--;) {
         if (eq__String(name,
                        ((struct TraitSymbol *)get__Vec(*self->traits, i))->name,
-                       false))
-            return (Usize *)i;
+                       false)) {
+            check_trait(self, get__Vec(*self->traits, i), i, NULL);
+
+            return get__Vec(*self->traits, i);
+        }
+    }
 
     return NULL;
 }
@@ -2195,288 +2332,225 @@ check_data_type(
                           // function search by default in global
   struct SearchContext ctx)
 {
-    struct Vec *id = NULL;
-
     if (ctx.search_object) {
         switch (data_type->kind) {
             case DataTypeKindCustom: {
             custom_data_type : {
                 if (len__Vec(
                       *(struct Vec *)data_type->value.custom->items[0]) == 1) {
-                    Usize *id_enums = search_in_enums_from_name(
-                      self,
-                      get__Vec(
-                        (*(struct Vec *)data_type->value.custom->items[0]), 0));
-                    Usize *id_records =
-                      !id_enums
-                        ? search_in_records_from_name(
-                            self,
-                            get__Vec((*(struct Vec *)
-                                         data_type->value.custom->items[0]),
-                                     0))
-                        : NULL;
-                    Usize *id_enums_obj =
-                      !id_records && !id_enums
-                        ? search_in_enums_obj_from_name(
-                            self,
-                            get__Vec((*(struct Vec *)
-                                         data_type->value.custom->items[0]),
-                                     0))
-                        : NULL;
-                    Usize *id_records_obj =
-                      !id_enums && !id_records && !id_enums_obj
-                        ? search_in_records_obj_from_name(
-                            self,
-                            get__Vec((*(struct Vec *)
-                                         data_type->value.custom->items[0]),
-                                     0))
-                        : NULL;
-                    Usize *id_classes =
-                      !id_enums && !id_records && !id_enums_obj &&
-                          !id_records_obj
-                        ? search_in_classes_from_name(
-                            self,
-                            get__Vec((*(struct Vec *)
-                                         data_type->value.custom->items[0]),
-                                     0))
-                        : NULL;
-                    Usize *id_traits =
-                      !id_enums && !id_records && !id_enums_obj &&
-                          !id_records_obj && !id_classes
-                        ? search_in_traits_from_name(
-                            self,
-                            get__Vec((*(struct Vec *)
-                                         data_type->value.custom->items[0]),
-                                     0))
-                        : NULL;
-                    struct Vec *generic_params = NULL;
+                    if (!local_decl) {
+                        struct EnumSymbol *enum_ = search_in_enums_from_name(
+                          self,
+                          get__Vec(
+                            (*(struct Vec *)data_type->value.custom->items[0]),
+                            0),
+                          data_type_loc);
+                        struct RecordSymbol *record =
+                          !enum_
+                            ? search_in_records_from_name(
+                                self,
+                                get__Vec((*(struct Vec *)
+                                             data_type->value.custom->items[0]),
+                                         0),
+                                data_type_loc)
+                            : NULL;
+                        struct EnumObjSymbol *enum_obj =
+                          !record && !enum_
+                            ? search_in_enums_obj_from_name(
+                                self,
+                                get__Vec((*(struct Vec *)
+                                             data_type->value.custom->items[0]),
+                                         0),
+                                data_type_loc)
+                            : NULL;
+                        struct RecordObjSymbol *record_obj =
+                          !enum_ && !record && !enum_obj
+                            ? search_in_records_obj_from_name(
+                                self,
+                                get__Vec((*(struct Vec *)
+                                             data_type->value.custom->items[0]),
+                                         0),
+                                data_type_loc)
+                            : NULL;
+                        struct ClassSymbol *class =
+                          !enum_ && !record && !enum_obj && !record_obj
+                            ? search_in_classes_from_name(
+                                self,
+                                get__Vec((*(struct Vec *)
+                                             data_type->value.custom->items[0]),
+                                         0),
+                                data_type_loc)
+                            : NULL;
+                        struct TraitSymbol *trait =
+                          !enum_ && !record && !enum_obj && !record_obj &&
+                              !class
+                            ? search_in_traits_from_name(
+                                self,
+                                get__Vec((*(struct Vec *)
+                                             data_type->value.custom->items[0]),
+                                         0),
+                                data_type_loc)
+                            : NULL;
+                        struct Vec *generic_params = NULL;
 
-                    if (!data_type->value.custom->items[1]) {
-                    return_data_type : {
-                        if (!id_enums && !id_records && !id_enums_obj &&
-                            !id_records_obj && !id_classes && !id_traits) {
-                            if (len__Vec(*(struct Vec *)data_type->value.custom
-                                            ->items[0]) == 1 &&
-                                local_data_type) {
-                                for (Usize i = len__Vec(*local_data_type);
-                                     i--;) {
-                                    if (eq__String(
-                                          ((struct LocalDataType *)get__Vec(
-                                             *local_data_type, i))
-                                            ->name,
-                                          get__Vec(*(struct Vec *)data_type
-                                                      ->value.custom->items[0],
-                                                   0),
-                                          false)) {
-                                        id = NEW(Vec, sizeof(Usize));
-
-                                        push__Vec(id, (Usize *)i);
-
-                                        return NEW(
-                                          DataTypeSymbolCustom,
-                                          generic_params,
-                                          NULL,
-                                          NEW(Scope,
-                                              self->parser.parse_block.scanner
-                                                .src->file.name,
-                                              (struct String *)get__Vec(
-                                                (*(struct Vec *)data_type->value
-                                                    .custom->items[0]),
+                        if (!data_type->value.custom->items[1]) {
+                        return_data_type : {
+                            if (!enum_ && !record && !enum_obj && !record_obj &&
+                                !class && !trait) {
+                                if (len__Vec(*(struct Vec *)data_type->value
+                                                .custom->items[0]) == 1 &&
+                                    local_data_type) {
+                                    for (Usize i = len__Vec(*local_data_type);
+                                         i--;) {
+                                        if (eq__String(
+                                              ((struct LocalDataType *)get__Vec(
+                                                 *local_data_type, i))
+                                                ->name,
+                                              get__Vec(
+                                                *(struct Vec *)data_type->value
+                                                   .custom->items[0],
                                                 0),
-                                              i,
-                                              ScopeItemKindGeneric,
-                                              ScopeKindLocal,
-                                              NULL));
+                                              false)) {
+                                            return NEW(
+                                              DataTypeSymbolCustom,
+                                              generic_params,
+                                              NULL,
+                                              NEW(
+                                                Scope,
+                                                self->parser.parse_block.scanner
+                                                  .src->file.name,
+                                                (struct String *)get__Vec(
+                                                  (*(struct Vec *)data_type
+                                                      ->value.custom->items[0]),
+                                                  0),
+                                                i,
+                                                ScopeItemKindGeneric,
+                                                ScopeKindLocal,
+                                                NULL));
+                                        }
                                     }
                                 }
-                            }
 
-                            struct Diagnostic *err =
-                              NEW(DiagnosticWithErrTypecheck,
+                                /* struct Diagnostic *err =
+                                  NEW(DiagnosticWithErrTypecheck,
+                                      self,
+                                      NEW(LilyError, LilyErrorUnknownDataType),
+                                      data_type_loc,
+                                      from__String(""),
+                                      None());
+
+                                err->err->s = format(
+                                  "{S}",
+                                  (struct String *)get__Vec(
+                                    (*(struct Vec *)
+                                        data_type->value.custom->items[0]),
+                                    0));
+
+                                emit__Diagnostic(err); */
+
+                                return NULL;
+                            } else if (enum_ && ctx.search_type) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           enum_->scope);
+                            } else if (record && ctx.search_type) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           record->scope);
+                            } else if (!enum_ && !record && ctx.search_object) {
+                                struct Diagnostic *err = NEW(
+                                  DiagnosticWithErrTypecheck,
                                   self,
-                                  NEW(LilyError, LilyErrorUnknownDataType),
+                                  NEW(
+                                    LilyError,
+                                    LilyErrorExpectedEnumObjectOrRecordObject),
                                   data_type_loc,
                                   from__String(""),
                                   None());
 
-                            err->err->s =
-                              format("{S}",
-                                     (struct String *)get__Vec(
-                                       (*(struct Vec *)
-                                           data_type->value.custom->items[0]),
-                                       0));
+                                struct Diagnostic *note = NEW(
+                                  DiagnosticWithNoteTypecheck,
+                                  self,
+                                  from__String("replace `type` by `object` in "
+                                               "current declaration"),
+                                  enum_ ? enum_->enum_decl->loc
+                                        : record->record_decl->loc,
+                                  from__String(""),
+                                  None());
 
-                            emit__Diagnostic(err);
+                                emit__Diagnostic(err);
+                                emit__Diagnostic(note);
 
-                            return NULL;
-                        } else if (id_enums_obj)
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_enums_obj,
-                                ScopeItemKindEnumObj,
-                                ScopeKindGlobal, NULL));
-                        else if (id_records_obj) {
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_records_obj,
-                                ScopeItemKindRecordObj,
-                                ScopeKindGlobal, NULL));
-                        } else if (!id_enums && !id_records &&
-                                   ctx.search_object) {
-                            struct Diagnostic *err = NEW(
-                              DiagnosticWithErrTypecheck,
-                              self,
-                              NEW(LilyError,
-                                  LilyErrorExpectedEnumObjectOrRecordObject),
-                              data_type_loc,
-                              from__String(""),
-                              None());
+                                return NULL;
+                            } else if (enum_obj) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           enum_obj->scope);
 
-                            struct Diagnostic *note = NEW(
-                              DiagnosticWithNoteTypecheck,
-                              self,
-                              from__String("replace `type` by `object` in "
-                                           "current declaration"),
-                              id_enums ? ((struct Decl *)get__Vec(
-                                            *self->parser.decls, *id_enums))
-                                           ->loc
-                                       : ((struct Decl *)get__Vec(
-                                            *self->parser.decls, *id_records))
-                                           ->loc,
-                              from__String(""),
-                              None());
-
-                            emit__Diagnostic(err);
-                            emit__Diagnostic(note);
-
-                            return NULL;
-                        } else if (id_enums) {
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_enums,
-                                ScopeItemKindEnum,
-                                ScopeKindGlobal, NULL));
-
-                        } else if (id_records) {
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_records,
-                                ScopeItemKindRecord,
-                                ScopeKindGlobal, NULL));
-                        } else if (id_classes) {
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_classes,
-                                ScopeItemKindClass,
-                                ScopeKindGlobal, NULL));
-                        } else if (id_traits && ctx.search_trait) {
-                            id = NEW(Vec, sizeof(Usize));
-
-                            push__Vec(id, id_traits);
-
-                            return NEW(
-                              DataTypeSymbolCustom,
-                              generic_params,
-                              NULL,
-                              NEW(
-                                Scope,
-                                self->parser.parse_block.scanner.src->file.name,
-                                (struct String *)get__Vec(
-                                  (*(struct Vec *)
-                                      data_type->value.custom->items[0]),
-                                  0),
-                                (Usize)(UPtr)id_traits,
-                                ScopeItemKindTrait,
-                                ScopeKindGlobal,
-                                NULL));
-                        } else if (id_traits && !ctx.search_trait)
-                            assert(0 && "error");
-                    }
-                    } else {
-                        generic_params =
-                          NEW(Vec, sizeof(struct DataTypeSymbol));
-
-                        for (Usize i = len__Vec(*(struct Vec *)data_type->value
-                                                   .custom->items[1]);
-                             i--;) {
-                            struct DataType *current = get__Vec(
-                              *(struct Vec *)data_type->value.custom->items[1],
-                              i);
-                            push__Vec(generic_params,
-                                      check_data_type(self,
-                                                      data_type_loc,
-                                                      current,
-                                                      local_data_type,
-                                                      local_decl,
-                                                      ctx));
+                            } else if (record_obj) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           record_obj->scope);
+                            } else if (class) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           class->scope);
+                            } else if (trait && ctx.search_trait) {
+                                return NEW(DataTypeSymbolCustom,
+                                           generic_params,
+                                           NULL,
+                                           trait->scope);
+                            } else if (trait && !ctx.search_trait)
+                                assert(0 && "error");
                         }
+                        } else {
+                            generic_params =
+                              NEW(Vec, sizeof(struct DataTypeSymbol));
 
-                        goto return_data_type;
+                            for (Usize i = len__Vec(
+                                   *(struct Vec *)
+                                      data_type->value.custom->items[1]);
+                                 i--;) {
+                                struct DataType *current =
+                                  get__Vec(*(struct Vec *)
+                                              data_type->value.custom->items[1],
+                                           i);
+                                push__Vec(generic_params,
+                                          check_data_type(self,
+                                                          data_type_loc,
+                                                          current,
+                                                          local_data_type,
+                                                          local_decl,
+                                                          ctx));
+                            }
+
+                            goto return_data_type;
+                        }
+                    } else {
+                        struct SearchContext search_module_context = {
+                            .search_fun = false,
+                            .search_type = true,
+                            .search_value = false,
+                            .search_variant = false,
+                            .search_trait = false,
+                            .search_class = false
+                        };
+                        /* return NEW(DataTypeSymbolCustom,
+                                   data_type->value.custom->items[1],
+                                   NULL,
+                                   search_in_modules_from_name(
+                                     self,
+                                     data_type->value.custom->items[0],
+                                     search_module_context)); */
+                        return NULL;
                     }
-                } else {
-                    struct SearchContext search_module_context = {
-                        .search_fun = false,
-                        .search_type = true,
-                        .search_value = false,
-                        .search_variant = false,
-                        .search_trait = false,
-                        .search_class = false
-                    };
-                    /* return NEW(DataTypeSymbolCustom,
-                               data_type->value.custom->items[1],
-                               NULL,
-                               search_in_modules_from_name(
-                                 self,
-                                 data_type->value.custom->items[0],
-                                 search_module_context)); */
-                    return NULL;
                 }
-            } break;
+                break;
             }
             default: {
                 struct Diagnostic *err =
@@ -2490,6 +2564,7 @@ check_data_type(
                 emit__Diagnostic(err);
 
                 return NULL;
+            }
             }
         }
     } else {
