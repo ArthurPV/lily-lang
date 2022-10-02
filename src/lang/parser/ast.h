@@ -2247,7 +2247,7 @@ __free__RecordDecl(struct RecordDecl *self);
 
 typedef struct VariantEnum
 {
-    struct String *name;      // struct String&
+    struct String *name;        // struct String&
     struct DataType *data_type; // struct DataType*
     struct Location loc;
 } VariantEnum;
@@ -2466,9 +2466,11 @@ typedef struct ClassDecl
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
-    struct Vec *inheritance;    // struct Vec<struct DataType*>*
-    struct Vec *impl;           // struct Vec<struct DataType*>*
-    struct Vec *body;           // struct Vec<struct ClassBodyItem*>*
+    struct Vec *inheritance; // struct Vec<struct Tuple<struct DataType*, struct
+                             // Location*>*>*
+    struct Vec
+      *impl; // struct Vec<struct Tuple<struct DataType*, struct Location*>*>*
+    struct Vec *body; // struct Vec<struct ClassBodyItem*>*
     bool is_pub;
 } ClassDecl;
 

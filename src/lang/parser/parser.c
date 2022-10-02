@@ -5648,14 +5648,19 @@ parse_alias_declaration(struct Parser *self,
 static struct Vec *
 parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *inh = NEW(Vec, sizeof(struct DataType));
+    struct Vec *inh = NEW(Vec, sizeof(struct Tuple));
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        struct Location loc = NEW(Location);
         struct DataType *dt = parse_data_type(self, parse_decl);
+
+        start__Location(&loc,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
 
         switch (dt->kind) {
             case DataTypeKindCustom:
-                push__Vec(inh, dt);
+                push__Vec(inh, NEW(Tuple, 2, dt, copy__Location(&loc)));
                 break;
             default: {
                 struct Diagnostic *err =
