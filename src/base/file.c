@@ -25,6 +25,7 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <errno.h>
 #include <base/file.h>
 #include <base/new.h>
 #include <base/platform.h>
