@@ -220,9 +220,11 @@ typedef struct MethodParseContext
     bool is_async;
     bool has_generic_params;
     bool has_params;
+    bool has_return_type;
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Token&>*
     struct Vec *params;         // struct Vec<struct Token&>*
+    struct Vec *return_type;    // struct Vec<struct Token&>*
     struct Vec *body;           // struct Vec<struct Token&>*
 } MethodParseContext;
 
@@ -548,7 +550,7 @@ __free__ParseContextModule(struct ParseContext *self);
 void
 __free__ParseContextAll(struct ParseContext *self);
 
-typedef struct ParseDecl
+typedef struct ParseDecl // Parse for all declaration except for class body
 {
     Usize pos;
     struct Token *current;  // struct Token&
@@ -562,6 +564,20 @@ typedef struct ParseDecl
  */
 struct ParseDecl
 __new__ParseDecl(struct Vec *tokens);
+
+typedef struct ParseClassBody
+{
+    Usize pos;
+    struct ParseContext *current; // struct ParseContext&
+    struct Vec *blocks;           // struct Vec<struct ParseContext*>*
+} ParseClassBody;
+
+/**
+ *
+ * @brief Construct the ParseDecl type.
+ */
+struct ParseClassBody
+__new__ParseClassBody(struct Vec *blocks);
 
 typedef struct Parser
 {

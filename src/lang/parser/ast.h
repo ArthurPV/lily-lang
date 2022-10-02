@@ -596,9 +596,9 @@ __free__BinaryOp(struct BinaryOp self);
 
 typedef struct FunCall
 {
-    struct Expr *id; 
-    struct Vec *params;  // struct Vec<struct Tuple<struct FunParamCall*, struct
-                         // Location*>*>*
+    struct Expr *id;
+    struct Vec *params; // struct Vec<struct Tuple<struct FunParamCall*, struct
+                        // Location*>*>*
 } FunCall;
 
 /**
@@ -1885,7 +1885,7 @@ __free__ModuleDecl(struct ModuleDecl *self);
 
 typedef struct AliasDecl
 {
-    struct String *name; // struct String&
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct DataType *data_type;
     bool is_pub;
@@ -1937,7 +1937,7 @@ __free__FieldRecord(struct FieldRecord *self);
 
 typedef struct RecordDecl
 {
-    struct String *name; // struct String&
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *fields;         // struct Vec<struct FieldRecord*>*
     bool is_pub;
@@ -1964,7 +1964,7 @@ __free__RecordDecl(struct RecordDecl *self);
 
 typedef struct VariantEnum
 {
-    struct String *name; // struct String&
+    struct String *name;      // struct String&
     struct Option *data_type; // struct Option<struct DataType*>*
     struct Location loc;
 } VariantEnum;
@@ -1987,7 +1987,7 @@ __free__VariantEnum(struct VariantEnum *self);
 
 typedef struct EnumDecl
 {
-    struct String *name; // struct String&
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *variants;       // struct Vec<struct VariantEnum*>*
     struct Option *type_value;  // struct Option<struct DataType*>*
@@ -2073,10 +2073,11 @@ __free__PropertyDecl(struct PropertyDecl *self);
 
 typedef struct MethodDecl
 {
-    struct String *name;
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>
     struct Vec *params;         // struct Vec<struct FunParam*>*
-    struct Vec *body;           // struct Vec<struct FunBodyItem*>*
+    struct DataType *return_type;
+    struct Vec *body; // struct Vec<struct FunBodyItem*>*
     bool has_first_self_param;
     bool is_async;
     bool is_pub;
@@ -2090,6 +2091,7 @@ struct MethodDecl *
 __new__MethodDecl(struct String *name,
                   struct Vec *generic_params,
                   struct Vec *params,
+                  struct DataType *return_type,
                   struct Vec *body,
                   bool has_first_self_param,
                   bool is_async,
@@ -2167,10 +2169,10 @@ __free__ClassBodyItemAll(struct ClassBodyItem *self);
 
 typedef struct ClassDecl
 {
-    struct String *name;
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
-    struct Vec *inheritance;    // struct Vec<struct String*>*
-    struct Vec *impl;           // struct Vec<struct String*>*
+    struct Vec *inheritance;    // struct Vec<struct DataType*>*
+    struct Vec *impl;           // struct Vec<struct DataType*>*
     struct Vec *body;           // struct Vec<struct ClassBodyItem*>*
     bool is_pub;
 } ClassDecl;
@@ -2202,7 +2204,7 @@ enum TraitBodyItemKind
 
 typedef struct Prototype
 {
-    struct String *name; // struct String&
+    struct String *name;     // struct String&
     struct Vec *params_type; // struct Vec<struct DataType*>*
     struct DataType *return_type;
     bool is_async;
@@ -2276,10 +2278,10 @@ __free__TraitBodyItemAll(struct TraitBodyItem *self);
 
 typedef struct TraitDecl
 {
-    struct String *name; // struct String&
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
-    struct Vec *inh; // struct Vec<struct DataType*>*
-    struct Vec *body; // struct Vec<struct TraitBodyItem*>*
+    struct Vec *inh;            // struct Vec<struct DataType*>*
+    struct Vec *body;           // struct Vec<struct TraitBodyItem*>*
 } TraitDecl;
 
 /**

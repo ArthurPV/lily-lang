@@ -16,6 +16,12 @@ type Persons: alias = i32;
 
 object Work: trait =
 	@get_work :: self -> Str
+	@get_salary :: self -> Int32
+end
+
+object Person: class =
+	@name Str;
+	@age Uint8;
 end
 
 fun main =

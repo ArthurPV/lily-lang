@@ -1,8 +1,8 @@
-#include <string.h>
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/str.h>
 #include <lang/parser/ast.h>
+#include <string.h>
 
 struct DataType *
 __new__DataType(enum DataTypeKind kind)
@@ -554,7 +554,8 @@ __new__LiteralChar(char char_)
 struct Literal
 __new__LiteralBitChar(UInt8 bit_char)
 {
-    struct Literal self = { .kind = LiteralKindBitChar, .value.bit_char = bit_char };
+    struct Literal self = { .kind = LiteralKindBitChar,
+                            .value.bit_char = bit_char };
 
     return self;
 }
@@ -602,7 +603,8 @@ __new__LiteralStr(Str str)
 struct Literal
 __new__LiteralBitStr(UInt8 **bit_str)
 {
-    struct Literal self = { .kind = LiteralKindBitStr, .value.bit_str = bit_str };
+    struct Literal self = { .kind = LiteralKindBitStr,
+                            .value.bit_str = bit_str };
 
     return self;
 }
@@ -2743,7 +2745,7 @@ __free__EnumDecl(struct EnumDecl *self)
 
         FREE(Vec, self->generic_params);
     }
-    
+
     if (self->variants != NULL) {
         for (Usize i = 0; i < len__Vec(*self->variants); i++)
             FREE(VariantEnum, get__Vec(*self->variants, i));
@@ -2809,6 +2811,7 @@ struct MethodDecl *
 __new__MethodDecl(struct String *name,
                   struct Vec *generic_params,
                   struct Vec *params,
+                  struct DataType *return_type,
                   struct Vec *body,
                   bool has_first_self_param,
                   bool is_async,
@@ -2818,6 +2821,7 @@ __new__MethodDecl(struct String *name,
     self->name = name;
     self->generic_params = generic_params;
     self->params = params;
+    self->return_type = return_type;
     self->body = body;
     self->has_first_self_param = has_first_self_param;
     self->is_async = is_async;
@@ -2828,22 +2832,30 @@ __new__MethodDecl(struct String *name,
 void
 __free__MethodDecl(struct MethodDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
+    if (self->params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->params); i++)
+            FREE(FunParamAll, get__Vec(*self->params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->params); i++)
-        FREE(FunParamAll, get__Vec(*self->params, i));
+        FREE(Vec, self->params);
+    }
 
-    FREE(Vec, self->params);
+    if (self->return_type != NULL)
+        FREE(DataTypeAll, self->return_type);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
-        FREE(FunBodyItemAll, get__Vec(*self->body, i));
+    if (self->body != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->body); i++)
+            FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
-    FREE(Vec, self->body);
+        FREE(Vec, self->body);
+    }
+
     free(self);
 }
 
@@ -2937,27 +2949,34 @@ __new__ClassDecl(struct String *name,
 void
 __free__ClassDecl(struct ClassDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->inheritance); i++)
+            FREE(DataTypeAll, get__Vec(*self->inheritance, i));
 
-    for (Usize i = 0; i < len__Vec(*self->inheritance); i++)
-        FREE(String, get__Vec(*self->inheritance, i));
+        FREE(Vec, self->inheritance);
+    }
 
-    FREE(Vec, self->inheritance);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->impl); i++)
+            FREE(DataTypeAll, get__Vec(*self->impl, i));
 
-    for (Usize i = 0; i < len__Vec(*self->impl); i++)
-        FREE(String, get__Vec(*self->impl, i));
+        FREE(Vec, self->impl);
+    }
 
-    FREE(Vec, self->impl);
+    if (self->body != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->body); i++)
+            FREE(ClassBodyItemAll, get__Vec(*self->body, i));
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
-        FREE(ClassBodyItemAll, get__Vec(*self->body, i));
+        FREE(Vec, self->body);
+    }
 
-    FREE(Vec, self->body);
     free(self);
 }
 

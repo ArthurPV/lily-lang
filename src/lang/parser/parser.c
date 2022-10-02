@@ -429,8 +429,16 @@ static struct Vec *
 parse_inheritance(struct Parser self, struct ParseDecl *parse_decl);
 static struct TraitDecl *
 parse_trait_declaration(struct Parser *self);
+static struct Vec *
+parse_impl(struct Parser self, struct ParseDecl *parse_decl);
 static struct ClassDecl *
 parse_class_declaration(struct Parser *self);
+static struct PropertyDecl *
+parse_property_declaration(struct Parser *self,
+                           struct ParseClassBody *parse_class);
+static struct MethodDecl *
+parse_method_declaration(struct Parser *self,
+                         struct ParseClassBody *parse_class);
 static struct ImportStmt *
 parse_import_declaration(struct Parser *self);
 static struct ConstantDecl *
@@ -2193,10 +2201,13 @@ __new__MethodParseContext()
                                        .is_async = false,
                                        .has_generic_params = false,
                                        .has_params = false,
+                                       .has_return_type = false,
                                        .name = NULL,
                                        .generic_params =
                                          NEW(Vec, sizeof(struct Token)),
                                        .params = NEW(Vec, sizeof(struct Token)),
+                                       .return_type =
+                                         NEW(Vec, sizeof(struct Token)),
                                        .body = NEW(Vec, sizeof(struct Token)) };
 
     return self;
@@ -2208,6 +2219,16 @@ get_method_parse_context(struct MethodParseContext *self,
 {
     PARSE_GENERIC_PARAMS(self);
     PARSE_PARAMS(self);
+
+    if (parse_block->current->kind != TokenKindEq) {
+        self->has_return_type = true;
+
+        while (parse_block->current->kind != TokenKindEq &&
+               parse_block->current->kind != TokenKindEof) {
+            push__Vec(self->return_type, &*parse_block->current);
+            next_token_pb(parse_block);
+        }
+    }
 
     EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
         struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
@@ -2225,6 +2246,7 @@ __free__MethodParseContext(struct MethodParseContext self)
 {
     FREE(Vec, self.generic_params);
     FREE(Vec, self.params);
+    FREE(Vec, self.return_type);
     FREE(Vec, self.body);
 }
 
@@ -2898,6 +2920,18 @@ __new__ParseDecl(struct Vec *tokens)
         .previous = len__Vec(*tokens) == 0 ? NULL : get__Vec(*tokens, 0),
         .tokens = tokens
     };
+
+    return self;
+}
+
+struct ParseClassBody
+__new__ParseClassBody(struct Vec *blocks)
+{
+    struct ParseClassBody self = { .pos = 0,
+                                   .current = len__Vec(*blocks) == 0
+                                                ? NULL
+                                                : get__Vec(*blocks, 0),
+                                   .blocks = blocks };
 
     return self;
 }
@@ -5121,9 +5155,183 @@ parse_trait_declaration(struct Parser *self)
     return NEW(TraitDecl, trait_parse_context.name, generic_params, inh, body);
 }
 
+static struct Vec *
+parse_impl(struct Parser self, struct ParseDecl *parse_decl)
+{
+    return parse_inheritance(self, parse_decl);
+}
+
+#define NEXT_CLASS_BLOCK()                                            \
+    parse.pos += 1;                                                   \
+    parse.current =                                                   \
+      parse.pos < len__Vec(*parse.blocks)                             \
+        ? ((struct ParseContext *)get__Vec(*parse.blocks, parse.pos)) \
+        : NULL
+
 static struct ClassDecl *
 parse_class_declaration(struct Parser *self)
 {
+    ClassParseContext class_parse_context = self->current->value.class;
+    struct Vec *generic_params = NULL;
+    struct Vec *inheritance = NULL;
+    struct Vec *impl = NULL;
+    struct Vec *body = NULL;
+
+    if (class_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, class_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (class_parse_context.has_inheritance) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, class_parse_context.inheritance);
+
+        inheritance = parse_inheritance(*self, &parse);
+    }
+
+    if (class_parse_context.has_impl) {
+        struct ParseDecl parse = NEW(ParseDecl, class_parse_context.impl);
+
+        impl = parse_impl(*self, &parse);
+    }
+
+    if (len__Vec(*class_parse_context.body) > 0) {
+        body = NEW(Vec, sizeof(struct ClassBodyItem));
+        struct ParseClassBody parse =
+          NEW(ParseClassBody, class_parse_context.body);
+
+        while (parse.pos < len__Vec(*parse.blocks)) {
+            switch (parse.current->kind) {
+                case ParseContextKindProperty: {
+                    struct PropertyDecl *prop =
+                      parse_property_declaration(self, &parse);
+                    push__Vec(
+                      body,
+                      NEW(ClassBodyItemProperty, prop, parse.current->loc));
+                    break;
+                }
+                case ParseContextKindMethod: {
+                    struct MethodDecl *method =
+                      parse_method_declaration(self, &parse);
+                    push__Vec(
+                      body,
+                      NEW(ClassBodyItemMethod, method, parse.current->loc));
+                    break;
+                }
+                case ParseContextKindImport:
+                    break;
+                default:
+                    UNREACHABLE("");
+            }
+
+            NEXT_CLASS_BLOCK();
+        }
+    }
+
+    return NEW(ClassDecl,
+               class_parse_context.name,
+               generic_params,
+               inheritance,
+               impl,
+               body,
+               class_parse_context.is_pub);
+}
+
+static struct PropertyDecl *
+parse_property_declaration(struct Parser *self,
+                           struct ParseClassBody *parse_class)
+{
+    struct PropertyParseContext property_parse_context =
+      parse_class->current->value.property;
+    struct DataType *data_type = NULL;
+
+    {
+        struct ParseDecl parse =
+          NEW(ParseDecl, property_parse_context.data_type);
+
+        data_type = parse_data_type(*self, &parse);
+    }
+
+    return NEW(PropertyDecl,
+               property_parse_context.name,
+               data_type,
+               property_parse_context.is_pub);
+}
+
+static struct MethodDecl *
+parse_method_declaration(struct Parser *self,
+                         struct ParseClassBody *parse_class)
+{
+    struct MethodParseContext method_parse_context =
+      parse_class->current->value.method;
+    struct Vec *generic_params = NULL;
+    struct Vec *params = NULL;
+    struct DataType *return_type = NULL;
+    struct Vec *body = NULL;
+    bool has_first_self_param = false;
+
+    if (method_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, method_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (method_parse_context.has_params) {
+        struct ParseDecl parse = NEW(ParseDecl, method_parse_context.params);
+
+        params = parse_fun_params(*self, &parse);
+
+        has_first_self_param =
+          ((struct FunParam *)get__Vec(*params, 0))->param_data_type->some !=
+              NULL
+            ? ((struct DataType *)((struct FunParam *)get__Vec(*params, 0))
+                 ->param_data_type->some)
+                    ->kind == DataTypeKindSelf
+                ? true
+                : false
+            : false;
+    }
+
+    if (method_parse_context.has_return_type) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, method_parse_context.return_type);
+
+        return_type = parse_data_type(*self, &parse);
+
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  format(""),
+                  None());
+
+            err->err->s =
+              format("`{S}`", token_kind_to_string__Token(*parse.current));
+
+            emit__Diagnostic(err);
+        }
+    }
+
+    if (len__Vec(*method_parse_context.body) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, method_parse_context.body);
+
+        body = parse_fun_body(*self, &parse);
+    }
+
+    return NEW(MethodDecl,
+               method_parse_context.name,
+               generic_params,
+               params,
+               return_type,
+               body,
+               has_first_self_param,
+               method_parse_context.is_async,
+               method_parse_context.is_pub);
 }
 
 static struct ImportStmt *
