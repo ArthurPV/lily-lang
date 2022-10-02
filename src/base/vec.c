@@ -352,6 +352,16 @@ clear__Vec(struct Vec *self)
     truncate__Vec(self, 0);
 }
 
+struct Vec *
+copy__Vec(struct Vec *self)
+{
+	struct Vec *copy = malloc(sizeof(struct Vec));
+
+	memcpy(copy, self, sizeof(struct Vec));
+
+	return copy;
+}
+
 bool
 is_clear__Vec(struct Vec self)
 {

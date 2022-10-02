@@ -229,6 +229,13 @@ is_clear__Vec(struct Vec self);
 
 /**
  *
+ * @return the copy of Vec.
+ */
+struct Vec *
+copy__Vec(struct Vec *self);
+
+/**
+ *
  * @return the length of the Vec.
  */
 Usize

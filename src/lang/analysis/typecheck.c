@@ -79,9 +79,17 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
 static void
 push_all_symbols(struct Typecheck *self);
 static void
+check_constant(struct Typecheck *self,
+               struct ConstantSymbol *constant,
+               struct Vec *scope_id);
+static void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
              struct Vec *scope_id);
+static void
+check_alias(struct Typecheck *self,
+            struct AliasSymbol *alias,
+            struct Vec *scope_id);
 static void
 check_enum(struct Typecheck *self,
            struct EnumSymbol *enum_,
@@ -90,6 +98,10 @@ static void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
              struct Vec *scope_id);
+static void
+check_error(struct Typecheck *self,
+            struct ErrorSymbol *error,
+            struct Vec *scope_id);
 static void
 check_enum_obj(struct Typecheck *self,
                struct EnumObjSymbol *enum_obj,
@@ -139,37 +151,29 @@ search_in_classes_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_traits_from_name(struct Typecheck *self, struct String *name);
 static struct SymbolTable *
-search_module_in_scope(struct Typecheck *self,
-                       struct Expr *id,
-                       struct SymbolTable *scope);
+search_module_item_in_scope(struct Typecheck *self,
+                            struct Expr *id,
+                            struct SymbolTable *scope);
 static struct SymbolTable *
-search_fun_in_scope(struct Typecheck *self,
-                    struct Expr *id,
-                    struct SymbolTable *scope);
+search_enum_item_in_scope(struct Typecheck *self,
+                          struct Expr *id,
+                          struct SymbolTable *scope);
 static struct SymbolTable *
-search_enum_in_scope(struct Typecheck *self,
-                     struct Expr *id,
-                     struct SymbolTable *scope);
+search_record_item_in_scope(struct Typecheck *self,
+                            struct Expr *id,
+                            struct SymbolTable *scope);
 static struct SymbolTable *
-search_record_in_scope(struct Typecheck *self,
-                       struct Expr *id,
-                       struct SymbolTable *scope);
+search_enum_obj_item_in_scope(struct Typecheck *self,
+                              struct Expr *id,
+                              struct SymbolTable *scope);
 static struct SymbolTable *
-search_enum_obj_in_scope(struct Typecheck *self,
-                         struct Expr *id,
-                         struct SymbolTable *scope);
+search_record_obj_item_in_scope(struct Typecheck *self,
+                                struct Expr *id,
+                                struct SymbolTable *scope);
 static struct SymbolTable *
-search_record_obj_in_scope(struct Typecheck *self,
+search_class_item_in_scope(struct Typecheck *self,
                            struct Expr *id,
                            struct SymbolTable *scope);
-static struct SymbolTable *
-search_class_in_scope(struct Typecheck *self,
-                      struct Expr *id,
-                      struct SymbolTable *scope);
-static struct SymbolTable *
-search_trait_in_scope(struct Typecheck *self,
-                      struct Expr *id,
-                      struct SymbolTable *scope);
 static struct SymbolTable *
 search_in_custom_scope(struct Typecheck *self,
                        struct Expr *id,
@@ -521,9 +525,180 @@ push_all_symbols(struct Typecheck *self)
 }
 
 static void
+check_constant(struct Typecheck *self,
+               struct ConstantSymbol *constant,
+               struct Vec *scope_id)
+{
+}
+
+static void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
              struct Vec *scope_id)
+{
+    if (!module->scope) {
+        if (module->module_decl->value.module->body) {
+            module->body = NEW(Vec, sizeof(struct SymbolTable));
+
+            for (Usize i = 0;
+                 i < len__Vec(*module->module_decl->value.module->body);
+                 i++) {
+                for (Usize j = i + 1;
+                     j < len__Vec(*module->module_decl->value.module->body);
+                     j++)
+                    if (!get_name__SymbolTable(get__Vec(
+                          *module->module_decl->value.module->body, i)) ||
+                        eq__String(
+                          get_name__SymbolTable(get__Vec(
+                            *module->module_decl->value.module->body, i)),
+                          get_name__SymbolTable(get__Vec(
+                            *module->module_decl->value.module->body, j)),
+                          false)) {
+                        assert(0 && "error: duplicate module item");
+                    }
+
+                switch (((struct Decl *)get__Vec(
+                           *module->module_decl->value.module->body, i))
+                          ->kind) {
+                    case DeclKindFun: {
+                        struct SymbolTable *fun_symb = NEW(
+                          SymbolTableFun,
+                          NEW(FunSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *fun_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(fun_scope_id, (Usize *)i);
+                        check_fun(self, fun_symb->value.fun, fun_scope_id);
+
+                        break;
+                    }
+                    case DeclKindConstant: {
+                        struct SymbolTable *constant_symb = NEW(
+                          SymbolTableConstant,
+                          NEW(ConstantSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *constant_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(constant_scope_id, (Usize *)i);
+                        check_constant(self,
+                                       constant_symb->value.constant,
+                                       constant_scope_id);
+
+                        break;
+                    }
+                    case DeclKindModule: {
+                        struct SymbolTable *module_symb = NEW(
+                          SymbolTableModule,
+                          NEW(ModuleSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *module_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(module_scope_id, (Usize *)i);
+                        check_module(
+                          self, module_symb->value.module, module_scope_id);
+
+                        break;
+                    }
+                    case DeclKindAlias: {
+                        struct SymbolTable *alias_symb = NEW(
+                          SymbolTableAlias,
+                          NEW(AliasSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *alias_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(alias_scope_id, (Usize *)i);
+                        check_alias(
+                          self, alias_symb->value.alias, alias_scope_id);
+
+                        break;
+                    }
+                    case DeclKindRecord: {
+                        struct SymbolTable *record_symb = NEW(
+                          SymbolTableRecord,
+                          NEW(RecordSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *record_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(record_scope_id, (Usize *)i);
+                        check_alias(
+                          self, record_symb->value.alias, record_scope_id);
+
+                        break;
+                    }
+                    case DeclKindEnum: {
+                        struct SymbolTable *enum_symb = NEW(
+                          SymbolTableEnum,
+                          NEW(EnumSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *enum_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(enum_scope_id, (Usize *)i);
+                        check_enum(self, enum_symb->value.enum_, enum_scope_id);
+
+                        break;
+                    }
+                    case DeclKindError: {
+                        struct SymbolTable *error_symb = NEW(
+                          SymbolTableError,
+                          NEW(ErrorSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *error_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(error_scope_id, (Usize *)i);
+                        check_error(
+                          self, error_symb->value.error, error_scope_id);
+
+                        break;
+                    }
+                    case DeclKindClass: {
+                        struct SymbolTable *class_symb = NEW(
+                          SymbolTableClass,
+                          NEW(ClassSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *class_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(class_scope_id, (Usize *)i);
+                        check_class(
+                          self, class_symb->value.class, class_scope_id);
+
+                        break;
+                    }
+                    case DeclKindTrait: {
+                        struct SymbolTable *trait_symb = NEW(
+                          SymbolTableTrait,
+                          NEW(TraitSymbol,
+                              get__Vec(*module->module_decl->value.module->body,
+                                       i)));
+                        struct Vec *trait_scope_id = copy__Vec(scope_id);
+
+                        push__Vec(trait_scope_id, (Usize *)i);
+                        check_trait(
+                          self, trait_symb->value.trait, trait_scope_id);
+
+                        break;
+                    }
+                    case DeclKindImport:
+                        break;
+                    case DeclKindTag:
+                        break;
+                }
+            }
+        }
+    }
+}
+
+static void
+check_alias(struct Typecheck *self,
+            struct AliasSymbol *alias,
+            struct Vec *scope_id)
 {
 }
 
@@ -625,6 +800,13 @@ static void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
              struct Vec *scope_id)
+{
+}
+
+static void
+check_error(struct Typecheck *self,
+            struct ErrorSymbol *error,
+            struct Vec *scope_id)
 {
 }
 
@@ -1008,25 +1190,31 @@ search_in_traits_from_name(struct Typecheck *self, struct String *name)
 }
 
 static struct SymbolTable *
-search_module_in_scope(struct Typecheck *self,
-                       struct Expr *id,
-                       struct SymbolTable *scope)
+search_module_item_in_scope(struct Typecheck *self,
+                            struct Expr *id,
+                            struct SymbolTable *scope)
 {
-    TODO("search_module_in_scope");
+    for (Usize i = len__Vec(*scope->value.module->body); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           ((struct SymbolTable *)get__Vec(
+                              *scope->value.module->body, i))
+                             ->value.variant->name,
+                           false))
+                return get__Vec(*scope->value.module->body, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    assert(0 && "error: unknown module item");
+
+    return NULL;
 }
 
 static struct SymbolTable *
-search_fun_in_scope(struct Typecheck *self,
-                    struct Expr *id,
-                    struct SymbolTable *scope)
-{
-    TODO("search_fun_in_scope");
-}
-
-static struct SymbolTable *
-search_enum_in_scope(struct Typecheck *self,
-                     struct Expr *id,
-                     struct SymbolTable *scope)
+search_enum_item_in_scope(struct Typecheck *self,
+                          struct Expr *id,
+                          struct SymbolTable *scope)
 {
     for (Usize i = len__Vec(*scope->value.enum_->variants); i--;) {
         if (id->kind == TokenKindIdentifier) {
@@ -1046,9 +1234,9 @@ search_enum_in_scope(struct Typecheck *self,
 }
 
 static struct SymbolTable *
-search_record_in_scope(struct Typecheck *self,
-                       struct Expr *id,
-                       struct SymbolTable *scope)
+search_record_item_in_scope(struct Typecheck *self,
+                            struct Expr *id,
+                            struct SymbolTable *scope)
 {
     for (Usize i = len__Vec(*scope->value.record->fields); i--;) {
         if (id->kind == TokenKindIdentifier) {
@@ -1068,35 +1256,90 @@ search_record_in_scope(struct Typecheck *self,
 }
 
 static struct SymbolTable *
-search_enum_obj_in_scope(struct Typecheck *self,
-                         struct Expr *id,
-                         struct SymbolTable *scope)
+search_enum_obj_item_in_scope(struct Typecheck *self,
+                              struct Expr *id,
+                              struct SymbolTable *scope)
 {
-    TODO("search_enum_obj_in_scope");
+    for (Usize i = len__Vec(*scope->value.enum_obj->variants); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           ((struct SymbolTable *)get__Vec(
+                              *scope->value.enum_obj->variants, i))
+                             ->value.variant->name,
+                           false))
+                return get__Vec(*scope->value.enum_obj->variants, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    for (Usize i = len__Vec(*scope->value.enum_obj->attached); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           get_name__SymbolTable(
+                             get__Vec(*scope->value.enum_obj->attached, i)),
+                           false))
+                return get__Vec(*scope->value.enum_obj->attached, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    assert(0 && "error: unknown field");
+
+    return NULL;
 }
 
 static struct SymbolTable *
-search_record_obj_in_scope(struct Typecheck *self,
+search_record_obj_item_in_scope(struct Typecheck *self,
+                                struct Expr *id,
+                                struct SymbolTable *scope)
+{
+    for (Usize i = len__Vec(*scope->value.record_obj->fields); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           ((struct SymbolTable *)get__Vec(
+                              *scope->value.record_obj->fields, i))
+                             ->value.field->name,
+                           false))
+                return get__Vec(*scope->value.record_obj->fields, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    for (Usize i = len__Vec(*scope->value.record_obj->attached); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(id->value.identifier,
+                           get_name__SymbolTable(
+                             get__Vec(*scope->value.record_obj->attached, i)),
+                           false))
+                return get__Vec(*scope->value.record_obj->attached, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
+
+    assert(0 && "error: unknown field");
+
+    return NULL;
+}
+
+static struct SymbolTable *
+search_class_item_in_scope(struct Typecheck *self,
                            struct Expr *id,
                            struct SymbolTable *scope)
 {
-    TODO("search_record_obj_in_scope");
-}
+    for (Usize i = len__Vec(*scope->value.class->body); i--;) {
+        if (id->kind == TokenKindIdentifier) {
+            if (eq__String(
+                  id->value.identifier,
+                  get_name__SymbolTable(get__Vec(*scope->value.class->body, i)),
+                  false))
+                return get__Vec(*scope->value.class->body, i);
+        } else
+            UNREACHABLE("only identifier expression is expected");
+    }
 
-static struct SymbolTable *
-search_class_in_scope(struct Typecheck *self,
-                      struct Expr *id,
-                      struct SymbolTable *scope)
-{
-    TODO("search_class_in_scope");
-}
+    assert(0 && "error: unknown property or method");
 
-static struct SymbolTable *
-search_trait_in_scope(struct Typecheck *self,
-                      struct Expr *id,
-                      struct SymbolTable *scope)
-{
-    TODO("search_trait_in_scope")
+    return NULL;
 }
 
 static struct SymbolTable *
@@ -1109,29 +1352,36 @@ search_in_custom_scope(struct Typecheck *self,
     struct Vec *fields = NULL;   // struct Vec<struct SymbolTable*>*
 
     switch (scope->kind) {
+        case SymbolTableKindModule:
+            if (!scope->value.module->scope) {
+                TODO("ananlysis the module");
+            }
+
+            body = scope->value.module->body;
+            break;
         case SymbolTableKindClass:
-            if (!scope->value.class->body) {
+            if (!scope->value.class->scope) {
                 TODO("analysis the class");
             }
 
             body = scope->value.class->body;
             break;
         case SymbolTableKindEnum:
-            if (!scope->value.enum_->variants) {
+            if (!scope->value.enum_->scope) {
                 TODO("analysis the enum");
             }
 
             variants = scope->value.enum_->variants;
             break;
         case SymbolTableKindRecord:
-            if (!scope->value.record->fields) {
+            if (!scope->value.record->scope) {
                 TODO("analysis the record");
             }
 
             fields = scope->value.record->fields;
             break;
         case SymbolTableKindEnumObj:
-            if (!scope->value.enum_obj->variants) {
+            if (!scope->value.enum_obj->scope) {
                 TODO("analysis the enum obj");
             }
 
@@ -1139,7 +1389,7 @@ search_in_custom_scope(struct Typecheck *self,
             body = scope->value.enum_obj->attached;
             break;
         case SymbolTableKindRecordObj:
-            if (!scope->value.record_obj->fields) {
+            if (!scope->value.record_obj->scope) {
                 TODO("analysis the record obj");
             }
 
@@ -1150,14 +1400,25 @@ search_in_custom_scope(struct Typecheck *self,
             assert(0 && "error: cannot search in scope in this case");
     }
 
-    if (body) {
-    } else if (body && variants) {
-    } else if (body && fields) {
-    } else if (variants) {
-    } else if (fields) {
-    }
+    if (body)
+        switch (scope->kind) {
+            case SymbolTableKindClass:
+                return search_class_item_in_scope(self, id, scope);
+            case SymbolTableKindModule:
+                return search_module_item_in_scope(self, id, scope);
+            default:
+                UNREACHABLE("expected module or class");
+        }
+    else if (body && variants)
+        return search_enum_obj_item_in_scope(self, id, scope);
+    else if (body && fields)
+        return search_record_obj_item_in_scope(self, id, scope);
+    else if (variants)
+        return search_enum_item_in_scope(self, id, scope);
+    else if (fields)
+        return search_record_item_in_scope(self, id, scope);
 
-    TODO("search_in_custom_scope");
+    return NULL;
 }
 
 static struct Vec *

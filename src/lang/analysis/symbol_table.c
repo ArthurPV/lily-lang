@@ -1513,7 +1513,7 @@ get_name__SymbolTable(struct SymbolTable *self)
         case SymbolTableKindEnumObj:
             return self->value.enum_obj->name;
         default:
-            UNREACHABLE("can't get name of symbol");
+            return NULL;
     }
 }
 
