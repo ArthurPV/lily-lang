@@ -1,9 +1,10 @@
-#include <string.h>
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
+#include <string.h>
 
 void
-__free__LocalDataType(struct LocalDataType *self) {
+__free__LocalDataType(struct LocalDataType *self)
+{
     if (self->restricted != NULL) {
         FREE(DataTypeSymbolAll, self->restricted->items[0]);
         FREE(Tuple, self->restricted);
@@ -83,8 +84,7 @@ __new__DataTypeSymbolLambda(struct Vec *params,
 }
 
 struct DataTypeSymbol *
-__new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
-                           Usize *size)
+__new__DataTypeSymbolArray(struct DataTypeSymbol *data_type, Usize *size)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindArray;
@@ -94,7 +94,9 @@ __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
 }
 
 struct DataTypeSymbol *
-__new__DataTypeSymbolCustom(struct Vec *generic_params, struct String *name, struct Scope *scope)
+__new__DataTypeSymbolCustom(struct Vec *generic_params,
+                            struct String *name,
+                            struct Scope *scope)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindCustom;
@@ -376,7 +378,7 @@ __new__ExprSymbolLambda(struct Expr expr, struct LambdaSymbol lambda)
 }
 
 struct ExprSymbol *
-__new__ExprSymbolTuple(struct Expr expr, struct Vec *tuple)
+__new__ExprSymbolTuple(struct Expr expr, struct Tuple *tuple)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -386,7 +388,7 @@ __new__ExprSymbolTuple(struct Expr expr, struct Vec *tuple)
 }
 
 struct ExprSymbol *
-__new__ExprSymbolArray(struct Expr expr, struct Vec *array)
+__new__ExprSymbolArray(struct Expr expr, struct Tuple *array)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -475,6 +477,16 @@ __new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol *variable)
     return self;
 }
 
+struct ExprSymbol *
+__new__ExprSymbolGrouping(struct Expr expr, struct Tuple *grouping)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.grouping = grouping;
+    return self;
+}
+
 void
 __free__ExprSymbolFunCall(struct ExprSymbol *self)
 {
@@ -492,20 +504,26 @@ __free__ExprSymbolLambda(struct ExprSymbol *self)
 void
 __free__ExprSymbolTuple(struct ExprSymbol *self)
 {
-    for (Usize i = len__Vec(*self->value.tuple); i--;)
-        FREE(ExprSymbolAll, get__Vec(*self->value.tuple, i));
+    for (Usize i = len__Vec(*(struct Vec *)self->value.tuple->items[0]); i--;)
+        FREE(ExprSymbolAll,
+             get__Vec(*(struct Vec *)self->value.tuple->items[0], i));
 
-    FREE(Vec, self->value.tuple);
+    FREE(Vec, self->value.tuple->items[0]);
+    FREE(DataTypeSymbolAll, self->value.tuple->items[1]);
+    FREE(Tuple, self->value.tuple);
     free(self);
 }
 
 void
 __free__ExprSymbolArray(struct ExprSymbol *self)
 {
-    for (Usize i = len__Vec(*self->value.array); i--;)
-        FREE(ExprSymbolAll, get__Vec(*self->value.array, i));
+    for (Usize i = len__Vec(*(struct Vec *)self->value.array->items[0]); i--;)
+        FREE(ExprSymbolAll,
+             get__Vec(*(struct Vec *)self->value.array->items[0], i));
 
-    FREE(Vec, self->value.array);
+    FREE(Vec, self->value.array->items[0]);
+    FREE(DataTypeSymbolAll, self->value.array->items[1]);
+    FREE(Tuple, self->value.array);
     free(self);
 }
 
@@ -523,6 +541,14 @@ void
 __free__ExprSymbolVariable(struct ExprSymbol *self)
 {
     FREE(VariableSymbol, self->value.variable);
+    free(self);
+}
+
+void
+__free__ExprSymbolGrouping(struct ExprSymbol *self)
+{
+    FREE(ExprSymbolAll, self->value.grouping->items[0]);
+    FREE(DataTypeSymbolAll, self->value.grouping->items[1]);
     free(self);
 }
 

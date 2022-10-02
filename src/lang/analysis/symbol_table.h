@@ -68,9 +68,11 @@ __free__Scope(struct Scope *scope)
     free(scope);
 }
 
-typedef struct LocalDataType {
+typedef struct LocalDataType
+{
     struct String *name; // struct String&
-    struct Tuple *restricted; // struct Tuple<struct DataTypeSymbol*, struct Location&>*
+    struct Tuple
+      *restricted; // struct Tuple<struct DataTypeSymbol*, struct Location&>*
 } LocalDataType;
 
 /**
@@ -78,7 +80,8 @@ typedef struct LocalDataType {
  * @brief Construct the LocalDataType type.
  */
 inline struct LocalDataType *
-__new__LocalDataType(struct String *name, struct Tuple *restricted) {
+__new__LocalDataType(struct String *name, struct Tuple *restricted)
+{
     struct LocalDataType *self = malloc(sizeof(struct LocalDataType));
     self->name = name;
     self->restricted = restricted;
@@ -112,14 +115,15 @@ typedef struct DataTypeSymbol
         struct DataTypeSymbol *optional;
         struct DataTypeSymbol *exception;
         struct DataTypeSymbol *mut;
-        struct Tuple
-          *lambda; // struct Tuple<struct Vec<struct DataTypeSymbol*>*, struct DataTypeSymbol*>*
+        struct Tuple *lambda; // struct Tuple<struct Vec<struct
+                              // DataTypeSymbol*>*, struct DataTypeSymbol*>*
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
-        struct Vec *custom; // struct Vec<struct DataTypeSymbol*>*
+        struct Vec *custom;   // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*
     } value;
 
-    union {
+    union
+    {
         struct String *custom_name;
     };
 } DataTypeSymbol;
@@ -179,8 +183,7 @@ __new__DataTypeSymbolLambda(struct Vec *params,
  * @brief Construct the DataTypeSymbol type (Array variant).
  */
 struct DataTypeSymbol *
-__new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
-                           Usize *size);
+__new__DataTypeSymbolArray(struct DataTypeSymbol *data_type, Usize *size);
 
 /**
  *
@@ -360,8 +363,9 @@ __free__FunParamSymbol(struct FunParamSymbol *self);
 
 typedef struct FunSymbol
 {
-    struct String *name;        // struct String&
-    struct Vec *tagged_type;    // struct Vec<struct Tuple<struct DataTypeSymbol*, struct Location&>*>*
+    struct String *name;     // struct String&
+    struct Vec *tagged_type; // struct Vec<struct Tuple<struct DataTypeSymbol*,
+                             // struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
     enum Visibility visibility;
@@ -788,6 +792,7 @@ enum LiteralSymbolKind
 typedef struct LiteralSymbol
 {
     enum LiteralSymbolKind kind;
+    struct DataTypeSymbol *data_type;
 
     union
     {
@@ -819,6 +824,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolBool(bool bool_)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindBool,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindBool),
                                   .value.bool_ = bool_ };
 
     return self;
@@ -832,6 +839,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolChar(char char_)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindChar,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindChar),
                                   .value.char_ = char_ };
 
     return self;
@@ -845,6 +854,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolBitChar(UInt8 bit_char)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindBitChar,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU8),
                                   .value.bit_char = bit_char };
 
     return self;
@@ -858,6 +869,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolInt8(Int8 int8)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt8,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindI8),
                                   .value.int8 = int8 };
 
     return self;
@@ -871,6 +884,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolInt16(Int16 int16)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt16,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindI16),
                                   .value.int16 = int16 };
 
     return self;
@@ -884,6 +899,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolInt32(Int32 int32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt32,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindI32),
                                   .value.int32 = int32 };
 
     return self;
@@ -897,6 +914,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolInt64(Int64 int64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt64,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindI64),
                                   .value.int64 = int64 };
 
     return self;
@@ -910,6 +929,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolInt128(Int128 int128)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt128,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindI128),
                                   .value.int128 = int128 };
 
     return self;
@@ -923,6 +944,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolUint8(UInt8 uint8)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint8,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU8),
                                   .value.uint8 = uint8 };
 
     return self;
@@ -936,6 +959,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolUint16(UInt16 uint16)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint16,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU16),
                                   .value.uint16 = uint16 };
 
     return self;
@@ -949,6 +974,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolUint32(UInt32 uint32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint32,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU32),
                                   .value.uint32 = uint32 };
 
     return self;
@@ -962,6 +989,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolUint64(UInt64 uint64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint64,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU64),
                                   .value.uint64 = uint64 };
 
     return self;
@@ -975,6 +1004,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolUint128(Int128 uint128)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint128,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindU128),
                                   .value.uint128 = uint128 };
 
     return self;
@@ -988,6 +1019,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolFloat32(Float32 float32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat32,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindF32),
                                   .value.float32 = float32 };
 
     return self;
@@ -1001,6 +1034,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolFloat64(Float64 float64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat64,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindF64),
                                   .value.float64 = float64 };
 
     return self;
@@ -1014,6 +1049,8 @@ inline struct LiteralSymbol
 __new__LiteralSymbolStr(Str str)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindStr,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindStr),
                                   .value.str = str };
 
     return self;
@@ -1026,8 +1063,12 @@ __new__LiteralSymbolStr(Str str)
 inline struct LiteralSymbol
 __new__LiteralSymbolBitStr(UInt8 **bit_str)
 {
-    struct LiteralSymbol self = { .kind = LiteralSymbolKindBitStr,
-                                  .value.bit_str = bit_str };
+    struct LiteralSymbol self = {
+        .kind = LiteralSymbolKindBitStr,
+        .data_type =
+          NEW(DataTypeSymbolArray, NEW(DataTypeSymbol, DataTypeKindU8), NULL),
+        .value.bit_str = bit_str
+    };
 
     return self;
 }
@@ -1039,9 +1080,17 @@ __new__LiteralSymbolBitStr(UInt8 **bit_str)
 inline struct LiteralSymbol
 __new__LiteralSymbolUnit()
 {
-    struct LiteralSymbol self = { .kind = LiteralSymbolKindUnit };
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUnit,
+                                  .data_type =
+                                    NEW(DataTypeSymbol, DataTypeKindUnit) };
 
     return self;
+}
+
+inline void
+__free__LiteralSymbol(struct LiteralSymbol self)
+{
+    FREE(DataTypeSymbolAll, self.data_type);
 }
 
 typedef struct UnaryOpSymbol
@@ -1283,8 +1332,10 @@ typedef struct ExprSymbol
         struct ArrayAccessSymbol array_access;
         struct TupleAccessSymbol tuple_access;
         struct LambdaSymbol lambda;
-        struct Vec *array;
-        struct Vec *tuple;
+        struct Tuple *array; // struct Tuple<struct Vec<struct ExprSymbol*>*,
+                             // struct DataTypeSymbol*>*
+        struct Tuple *tuple; // struct Tuple<struct Vec<struct ExprSymbol*>*,
+                             // struct DataTypeSymbol*>*
         struct VariantSymbol variant;
         struct ExprSymbol *try;
         // struct IfCond
@@ -1294,6 +1345,8 @@ typedef struct ExprSymbol
         struct Scope *ref;
         struct LiteralSymbol literal;
         struct VariableSymbol *variable;
+        struct Tuple *
+          grouping; // struct Tuple<struct ExprSymbol*, struct DataTypeSymbol*>*
     } value;
 } ExprSymbol;
 
@@ -1376,14 +1429,14 @@ __new__ExprSymbolLambda(struct Expr expr, struct LambdaSymbol lambda);
  * @brief Construct the ExprSymbol type (Tuple variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolTuple(struct Expr expr, struct Vec *tuple);
+__new__ExprSymbolTuple(struct Expr expr, struct Tuple *tuple);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Array variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolArray(struct Expr expr, struct Vec *array);
+__new__ExprSymbolArray(struct Expr expr, struct Tuple *array);
 
 /**
  *
@@ -1440,6 +1493,13 @@ __new__ExprSymbolLiteral(struct Expr expr, struct LiteralSymbol literal);
  */
 struct ExprSymbol *
 __new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol *variable);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Grouping variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolGrouping(struct Expr expr, struct Tuple *grouping);
 
 /**
  *
@@ -1632,6 +1692,7 @@ __free__ExprSymbolRef(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolLiteral(struct ExprSymbol *self)
 {
+    FREE(LiteralSymbol, self->value.literal);
     free(self);
 }
 
@@ -1641,6 +1702,13 @@ __free__ExprSymbolLiteral(struct ExprSymbol *self)
  */
 void
 __free__ExprSymbolVariable(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Grouping variant).
+ */
+void
+__free__ExprSymbolGrouping(struct ExprSymbol *self);
 
 typedef struct VariableSymbol
 {

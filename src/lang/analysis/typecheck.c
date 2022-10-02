@@ -111,8 +111,12 @@ check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
            bool is_return_type);
+static struct DataTypeSymbol *
+get_data_type_of_expression(struct Typecheck *self,
+                            struct ExprSymbol *expr,
+                            struct Vec *local_value);
 static const Str
-get_builtin_module_name_from_data_type(struct DataType *dt);
+get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt);
 static struct BuiltinFun *
 search_fun_builtin(struct Typecheck *self,
                    const Str module_name,
@@ -1386,8 +1390,70 @@ check_stmt(struct Typecheck *self,
     }
 }
 
+static struct DataTypeSymbol *
+get_data_type_of_expression(struct Typecheck *self,
+                            struct ExprSymbol *expr,
+                            struct Vec *local_value)
+{
+    switch (expr->kind) {
+        case ExprKindUnaryOp:
+            return get_data_type_of_expression(
+              self, expr->value.unary_op.right, local_value);
+        case ExprKindBinaryOp:
+            return get_data_type_of_expression(
+              self, expr->value.binary_op.left, local_value);
+        case ExprKindFunCall:
+            TODO("get data type of fun call");
+        case ExprKindRecordCall:
+            TODO("get data type of record call");
+        case ExprKindIdentifier:
+            TODO("get data type of identifier");
+        case ExprKindIdentifierAccess:
+            TODO("get data type of identifier access");
+        case ExprKindArrayAccess:
+            TODO("get data type of array access");
+        case ExprKindTupleAccess:
+            TODO("get data type of tuple access");
+        case ExprKindLambda:
+            TODO("get data type of lambda");
+        case ExprKindTuple:
+            TODO("get data type of tuple");
+        case ExprKindArray:
+            TODO("get data type of array");
+        case ExprKindVariant:
+            TODO("get data type of variant");
+        case ExprKindTry:
+            TODO("get data type of try");
+        case ExprKindIf:
+            TODO("get data type of if");
+        case ExprKindBlock:
+            UNREACHABLE("block variant is not used");
+        case ExprKindQuestionMark:
+            TODO("get data type of question mark");
+        case ExprKindDereference:
+            TODO("get data type of dereference");
+        case ExprKindRef:
+            TODO("get data type of ref");
+        case ExprKindSelf:
+            UNREACHABLE("self variant is not used");
+        case ExprKindUndef:
+            TODO("get data type of undef");
+        case ExprKindNil:
+            TODO("get data type of nil");
+        case ExprKindWildcard:
+            UNREACHABLE("wildcard variant is not used");
+        case ExprKindLiteral:
+            TODO("get data type of literal");
+        case ExprKindVariable:
+            UNREACHABLE("variant variant is not used");
+        case ExprKindGrouping:
+            return get_data_type_of_expression(
+              self, expr->value.grouping->items[0], local_value);
+    }
+}
+
 static const Str
-get_builtin_module_name_from_data_type(struct DataType *dt)
+get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt)
 {
     switch (dt->kind) {
         case DataTypeKindPtr:
@@ -1605,6 +1671,17 @@ check_expression(struct Typecheck *self,
                 case UnaryOpKindReference:
                     TODO("check reference");
                 case UnaryOpKindNegative: {
+                    struct ExprSymbol *right =
+                      check_expression(self,
+                                       fun,
+                                       expr->value.unary_op.right,
+                                       local_value,
+                                       local_data_type,
+                                       defined_data_type,
+                                       is_return_type);
+
+                    // verify_type_of_fun_builtin(search_fun_builtin(self,
+                    // get_builtin_module_name_from_data_type(right->value.unary_op.right)))
                     TODO("check negative");
                 }
                 case UnaryOpKindNot:
