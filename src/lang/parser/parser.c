@@ -456,6 +456,17 @@ get_block(struct ParseBlock *self, bool in_module)
                     return NEW(ParseContextError, error_parse_context, loc);
                 }
 
+                case TokenKindModuleKw: {
+                    struct ModuleParseContext module_parse_context = NEW(ModuleParseContext);
+
+                    module_parse_context.is_pub = true;
+
+                    get_module_parse_context(&module_parse_context, self);
+                    end__Location(&loc, self->current->loc->s_line, self->current->loc->s_col);
+    
+                    return NEW(ParseContextModule, module_parse_context, loc);
+                }
+
                 case TokenKindIdentifier: {
                     struct ConstantParseContext constant_parse_context =
                       NEW(ConstantParseContext);
@@ -516,6 +527,15 @@ get_block(struct ParseBlock *self, bool in_module)
               &loc, self->current->loc->s_line, self->current->loc->s_col);
 
             return NEW(ParseContextError, error_parse_context, loc);
+        }
+
+        case TokenKindModuleKw: {
+            struct ModuleParseContext module_parse_context = NEW(ModuleParseContext);
+
+            get_module_parse_context(&module_parse_context, self);
+            end__Location(&loc, self->current->loc->s_line, self->current->loc->s_col);
+
+            return NEW(ParseContextModule, module_parse_context, loc);
         }
 
         case TokenKindBang: {
@@ -2318,7 +2338,15 @@ get_error_parse_context(struct ErrorParseContext *self,
     next_token_pb(parse_block);
 
     if (parse_block->current->kind != TokenKindIdentifier) {
-        assert(0 && "error");
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissErrorName),
+              *parse_block->current->loc,
+              format(""),
+              None());
+
+        emit__Diagnostic(err);
     } else
         self->name = &*parse_block->current->lit;
 
@@ -2343,16 +2371,37 @@ get_module_parse_context(struct ModuleParseContext *self,
     next_token_pb(parse_block);
 
     if (parse_block->current->kind != TokenKindIdentifier) {
-        assert(0 && "error");
-    } else
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissModuleName),
+              *parse_block->current->loc,
+              format(""),
+              None());
+
+        emit__Diagnostic(err);
+    } else {
         self->name = &*parse_block->current->lit;
 
+        next_token_pb(parse_block);
+    }
+
     EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
-        assert(0 && "error");
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorExpectedToken),
+              *parse_block->current->loc,
+              format(""),
+              None());
+
+        err->err->s = from__String("`=`");
+
+        emit__Diagnostic(err);
     });
 
-    while (parse_block->current->kind != TokenKindEq) {
-        struct ParseContext *block = get_block(self, true);
+    while (parse_block->current->kind != TokenKindEndKw && parse_block->current->kind != TokenKindEof) {
+        struct ParseContext *block = get_block(parse_block, true);
 
         if (block != NULL)
             push__Vec(self->body, block);
@@ -2518,6 +2567,7 @@ __new__ParseContextConstant(struct ConstantParseContext constant,
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindConstant;
+    self->loc = loc;
     self->value.constant = constant;
     return self;
 }
@@ -2527,7 +2577,18 @@ __new__ParseContextError(struct ErrorParseContext error, struct Location loc)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindError;
+    self->loc = loc;
     self->value.error = error;
+    return self;
+}
+
+struct ParseContext *
+__new__ParseContextModule(struct ModuleParseContext module, struct Location loc)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindModule;
+    self->loc = loc;
+    self->value.module = module;
     return self;
 }
 
@@ -2601,6 +2662,13 @@ __free__ParseContextConstant(struct ParseContext *self)
 }
 
 void
+__free__ParseContextModule(struct ParseContext *self)
+{
+    FREE(ModuleParseContext, self->value.module);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -2648,6 +2716,10 @@ __free__ParseContextAll(struct ParseContext *self)
 
         case ParseContextKindError:
             free(self);
+            break;
+
+        case ParseContextKindModule:
+            FREE(ParseContextModule, self);
             break;
 
         default:

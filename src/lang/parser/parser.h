@@ -345,7 +345,8 @@ enum ParseContextKind
     ParseContextKindProperty,
     ParseContextKindImport,
     ParseContextKindConstant,
-    ParseContextKindError
+    ParseContextKindError,
+    ParseContextKindModule
 };
 
 typedef struct ParseContext
@@ -366,6 +367,7 @@ typedef struct ParseContext
         struct ImportParseContext import;
         struct ConstantParseContext constant;
         struct ErrorParseContext error;
+        struct ModuleParseContext module;
     } value;
 } ParseContext;
 
@@ -456,6 +458,14 @@ __new__ParseContextError(struct ErrorParseContext error, struct Location loc);
 
 /**
  *
+ * @brief Contruct the ParseContext type (Module variant).
+ */
+struct ParseContext *
+__new__ParseContextModule(struct ModuleParseContext module,
+                          struct Location loc);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -523,6 +533,13 @@ __free__ParseContextImport(struct ParseContext *self);
  */
 void
 __free__ParseContextConstant(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Module variant).
+ */
+void
+__free__ParseContextModule(struct ParseContext *self);
 
 /**
  *

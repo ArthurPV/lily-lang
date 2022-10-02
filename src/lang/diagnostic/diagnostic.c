@@ -163,6 +163,10 @@ lily_error_to_string(struct LilyError err)
             return from__String("mismatched closing delimiter");
         case LilyErrorInvalidCharacter:
             return format("invalid character: `{S}`", err.s);
+        case LilyErrorInvalidEscape:
+            return from__String("invalid escape");
+        case LilyErrorUnclosedChar:
+            return from__String("unclosed char");
         case LilyErrorUnexpectedToken:
             return format("unexpected token: `{S}`", err.s);
         case LilyErrorMissFunctionName:
@@ -221,6 +225,10 @@ lily_error_to_string(struct LilyError err)
             return from__String("the operator identifier cannot be a keyword");
         case LilyErrorMissFieldCallName:
             return from__String("miss field call name");
+        case LilyErrorMissErrorName:
+            return from__String("miss error name");
+        case LilyErrorMissModuleName:
+            return from__String("miss module name");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -269,64 +277,72 @@ get_code_of_lily_error(struct LilyError err)
             return "0010";
         case LilyErrorInvalidCharacter:
             return "0011";
-        case LilyErrorUnexpectedToken:
+        case LilyErrorInvalidEscape:
             return "0012";
-        case LilyErrorMissFunctionName:
+        case LilyErrorUnclosedChar:
             return "0013";
-        case LilyErrorExpectedToken:
+        case LilyErrorUnexpectedToken:
             return "0014";
-        case LilyErrorMissClosingBlock:
+        case LilyErrorMissFunctionName:
             return "0015";
-        case LilyErrorMisuseOfSpecialClosingBlock:
+        case LilyErrorExpectedToken:
             return "0016";
-        case LilyErrorBadUsageOfAsync:
+        case LilyErrorMissClosingBlock:
             return "0017";
-        case LilyErrorBadUsageOfPub:
+        case LilyErrorMisuseOfSpecialClosingBlock:
             return "0018";
-        case LilyErrorInvalidItemInFunOrMethodBody:
+        case LilyErrorBadUsageOfAsync:
             return "0019";
-        case LilyErrorBadUsageOfType:
+        case LilyErrorBadUsageOfPub:
             return "0020";
-        case LilyErrorMissTypeName:
+        case LilyErrorInvalidItemInFunOrMethodBody:
             return "0021";
-        case LilyErrorInvalidTokenInEnumVariant:
+        case LilyErrorBadUsageOfType:
             return "0022";
-        case LilyErrorInvalidTokenInRecordField:
+        case LilyErrorMissTypeName:
             return "0023";
-        case LilyErrorMissObjectName:
+        case LilyErrorInvalidTokenInEnumVariant:
             return "0024";
-        case LilyErrorInvalidTokenInAliasDataType:
+        case LilyErrorInvalidTokenInRecordField:
             return "0025";
-        case LilyErrorUnexpectedInheritance:
+        case LilyErrorMissObjectName:
             return "0026";
-        case LilyErrorUnexpectedImplementation:
+        case LilyErrorInvalidTokenInAliasDataType:
             return "0027";
-        case LilyErrorInvalidTokenInTagBody:
+        case LilyErrorUnexpectedInheritance:
             return "0028";
-        case LilyErrorMissNameOnPropertyOrMethod:
+        case LilyErrorUnexpectedImplementation:
             return "0029";
-        case LilyErrorInvalidClassItem:
+        case LilyErrorInvalidTokenInTagBody:
             return "0030";
-        case LilyErrorMissImportValue:
+        case LilyErrorMissNameOnPropertyOrMethod:
             return "0031";
-        case LilyErrorMissAsValue:
+        case LilyErrorInvalidClassItem:
             return "0032";
-        case LilyErrorUnexpectedTokenForBeginingInGlobal:
+        case LilyErrorMissImportValue:
             return "0033";
-        case LilyErrorUnknownAttribute:
+        case LilyErrorMissAsValue:
             return "0034";
-        case LilyErrorExpectedAttribute:
+        case LilyErrorUnexpectedTokenForBeginingInGlobal:
             return "0035";
-        case LilyErrorMissDataType:
+        case LilyErrorUnknownAttribute:
             return "0036";
-        case LilyErrorIntegerIsOutOfRange:
+        case LilyErrorExpectedAttribute:
             return "0037";
-        case LilyErrorMissParamName:
+        case LilyErrorMissDataType:
             return "0038";
-        case LilyErrorOperatorIdentifierCannotBeAKeyword:
+        case LilyErrorIntegerIsOutOfRange:
             return "0039";
-        case LilyErrorMissFieldCallName:
+        case LilyErrorMissParamName:
             return "0040";
+        case LilyErrorOperatorIdentifierCannotBeAKeyword:
+            return "0041";
+        case LilyErrorMissFieldCallName:
+            return "0042";
+        case LilyErrorMissErrorName:
+            return "0043";
+        case LilyErrorMissModuleName:
+            return "0044";
         default:
             UNREACHABLE("unknown lily error kind");
     }
