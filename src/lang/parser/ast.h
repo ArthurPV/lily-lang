@@ -260,6 +260,9 @@ __new__GenericRestrictedDataType(struct String *name,
                                  struct Location loc,
                                  struct Tuple *data_type);
 
+struct String *
+get_name__Generic(struct Generic *self);
+
 /**
  *
  * @brief Convert Generic in String.
@@ -820,7 +823,7 @@ enum ExprKind
     ExprKindRecordCall,
     ExprKindIdentifier,
     ExprKindIdentifierAccess,
-	ExprKindGlobalAccess,
+    ExprKindGlobalAccess,
     ExprKindArrayAccess,
     ExprKindTupleAccess,
     ExprKindLambda,
@@ -855,7 +858,7 @@ typedef struct Expr
         struct RecordCall record_call;
         struct String *identifier;     // struct String&
         struct Vec *identifier_access; // struct Vec<struct Expr*>*
-		struct Vec *global_access; // struct Vec<struct Expr*>*
+        struct Vec *global_access;     // struct Vec<struct Expr*>*
         struct ArrayAccess array_access;
         struct TupleAccess tuple_access;
         struct Lambda lambda;
@@ -2245,7 +2248,7 @@ __free__RecordDecl(struct RecordDecl *self);
 typedef struct VariantEnum
 {
     struct String *name;      // struct String&
-    struct Option *data_type; // struct Option<struct DataType*>*
+    struct DataType *data_type; // struct DataType*
     struct Location loc;
 } VariantEnum;
 
@@ -2255,7 +2258,7 @@ typedef struct VariantEnum
  */
 struct VariantEnum *
 __new__VariantEnum(struct String *name,
-                   struct Option *data_type,
+                   struct DataType *data_type,
                    struct Location loc);
 
 /**

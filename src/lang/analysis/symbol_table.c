@@ -5,7 +5,7 @@
 void
 __free__LocalDataType(struct LocalDataType *self)
 {
-    if (self->restricted != NULL) {
+    if (self->restricted) {
         FREE(DataTypeSymbolAll, self->restricted->items[0]);
         FREE(Tuple, self->restricted);
     }
@@ -189,7 +189,7 @@ __free__DataTypeSymbolLambda(struct DataTypeSymbol *self)
 void
 __free__DataTypeSymbolArray(struct DataTypeSymbol *self)
 {
-    if (self->value.array->items[0] != NULL)
+    if (self->value.array->items[0])
         FREE(DataTypeSymbolAll, self->value.array->items[0]);
 
     FREE(Tuple, self->value.array);
@@ -199,13 +199,13 @@ __free__DataTypeSymbolArray(struct DataTypeSymbol *self)
 void
 __free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
 {
-    if (self->scope != NULL)
+    if (self->scope)
         FREE(Scope, self->scope);
 
-    if (self->custom_name != NULL)
+    if (self->custom_name)
         FREE(String, self->custom_name);
 
-    if (self->value.custom != NULL) {
+    if (self->value.custom) {
         for (Usize i = len__Vec(*self->value.custom); i--;)
             FREE(DataTypeSymbolAll, get__Vec(*self->value.custom, i));
 
@@ -253,7 +253,7 @@ __free__FieldCallSymbol(struct FieldCallSymbol *self)
 void
 __free__RecordCallSymbol(struct RecordCallSymbol self)
 {
-    if (self.fields != NULL) {
+    if (self.fields) {
         for (Usize i = len__Vec(*self.fields); i--;) {
             FREE(FieldCallSymbol,
                  ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
@@ -735,10 +735,10 @@ __free__TrySymbol(struct TrySymbol self)
 
     FREE(Vec, self.try_body);
 
-    if (self.catch_expr != NULL)
+    if (self.catch_expr)
         FREE(ExprSymbolAll, self.catch_expr);
 
-    if (self.catch_body != NULL) {
+    if (self.catch_body) {
         for (Usize i = len__Vec(*self.catch_body); i--;)
             FREE(SymbolTableAll, get__Vec(*self.catch_body, i));
 
@@ -816,7 +816,7 @@ __new__FunSymbol(struct Decl *fun_decl)
     struct FunSymbol *self = malloc(sizeof(struct FunSymbol));
     self->name = &*fun_decl->value.fun->name;
     self->tagged_type = NULL;
-    self->generic_params = &*fun_decl->value.fun->generic_params;
+    self->generic_params = NULL;
     self->params = NULL;
     self->visibility = VISIBILITY(fun_decl->value.fun);
     self->is_async = fun_decl->value.fun->is_async;
@@ -830,7 +830,7 @@ __new__FunSymbol(struct Decl *fun_decl)
 void
 __free__FunSymbol(struct FunSymbol *self)
 {
-    if (self->tagged_type != NULL) {
+    if (self->tagged_type) {
         for (Usize i = len__Vec(*self->tagged_type); i--;) {
             FREE(DataTypeSymbolAll,
                  ((struct Tuple *)get__Vec(*self->tagged_type, i))->items[0]);
@@ -840,17 +840,17 @@ __free__FunSymbol(struct FunSymbol *self)
         FREE(Vec, self->tagged_type);
     }
 
-    if (self->params != NULL) {
+    if (self->params) {
         for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamSymbol, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
     }
 
-    if (self->return_type != NULL)
+    if (self->return_type)
         FREE(DataTypeSymbolAll, self->return_type);
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(SymbolTableAll, get__Vec(*self->body, i));
 
@@ -910,7 +910,7 @@ __new__AliasSymbol(struct Decl *alias_decl)
 {
     struct AliasSymbol *self = malloc(sizeof(struct AliasSymbol));
     self->name = alias_decl->value.alias->name;
-    self->generic_params = alias_decl->value.alias->generic_params;
+    self->generic_params = NULL;
     self->data_type = NULL;
     self->scope = NULL;
     self->alias_decl = alias_decl;
@@ -951,7 +951,7 @@ __new__RecordSymbol(struct Decl *record_decl)
 {
     struct RecordSymbol *self = malloc(sizeof(struct RecordSymbol));
     self->name = record_decl->value.record->name;
-    self->generic_params = record_decl->value.record->generic_params;
+    self->generic_params = NULL;
     self->fields = NULL;
     self->scope = NULL;
     self->visibility = VISIBILITY(record_decl->value.record);
@@ -962,7 +962,7 @@ __new__RecordSymbol(struct Decl *record_decl)
 void
 __free__RecordSymbol(struct RecordSymbol *self)
 {
-    if (self->fields != NULL) {
+    if (self->fields) {
         for (Usize i = len__Vec(*self->fields); i--;)
             FREE(SymbolTableAll, get__Vec(*self->fields, i));
 
@@ -979,7 +979,7 @@ __new__RecordObjSymbol(struct Decl *record_decl)
 {
     struct RecordObjSymbol *self = malloc(sizeof(struct RecordObjSymbol));
     self->name = record_decl->value.record->name;
-    self->generic_params = record_decl->value.record->generic_params;
+    self->generic_params = NULL;
     self->fields = NULL;
     self->attached = NULL;
     self->scope = NULL;
@@ -991,14 +991,14 @@ __new__RecordObjSymbol(struct Decl *record_decl)
 void
 __free__RecordObjSymbol(struct RecordObjSymbol *self)
 {
-    if (self->fields != NULL) {
+    if (self->fields) {
         for (Usize i = len__Vec(*self->fields); i--;)
             FREE(SymbolTableAll, get__Vec(*self->fields, i));
 
         FREE(Vec, self->fields);
     }
 
-    if (self->attached != NULL) {
+    if (self->attached) {
         for (Usize i = len__Vec(*self->attached); i--;)
             FREE(SymbolTableAll, get__Vec(*self->attached, i));
 
@@ -1024,7 +1024,7 @@ __new__EnumSymbol(struct Decl *enum_decl)
 {
     struct EnumSymbol *self = malloc(sizeof(struct EnumSymbol));
     self->name = enum_decl->value.enum_->name;
-    self->generic_params = enum_decl->value.enum_->generic_params;
+    self->generic_params = NULL;
     self->variants = NULL;
     self->type_value = NULL;
     self->scope = NULL;
@@ -1037,14 +1037,14 @@ __new__EnumSymbol(struct Decl *enum_decl)
 void
 __free__EnumSymbol(struct EnumSymbol *self)
 {
-    if (self->variants != NULL) {
+    if (self->variants) {
         for (Usize i = len__Vec(*self->variants); i--;)
             FREE(SymbolTableAll, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
     }
 
-    if (self->type_value != NULL)
+    if (self->type_value)
         FREE(DataTypeSymbolAll, self->type_value);
 
     FREE(Scope, self->scope);
@@ -1056,7 +1056,7 @@ __new__EnumObjSymbol(struct Decl *enum_decl)
 {
     struct EnumObjSymbol *self = malloc(sizeof(struct EnumObjSymbol));
     self->name = &*enum_decl->value.enum_->name;
-    self->generic_params = enum_decl->value.enum_->generic_params;
+    self->generic_params = NULL;
     self->variants = NULL;
     self->attached = NULL;
     self->type_value = NULL;
@@ -1070,14 +1070,14 @@ __new__EnumObjSymbol(struct Decl *enum_decl)
 void
 __free__EnumObjSymbol(struct EnumObjSymbol *self)
 {
-    if (self->variants != NULL) {
+    if (self->variants) {
         for (Usize i = len__Vec(*self->variants); i--;)
             FREE(SymbolTableAll, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
     }
 
-    if (self->attached != NULL) {
+    if (self->attached) {
         for (Usize i = len__Vec(*self->attached); i--;)
             FREE(SymbolTableAll, get__Vec(*self->attached, i));
 
@@ -1094,7 +1094,7 @@ __new__ErrorSymbol(struct Decl *error_decl)
 {
     struct ErrorSymbol *self = malloc(sizeof(struct ErrorSymbol));
     self->name = error_decl->value.error->name;
-    self->generic_params = error_decl->value.error->generic_params;
+    self->generic_params = NULL;
     self->data_type = NULL;
     self->scope = NULL;
     self->error_decl = error_decl;
@@ -1107,7 +1107,7 @@ __new__MethodSymbol(struct ClassBodyItem *method_decl)
 {
     struct MethodSymbol *self = malloc(sizeof(struct MethodSymbol));
     self->name = method_decl->value.method->name;
-    self->generic_params = method_decl->value.method->generic_params;
+    self->generic_params = NULL;
     self->params = NULL;
     self->return_type = NULL;
     self->body = NULL;
@@ -1123,17 +1123,17 @@ __new__MethodSymbol(struct ClassBodyItem *method_decl)
 void
 __free__MethodSymbol(struct MethodSymbol *self)
 {
-    if (self->params != NULL) {
+    if (self->params) {
         for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamSymbol, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
     }
 
-    if (self->return_type != NULL)
+    if (self->return_type)
         FREE(DataTypeSymbolAll, self->return_type);
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(SymbolTableAll, get__Vec(*self->body, i));
 
@@ -1159,7 +1159,7 @@ __new__PropertySymbol(struct ClassBodyItem *property_decl)
 void
 __free__PropertySymbol(struct PropertySymbol *self)
 {
-    if (self->data_type != NULL)
+    if (self->data_type)
         FREE(DataTypeSymbolAll, self->data_type);
 
     FREE(Scope, self->scope);
@@ -1171,7 +1171,7 @@ __new__ClassSymbol(struct Decl *class_decl)
 {
     struct ClassSymbol *self = malloc(sizeof(struct ClassSymbol));
     self->name = class_decl->value.class->name;
-    self->generic_params = class_decl->value.class->generic_params;
+    self->generic_params = NULL;
     self->inheritance = NULL;
     self->impl = NULL;
     self->body = NULL;
@@ -1184,21 +1184,21 @@ __new__ClassSymbol(struct Decl *class_decl)
 void
 __free__ClassSymbol(struct ClassSymbol *self)
 {
-    if (self->inheritance != NULL) {
+    if (self->inheritance) {
         for (Usize i = len__Vec(*self->inheritance); i--;)
             FREE(DataTypeSymbolAll, get__Vec(*self->inheritance, i));
 
         FREE(Vec, self->inheritance);
     }
 
-    if (self->impl != NULL) {
+    if (self->impl) {
         for (Usize i = len__Vec(*self->impl); i--;)
             FREE(DataTypeSymbolAll, get__Vec(*self->impl, i));
 
         FREE(Vec, self->impl);
     }
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(SymbolTableAll, get__Vec(*self->body, i));
 
@@ -1241,7 +1241,7 @@ __new__TraitSymbol(struct Decl *trait_decl)
 {
     struct TraitSymbol *self = malloc(sizeof(struct TraitSymbol));
     self->name = trait_decl->value.trait->name;
-    self->generic_params = trait_decl->value.trait->generic_params;
+    self->generic_params = NULL;
     self->inh = NULL;
     self->body = NULL;
     self->scope = NULL;
@@ -1253,14 +1253,14 @@ __new__TraitSymbol(struct Decl *trait_decl)
 void
 __free__TraitSymbol(struct TraitSymbol *self)
 {
-    if (self->inh != NULL) {
+    if (self->inh) {
         for (Usize i = len__Vec(*self->inh); i--;)
             FREE(DataTypeSymbolAll, get__Vec(*self->inh, i));
 
         FREE(Vec, self->inh);
     }
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(SymbolTableAll, get__Vec(*self->body, i));
 

@@ -815,7 +815,7 @@ run__ParseBlock(struct ParseBlock *self)
     while (self->current->kind != TokenKindEof) {
         struct ParseContext *block = get_block(self, false);
 
-        if (block != NULL)
+        if (block)
             push__Vec(self->blocks, block);
     }
 
@@ -2696,7 +2696,7 @@ get_module_parse_context(struct ModuleParseContext *self,
            parse_block->current->kind != TokenKindEof) {
         struct ParseContext *block = get_block(parse_block, true);
 
-        if (block != NULL)
+        if (block)
             push__Vec(self->body, block);
     }
 
@@ -3294,7 +3294,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 }
             }
 
-            if (!is_wildcard && size == NULL) {
+            if (!is_wildcard && !size) {
                 next_token(parse_decl);
 
                 EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
@@ -3313,7 +3313,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             }
 
             if (is_data_type(parse_decl)) {
-                if (size == NULL)
+                if (!size)
                     data_type = NEW(
                       DataTypeArray, parse_data_type(self, parse_decl), NULL);
                 else
@@ -3714,7 +3714,7 @@ parse_variable(struct Parser self,
         data_type = parse_data_type(self, parse_decl);
     }
 
-    if (data_type == NULL)
+    if (!data_type)
         next_token(parse_decl);
     else {
         EXPECTED_TOKEN(parse_decl, TokenKindColonEq, {
@@ -3736,7 +3736,7 @@ parse_variable(struct Parser self,
     end__Location(
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
-    if (data_type == NULL)
+    if (!data_type)
         return NEW(
           ExprVariable, NEW(VariableDecl, name, None(), expr, is_mut), loc);
     else
@@ -3760,7 +3760,7 @@ skip_container(struct ParseDecl parse_decl, Usize *pos)
     while (1) {
         struct Token *t = peek_token(parse_decl, *pos++);
 
-        if (t == NULL)
+        if (!t)
             break;
 
         if (t->kind == TokenKindRParen || t->kind == TokenKindRBrace ||
@@ -3779,7 +3779,7 @@ verify_if_has_comma(struct ParseDecl parse_decl, Usize add)
     while (1) {
         struct Token *t = peek_token(parse_decl, pos++);
 
-        if (t == NULL)
+        if (!t)
             break;
         else {
             switch (t->kind) {
@@ -3815,7 +3815,7 @@ parse_expr_binary_op(struct Parser self,
         struct String *binary_op_string = NULL;
         binary_op_string = &*parse_decl->current->lit;
 
-        if (binary_op_kind == NULL)
+        if (!binary_op_kind)
             break;
 
         Usize next_prec =
@@ -3857,7 +3857,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     int *unary_op = parse_unary_op(parse_decl->current->kind);
     struct String *unary_op_string = NULL;
 
-    if (unary_op != NULL) {
+    if (unary_op) {
         if (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens))
             if (unary_op == (int *)UnaryOpKindCustom &&
                 ((struct Token *)get__Vec(*parse_decl->tokens,
@@ -4032,13 +4032,13 @@ exit_unary : {
             break;
         }
 
-		case TokenKindGlobalKw: {
-			struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+        case TokenKindGlobalKw: {
+            struct Vec *ids = NEW(Vec, sizeof(struct Expr));
 
-			expr = parse_identifier_access(self, parse_decl, loc, ids);
+            expr = parse_identifier_access(self, parse_decl, loc, ids);
 
-			break;
-		}
+            break;
+        }
 
         case TokenKindLParen: {
             if (verify_if_has_comma(*parse_decl, 0)) {
@@ -4264,7 +4264,7 @@ exit_unary : {
     /* int *binary_op = parse_binary_op(parse_decl->current->kind);
     struct String *binop_string = NULL;
 
-    if (binary_op != NULL) {
+    if (binary_op ) {
         if (binary_op == (int *)BinaryOpKindCustom)
             binop_string = parse_decl->current->lit;
 
@@ -4966,7 +4966,7 @@ parse_if_stmt(struct Parser self,
                           parse_decl->previous->loc->s_line,
                           parse_decl->previous->loc->s_col);
 
-            if (elif == NULL)
+            if (!elif)
                 return NEW(IfCond,
                            NEW(IfBranch, if_cond, if_body),
                            None(),
@@ -5260,7 +5260,7 @@ parse_fun_params(struct Parser self,
                     break;
             }
 
-            if (data_type == NULL && default_value == NULL)
+            if (!data_type && !default_value)
                 end__Location(&loc,
                               parse_decl->current->loc->e_line,
                               parse_decl->current->loc->e_col);
@@ -5283,16 +5283,16 @@ parse_fun_params(struct Parser self,
                 emit__Diagnostic(err);
             });
 
-            if (default_value == NULL && data_type == NULL)
+            if (!default_value && !data_type)
                 push__Vec(params, NEW(FunParamNormal, name, NULL, loc));
-            else if (default_value == NULL)
+            else if (!default_value)
                 push__Vec(
                   params,
                   NEW(FunParamNormal,
                       name,
                       NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc));
-            else if (default_value != NULL && data_type == NULL)
+            else if (default_value && !data_type)
                 push__Vec(params,
                           NEW(FunParamDefault, name, NULL, loc, default_value));
             else
@@ -5446,7 +5446,7 @@ parse_enum_declaration(struct Parser *self,
         while (parse.pos < len__Vec(*parse.tokens)) {
             struct Location loc = NEW(Location);
             struct String *variant_name = NULL;
-            struct Option *data_type = NULL;
+            struct DataType *data_type = NULL;
 
             start__Location(
               &loc, parse.current->loc->s_line, parse.current->loc->s_col);
@@ -5468,7 +5468,7 @@ parse_enum_declaration(struct Parser *self,
 
             if (parse.current->kind != TokenKindComma &&
                 parse.pos != len__Vec(*parse.tokens)) {
-                data_type = Some(parse_data_type(*self, &parse));
+                data_type = parse_data_type(*self, &parse);
 
                 if (parse.current->kind != TokenKindComma &&
                     parse.pos != len__Vec(*parse.tokens)) {
@@ -5485,11 +5485,8 @@ parse_enum_declaration(struct Parser *self,
                     emit__Diagnostic(err);
                 } else
                     next_token(&parse);
-            } else {
-                data_type = None();
-
+            } else
                 next_token(&parse);
-            }
 
             end__Location(
               &loc, parse.current->loc->s_line, parse.current->loc->s_col);

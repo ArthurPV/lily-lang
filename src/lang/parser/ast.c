@@ -313,7 +313,7 @@ __free__DataTypeLambda(struct DataType *self)
 void
 __free__DataTypeArray(struct DataType *self)
 {
-    if (self->value.array->items[0] != NULL)
+    if (self->value.array->items[0])
         FREE(DataTypeAll, (struct DataType *)self->value.array->items[0]);
 
     FREE(Tuple, self->value.array);
@@ -325,7 +325,7 @@ __free__DataTypeCustom(struct DataType *self)
 {
     FREE(Vec, self->value.custom->items[0]);
 
-    if (self->value.custom->items[1] != NULL) {
+    if (self->value.custom->items[1]) {
         for (Usize i = len__Vec(*(struct Vec *)self->value.custom->items[1]);
              i--;)
             FREE(DataTypeAll,
@@ -407,6 +407,17 @@ __new__GenericRestrictedDataType(struct String *name,
     self->loc = loc;
     self->value.restricted_data_type = NEW(Tuple, 2, name, data_type);
     return self;
+}
+
+struct String *
+get_name__Generic(struct Generic *self)
+{
+	switch (self->kind) {
+		case GenericKindDataType:
+			return self->value.data_type;
+		case GenericKindRestrictedDataType:
+			return self->value.restricted_data_type->items[0];
+	}
 }
 
 struct String *
@@ -1134,11 +1145,11 @@ __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc)
 struct Expr *
 __new__ExprGlobalAccess(struct Vec *global_access, struct Location loc)
 {
-	struct Expr *self = malloc(sizeof(struct Expr));
-	self->kind = ExprKindGlobalAccess;
-	self->loc = loc;
-	self->value.global_access = global_access;
-	return self;
+    struct Expr *self = malloc(sizeof(struct Expr));
+    self->kind = ExprKindGlobalAccess;
+    self->loc = loc;
+    self->value.global_access = global_access;
+    return self;
 }
 
 struct Expr *
@@ -1294,7 +1305,7 @@ __new__ExprGrouping(struct Expr *grouping, struct Location loc)
 UInt32
 get_precedence__Expr(struct Expr *expr)
 {
-    assert(expr != NULL && "expr == NULL");
+    assert(expr && "expr == NULL");
 
     switch (expr->kind) {
         case ExprKindGrouping:
@@ -1347,7 +1358,7 @@ to_string__Expr(struct Expr self)
         case ExprKindLiteral:
             return format("{S}", to_string__Literal(self.value.literal));
         case ExprKindGrouping:
-            assert(self.value.grouping != NULL);
+            assert(self.value.grouping);
             return format("({S})", to_string__Expr(*self.value.grouping));
         default:
             UNREACHABLE("unknown expr kind");
@@ -1470,9 +1481,9 @@ __free__ExprAll(struct Expr *self)
         case ExprKindIdentifierAccess:
             FREE(ExprIdentifierAccess, self);
             break;
-		case ExprKindGlobalAccess:
-			FREE(ExprGlobalAccess, self);
-			break;
+        case ExprKindGlobalAccess:
+            FREE(ExprGlobalAccess, self);
+            break;
         case ExprKindArrayAccess:
             FREE(ExprArrayAccess, self);
             break;
@@ -1574,7 +1585,7 @@ __free__MatchStmt(struct MatchStmt *self)
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[2]);
 
-        if ((struct Tuple *)get__Vec(*self->pattern, i) != NULL)
+        if ((struct Tuple *)get__Vec(*self->pattern, i))
             FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
     }
 
@@ -2396,7 +2407,7 @@ to_string__FunParam(struct FunParam self)
 void
 __free__FunParamDefault(struct FunParam *self)
 {
-    if (self->param_data_type != NULL) {
+    if (self->param_data_type) {
         FREE(DataTypeAll, self->param_data_type->items[0]);
         free(self->param_data_type->items[1]);
         FREE(Tuple, self->param_data_type);
@@ -2409,7 +2420,7 @@ __free__FunParamDefault(struct FunParam *self)
 void
 __free__FunParamNormal(struct FunParam *self)
 {
-    if (self->param_data_type != NULL) {
+    if (self->param_data_type) {
         FREE(DataTypeAll, self->param_data_type->items[0]);
         free(self->param_data_type->items[1]);
         FREE(Tuple, self->param_data_type);
@@ -2467,7 +2478,7 @@ __new__FunDecl(struct String *name,
 void
 __free__FunDecl(struct FunDecl *self)
 {
-    if (self->tags != NULL) {
+    if (self->tags) {
         for (Usize i = len__Vec(*self->tags); i--;) {
             struct Tuple *temp = (struct Tuple *)get__Vec(*self->tags, i);
             FREE(DataTypeAll, temp->items[0]);
@@ -2478,27 +2489,27 @@ __free__FunDecl(struct FunDecl *self)
         FREE(Vec, self->tags);
     }
 
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->params != NULL) {
+    if (self->params) {
         for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamAll, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
     }
 
-    if (self->return_type != NULL) {
+    if (self->return_type) {
         FREE(DataTypeAll, self->return_type->items[0]);
         free(self->return_type->items[1]);
         FREE(Tuple, self->return_type);
     }
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
@@ -2525,7 +2536,7 @@ __new__ConstantDecl(struct String *name,
 void
 __free__ConstantDecl(struct ConstantDecl *self)
 {
-    if (self->data_type != NULL)
+    if (self->data_type)
         FREE(DataTypeAll, self->data_type);
 
     FREE(ExprAll, self->expr);
@@ -2585,7 +2596,7 @@ __new__ModuleDecl(struct String *name, struct Vec *body, bool is_pub)
 void
 __free__ModuleDecl(struct ModuleDecl *self)
 {
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
 
@@ -2612,7 +2623,7 @@ __new__AliasDecl(struct String *name,
 void
 __free__AliasDecl(struct AliasDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
@@ -2644,7 +2655,7 @@ __free__FieldRecord(struct FieldRecord *self)
 {
     FREE(DataTypeAll, self->data_type);
 
-    if (self->value != NULL)
+    if (self->value)
         FREE(ExprAll, self->value);
 
     free(self);
@@ -2669,14 +2680,14 @@ __new__RecordDecl(struct String *name,
 void
 __free__RecordDecl(struct RecordDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->fields != NULL) {
+    if (self->fields) {
         for (Usize i = len__Vec(*self->fields); i--;)
             FREE(FieldRecord, get__Vec(*self->fields, i));
 
@@ -2688,7 +2699,7 @@ __free__RecordDecl(struct RecordDecl *self)
 
 struct VariantEnum *
 __new__VariantEnum(struct String *name,
-                   struct Option *data_type,
+                   struct DataType *data_type,
                    struct Location loc)
 {
     struct VariantEnum *self = malloc(sizeof(struct VariantEnum));
@@ -2701,10 +2712,9 @@ __new__VariantEnum(struct String *name,
 void
 __free__VariantEnum(struct VariantEnum *self)
 {
-    if (is_Some__Option(self->data_type))
-        FREE(DataTypeAll, get__Option(self->data_type));
+    if (self->data_type)
+        FREE(DataTypeAll, self->data_type);
 
-    FREE(Option, self->data_type);
     free(self);
 }
 
@@ -2731,21 +2741,21 @@ __new__EnumDecl(struct String *name,
 void
 __free__EnumDecl(struct EnumDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->variants != NULL) {
+    if (self->variants) {
         for (Usize i = len__Vec(*self->variants); i--;)
             FREE(VariantEnum, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
     }
 
-    if (self->type_value != NULL)
+    if (self->type_value)
         FREE(DataTypeAll, self->type_value);
 
     free(self);
@@ -2768,14 +2778,14 @@ __new__ErrorDecl(struct String *name,
 void
 __free__ErrorDecl(struct ErrorDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->data_type != NULL)
+    if (self->data_type)
         FREE(DataTypeAll, self->data_type);
 
     free(self);
@@ -2825,24 +2835,24 @@ __new__MethodDecl(struct String *name,
 void
 __free__MethodDecl(struct MethodDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->params != NULL) {
+    if (self->params) {
         for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamAll, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
     }
 
-    if (self->return_type != NULL)
+    if (self->return_type)
         FREE(DataTypeAll, self->return_type);
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
@@ -2921,28 +2931,28 @@ __new__ClassDecl(struct String *name,
 void
 __free__ClassDecl(struct ClassDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->inheritance); i--;)
             FREE(DataTypeAll, get__Vec(*self->inheritance, i));
 
         FREE(Vec, self->inheritance);
     }
 
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->impl); i--;)
             FREE(DataTypeAll, get__Vec(*self->impl, i));
 
         FREE(Vec, self->impl);
     }
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(ClassBodyItemAll, get__Vec(*self->body, i));
 
@@ -3033,21 +3043,21 @@ __new__TraitDecl(struct String *name,
 void
 __free__TraitDecl(struct TraitDecl *self)
 {
-    if (self->generic_params != NULL) {
+    if (self->generic_params) {
         for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
-    if (self->inh != NULL) {
+    if (self->inh) {
         for (Usize i = len__Vec(*self->inh); i--;)
             FREE(DataTypeAll, get__Vec(*self->inh, i));
 
         FREE(Vec, self->inh);
     }
 
-    if (self->body != NULL) {
+    if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
             FREE(TraitBodyItemAll, get__Vec(*self->body, i));
 

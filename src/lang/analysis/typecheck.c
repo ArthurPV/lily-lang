@@ -79,6 +79,34 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
 static void
 push_all_symbols(struct Typecheck *self);
 static void
+check_module(struct Typecheck *self,
+             struct ModuleSymbol *module,
+             struct Vec *scope_id);
+static void
+check_enum(struct Typecheck *self,
+           struct EnumSymbol *enum_,
+           struct Vec *scope_id);
+static void
+check_record(struct Typecheck *self,
+             struct RecordSymbol *record,
+             struct Vec *scope_id);
+static void
+check_enum_obj(struct Typecheck *self,
+               struct EnumObjSymbol *enum_obj,
+               struct Vec *scope_id);
+static void
+check_record_obj(struct Typecheck *self,
+                 struct RecordObjSymbol *record_obj,
+                 struct Vec *scope_id);
+static void
+check_class(struct Typecheck *self,
+            struct ClassSymbol *class,
+            struct Vec *scope_id);
+static void
+check_trait(struct Typecheck *self,
+            struct TraitSymbol *trait,
+            struct Vec *scope_id);
+static void
 check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id);
 static void
 check_symbols(struct Typecheck *self);
@@ -247,77 +275,77 @@ __free__Typecheck(struct Typecheck self)
 
     FREE(Vec, self.builtins);
 
-    if (self.funs != NULL) {
+    if (self.funs) {
         for (Usize i = len__Vec(*self.funs); i--;)
             FREE(FunSymbol, get__Vec(*self.funs, i));
 
         FREE(Vec, self.funs);
     }
 
-    if (self.consts != NULL) {
+    if (self.consts) {
         for (Usize i = len__Vec(*self.consts); i--;)
             FREE(ConstantSymbol, get__Vec(*self.consts, i));
 
         FREE(Vec, self.consts);
     }
 
-    if (self.modules != NULL) {
+    if (self.modules) {
         for (Usize i = len__Vec(*self.modules); i--;)
             FREE(ModuleSymbol, get__Vec(*self.modules, i));
 
         FREE(Vec, self.modules);
     }
 
-    if (self.aliases != NULL) {
+    if (self.aliases) {
         for (Usize i = len__Vec(*self.aliases); i--;)
             FREE(AliasSymbol, get__Vec(*self.aliases, i));
 
         FREE(Vec, self.aliases);
     }
 
-    if (self.records != NULL) {
+    if (self.records) {
         for (Usize i = len__Vec(*self.records); i--;)
             FREE(RecordSymbol, get__Vec(*self.records, i));
 
         FREE(Vec, self.records);
     }
 
-    if (self.records_obj != NULL) {
+    if (self.records_obj) {
         for (Usize i = len__Vec(*self.records_obj); i--;)
             FREE(RecordObjSymbol, get__Vec(*self.records_obj, i));
 
         FREE(Vec, self.records_obj);
     }
 
-    if (self.enums != NULL) {
+    if (self.enums) {
         for (Usize i = len__Vec(*self.enums); i--;)
             FREE(EnumSymbol, get__Vec(*self.enums, i));
 
         FREE(Vec, self.enums);
     }
 
-    if (self.enums_obj != NULL) {
+    if (self.enums_obj) {
         for (Usize i = len__Vec(*self.enums_obj); i--;)
             FREE(EnumObjSymbol, get__Vec(*self.enums_obj, i));
 
         FREE(Vec, self.enums_obj);
     }
 
-    if (self.errors != NULL) {
+    if (self.errors) {
         for (Usize i = len__Vec(*self.errors); i--;)
             FREE(ErrorSymbol, get__Vec(*self.errors, i));
 
         FREE(Vec, self.errors);
     }
 
-    if (self.classes != NULL) {
+    if (self.classes) {
         for (Usize i = len__Vec(*self.classes); i--;)
             FREE(ClassSymbol, get__Vec(*self.classes, i));
 
         FREE(Vec, self.classes);
     }
 
-    if (self.traits != NULL) {
+    if (self.traits) {
         for (Usize i = len__Vec(*self.traits); i--;)
             FREE(TraitSymbol, get__Vec(*self.traits, i));
 
@@ -380,48 +408,48 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                    ? ((struct Decl *)get__Vec(*self->parser.decls, pos)) \
                    : NULL
 
-#define ALLOC_FUNS()        \
-    if (self->funs == NULL) \
+#define ALLOC_FUNS() \
+    if (!self->funs) \
     self->funs = NEW(Vec, sizeof(struct FunSymbol))
 
-#define ALLOC_CONSTS()        \
-    if (self->consts == NULL) \
+#define ALLOC_CONSTS() \
+    if (!self->consts) \
     self->consts = NEW(Vec, sizeof(struct ConstantSymbol))
 
-#define ALLOC_MODULES()        \
-    if (self->modules == NULL) \
+#define ALLOC_MODULES() \
+    if (!self->modules) \
     self->modules = NEW(Vec, sizeof(struct ModuleSymbol))
 
-#define ALLOC_ALIASES()        \
-    if (self->aliases == NULL) \
+#define ALLOC_ALIASES() \
+    if (!self->aliases) \
     self->aliases = NEW(Vec, sizeof(struct AliasSymbol))
 
-#define ALLOC_RECORDS()        \
-    if (self->records == NULL) \
+#define ALLOC_RECORDS() \
+    if (!self->records) \
     self->records = NEW(Vec, sizeof(struct RecordSymbol))
 
-#define ALLOC_RECORDS_OBJ()        \
-    if (self->records_obj == NULL) \
+#define ALLOC_RECORDS_OBJ() \
+    if (!self->records_obj) \
     self->records_obj = NEW(Vec, sizeof(struct RecordObjSymbol))
 
-#define ALLOC_ENUMS()        \
-    if (self->enums == NULL) \
+#define ALLOC_ENUMS() \
+    if (!self->enums) \
     self->enums = NEW(Vec, sizeof(struct EnumSymbol))
 
-#define ALLOC_ENUMS_OBJ()        \
-    if (self->enums_obj == NULL) \
+#define ALLOC_ENUMS_OBJ() \
+    if (!self->enums_obj) \
     self->enums_obj = NEW(Vec, sizeof(struct EnumObjSymbol))
 
-#define ALLOC_ERRORS()        \
-    if (self->errors == NULL) \
+#define ALLOC_ERRORS() \
+    if (!self->errors) \
     self->errors = NEW(Vec, sizeof(struct ErrorSymbol))
 
-#define ALLOC_CLASSES()        \
-    if (self->classes == NULL) \
+#define ALLOC_CLASSES() \
+    if (!self->classes) \
     self->classes = NEW(Vec, sizeof(struct ClassSymbol))
 
-#define ALLOC_TRAITS()        \
-    if (self->traits == NULL) \
+#define ALLOC_TRAITS() \
+    if (!self->traits) \
     self->traits = NEW(Vec, sizeof(struct TraitSymbol))
 
 static void
@@ -493,9 +521,145 @@ push_all_symbols(struct Typecheck *self)
 }
 
 static void
+check_module(struct Typecheck *self,
+             struct ModuleSymbol *module,
+             struct Vec *scope_id)
+{
+}
+
+static void
+check_enum(struct Typecheck *self,
+           struct EnumSymbol *enum_,
+           struct Vec *scope_id)
+{
+    if (!enum_->scope) {
+        enum_->scope = NEW(Scope,
+                           self->parser.parse_block.scanner.src->file.name,
+                           enum_->name,
+                           scope_id,
+                           ScopeItemKindEnum,
+                           ScopeKindGlobal);
+
+        if (enum_->enum_decl->value.enum_->generic_params) {
+
+            enum_->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*enum_->enum_decl->value.enum_->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j <
+                     len__Vec(*enum_->enum_decl->value.enum_->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *enum_->enum_decl->value.enum_->generic_params, i)),
+                          get_name__Generic(get__Vec(
+                            *enum_->enum_decl->value.enum_->generic_params, j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of enum_decl in enum_->generic_params
+                switch (((struct Generic *)get__Vec(
+                           *enum_->enum_decl->value.enum_->generic_params, i))
+                          ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(
+                          enum_->generic_params,
+                          NEW(GenericDataType,
+                              get_name__Generic(get__Vec(
+                                *enum_->enum_decl->value.enum_->generic_params,
+                                i)),
+                              ((struct Generic *)get__Vec(
+                                 *enum_->enum_decl->value.enum_->generic_params,
+                                 i))
+                                ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
+        }
+
+        if (enum_->enum_decl->value.enum_->variants) {
+            enum_->variants = NEW(Vec, sizeof(struct VariantEnumSymbol));
+
+            // Check if enum's variant name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*enum_->enum_decl->value.enum_->variants);
+                 i++) {
+                for (Usize j = i + 1;
+                     j < len__Vec(*enum_->enum_decl->value.enum_->variants);
+                     j++)
+                    if (eq__String(
+                          ((struct VariantEnum *)get__Vec(
+                             *enum_->enum_decl->value.enum_->variants, i))
+                            ->name,
+                          ((struct VariantEnum *)get__Vec(
+                             *enum_->enum_decl->value.enum_->variants, j))
+                            ->name,
+                          false))
+                        assert(0 && "error: duplicate variant name");
+
+                // Push variant enum in enum_->variants
+                if (((struct VariantEnum *)get__Vec(
+                       *enum_->enum_decl->value.enum_->variants, i))
+                      ->data_type) {
+                    TODO("Check data type");
+                } else
+                    push__Vec(
+                      enum_->variants,
+                      NEW(
+                        VariantEnumSymbol,
+                        get__Vec(*enum_->enum_decl->value.enum_->variants, i)));
+            }
+        }
+
+		++count_enum_id;
+    }
+}
+
+static void
+check_record(struct Typecheck *self,
+             struct RecordSymbol *record,
+             struct Vec *scope_id)
+{
+}
+
+static void
+check_enum_obj(struct Typecheck *self,
+               struct EnumObjSymbol *enum_obj,
+               struct Vec *scope_id)
+{
+}
+
+static void
+check_record_obj(struct Typecheck *self,
+                 struct RecordObjSymbol *record_obj,
+                 struct Vec *scope_id)
+{
+}
+
+static void
+check_class(struct Typecheck *self,
+            struct ClassSymbol *class,
+            struct Vec *scope_id)
+{
+}
+
+static void
+check_trait(struct Typecheck *self,
+            struct TraitSymbol *trait,
+            struct Vec *scope_id)
+{
+}
+
+static void
 check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
 {
-    if (fun->scope == NULL) {
+    if (!fun->scope) {
         struct FunDecl *fun_decl = fun->fun_decl->value.fun;
         struct Vec *local_data_type = NULL;
         struct Vec *local_value = NULL;
@@ -505,7 +669,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
         struct DataTypeSymbol *return_type = NULL;
         struct Vec *body = NULL;
 
-        if (fun_decl->tags != NULL) {
+        if (fun_decl->tags) {
             tagged_type = NEW(Vec, sizeof(struct Tuple));
 
             for (Usize i = len__Vec(*fun_decl->tags); i--;) {
@@ -518,14 +682,14 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
                                   true,
                                   false);
 
-                if (dts != NULL)
+                if (dts)
                     push__Vec(tagged_type, dts);
             }
 
             SUMMARY();
         }
 
-        if (fun_decl->generic_params != NULL) {
+        if (fun_decl->generic_params) {
             local_data_type = NEW(Vec, sizeof(struct LocalDataType));
 
             for (Usize i = len__Vec(*fun_decl->generic_params); i--;) {
@@ -557,7 +721,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
                           false,
                           false);
 
-                        if (dts != NULL)
+                        if (dts)
                             push__Vec(
                               local_data_type,
                               NEW(LocalDataType,
@@ -586,7 +750,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
             SUMMARY();
         }
 
-        if (fun_decl->params != NULL) {
+        if (fun_decl->params) {
             params = NEW(Vec, sizeof(struct FunParamSymbol));
             local_value = NEW(Vec, sizeof(struct Scope));
 
@@ -605,10 +769,10 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
                   false,
                   false);
 
-                if (dts != NULL) {
+                if (dts) {
                     param->param_data_type =
                       ((struct FunParam *)get__Vec(*fun_decl->params, i))
-                            ->param_data_type != NULL
+                          ->param_data_type
                         ? NEW(
                             Tuple,
                             2,
@@ -618,7 +782,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
                         : NULL;
                 }
 
-                if (param->default_ != NULL)
+                if (param->default_)
                     TODO("");
 
                 push__Vec(ids, (Usize *)i);
@@ -633,7 +797,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
             }
         }
 
-        if (fun_decl->return_type != NULL) {
+        if (fun_decl->return_type) {
             struct DataTypeSymbol *dts = check_data_type(
               self,
               *(struct Location *)fun_decl->return_type->items[1],
@@ -642,13 +806,13 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
               false,
               false);
 
-            if (dts != NULL)
+            if (dts)
                 return_type = dts;
 
             SUMMARY();
         }
 
-        if (fun_decl->body != NULL) {
+        if (fun_decl->body) {
             TODO("body");
         }
 
@@ -665,11 +829,11 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
         fun->body = body;
         ++count_fun_id;
 
-        if (local_data_type != NULL)
+        if (local_data_type)
             for (Usize i = len__Vec(*local_data_type); i--;)
                 FREE(LocalDataType, get__Vec(*local_data_type, i));
 
-        if (local_value != NULL)
+        if (local_value)
             for (Usize i = len__Vec(*local_value); i--;)
                 FREE(Scope, get__Vec(*local_value, i));
     }
@@ -699,7 +863,7 @@ check_symbols(struct Typecheck *self)
 static struct ModuleSymbol *
 entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx)
 {
-    if (self->modules == NULL)
+    if (!self->modules)
         assert(0 && "error unknown module");
 
     if (len__Vec(*id) == 0)
@@ -736,7 +900,7 @@ search_from_access(struct Typecheck *self,
 static Usize *
 search_in_modules_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->modules == NULL)
+    if (!self->modules)
         return NULL;
 
     for (Usize i = len__Vec(*self->modules); i--;)
@@ -752,7 +916,7 @@ search_in_modules_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_enums_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->enums == NULL)
+    if (!self->enums)
         return NULL;
 
     for (Usize i = len__Vec(*self->enums); i--;)
@@ -767,7 +931,7 @@ search_in_enums_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_records_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->records == NULL)
+    if (!self->records)
         return NULL;
 
     for (Usize i = len__Vec(*self->records); i--;)
@@ -783,7 +947,7 @@ search_in_records_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->enums_obj == NULL)
+    if (!self->enums_obj)
         return NULL;
 
     for (Usize i = len__Vec(*self->enums_obj); i--;)
@@ -799,7 +963,7 @@ search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->records_obj == NULL)
+    if (!self->records_obj)
         return NULL;
 
     for (Usize i = len__Vec(*self->records_obj); i--;)
@@ -815,7 +979,7 @@ search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_classes_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->classes == NULL)
+    if (!self->classes)
         return NULL;
 
     for (Usize i = len__Vec(*self->classes); i--;)
@@ -831,7 +995,7 @@ search_in_classes_from_name(struct Typecheck *self, struct String *name)
 static Usize *
 search_in_traits_from_name(struct Typecheck *self, struct String *name)
 {
-    if (self->traits == NULL)
+    if (!self->traits)
         return NULL;
 
     for (Usize i = len__Vec(*self->traits); i--;)
@@ -912,37 +1076,57 @@ search_in_custom_scope(struct Typecheck *self,
                        struct Expr *id,
                        struct SymbolTable *scope)
 {
-    struct Vec *body = NULL; // struct Vec<struct SymbolTable*>*
+    struct Vec *body = NULL;     // struct Vec<struct SymbolTable*>*
     struct Vec *variants = NULL; // struct Vec<struct SymbolTable*>*
-    struct Vec *fields = NULL; // struct Vec<struct SymbolTable*>*
+    struct Vec *fields = NULL;   // struct Vec<struct SymbolTable*>*
 
     switch (scope->kind) {
-      case SymbolTableKindClass:
-        body = scope->value.class->body;
-        break;
-      case SymbolTableKindEnum:
-        variants = scope->value.enum_->variants;
-        break;
-      case SymbolTableKindRecord:
-        fields = scope->value.record->fields;
-        break;
-      case SymbolTableKindEnumObj:
-        variants = scope->value.enum_obj->variants;
-        body = scope->value.enum_obj->attached;
-        break;
-      case SymbolTableKindRecordObj:
-        fields = scope->value.record_obj->fields;
-        body = scope->value.record_obj->attached;
-        break;
-      default:
-        assert(0 && "error: cannot search in scope in this case");
+        case SymbolTableKindClass:
+            if (!scope->value.class->body) {
+                TODO("analysis the class");
+            }
+
+            body = scope->value.class->body;
+            break;
+        case SymbolTableKindEnum:
+            if (!scope->value.enum_->variants) {
+                TODO("analysis the enum");
+            }
+
+            variants = scope->value.enum_->variants;
+            break;
+        case SymbolTableKindRecord:
+            if (!scope->value.record->fields) {
+                TODO("analysis the record");
+            }
+
+            fields = scope->value.record->fields;
+            break;
+        case SymbolTableKindEnumObj:
+            if (!scope->value.enum_obj->variants) {
+                TODO("analysis the enum obj");
+            }
+
+            variants = scope->value.enum_obj->variants;
+            body = scope->value.enum_obj->attached;
+            break;
+        case SymbolTableKindRecordObj:
+            if (!scope->value.record_obj->fields) {
+                TODO("analysis the record obj");
+            }
+
+            fields = scope->value.record_obj->fields;
+            body = scope->value.record_obj->attached;
+            break;
+        default:
+            assert(0 && "error: cannot search in scope in this case");
     }
 
-    if (body != NULL) {
-    } else if (body != NULL && variants != NULL) {
-    } else if (body != NULL && fields != NULL) {
-    } else if (variants != NULL) {
-    } else if (fields != NULL) {
+    if (body) {
+    } else if (body && variants) {
+    } else if (body && fields) {
+    } else if (variants) {
+    } else if (fields) {
     }
 
     TODO("search_in_custom_scope");
@@ -1016,7 +1200,7 @@ check_data_type(struct Typecheck *self,
                       get__Vec(
                         (*(struct Vec *)data_type->value.custom->items[0]), 0));
                     Usize *id_records =
-                      id_enums == NULL
+                      !id_enums
                         ? search_in_records_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1024,7 +1208,7 @@ check_data_type(struct Typecheck *self,
                                      0))
                         : NULL;
                     Usize *id_enums_obj =
-                      id_records == NULL && id_enums == NULL
+                      !id_records && !id_enums
                         ? search_in_enums_obj_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1032,8 +1216,7 @@ check_data_type(struct Typecheck *self,
                                      0))
                         : NULL;
                     Usize *id_records_obj =
-                      id_enums == NULL && id_records == NULL &&
-                          id_enums_obj == NULL
+                      !id_enums && !id_records && !id_enums_obj
                         ? search_in_records_obj_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1041,8 +1224,8 @@ check_data_type(struct Typecheck *self,
                                      0))
                         : NULL;
                     Usize *id_classes =
-                      id_enums == NULL && id_records == NULL &&
-                          id_enums_obj == NULL && id_records_obj == NULL
+                      !id_enums && !id_records && !id_enums_obj &&
+                          !id_records_obj
                         ? search_in_classes_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1050,9 +1233,8 @@ check_data_type(struct Typecheck *self,
                                      0))
                         : NULL;
                     Usize *id_traits =
-                      id_enums == NULL && id_records == NULL &&
-                          id_enums_obj == NULL && id_records_obj == NULL &&
-                          id_classes == NULL
+                      !id_enums && !id_records && !id_enums_obj &&
+                          !id_records_obj && !id_classes
                         ? search_in_traits_from_name(
                             self,
                             get__Vec((*(struct Vec *)
@@ -1061,14 +1243,13 @@ check_data_type(struct Typecheck *self,
                         : NULL;
                     struct Vec *generic_params = NULL;
 
-                    if (data_type->value.custom->items[1] == NULL) {
+                    if (!data_type->value.custom->items[1]) {
                     return_data_type : {
-                        if (id_enums == NULL && id_records == NULL &&
-                            id_enums_obj == NULL && id_records_obj == NULL &&
-                            id_classes == NULL && id_traits == NULL) {
+                        if (!id_enums && !id_records && !id_enums_obj &&
+                            !id_records_obj && !id_classes && !id_traits) {
                             if (len__Vec(*(struct Vec *)data_type->value.custom
                                             ->items[0]) == 1 &&
-                                local_data_type != NULL) {
+                                local_data_type) {
                                 for (Usize i = len__Vec(*local_data_type);
                                      i--;) {
                                     if (eq__String(
@@ -1119,7 +1300,7 @@ check_data_type(struct Typecheck *self,
                             emit__Diagnostic(err);
 
                             return NULL;
-                        } else if (id_enums_obj != NULL) {
+                        } else if (id_enums_obj) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_enums_obj);
@@ -1138,7 +1319,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindEnumObj,
                                 ScopeKindGlobal));
-                        } else if (id_records_obj != NULL) {
+                        } else if (id_records_obj) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_records_obj);
@@ -1157,8 +1338,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindRecordObj,
                                 ScopeKindGlobal));
-                        } else if (id_enums == NULL && id_records == NULL &&
-                                   must_object) {
+                        } else if (!id_enums && !id_records && must_object) {
                             struct Diagnostic *err = NEW(
                               DiagnosticWithErrTypecheck,
                               self,
@@ -1168,26 +1348,25 @@ check_data_type(struct Typecheck *self,
                               from__String(""),
                               None());
 
-                            struct Diagnostic *note =
-                              NEW(DiagnosticWithNoteTypecheck,
-                                  self,
-                                  from__String("replace `type` by `object` in "
-                                               "current declaration"),
-                                  id_enums != NULL
-                                    ? ((struct Decl *)get__Vec(
-                                         *self->parser.decls, *id_enums))
-                                        ->loc
-                                    : ((struct Decl *)get__Vec(
-                                         *self->parser.decls, *id_records))
-                                        ->loc,
-                                  from__String(""),
-                                  None());
+                            struct Diagnostic *note = NEW(
+                              DiagnosticWithNoteTypecheck,
+                              self,
+                              from__String("replace `type` by `object` in "
+                                           "current declaration"),
+                              id_enums ? ((struct Decl *)get__Vec(
+                                            *self->parser.decls, *id_enums))
+                                           ->loc
+                                       : ((struct Decl *)get__Vec(
+                                            *self->parser.decls, *id_records))
+                                           ->loc,
+                              from__String(""),
+                              None());
 
                             emit__Diagnostic(err);
                             emit__Diagnostic(note);
 
                             return NULL;
-                        } else if (id_enums != NULL) {
+                        } else if (id_enums) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_enums);
@@ -1207,7 +1386,7 @@ check_data_type(struct Typecheck *self,
                                 ScopeItemKindEnum,
                                 ScopeKindGlobal));
 
-                        } else if (id_records != NULL) {
+                        } else if (id_records) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_records);
@@ -1226,7 +1405,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindRecord,
                                 ScopeKindGlobal));
-                        } else if (id_classes != NULL) {
+                        } else if (id_classes) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_classes);
@@ -1245,7 +1424,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindClass,
                                 ScopeKindGlobal));
-                        } else if (id_traits != NULL && must_trait) {
+                        } else if (id_traits && must_trait) {
                             id = NEW(Vec, sizeof(Usize));
 
                             push__Vec(id, id_traits);
@@ -1264,7 +1443,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindTrait,
                                 ScopeKindGlobal));
-                        } else if (id_traits != NULL && !must_trait)
+                        } else if (id_traits && !must_trait)
                             assert(0 && "error");
                     }
                     } else {
@@ -1611,7 +1790,7 @@ search_fun_builtin(struct Typecheck *self,
             break;
         }
 
-    assert(module != NULL && "module is not found");
+    assert(module && "module is not found");
 
     for (Usize i = len__Vec(*module->items); i--;)
         if (!strcmp(((struct BuiltinFun *)get__Vec(*module->items, i))->name,
@@ -1720,7 +1899,7 @@ check_if_defined_data_type_is_equal_to_infered_data_type(
   struct DataTypeSymbol *defined_data_type,
   struct DataTypeSymbol *infered_data_type)
 {
-    if (defined_data_type != NULL)
+    if (defined_data_type)
         if (defined_data_type == infered_data_type) {
             assert(0 && "error");
             return NULL;
@@ -1739,14 +1918,14 @@ infer_expression(struct Typecheck *self,
                  bool is_return_type)
 {
 #define INFER(dt)                                                              \
-    if (defined_data_type != NULL)                                             \
+    if (defined_data_type)                                                     \
         return copy__DataTypeSymbol(defined_data_type);                        \
-    else if (is_return_type && fun != NULL && dt != NULL)                      \
-        if (fun->return_type != NULL)                                          \
+    else if (is_return_type && fun && dt)                                      \
+        if (fun->return_type)                                                  \
             return copy__DataTypeSymbol(fun->return_type);                     \
         else                                                                   \
             return dt;                                                         \
-    else if (dt == NULL)                                                       \
+    else if (!dt)                                                              \
         assert(0 && "error: cannot infer on nil or undef or other value with " \
                     "no specified data type");                                 \
     else                                                                       \
@@ -1876,9 +2055,9 @@ check_expression(struct Typecheck *self,
                         check_if_defined_data_type_is_equal_to_infered_data_type(
                           self,
                           defined_data_type,
-                          return_type == NULL ? get_data_type_of_expression(
-                                                  self, right, local_value)
-                                              : return_type),
+                          !return_type ? get_data_type_of_expression(
+                                           self, right, local_value)
+                                       : return_type),
                         right));
                 }
                 case UnaryOpKindBitNot:
@@ -1989,7 +2168,7 @@ check_expression(struct Typecheck *self,
                     struct BuiltinFun *fun_builtin =
                       search_fun_builtin(self, module_name, op_str, 3);
 
-                    if (fun_builtin == NULL)
+                    if (!fun_builtin)
                         assert(0 && "error");
 
                     verify_type_of_fun_builtin(

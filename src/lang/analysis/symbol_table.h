@@ -591,7 +591,6 @@ __free__VariantEnumSymbol(struct VariantEnumSymbol *self)
     free(self);
 }
 
-// TODO: struct Vec<struct VariantEnumSymbol*>* -> struct Vec<struct SymbolTable*>*
 typedef struct EnumSymbol
 {
     struct String *name;        // struct String&
@@ -2403,13 +2402,15 @@ __free__SymbolTableStmt(struct SymbolTable *self)
 }
 
 inline void
-__free__SymbolTableVariant(struct SymbolTable *self) {
+__free__SymbolTableVariant(struct SymbolTable *self)
+{
     FREE(VariantEnumSymbol, self->value.variant);
     free(self);
 }
 
 inline void
-__free__SymbolTableField(struct SymbolTable *self) {
+__free__SymbolTableField(struct SymbolTable *self)
+{
     FREE(FieldRecordSymbol, self->value.field);
     free(self);
 }
