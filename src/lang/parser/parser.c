@@ -279,9 +279,9 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static inline int *
-parse_unary_op(struct Parser self, struct ParseDecl *parse_decl);
+parse_unary_op(struct ParseDecl parse_decl);
 static inline int *
-parse_binary_op(struct Parser self, struct ParseDecl *parse_decl);
+parse_binary_op(struct ParseDecl parse_decl);
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Stmt *
@@ -3171,6 +3171,19 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                     parse_decl->previous->loc->s_line,
                     parse_decl->previous->loc->s_col);
 
+    int *unary_op = parse_unary_op(*parse_decl);
+
+    if (unary_op != NULL) {
+        struct Expr *right = parse_primary_expr(self, parse_decl);
+
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(
+          ExprUnaryOp, NEW(UnaryOp, (enum UnaryOpKind)(*unary_op), right), loc);
+    }
+
     switch (parse_decl->previous->kind) {
         case TokenKindIdentifier:
             break;
@@ -3237,13 +3250,27 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             assert(0 && "error");
     }
 
+    int *binary_op = parse_binary_op(*parse_decl);
+
+    if (binary_op != NULL) {
+        struct Expr *right = parse_primary_expr(self, parse_decl);
+
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(ExprBinaryOp,
+                   NEW(BinaryOp, (enum BinaryOpKind)(*binary_op), expr, right),
+                   loc);
+    }
+
     return expr;
 }
 
 static inline int *
-parse_unary_op(struct Parser self, struct ParseDecl *parse_decl)
+parse_unary_op(struct ParseDecl parse_decl)
 {
-    switch (parse_decl->current->kind) {
+    switch (parse_decl.current->kind) {
         case TokenKindMinus:
             return (int *)UnaryOpKindNegative;
         case TokenKindNotKw:
@@ -3256,8 +3283,9 @@ parse_unary_op(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 static inline int *
-parse_binary_op(struct Parser self, struct ParseDecl *parse_decl) {
-    switch (parse_decl->current->kind) {
+parse_binary_op(struct ParseDecl parse_decl)
+{
+    switch (parse_decl.current->kind) {
         case TokenKindPlus:
             return (int *)BinaryOpKindAdd;
         case TokenKindMinus:
