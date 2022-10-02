@@ -12,7 +12,7 @@
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
-static enum TokenKind
+static inline enum TokenKind
 get_keyword(const Str id);
 
 static inline void
@@ -153,7 +153,7 @@ __new__Scanner(struct Source *src)
     return self;
 }
 
-static enum TokenKind
+static inline enum TokenKind
 get_keyword(const Str id)
 {
     if (!strcmp(id, "fun"))

@@ -7,4 +7,9 @@ type Name: enum(error) =
 	G
 end
 
+type Person: record =
+	name: string,
+	age: u32
+end
+
 fun div(x, y) = x/y;

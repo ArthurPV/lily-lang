@@ -205,7 +205,9 @@ lily_error_to_string(struct LilyError err)
         case LilyErrorMissTypeName:
             return from__String("miss type name");
         case LilyErrorInvalidTokenInEnumVariant:
-            return format("invalid token in enum variant");
+            return from__String("invalid token in enum variant");
+        case LilyErrorInvalidTokenInRecordField:
+            return from__String("invalid token in record field");
         default:
             UNREACHABLE("unknown lily error kind");
     }

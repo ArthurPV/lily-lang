@@ -91,13 +91,14 @@ __new__EnumParseContext();
 void
 __free__EnumParseContext(struct EnumParseContext *self);
 
-typedef struct RecordParseContext {
+typedef struct RecordParseContext
+{
     bool is_pub;
     bool has_generic_params;
     bool has_data_type;
-    struct String *name;
+    struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Token&>*
-    struct Vec *fields; // struct Vec<struct Token&>*
+    struct Vec *fields;         // struct Vec<struct Token&>*
 } RecordParseContext;
 
 /**

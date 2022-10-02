@@ -5,4 +5,4 @@ IndentWidth: 4
 Language: Cpp
 BasedOnStyle: Mozilla
 PointerAlignment: Right
-AlignEscapedNewlines: DontAlign
+AlignEscapedNewlines: true 

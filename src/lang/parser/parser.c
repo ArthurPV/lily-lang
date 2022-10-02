@@ -6,6 +6,24 @@
 #include <lang/parser/parser.h>
 #include <pthread.h>
 
+#define EXPECTED_TOKEN_ERR(parse_block, expected)   \
+    NEW(DiagnosticWithErrParser,                    \
+        parse_block,                                \
+        NEW(LilyError, LilyErrorExpectedToken),     \
+        *parse_block->current->loc,                 \
+        format(""),                                 \
+        Some(format("expected `{c}`, found `{Sr}`", \
+                    expected,                       \
+                    token_kind_to_string__Token(*parse_block->current))));
+
+#define CLOSE_BLOCK_NOTE(parse_block)                        \
+    NEW(DiagnosticWithNoteParser,                            \
+        parse_block,                                         \
+        format("you may have forgotten to close the block"), \
+        *parse_block->current->loc,                          \
+        format(""),                                          \
+        None());
+
 static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
@@ -33,6 +51,13 @@ valid_token_in_enum_variants(struct EnumParseContext *self,
 static void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
+static inline bool
+valid_token_in_record_fields(struct RecordParseContext *self,
+                             struct ParseBlock *parse_block,
+                             bool already_invalid);
+static void
+get_record_parse_context(struct RecordParseContext *self,
+                         struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -259,14 +284,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
         has_generic_params = true;
 
     if (self->current->kind != TokenKindColon) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              self,
-              NEW(LilyError, LilyErrorExpectedToken),
-              *self->current->loc,
-              format(""),
-              Some(format("expected `:`, found `{Sr}`",
-                          token_kind_to_string__Token(*self->current))));
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, ':');
 
         err->err->s = from__String(":");
 
@@ -291,6 +309,19 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindRecordKw:
+            struct RecordParseContext *record_parse_context =
+              NEW(RecordParseContext);
+
+            record_parse_context->name = name;
+            record_parse_context->generic_params = generic_params;
+            record_parse_context->is_pub = is_pub;
+            record_parse_context->has_generic_params = has_generic_params;
+
+            get_record_parse_context(record_parse_context, self);
+
+            push__Vec(self->blocks,
+                      NEW(ParseContextRecord, record_parse_context));
+
             break;
         default: {
             struct Diagnostic *err =
@@ -399,13 +430,7 @@ valid_fun_body_item(struct FunParseContext *self,
                       format("this token is invalid inside the function"),
                       None());
 
-                struct Diagnostic *note =
-                  NEW(DiagnosticWithNoteParser,
-                      parse_block,
-                      format("you may have forgotten to close the block"),
-                      *parse_block->current->loc,
-                      format(""),
-                      None());
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
 
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
@@ -607,14 +632,7 @@ get_fun_parse_context(struct FunParseContext *self,
     if (parse_block->current->kind == TokenKindEq)
         next_token_pb(parse_block);
     else {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorExpectedToken),
-              *parse_block->current->loc,
-              format(""),
-              Some(format("expected `=`, found `{Sr}`",
-                          token_kind_to_string__Token(*parse_block->current))));
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
 
         err->err->s = from__String("=");
 
@@ -665,15 +683,7 @@ get_enum_parse_context(struct EnumParseContext *self,
             next_token_pb(parse_block);
 
             if (parse_block->current->kind != TokenKindRParen) {
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      parse_block,
-                      NEW(LilyError, LilyErrorExpectedToken),
-                      *parse_block->current->loc,
-                      format(""),
-                      Some(format(
-                        "expected `)`, found `{Sr}`",
-                        token_kind_to_string__Token(*parse_block->current))));
+                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, ')');
 
                 err->err->s = from__String(")");
 
@@ -696,8 +706,14 @@ get_enum_parse_context(struct EnumParseContext *self,
     }
 
     // 2. Variants
-    assert(parse_block->current->kind == TokenKindEq && "error");
-    next_token_pb(parse_block);
+    if (parse_block->current->kind != TokenKindEq) {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+
+        err->err->s = from__String("=");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
 
     bool bad_token = false;
 
@@ -726,9 +742,8 @@ get_enum_parse_context(struct EnumParseContext *self,
         err->err->s = from__String("`end`");
 
         emit__Diagnostic(err);
-    } else {
+    } else
         next_token_pb(parse_block);
-    }
 }
 
 static inline bool
@@ -758,13 +773,7 @@ valid_token_in_enum_variants(struct EnumParseContext *self,
                              "`(`, `)`, `[`, `]`, `ID`, `?`, `!` or `,`"),
                       None());
 
-                struct Diagnostic *note =
-                  NEW(DiagnosticWithNoteParser,
-                      parse_block,
-                      format("you may have forgotten to close the block"),
-                      *parse_block->current->loc,
-                      format(""),
-                      None());
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
 
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
@@ -785,19 +794,106 @@ __free__EnumParseContext(struct EnumParseContext *self)
 }
 
 struct RecordParseContext *
-__new__RecordParseContext() {
+__new__RecordParseContext()
+{
     struct RecordParseContext *self = malloc(sizeof(struct RecordParseContext));
     self->is_pub = false;
     self->has_generic_params = false;
     self->has_data_type = false;
     self->name = NULL;
-    self->generic_params = NEW(Vec, sizeof(struct Token));
+    self->generic_params = NULL;
     self->fields = NEW(Vec, sizeof(struct Token));
     return self;
 }
 
+static inline bool
+valid_token_in_record_fields(struct RecordParseContext *self,
+                             struct ParseBlock *parse_block,
+                             bool already_invalid)
+{
+    switch (parse_block->current->kind) {
+        case TokenKindLParen:
+        case TokenKindRParen:
+        case TokenKindLHook:
+        case TokenKindRHook:
+        case TokenKindColon:
+        case TokenKindInterrogation:
+        case TokenKindBang:
+        case TokenKindComma:
+        case TokenKindIdentifier:
+            return true;
+        default: {
+            if (!already_invalid) {
+                struct Diagnostic *err = NEW(
+                  DiagnosticWithErrParser,
+                  parse_block,
+                  NEW(LilyError, LilyErrorInvalidTokenInRecordField),
+                  *parse_block->current->loc,
+                  format("this token is invalid inside the record, expected: "
+                         "`(`, `)`, `[`, `]`, `ID`, `?`, `!`, `,` or `:`"),
+                  None());
+
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
+
+                emit__Diagnostic(err);
+                emit__Diagnostic(note);
+            }
+
+            return false;
+        }
+    }
+}
+
+static void
+get_record_parse_context(struct RecordParseContext *self,
+                         struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    // 1. Fields
+    if (parse_block->current->kind != TokenKindEq) {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+
+        err->err->s = from__String("=");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+
+    bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
+        if (valid_token_in_record_fields(self, parse_block, bad_token)) {
+            push__Vec(self->fields, &*parse_block->current);
+            next_token_pb(parse_block);
+        } else {
+            bad_token = true;
+            next_token_pb(parse_block);
+        }
+    }
+
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissClosingBlock),
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+                                         parse_block->pos - 1))
+                 ->loc,
+              format("expected closing block here"),
+              None());
+
+        err->err->s = from__String("`end`");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+}
+
 void
-__free__RecordParseContext(struct RecordParseContext *self) {
+__free__RecordParseContext(struct RecordParseContext *self)
+{
     FREE(Vec, self->generic_params);
     FREE(Vec, self->fields);
     free(self);
@@ -865,7 +961,8 @@ __new__ParseContextEnum(struct EnumParseContext *enum_)
 }
 
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext *record) {
+__new__ParseContextRecord(struct RecordParseContext *record)
+{
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindRecord;
     self->value.record = record;
@@ -887,7 +984,8 @@ __free__ParseContextEnum(struct ParseContext *self)
 }
 
 void
-__free__ParseContextRecord(struct ParseContext *self) {
+__free__ParseContextRecord(struct ParseContext *self)
+{
     FREE(RecordParseContext, self->value.record);
     free(self);
 }
