@@ -8,22 +8,22 @@
 #define DEBUG
 #undef DEBUG
 
-#define UNREACHABLE(msg)                                                       \
-    {                                                                          \
-        println("UNREACHABLE: %s", msg);                                       \
-        exit(1);                                                               \
+#define UNREACHABLE(msg)                                             \
+    {                                                                \
+        println("UNREACHABLE: %s (%s:%d)", msg, __FILE__, __LINE__); \
+        exit(1);                                                     \
     }
 
-#define TODO(msg)                                                              \
-    {                                                                          \
-        println("TODO: %s", msg);                                              \
-        exit(1);                                                               \
+#define TODO(msg)                                             \
+    {                                                         \
+        println("TODO: %s (%s:%d)", msg, __FILE__, __LINE__); \
+        exit(1);                                              \
     }
 
-#define UNIMPLEMENTED(msg)                                                     \
-    {                                                                          \
-        println("UNIMPLEMENTED: %s", msg);                                     \
-        exit(1);                                                               \
+#define UNIMPLEMENTED(msg)                                             \
+    {                                                                  \
+        println("UNIMPLEMENTED: %s (%s:%d)", msg, __FILE__, __LINE__); \
+        exit(1);                                                       \
     }
 
 #endif // LILY_MACROS_H

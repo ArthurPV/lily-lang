@@ -104,6 +104,23 @@ enum Visibility
 #define VISIBILITY(self) \
     self->is_pub == true ? VisibilityPublic : VisibilityPrivate;
 
+typedef struct CompilerDefinedDataType
+{
+    Str name;
+    bool is_args;
+} CompilerDefinedDataType;
+
+/**
+ *
+ * @brief Construct the CompilerDefinedDataType type.
+ */
+inline struct CompilerDefinedDataType
+__new__CompilerDefinedDataType(Str name, bool is_args)
+{
+    struct CompilerDefinedDataType self = {.name = name, .is_args = is_args};
+    return self;
+}
+
 typedef struct DataTypeSymbol
 {
     enum DataTypeKind kind;
@@ -120,6 +137,7 @@ typedef struct DataTypeSymbol
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
         struct Vec *custom;   // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*
+        struct CompilerDefinedDataType compiler_defined; // struct CompilerDefinedDataType
     } value;
 
     union
@@ -200,6 +218,13 @@ __new__DataTypeSymbolCustom(struct Vec *generic_params,
  */
 struct DataTypeSymbol *
 __new__DataTypeSymbolTuple(struct Vec *tuple);
+
+/**
+ *
+ * @brief Construct the DataTypeSymbol type (CompilerDefinedDataType variant).
+ */
+struct DataTypeSymbol *
+__new__DataTypeSymbolCompilerDefined(struct CompilerDefinedDataType compiler_defined);
 
 /**
  *
@@ -312,6 +337,12 @@ __free__DataTypeSymbolTuple(struct DataTypeSymbol *self)
         FREE(DataTypeSymbolAll, get__Vec(*self->value.tuple, i));
 
     FREE(Vec, self->value.tuple);
+    free(self);
+}
+
+inline void
+__free__DataTypeSymbolCompilerDefined(struct DataTypeSymbol *self)
+{
     free(self);
 }
 

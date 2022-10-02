@@ -39,7 +39,8 @@ enum DataTypeKind
     DataTypeKindLambda,
     DataTypeKindArray,
     DataTypeKindTuple,
-    DataTypeKindCustom
+    DataTypeKindCustom,
+    DataTypeKindCompilerDefined // CompilerDefined is not used in AST
 };
 
 typedef struct DataType

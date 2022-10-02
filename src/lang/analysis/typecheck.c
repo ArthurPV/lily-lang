@@ -126,6 +126,16 @@ static void
 verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
                            Usize param_count,
                            ...);
+static inline struct DataTypeSymbol *
+get_return_type_of_fun_builtin(struct Typecheck *self,
+                               const Str module_name,
+                               const Str fun_name,
+                               Usize param_count);
+static struct DataTypeSymbol *
+check_if_defined_data_type_is_equal_to_infered_data_type(
+  struct Typecheck *self,
+  struct DataTypeSymbol *defined_data_type,
+  struct DataTypeSymbol *infered_data_type);
 static struct DataTypeSymbol *
 infer_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
@@ -1541,12 +1551,50 @@ verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
 
     va_start(vl, param_count);
 
-    for (Usize i = param_count; i--;)
+    for (Usize i = param_count; i--;) {
         if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params, i)) !=
-            va_arg(vl, struct DataTypeSymbol *))
-            assert(0 && "error");
+            NULL) {
+            if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params, i))
+                  ->kind != DataTypeKindCompilerDefined)
+                if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params,
+                                                       i)) !=
+                    va_arg(vl, struct DataTypeSymbol *))
+                    assert(0 && "error");
+        }
+    }
 
     va_end(vl);
+}
+
+static inline struct DataTypeSymbol *
+get_return_type_of_fun_builtin(struct Typecheck *self,
+                               const Str module_name,
+                               const Str fun_name,
+                               Usize param_count)
+{
+    struct BuiltinFun *fun =
+      search_fun_builtin(self, module_name, fun_name, param_count);
+    struct DataTypeSymbol *dt = get__Vec(*fun->params, fun->params->len - 1);
+
+    if (dt->kind == DataTypeKindCompilerDefined)
+        return NULL;
+
+    return dt;
+}
+
+static struct DataTypeSymbol *
+check_if_defined_data_type_is_equal_to_infered_data_type(
+  struct Typecheck *self,
+  struct DataTypeSymbol *defined_data_type,
+  struct DataTypeSymbol *infered_data_type)
+{
+    if (defined_data_type != NULL)
+        if (defined_data_type == infered_data_type) {
+            assert(0 && "error");
+            return NULL;
+        }
+
+    return infered_data_type;
 }
 
 static struct DataTypeSymbol *
@@ -1668,8 +1716,39 @@ check_expression(struct Typecheck *self,
     switch (expr->kind) {
         case ExprKindUnaryOp:
             switch (expr->value.unary_op.kind) {
-                case UnaryOpKindReference:
-                    TODO("check reference");
+                case UnaryOpKindReference: {
+                    struct ExprSymbol *right =
+                      check_expression(self,
+                                       fun,
+                                       expr->value.unary_op.right,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       is_return_type);
+
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, "Ref", "&", 2),
+                      2,
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    struct DataTypeSymbol *return_type =
+                      get_return_type_of_fun_builtin(self, "Ref", "&", 2);
+
+                    return NEW(
+                      ExprSymbolUnaryOp,
+                      *expr,
+                      NEW(
+                        UnaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          return_type == NULL ? get_data_type_of_expression(
+                                                  self, right, local_value)
+                                              : return_type),
+                        right));
+                }
                 case UnaryOpKindNegative: {
                     struct ExprSymbol *right =
                       check_expression(self,
@@ -1677,18 +1756,69 @@ check_expression(struct Typecheck *self,
                                        expr->value.unary_op.right,
                                        local_value,
                                        local_data_type,
-                                       defined_data_type,
+                                       NULL,
                                        is_return_type);
 
-                    // verify_type_of_fun_builtin(search_fun_builtin(self,
-                    // get_builtin_module_name_from_data_type(right->value.unary_op.right)))
-                    TODO("check negative");
+                    const Str module_name =
+                      get_builtin_module_name_from_data_type(
+                        get_data_type_of_expression(self, right, local_value));
+
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, module_name, "-", 2),
+                      2,
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolUnaryOp,
+                      *expr,
+                      NEW(
+                        UnaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, module_name, "-", 2)),
+                        right));
                 }
-                case UnaryOpKindNot:
-                    TODO("check not");
+                case UnaryOpKindNot: {
+                    struct ExprSymbol *right =
+                      check_expression(self,
+                                       fun,
+                                       expr->value.unary_op.right,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       is_return_type);
+
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, "Bool", "not", 2),
+                      2,
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolUnaryOp,
+                      *expr,
+                      NEW(
+                        UnaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, "Bool", "not", 2)),
+                        right));
+                }
+                case UnaryOpKindCustom:
+                    TODO("check unary operator kind custom");
             }
         case ExprKindBinaryOp:
-            TODO("check binary op");
+            switch (expr->value.binary_op.kind) {
+                default:
+                    TODO("check binary op");
+            }
         case ExprKindFunCall:
             TODO("check fun call");
         case ExprKindRecordCall:

@@ -117,6 +117,16 @@ __new__DataTypeSymbolTuple(struct Vec *tuple)
 }
 
 struct DataTypeSymbol *
+__new__DataTypeSymbolCompilerDefined(struct CompilerDefinedDataType compiler_defined)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindCompilerDefined;
+    self->scope = NULL;
+    self->value.compiler_defined = compiler_defined;
+    return self;
+}
+
+struct DataTypeSymbol *
 copy__DataTypeSymbol(struct DataTypeSymbol *self)
 {
     struct DataTypeSymbol *copy = malloc(sizeof(struct DataTypeSymbol));
@@ -156,6 +166,9 @@ __free__DataTypeSymbolAll(struct DataTypeSymbol *self)
             break;
         case DataTypeKindTuple:
             FREE(DataTypeSymbolTuple, self);
+            break;
+        case DataTypeKindCompilerDefined:
+            FREE(DataTypeSymbolCompilerDefined, self);
             break;
         default:
             FREE(DataTypeSymbol, self);

@@ -377,6 +377,8 @@ __free__DataTypeAll(struct DataType *self)
         case DataTypeKindTuple:
             FREE(DataTypeTuple, self);
             break;
+        case DataTypeKindCompilerDefined:
+            UNREACHABLE("CompilerDefined is not used in AST");
         default:
             FREE(DataType, self);
             break;

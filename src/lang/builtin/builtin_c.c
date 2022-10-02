@@ -49,6 +49,8 @@ static struct Builtin *
 Load_Array_module();
 static struct Builtin *
 Load_Fun_module();
+static struct Builtin *
+Load_Ref_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
 
@@ -5881,15 +5883,11 @@ Load_Optional_module()
 
         PARAMS(3,
                NEW(DataTypeSymbolOptional,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbolOptional,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
@@ -5900,15 +5898,11 @@ Load_Optional_module()
 
         PARAMS(3,
                NEW(DataTypeSymbolOptional,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbolOptional,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
@@ -5927,15 +5921,11 @@ Load_Ptr_module()
 
         PARAMS(3,
                NEW(DataTypeSymbolPtr,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbolPtr,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
@@ -5946,15 +5936,11 @@ Load_Ptr_module()
 
         PARAMS(3,
                NEW(DataTypeSymbolPtr,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbolPtr,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL)),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
                NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
@@ -5971,25 +5957,18 @@ Load_Tuple_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(
-          3,
-          NEW(DataTypeSymbolTuple,
-              init__Vec(
-                sizeof(struct DataTypeSymbol),
-                1,
-                NEW(DataTypeSymbolCustom,
-                    init__Vec(sizeof(struct String), 1, from__String("T...")),
-                    NULL,
-                    NULL))),
-          NEW(DataTypeSymbolTuple,
-              init__Vec(
-                sizeof(struct DataTypeSymbol),
-                1,
-                NEW(DataTypeSymbolCustom,
-                    init__Vec(sizeof(struct String), 1, from__String("T...")),
-                    NULL,
-                    NULL))),
-          NEW(DataTypeSymbol, DataTypeKindBool));
+        PARAMS(3,
+               NEW(DataTypeSymbolTuple,
+                   init__Vec(sizeof(struct DataTypeSymbol),
+                             1,
+                             NEW(DataTypeSymbolCompilerDefined,
+                                 NEW(CompilerDefinedDataType, "A", true)))),
+               NEW(DataTypeSymbolTuple,
+                   init__Vec(sizeof(struct DataTypeSymbol),
+                             1,
+                             NEW(DataTypeSymbolCompilerDefined,
+                                 NEW(CompilerDefinedDataType, "A", true)))),
+               NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "==", params)));
     }
@@ -5997,25 +5976,18 @@ Load_Tuple_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(
-          3,
-          NEW(DataTypeSymbolTuple,
-              init__Vec(
-                sizeof(struct DataTypeSymbol),
-                1,
-                NEW(DataTypeSymbolCustom,
-                    init__Vec(sizeof(struct String), 1, from__String("T...")),
-                    NULL,
-                    NULL))),
-          NEW(DataTypeSymbolTuple,
-              init__Vec(
-                sizeof(struct DataTypeSymbol),
-                1,
-                NEW(DataTypeSymbolCustom,
-                    init__Vec(sizeof(struct String), 1, from__String("T...")),
-                    NULL,
-                    NULL))),
-          NEW(DataTypeSymbol, DataTypeKindBool));
+        PARAMS(3,
+               NEW(DataTypeSymbolTuple,
+                   init__Vec(sizeof(struct DataTypeSymbol),
+                             1,
+                             NEW(DataTypeSymbolCompilerDefined,
+                                 NEW(CompilerDefinedDataType, "A", true)))),
+               NEW(DataTypeSymbolTuple,
+                   init__Vec(sizeof(struct DataTypeSymbol),
+                             1,
+                             NEW(DataTypeSymbolCompilerDefined,
+                                 NEW(CompilerDefinedDataType, "A", true)))),
+               NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
     }
@@ -6033,16 +6005,12 @@ Load_Array_module()
 
         PARAMS(3,
                NEW(DataTypeSymbolArray,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false)),
                    NULL),
                NEW(DataTypeSymbolArray,
-                   NEW(DataTypeSymbolCustom,
-                       init__Vec(sizeof(struct String), 1, from__String("T")),
-                       NULL,
-                       NULL),
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false)),
                    NULL),
                NEW(DataTypeSymbol, DataTypeKindBool));
 
@@ -6052,21 +6020,16 @@ Load_Array_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(
-          3,
-          NEW(DataTypeSymbolArray,
-              NEW(DataTypeSymbolCustom,
-                  init__Vec(sizeof(struct String), 1, from__String("T...")),
-                  NULL,
-                  NULL),
-              NULL),
-          NEW(DataTypeSymbolArray,
-              NEW(DataTypeSymbolCustom,
-                  init__Vec(sizeof(struct String), 1, from__String("T...")),
-                  NULL,
-                  NULL),
-              NULL),
-          NEW(DataTypeSymbol, DataTypeKindBool));
+        PARAMS(3,
+               NEW(DataTypeSymbolArray,
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false)),
+                   NULL),
+               NEW(DataTypeSymbolArray,
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false)),
+                   NULL),
+               NEW(DataTypeSymbol, DataTypeKindBool));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "not=", params)));
     }
@@ -6082,11 +6045,32 @@ Load_Fun_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Fun", items));
 }
 
+static struct Builtin *
+Load_Ref_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+        PARAMS(2,
+               NEW(DataTypeSymbolCompilerDefined,
+                   NEW(CompilerDefinedDataType, "A", false)),
+               NEW(DataTypeSymbolRef,
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "&", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ref", items));
+}
+
 struct Vec *
 Load_C_builtins()
 {
     return init__Vec(sizeof(struct Builtin),
-                     22,
+                     23,
                      Load_Int8_module(),
                      Load_Int16_module(),
                      Load_Int32_module(),
@@ -6108,5 +6092,6 @@ Load_C_builtins()
                      Load_Ptr_module(),
                      Load_Tuple_module(),
                      Load_Array_module(),
-                     Load_Fun_module());
+                     Load_Fun_module(),
+                     Load_Ref_module());
 }
