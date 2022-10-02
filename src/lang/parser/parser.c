@@ -200,8 +200,12 @@
             break;                                                             \
         }                                                                      \
         case TokenKindForKw:                                                   \
-        case TokenKindWhileKw:                                                 \
             assert(0 && "todo");                                               \
+        case TokenKindWhileKw:                                                 \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_while_stmt(self, parse_decl, loc)));  \
+            break;                                                             \
         case TokenKindTryKw:                                                   \
             push__Vec(                                                         \
               body,                                                            \
@@ -4003,6 +4007,7 @@ exit_unary : {
         }
 
         case TokenKindMutKw:
+            next_token(parse_decl);
             return parse_variable(self, parse_decl, loc, true);
 
         case TokenKindSelfKw: {

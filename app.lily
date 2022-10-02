@@ -63,6 +63,12 @@ fun main =
 	if x == 10 do
 		println("Hello")
 	end
+
+	mut y := 0
+
+	while y < 10 do
+		y += 1
+	end
 end
 
 module hello =
