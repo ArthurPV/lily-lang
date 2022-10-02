@@ -164,6 +164,43 @@
     }                                                      \
     next_token(parse_decl);
 
+#define PARSE_STMT(body)                                                       \
+    struct Location loc = NEW(Location);                                       \
+                                                                               \
+    start__Location(&loc,                                                      \
+                    parse_decl->previous->loc->s_line,                         \
+                    parse_decl->previous->loc->s_col);                         \
+                                                                               \
+    switch (parse_decl->previous->kind) {                                      \
+        case TokenKindReturnKw:                                                \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_return_stmt(self, parse_decl, loc))); \
+            break;                                                             \
+        case TokenKindNextKw:                                                  \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt,                                             \
+                  NEW(Stmt, StmtKindNext, *parse_decl->previous->loc)));       \
+            break;                                                             \
+        case TokenKindBreakKw:                                                 \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt,                                             \
+                  NEW(Stmt, StmtKindBreak, *parse_decl->previous->loc)));      \
+            break;                                                             \
+        case TokenKindIfKw:                                                    \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt,                                             \
+                  NEW(StmtIf, loc, parse_if_stmt(self, parse_decl, &loc))));   \
+        case TokenKindForKw:                                                   \
+        case TokenKindWhileKw:                                                 \
+            assert(0 && "todo");                                               \
+        default:                                                               \
+            UNREACHABLE("");                                                   \
+    }
+
 #define PARSE_BODY(body)                                                   \
     switch (parse_decl->current->kind) {                                   \
         case TokenKindReturnKw:                                            \
@@ -172,7 +209,9 @@
         case TokenKindIfKw:                                                \
         case TokenKindForKw:                                               \
         case TokenKindWhileKw:                                             \
-            assert(0 && "todo");                                           \
+            next_token(parse_decl);                                        \
+            PARSE_STMT(body);                                              \
+                                                                           \
             break;                                                         \
                                                                            \
         default:                                                           \
@@ -335,10 +374,10 @@ static struct Stmt *
 parse_return_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc);
-static struct Tuple *
+static struct IfCond *
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
-              struct Location loc);
+              struct Location *loc);
 static struct Stmt *
 parse_await_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
@@ -4206,10 +4245,10 @@ parse_return_stmt(struct Parser self,
     return NEW(StmtReturn, loc, expr);
 }
 
-static struct Tuple *
+static struct IfCond *
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
-              struct Location loc)
+              struct Location *loc)
 {
     struct Expr *if_cond = NULL;
     struct Vec *if_body = NEW(Vec, sizeof(struct FunBodyItem));
@@ -4234,8 +4273,9 @@ parse_if_stmt(struct Parser self,
     while (parse_decl->current->kind != TokenKindEndKw &&
            parse_decl->current->kind != TokenKindSemicolon &&
            parse_decl->current->kind != TokenKindElifKw &&
-           parse_decl->current->kind != TokenKindElseKw)
+           parse_decl->current->kind != TokenKindElseKw) {
         PARSE_BODY(if_body);
+    }
 
     next_token(parse_decl);
 
@@ -4265,8 +4305,9 @@ parse_if_stmt(struct Parser self,
 
             while (parse_decl->current->kind != TokenKindEndKw &&
                    parse_decl->current->kind != TokenKindElifKw &&
-                   parse_decl->current->kind != TokenKindElseKw)
+                   parse_decl->current->kind != TokenKindElseKw) {
                 PARSE_BODY(elif_body);
+            }
 
             push__Vec(elif, NEW(IfBranch, elif_expr, elif_body));
 
@@ -4274,17 +4315,14 @@ parse_if_stmt(struct Parser self,
 
             switch (parse_decl->previous->kind) {
                 case TokenKindEndKw:
-                    end__Location(&loc,
+                    end__Location(loc,
                                   parse_decl->previous->loc->s_line,
                                   parse_decl->previous->loc->s_col);
 
-                    return NEW(Tuple,
-                               2,
-                               NEW(IfCond,
-                                   NEW(IfBranch, if_cond, if_body),
-                                   Some(elif),
-                                   None()),
-                               copy__Location(&loc));
+                    return NEW(IfCond,
+                               NEW(IfBranch, if_cond, if_body),
+                               Some(elif),
+                               None());
                 case TokenKindElifKw:
                     goto elif;
                 case TokenKindElseKw:
@@ -4300,43 +4338,34 @@ parse_if_stmt(struct Parser self,
         else_ : {
             struct Vec *else_body = NEW(Vec, sizeof(struct FunBodyItem));
 
-            while (parse_decl->current->kind != TokenKindEndKw)
+            while (parse_decl->current->kind != TokenKindEndKw) {
                 PARSE_BODY(else_body);
+            }
 
             next_token(parse_decl);
-            end__Location(&loc,
+            end__Location(loc,
                           parse_decl->previous->loc->s_line,
                           parse_decl->previous->loc->s_col);
 
             if (elif == NULL)
-                return NEW(Tuple,
-                           2,
-                           NEW(IfCond,
-                               NEW(IfBranch, if_cond, if_body),
-                               None(),
-                               Some(else_body)),
-                           copy__Location(&loc));
+                return NEW(IfCond,
+                           NEW(IfBranch, if_cond, if_body),
+                           None(),
+                           Some(else_body));
             else
-                return NEW(Tuple,
-                           2,
-                           NEW(IfCond,
-                               NEW(IfBranch, if_cond, if_body),
-                               Some(elif),
-                               Some(else_body)),
-                           copy__Location(&loc));
+                return NEW(IfCond,
+                           NEW(IfBranch, if_cond, if_body),
+                           Some(elif),
+                           Some(else_body));
         }
         }
         case TokenKindSemicolon:
         case TokenKindEndKw:
-            end__Location(&loc,
+            end__Location(loc,
                           parse_decl->previous->loc->s_line,
                           parse_decl->previous->loc->s_col);
 
-            return NEW(
-              Tuple,
-              2,
-              NEW(IfCond, NEW(IfBranch, if_cond, if_body), None(), None()),
-              copy__Location(&loc));
+            return NEW(IfCond, NEW(IfBranch, if_cond, if_body), None(), None());
         default:
             UNREACHABLE("");
     }

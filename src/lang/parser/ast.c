@@ -507,7 +507,7 @@ __free__FunBodyItemExpr(struct FunBodyItem *self)
 void
 __free__FunBodyItemStmt(struct FunBodyItem *self)
 {
-    TODO("FREE the Stmt type");
+    FREE(StmtAll, self->stmt);
     free(self);
 }
 
