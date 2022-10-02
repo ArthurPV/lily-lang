@@ -481,10 +481,33 @@ search_in_modules_from_name(struct Typecheck *self,
         return NULL;
     }
 
-#define CHECK_ID(decl)                                 \
+#define VALID_CONTEXT(kind)                          \
+    switch (kind) {                                  \
+        case DeclKindRecord:                         \
+        case DeclKindEnum:                           \
+        case DeclKindClass:                          \
+        case DeclKindTrait:                          \
+        case DeclKindAlias:                          \
+            if (!search_module_context.search_type)  \
+                assert(0 && "error");                \
+            break;                                   \
+        case DeclKindFun:                            \
+            if (!search_module_context.search_fun)   \
+                assert(0 && "error");                \
+            break;                                   \
+        case DeclKindConstant:                       \
+            if (!search_module_context.search_value) \
+                assert(0 && "error");                \
+            break;                                   \
+        default:                                     \
+            break;                                   \
+    }
+
+#define CHECK_ID(decl, kind)                           \
     if (eq__String(current_name, decl->name, false)) { \
         *id = j;                                       \
         push__Vec(ids, id);                            \
+        VALID_CONTEXT(kind);                           \
     }                                                  \
     if (len__Vec(*name) != i)                          \
         assert(0 && "error");                          \
@@ -512,21 +535,23 @@ search_in_modules_from_name(struct Typecheck *self,
                  j--;) {
                 switch (current_decl->kind) {
                     case DeclKindRecord:
-                        CHECK_ID(current_decl->value.record);
+                        CHECK_ID(current_decl->value.record,
+                                 current_decl->kind);
                     case DeclKindEnum:
-                        CHECK_ID(current_decl->value.enum_);
+                        CHECK_ID(current_decl->value.enum_, current_decl->kind);
                     case DeclKindClass:
-                        CHECK_ID(current_decl->value.class);
+                        CHECK_ID(current_decl->value.class, current_decl->kind);
                     case DeclKindTrait:
-                        CHECK_ID(current_decl->value.trait);
+                        CHECK_ID(current_decl->value.trait, current_decl->kind);
                     case DeclKindFun:
-                        CHECK_ID(current_decl->value.fun);
+                        CHECK_ID(current_decl->value.fun, current_decl->kind);
                     case DeclKindError:
-                        CHECK_ID(current_decl->value.error);
+                        CHECK_ID(current_decl->value.error, current_decl->kind);
                     case DeclKindAlias:
-                        CHECK_ID(current_decl->value.alias);
+                        CHECK_ID(current_decl->value.alias, current_decl->kind);
                     case DeclKindConstant:
-                        CHECK_ID(current_decl->value.constant);
+                        CHECK_ID(current_decl->value.constant,
+                                 current_decl->kind);
                     case DeclKindModule:
                         if (eq__String(current_decl->value.module->name,
                                        current_name,
@@ -823,6 +848,18 @@ check_data_type(struct Typecheck *self,
 
                         goto return_data_type;
                     }
+                } else {
+                    struct SearchModuleContext search_module_context = {
+                        .search_fun = false,
+                        .search_type = true,
+                        .search_value = false,
+                        .search_variant = false
+                    };
+                    struct Vec *ids = search_in_modules_from_name(
+                      self,
+                      data_type->value.custom->items[0],
+                      search_module_context);
+                    return NULL;
                 }
             } break;
             }
