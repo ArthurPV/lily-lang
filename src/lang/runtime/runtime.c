@@ -1,6 +1,6 @@
 #include <lang/runtime/runtime.h>
 
-struct Exception
+LILY_API struct Exception
 __new__Exception(void *val, void *ext) {
     RUNTIME_ASSERT(val != NULL || ext != NULL);
 
@@ -12,7 +12,7 @@ __new__Exception(void *val, void *ext) {
     return self;
 }
 
-struct Optional 
+LILY_API struct Optional 
 __new__Optional(void *val) {
     struct Optional self = {
         .val = val
@@ -21,7 +21,7 @@ __new__Optional(void *val) {
     return self;
 }
 
-void *
+LILY_API void *
 get__Optional(struct Optional self)
 {
     RUNTIME_ASSERT(self.val != NULL);

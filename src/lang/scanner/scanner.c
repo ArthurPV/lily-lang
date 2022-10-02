@@ -1216,10 +1216,7 @@ get_token(struct Scanner *self)
             break;
 
         case '~':
-            if (c2 == (char *)'=')
-                kind = TokenKindWaveEq;
-            else
-                kind = TokenKindWave;
+            kind = TokenKindWave;
             break;
 
         case '-':

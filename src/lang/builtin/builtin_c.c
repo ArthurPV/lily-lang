@@ -298,23 +298,11 @@ Load_Int8_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindI8),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindI8),
                NEW(DataTypeSymbol, DataTypeKindI8));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindI8)),
-               NEW(DataTypeSymbol, DataTypeKindI8),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -657,23 +645,11 @@ Load_Int16_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindI16),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindI16),
                NEW(DataTypeSymbol, DataTypeKindI16));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindI16)),
-               NEW(DataTypeSymbol, DataTypeKindI16),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -1016,23 +992,11 @@ Load_Int32_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindI32),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindI32),
                NEW(DataTypeSymbol, DataTypeKindI32));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindI32)),
-               NEW(DataTypeSymbol, DataTypeKindI32),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -1375,23 +1339,11 @@ Load_Int64_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindI64),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindI64),
                NEW(DataTypeSymbol, DataTypeKindI64));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindI64)),
-               NEW(DataTypeSymbol, DataTypeKindI64),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -1734,23 +1686,11 @@ Load_Int128_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindI128),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindI128),
                NEW(DataTypeSymbol, DataTypeKindI128));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindI128)),
-               NEW(DataTypeSymbol, DataTypeKindI128),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -2093,23 +2033,11 @@ Load_Uint8_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindU8),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindU8),
                NEW(DataTypeSymbol, DataTypeKindU8));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindU8)),
-               NEW(DataTypeSymbol, DataTypeKindU8),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -2452,23 +2380,11 @@ Load_Uint16_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindU16),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindU16),
                NEW(DataTypeSymbol, DataTypeKindU16));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindU16)),
-               NEW(DataTypeSymbol, DataTypeKindU16),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -2811,23 +2727,11 @@ Load_Uint32_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindU32),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindU32),
                NEW(DataTypeSymbol, DataTypeKindU32));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindU32)),
-               NEW(DataTypeSymbol, DataTypeKindU32),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -3170,23 +3074,11 @@ Load_Uint64_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindU64),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindU64),
                NEW(DataTypeSymbol, DataTypeKindU64));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindU64)),
-               NEW(DataTypeSymbol, DataTypeKindU64),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -3529,23 +3421,11 @@ Load_Uint128_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindU128),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindU128),
                NEW(DataTypeSymbol, DataTypeKindU128));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindU128)),
-               NEW(DataTypeSymbol, DataTypeKindU128),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -5385,23 +5265,11 @@ Load_Isize_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindIsize),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindIsize),
                NEW(DataTypeSymbol, DataTypeKindIsize));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindIsize)),
-               NEW(DataTypeSymbol, DataTypeKindIsize),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {
@@ -5744,23 +5612,11 @@ Load_Usize_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(3,
-               NEW(DataTypeSymbol, DataTypeKindUsize),
+        PARAMS(2,
                NEW(DataTypeSymbol, DataTypeKindUsize),
                NEW(DataTypeSymbol, DataTypeKindUsize));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~", params)));
-    }
-
-    {
-        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
-
-        PARAMS(3,
-               NEW(DataTypeSymbolMut, NEW(DataTypeSymbol, DataTypeKindUsize)),
-               NEW(DataTypeSymbol, DataTypeKindUsize),
-               NEW(DataTypeSymbol, DataTypeKindUnit));
-
-        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "~=", params)));
     }
 
     {

@@ -88,12 +88,10 @@ test_operator()
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 36))->kind,
                    TokenKindWave);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 37))->kind,
-                   TokenKindWaveEq);
-    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 38))->kind,
                    TokenKindXorEq);
-    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 39))->kind,
+    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 38))->kind,
                    TokenKindBarEq);
-    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 40))->kind,
+    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 39))->kind,
                    TokenKindAmpersandEq);
 
     FREE(Scanner, scanner);

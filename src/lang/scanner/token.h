@@ -38,7 +38,6 @@ enum TokenKind {
     TokenKindPlusPlusEq,
     TokenKindMinusMinusEq,
     TokenKindWave,
-    TokenKindWaveEq,
     TokenKindColonEq,
     TokenKindPlusEq,
     TokenKindMinusEq,

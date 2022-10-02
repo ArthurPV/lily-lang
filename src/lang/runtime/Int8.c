@@ -1,16 +1,16 @@
 #include <lang/runtime/Int8.h>
 #include <stdio.h>
 
-I8
-add(MutI8 x, MutI8 y)
+LILY_API I8
+add__Int8(MutI8 x, MutI8 y)
 {
     x = (x & y) << 1;
 
-    return x == 0 ? x ^ y : add(x, x ^ y);
+    return x == 0 ? x ^ y : add__Int8(x, x ^ y);
 }
 
-I8
-sub(MutI8 x, MutI8 y)
+LILY_API I8
+sub__Int8(MutI8 x, MutI8 y)
 {
 
     if (x >= -128 && x <= 127) {
@@ -22,11 +22,11 @@ sub(MutI8 x, MutI8 y)
     x = x ^ y;
     y = ((~x) & y) << 1;
 
-    return sub(x, y);
+    return sub__Int8(x, y);
 }
 
-I8
-mul(I8 x, I8 y)
+LILY_API I8
+mul__Int8(I8 x, I8 y)
 {
     MutI8 n1 = abs(x), n2 = abs(y), res = 0;
     bool neg = MIN(x, y) < 0 && MAX(x, y) >= 0 ? true : false;
@@ -41,32 +41,151 @@ mul(I8 x, I8 y)
     return neg ? (~(res) + 1) : res;
 }
 
-I8
-div_(I8 x, I8 y)
+LILY_API I8
+div__Int8(I8 x, I8 y)
 {
     return 0;
 }
 
-I8
-mod(I8 x, I8 y)
+LILY_API I8
+mod__Int8(I8 x, I8 y)
 {
-    return (div_(add(x, x), y)) & y;
+    return (div__Int8(add__Int8(x, x), y)) & y;
 }
 
-void
-add_assign(MutI8 *x, I8 y)
+LILY_API I8
+exp__Int8(I8 x, I8 y)
 {
-    *x = add(*x, y);
+    if (y < 0)
+        return 0;
+
+    MutI8 res = x;
+
+    for (MutI8 i = y; i--;)
+        res *= x;
+
+    return res;
 }
 
-void
-sub_assign(MutI8 *x, I8 y)
+LILY_API I8
+l_shift__Int8(I8 x, I8 y)
 {
-    *x = sub(*x, y);
+    return x << y;
 }
 
-void
-mul_assign(MutI8 *x, I8 y)
+LILY_API I8
+r_shift__Int8(I8 x, I8 y)
 {
-    *x = mul(*x, y);
+    return x >> y;
+}
+
+LILY_API I8
+bit_or__Int8(I8 x, I8 y)
+{
+    return x | y;
+}
+
+LILY_API I8
+bit_and__Int8(I8 x, I8 y)
+{
+    return x & y;
+}
+
+LILY_API I8
+bit_xor__Int8(I8 x, I8 y)
+{
+    return x ^ y;
+}
+
+LILY_API I8
+bit_not__Int8(I8 x)
+{
+    return ~x;
+}
+
+LILY_API Unit
+assign__Int8(MutI8 *var, I8 val)
+{
+    *var = val;
+}
+
+LILY_API Unit
+add_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = add__Int8(*x, y);
+}
+
+LILY_API Unit
+sub_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = sub__Int8(*x, y);
+}
+
+LILY_API Unit
+mul_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = mul__Int8(*x, y);
+}
+
+LILY_API Unit
+div_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = div__Int8(*x, y);
+}
+
+LILY_API Unit
+mod_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = mod__Int8(*x, y);
+}
+
+LILY_API Unit
+exp_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = exp__Int8(*x, y);
+}
+
+LILY_API Unit
+l_shift_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = l_shift__Int8(*x, y);
+}
+
+LILY_API Unit
+r_shift_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = r_shift__Int8(*x, y);
+}
+
+LILY_API Unit
+bit_or_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = bit_or__Int8(*x, y);
+}
+
+LILY_API Unit
+bit_and_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = bit_and__Int8(*x, y);
+}
+
+LILY_API Unit
+bit_xor_assign__Int8(MutI8 *x, I8 y)
+{
+    *x = bit_xor__Int8(*x, y);
+}
+
+LILY_API Bool eq__Int8(I8 x, I8 y)
+{
+    return x == y;
+}
+
+LILY_API Bool ne__Int8(I8 x, I8 y)
+{
+    return x != y;
+}
+
+LILY_API I8 neg__Int8(I8 x)
+{
+    return -x;
 }

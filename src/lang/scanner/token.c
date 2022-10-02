@@ -187,8 +187,6 @@ token_kind_to_string__Token(struct Token self)
             return from__String("--=");
         case TokenKindWave:
             return from__String("~");
-        case TokenKindWaveEq:
-            return from__String("~=");
         case TokenKindColonEq:
             return from__String(":=");
         case TokenKindPlusEq:

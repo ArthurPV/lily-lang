@@ -522,6 +522,23 @@ __free__LiteralAll(struct Literal self)
     }
 }
 
+const Str
+to_str__UnaryOpKind(enum UnaryOpKind kind)
+{
+    switch (kind) {
+        case UnaryOpKindNegative:
+            return "-";
+        case UnaryOpKindNot:
+            return "not";
+        case UnaryOpKindReference:
+            return "&";
+        case UnaryOpKindBitNot:
+            return "~";
+        case UnaryOpKindCustom:
+            return "Custom";
+    }
+}
+
 struct String *
 to_string__UnaryOp(struct UnaryOp self)
 {
@@ -532,6 +549,8 @@ to_string__UnaryOp(struct UnaryOp self)
             return format("not {Sr}", to_string__Expr(*self.right));
         case UnaryOpKindReference:
             return format("&{Sr}", to_string__Expr(*self.right));
+        case UnaryOpKindBitNot:
+            return format("~{Sr}", to_string__Expr(*self.right));
     }
 }
 
@@ -572,7 +591,6 @@ to_str__BinaryOpKind(enum BinaryOpKind kind)
         case BinaryOpKindBitOrAssign: return "|=";
         case BinaryOpKindXorAssign: return "xor=";
         case BinaryOpKindBitAndAssign: return "&=";
-        case BinaryOpKindBitNotAssign: return "~=";
         case BinaryOpKindMergeAssign: return "++=";
         case BinaryOpKindUnmergeAssign: return "--=";
         case BinaryOpKindExponentAssign: return "**=";
@@ -585,7 +603,6 @@ to_str__BinaryOpKind(enum BinaryOpKind kind)
         case BinaryOpKindBitRShift: return ">>";
         case BinaryOpKindBitOr: return "|";
         case BinaryOpKindBitAnd: return "&";
-        case BinaryOpKindBitNot: return "~";
         case BinaryOpKindExponent: return "**";
         case BinaryOpKindCustom: return "Custom";
     }
@@ -711,10 +728,6 @@ to_string__BinaryOp(struct BinaryOp self)
             return format("{Sr} &= {Sr}",
                           to_string__Expr(*self.left),
                           to_string__Expr(*self.right));
-        case BinaryOpKindBitNotAssign:
-            return format("{Sr} ~= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
         case BinaryOpKindMergeAssign:
             return format("{Sr} ++= {Sr}",
                           to_string__Expr(*self.left),
@@ -761,10 +774,6 @@ to_string__BinaryOp(struct BinaryOp self)
                           to_string__Expr(*self.right));
         case BinaryOpKindBitAnd:
             return format("{Sr} & {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
-        case BinaryOpKindBitNot:
-            return format("{Sr} ~ {Sr}",
                           to_string__Expr(*self.left),
                           to_string__Expr(*self.right));
         case BinaryOpKindExponent:

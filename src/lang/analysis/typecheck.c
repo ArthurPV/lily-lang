@@ -1801,13 +1801,15 @@ check_expression(struct Typecheck *self,
                                               : return_type),
                         right));
                 }
+                case UnaryOpKindBitNot:
                 case UnaryOpKindNegative: {
                     const Str module_name =
                       get_builtin_module_name_from_data_type(
                         get_data_type_of_expression(self, right, local_value));
+                    const Str op_str = to_str__UnaryOpKind(expr->value.unary_op.kind);
 
                     verify_type_of_fun_builtin(
-                      search_fun_builtin(self, module_name, "-", 2),
+                      search_fun_builtin(self, module_name, op_str, 2),
                       2,
                       get_data_type_of_expression(self, right, local_value),
                       defined_data_type);
@@ -1822,7 +1824,7 @@ check_expression(struct Typecheck *self,
                           self,
                           defined_data_type,
                           get_return_type_of_fun_builtin(
-                            self, module_name, "-", 2)),
+                            self, module_name, op_str, 2)),
                         right));
                 }
                 case UnaryOpKindNot: {
@@ -1845,6 +1847,7 @@ check_expression(struct Typecheck *self,
                             self, "Bool", "not", 2)),
                         right));
                 }
+                    TODO("");
                 case UnaryOpKindCustom:
                     TODO("check unary operator kind custom");
             }
@@ -1892,13 +1895,12 @@ check_expression(struct Typecheck *self,
                 case BinaryOpKindBitOrAssign:
                 case BinaryOpKindXorAssign:
                 case BinaryOpKindBitAndAssign:
-                case BinaryOpKindBitNotAssign:
                 case BinaryOpKindExponentAssign:
                 case BinaryOpKindBitLShift:
                 case BinaryOpKindBitRShift:
                 case BinaryOpKindBitOr:
                 case BinaryOpKindBitAnd:
-                case BinaryOpKindBitNot:
+                case BinaryOpKindXor:
                 case BinaryOpKindExponent: {
                     const Str module_name =
                       get_builtin_module_name_from_data_type(
@@ -1931,8 +1933,7 @@ check_expression(struct Typecheck *self,
                         right));
                 }
                 case BinaryOpKindAnd:
-                case BinaryOpKindOr:
-                case BinaryOpKindXor: {
+                case BinaryOpKindOr: {
                     verify_type_of_fun_builtin(
                       search_fun_builtin(self, "Bool", op_str, 3),
                       3,

@@ -4226,6 +4226,9 @@ parse_unary_op(enum TokenKind kind)
         case TokenKindAmpersand:
             return (int *)UnaryOpKindReference;
 
+        case TokenKindWave:
+            return (int *)UnaryOpKindBitNot;
+
         case TokenKindIdentifierOp:
             return (int *)UnaryOpKindCustom;
 
@@ -4319,9 +4322,6 @@ parse_binary_op(enum TokenKind kind)
         case TokenKindAmpersandEq:
             return (int *)BinaryOpKindBitAndAssign;
 
-        case TokenKindWaveEq:
-            return (int *)BinaryOpKindBitNotAssign;
-
         case TokenKindPlusPlusEq:
             return (int *)BinaryOpKindMergeAssign;
 
@@ -4357,9 +4357,6 @@ parse_binary_op(enum TokenKind kind)
 
         case TokenKindAmpersand:
             return (int *)BinaryOpKindBitAnd;
-
-        case TokenKindWave:
-            return (int *)BinaryOpKindBitNot;
 
         case TokenKindStarStar:
             return (int *)BinaryOpKindExponent;

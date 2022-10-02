@@ -36,6 +36,11 @@ set(LANG_SRC
         src/lang/generate/generate.c
         src/lang/parser/ast.c
         src/lang/parser/parser.c
+        src/lang/scanner/scanner.c
+        src/lang/scanner/token.c)
+
+set(RUNTIME_SRC
+        src/lang/runtime/Array.c
         src/lang/runtime/io.c
 	      src/lang/runtime/generic.c
         src/lang/runtime/runtime.c
@@ -46,13 +51,12 @@ set(LANG_SRC
         src/lang/runtime/Int32.c
         src/lang/runtime/Int64.c
         src/lang/runtime/Int128.c
+        src/lang/runtime/Tuple.c
         src/lang/runtime/Uint8.c
         src/lang/runtime/Uint16.c
         src/lang/runtime/Uint32.c
         src/lang/runtime/Uint64.c
-        src/lang/runtime/Uint128.c
-        src/lang/scanner/scanner.c
-        src/lang/scanner/token.c)
+        src/lang/runtime/Uint128.c)
 
 add_library(lily_base ${BASE_SRC})
 target_include_directories(lily_base PRIVATE src)
@@ -65,6 +69,9 @@ add_executable(lily src/bin/main.c
                     src/command/parse.c)
 target_link_libraries(lily lily_lang lily_base)
 target_include_directories(lily PRIVATE src)
+
+add_library(lily_runtime SHARED ${RUNTIME_SRC})
+target_include_directories(lily_runtime PRIVATE src)
 
 add_executable(scanner_test
         tests/scanner/test.c

@@ -498,8 +498,16 @@ enum UnaryOpKind
     UnaryOpKindNegative = 1,
     UnaryOpKindNot,
     UnaryOpKindReference,
+    UnaryOpKindBitNot,
     UnaryOpKindCustom
 };
+
+/**
+ *
+ * @brief Convert the UnaryOpKind to Str.
+ */
+const Str
+to_str__UnaryOpKind(enum UnaryOpKind kind);
 
 typedef struct UnaryOp
 {
@@ -567,7 +575,6 @@ enum BinaryOpKind
     BinaryOpKindBitOrAssign,
     BinaryOpKindXorAssign,
     BinaryOpKindBitAndAssign,
-    BinaryOpKindBitNotAssign,
     BinaryOpKindMergeAssign,
     BinaryOpKindUnmergeAssign,
     BinaryOpKindExponentAssign,
@@ -580,7 +587,6 @@ enum BinaryOpKind
     BinaryOpKindBitRShift,
     BinaryOpKindBitOr,
     BinaryOpKindBitAnd,
-    BinaryOpKindBitNot,
     BinaryOpKindExponent,
     BinaryOpKindCustom
 };
