@@ -412,12 +412,6 @@ to_string__Generic(struct Generic self)
 }
 
 void
-__free__GenericDataType(struct Generic *self)
-{
-    free(self);
-}
-
-void
 __free__GenericRestrictedDataType(struct Generic *self)
 {
     FREE(
@@ -475,148 +469,6 @@ __free__VariableDecl(struct VariableDecl self)
     FREE(ExprAll, self.expr);
 }
 
-struct FunBodyItem *
-__new__FunBodyItemExpr(struct Expr *expr)
-{
-    struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
-    self->kind = FunBodyItemKindExpr;
-    self->expr = expr;
-    return self;
-}
-
-struct FunBodyItem *
-__new__FunBodyItemStmt(struct Stmt *stmt)
-{
-    struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
-    self->kind = FunBodyItemKindStmt;
-    self->stmt = stmt;
-    return self;
-}
-
-struct String *
-to_string__FunBodyItem(struct FunBodyItem self)
-{
-    switch (self.kind) {
-        case FunBodyItemKindExpr:
-            return format("{S}", to_string__Expr(*self.expr));
-        case FunBodyItemKindStmt:
-            break;
-        default:
-            UNREACHABLE("unknown fun body item kind");
-    }
-
-    return from__String("unknown fun body item kind");
-}
-
-void
-__free__FunBodyItemExpr(struct FunBodyItem *self)
-{
-    FREE(ExprAll, self->expr);
-    free(self);
-}
-
-void
-__free__FunBodyItemStmt(struct FunBodyItem *self)
-{
-    FREE(StmtAll, self->stmt);
-    free(self);
-}
-
-void
-__free__FunBodyItemAll(struct FunBodyItem *self)
-{
-    switch (self->kind) {
-        case FunBodyItemKindExpr:
-            FREE(FunBodyItemExpr, self);
-            break;
-        case FunBodyItemKindStmt:
-            FREE(FunBodyItemStmt, self);
-            break;
-    }
-}
-
-struct Literal
-__new__LiteralBool(bool bool_)
-{
-    struct Literal self = { .kind = LiteralKindBool, .value.bool_ = bool_ };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralChar(char char_)
-{
-    struct Literal self = { .kind = LiteralKindChar, .value.char_ = char_ };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralBitChar(UInt8 bit_char)
-{
-    struct Literal self = { .kind = LiteralKindBitChar,
-                            .value.bit_char = bit_char };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralInt32(Int32 int32)
-{
-    struct Literal self = { .kind = LiteralKindInt32, .value.int32 = int32 };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralInt64(Int64 int64)
-{
-    struct Literal self = { .kind = LiteralKindInt64, .value.int64 = int64 };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralInt128(Int128 int128)
-{
-    struct Literal self = { .kind = LiteralKindInt128, .value.int128 = int128 };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralFloat(Float64 float_)
-{
-    struct Literal self = { .kind = LiteralKindFloat, .value.float_ = float_ };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralStr(Str str)
-{
-    struct Literal self = { .kind = LiteralKindStr, .value.str = str };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralBitStr(UInt8 **bit_str)
-{
-    struct Literal self = { .kind = LiteralKindBitStr,
-                            .value.bit_str = bit_str };
-
-    return self;
-}
-
-struct Literal
-__new__LiteralUnit()
-{
-    struct Literal self = { .kind = LiteralKindUnit };
-
-    return self;
-}
-
 struct String *
 to_string__Literal(struct Literal self)
 {
@@ -641,12 +493,6 @@ to_string__Literal(struct Literal self)
 }
 
 void
-__free__LiteralStr(struct Literal self)
-{
-    free(self.value.str);
-}
-
-void
 __free__LiteralAll(struct Literal self)
 {
     switch (self.kind) {
@@ -659,14 +505,6 @@ __free__LiteralAll(struct Literal self)
         default:
             break;
     }
-}
-
-struct UnaryOp
-__new__UnaryOp(enum UnaryOpKind kind, struct Expr *right)
-{
-    struct UnaryOp self = { .kind = kind, .right = right };
-
-    return self;
 }
 
 struct String *
@@ -963,14 +801,6 @@ __free__RecordCall(struct RecordCall self)
     FREE(Vec, self.fields);
 }
 
-struct ArrayAccess
-__new__ArrayAccess(struct Expr *id, struct Vec *access)
-{
-    struct ArrayAccess self = { .id = id, .access = access };
-
-    return self;
-}
-
 void
 __free__ArrayAccess(struct ArrayAccess self)
 {
@@ -980,14 +810,6 @@ __free__ArrayAccess(struct ArrayAccess self)
         FREE(ExprAll, get__Vec(*self.access, i));
 
     FREE(Vec, self.access);
-}
-
-struct TupleAccess
-__new__TupleAccess(struct Expr *id, struct Vec *access)
-{
-    struct TupleAccess self = { .id = id, .access = access };
-
-    return self;
 }
 
 void
@@ -1032,14 +854,6 @@ __free__Lambda(struct Lambda self)
         FREE(FunBodyItemAll, get__Vec(*self.body, i));
 
     FREE(Vec, self.body);
-}
-
-struct Variant
-__new__Variant(struct Expr *id, struct Option *value)
-{
-    struct Variant self = { .id = id, .value = value };
-
-    return self;
 }
 
 void
@@ -1277,67 +1091,12 @@ to_string__Expr(struct Expr self)
 }
 
 void
-__free__ExprUnaryOp(struct Expr *self)
-{
-    FREE(UnaryOp, self->value.unary_op);
-    free(self);
-}
-
-void
-__free__ExprBinaryOp(struct Expr *self)
-{
-    FREE(BinaryOp, self->value.binary_op);
-    free(self);
-}
-
-void
-__free__ExprFunCall(struct Expr *self)
-{
-    FREE(FunCall, self->value.fun_call);
-    free(self);
-}
-
-void
-__free__ExprRecordCall(struct Expr *self)
-{
-    FREE(RecordCall, self->value.record_call);
-    free(self);
-}
-
-void
-__free__ExprIdentifier(struct Expr *self)
-{
-    free(self);
-}
-
-void
 __free__ExprIdentifierAccess(struct Expr *self)
 {
     for (Usize i = len__Vec(*self->value.identifier_access); i--;)
         FREE(ExprAll, get__Vec(*self->value.identifier_access, i));
 
     FREE(Vec, self->value.identifier_access);
-    free(self);
-}
-
-void
-__free__ExprArrayAccess(struct Expr *self)
-{
-    FREE(ArrayAccess, self->value.array_access);
-    free(self);
-}
-
-void
-__free__ExprTupleAccess(struct Expr *self)
-{
-    FREE(TupleAccess, self->value.tuple_access);
-    free(self);
-}
-
-void
-__free__ExprLambda(struct Expr *self)
-{
-    FREE(Lambda, self->value.lambda);
     free(self);
 }
 
@@ -1358,13 +1117,6 @@ __free__ExprTuple(struct Expr *self)
         FREE(ExprAll, get__Vec(*self->value.tuple, i));
 
     FREE(Vec, self->value.tuple);
-    free(self);
-}
-
-void
-__free__ExprVariant(struct Expr *self)
-{
-    FREE(Variant, self->value.variant);
     free(self);
 }
 
@@ -1410,26 +1162,6 @@ void
 __free__ExprRef(struct Expr *self)
 {
     FREE(ExprAll, self->value.ref);
-    free(self);
-}
-
-void
-__free__ExprLiteral(struct Expr *self)
-{
-    FREE(LiteralAll, self->value.literal);
-    free(self);
-}
-
-void
-__free__ExprVariable(struct Expr *self)
-{
-    FREE(VariableDecl, self->value.variable);
-    free(self);
-}
-
-void
-__free__Expr(struct Expr *self)
-{
     free(self);
 }
 
@@ -1500,183 +1232,6 @@ __free__ExprAll(struct Expr *self)
         default:
             FREE(Expr, self);
             break;
-    }
-}
-
-struct FunParamCall *
-__new__FunParamCall(struct Expr *value)
-{
-    struct FunParamCall *self = malloc(sizeof(struct FunParamCall));
-    self->kind = FunParamKindNormal;
-    self->value = value;
-    return self;
-}
-
-struct FunParamCall *
-__new__FunParamCallDefault(struct Expr *value, struct String *name)
-{
-    struct FunParamCall *self = malloc(sizeof(struct FunParamCall));
-    self->kind = FunParamKindDefault;
-    self->value = value;
-    self->name = name;
-    return self;
-}
-
-struct String *
-to_string__FunParamCall(struct FunParamCall self)
-{
-    switch (self.kind) {
-        case FunParamKindNormal:
-            return format("{S}", to_string__Expr(*self.value));
-        case FunParamKindDefault:
-            return format("{S} = {S}", self.name, to_string__Expr(*self.value));
-        default:
-            UNREACHABLE("unknown fun param kind");
-    }
-}
-
-void
-__free__FunParamCall(struct FunParamCall *self)
-{
-    FREE(ExprAll, self->value);
-    free(self);
-}
-
-void
-__free__FunParamCallDefault(struct FunParamCall *self)
-{
-    FREE(ExprAll, self->value);
-    FREE(String, self->name);
-    free(self);
-}
-
-void
-__free__FunParamCallAll(struct FunParamCall *self)
-{
-    switch (self->kind) {
-        case FunParamKindDefault:
-            FREE(FunParamCallDefault, self);
-            break;
-        case FunParamKindNormal:
-            FREE(FunParamCall, self);
-            break;
-        default:
-            UNREACHABLE("unknown fun param kind");
-    }
-}
-
-struct FunParam *
-__new__FunParamDefault(struct String *name,
-                       struct Option *param_data_type,
-                       struct Location loc,
-                       struct Expr *default_)
-{
-    struct FunParam *self = malloc(sizeof(struct FunParam));
-    self->kind = FunParamKindDefault;
-    self->name = name;
-    self->param_data_type = param_data_type;
-    self->loc = loc;
-    self->value.default_ = default_;
-    return self;
-}
-
-struct FunParam *
-__new__FunParamNormal(struct String *name,
-                      struct Option *param_data_type,
-                      struct Location loc)
-{
-    struct FunParam *self = malloc(sizeof(struct FunParam));
-    self->kind = FunParamKindNormal;
-    self->name = name;
-    self->param_data_type = param_data_type;
-    self->loc = loc;
-    return self;
-}
-
-struct FunParam *
-__new__FunParamSelf(struct Location loc)
-{
-    struct FunParam *self = malloc(sizeof(struct FunParam));
-    self->kind = FunParamKindSelf;
-    self->param_data_type = NULL;
-    self->loc = loc;
-    return self;
-}
-
-struct String *
-to_string__FunParam(struct FunParam self)
-{
-    // switch (self.kind) {
-    //     case FunParamKindNormal:
-    //         return format(
-    //           "{S} {S}",
-    //           self.name,
-    //           to_string__DataType(
-    //             *(struct DataType *)self.param_data_type->items[0]));
-    //     case FunParamKindDefault:
-    //         return format("{S} {S} := {S}",
-    //                       self.name,
-    //                       to_string__DataType(
-    //                         *(struct DataType
-    //                         *)self.param_data_type->items[0]),
-    //                       to_string__Expr(*self.value.default_));
-    //     default:
-    //         UNREACHABLE("unknown fun param kind");
-    // }
-}
-
-void
-__free__FunParamDefault(struct FunParam *self)
-{
-    if (is_Some__Option(self->param_data_type)) {
-        struct Tuple *temp = get__Option(self->param_data_type);
-
-        FREE(DataTypeAll, temp->items[0]);
-        free(temp->items[1]);
-        FREE(Tuple, temp);
-    }
-
-    FREE(Option, self->param_data_type);
-    FREE(ExprAll, self->value.default_);
-    free(self);
-}
-
-void
-__free__FunParamNormal(struct FunParam *self)
-{
-    if (is_Some__Option(self->param_data_type)) {
-        struct Tuple *temp = get__Option(self->param_data_type);
-
-        FREE(DataTypeAll, temp->items[0]);
-        free(temp->items[1]);
-        FREE(Tuple, temp);
-    }
-
-    FREE(Option, self->param_data_type);
-    free(self);
-}
-
-void
-__free__FunParamSelf(struct FunParam *self)
-{
-    free(self);
-}
-
-void
-__free__FunParamAll(struct FunParam *self)
-{
-    switch (self->kind) {
-        case FunParamKindNormal:
-            FREE(FunParamNormal, self);
-            break;
-        case FunParamKindDefault:
-            FREE(FunParamDefault, self);
-            break;
-        case FunParamKindSelf:
-            FREE(FunParamSelf, self);
-            break;
-        default:
-            UNREACHABLE("unknown fun param kind");
     }
 }
 
@@ -2377,61 +1932,6 @@ to_string__Stmt(struct Stmt self)
 }
 
 void
-__free__Stmt(struct Stmt *self)
-{
-    free(self);
-}
-
-void
-__free__StmtReturn(struct Stmt *self)
-{
-    FREE(ExprAll, self->value.return_);
-    free(self);
-}
-
-void
-__free__StmtIf(struct Stmt *self)
-{
-    FREE(IfCond, self->value.if_);
-    free(self);
-}
-
-void
-__free__StmtAwait(struct Stmt *self)
-{
-    FREE(ExprAll, self->value.await);
-    free(self);
-}
-
-void
-__free__StmtTry(struct Stmt *self)
-{
-    FREE(TryStmt, self->value.try);
-    free(self);
-}
-
-void
-__free__StmtMatch(struct Stmt *self)
-{
-    FREE(MatchStmt, self->value.match);
-    free(self);
-}
-
-void
-__free__StmtWhile(struct Stmt *self)
-{
-    FREE(WhileStmt, self->value.while_);
-    free(self);
-}
-
-void
-__free__StmtFor(struct Stmt *self)
-{
-    FREE(ForStmt, self->value.for_);
-    free(self);
-}
-
-void
 __free__StmtAll(struct Stmt *self)
 {
     switch (self->kind) {
@@ -2459,6 +1959,215 @@ __free__StmtAll(struct Stmt *self)
         default:
             FREE(Stmt, self);
             break;
+    }
+}
+
+
+struct FunBodyItem *
+__new__FunBodyItemExpr(struct Expr *expr)
+{
+    struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
+    self->kind = FunBodyItemKindExpr;
+    self->expr = expr;
+    return self;
+}
+
+struct FunBodyItem *
+__new__FunBodyItemStmt(struct Stmt *stmt)
+{
+    struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
+    self->kind = FunBodyItemKindStmt;
+    self->stmt = stmt;
+    return self;
+}
+
+struct String *
+to_string__FunBodyItem(struct FunBodyItem self)
+{
+    switch (self.kind) {
+        case FunBodyItemKindExpr:
+            return format("{S}", to_string__Expr(*self.expr));
+        case FunBodyItemKindStmt:
+            break;
+        default:
+            UNREACHABLE("unknown fun body item kind");
+    }
+
+    return from__String("unknown fun body item kind");
+}
+
+void
+__free__FunBodyItemAll(struct FunBodyItem *self)
+{
+    switch (self->kind) {
+        case FunBodyItemKindExpr:
+            FREE(FunBodyItemExpr, self);
+            break;
+        case FunBodyItemKindStmt:
+            FREE(FunBodyItemStmt, self);
+            break;
+    }
+}
+
+struct FunParamCall *
+__new__FunParamCall(struct Expr *value)
+{
+    struct FunParamCall *self = malloc(sizeof(struct FunParamCall));
+    self->kind = FunParamKindNormal;
+    self->value = value;
+    return self;
+}
+
+struct FunParamCall *
+__new__FunParamCallDefault(struct Expr *value, struct String *name)
+{
+    struct FunParamCall *self = malloc(sizeof(struct FunParamCall));
+    self->kind = FunParamKindDefault;
+    self->value = value;
+    self->name = name;
+    return self;
+}
+
+struct String *
+to_string__FunParamCall(struct FunParamCall self)
+{
+    switch (self.kind) {
+        case FunParamKindNormal:
+            return format("{S}", to_string__Expr(*self.value));
+        case FunParamKindDefault:
+            return format("{S} = {S}", self.name, to_string__Expr(*self.value));
+        default:
+            UNREACHABLE("unknown fun param kind");
+    }
+}
+
+void
+__free__FunParamCallAll(struct FunParamCall *self)
+{
+    switch (self->kind) {
+        case FunParamKindDefault:
+            FREE(FunParamCallDefault, self);
+            break;
+        case FunParamKindNormal:
+            FREE(FunParamCall, self);
+            break;
+        default:
+            UNREACHABLE("unknown fun param kind");
+    }
+}
+
+struct FunParam *
+__new__FunParamDefault(struct String *name,
+                       struct Option *param_data_type,
+                       struct Location loc,
+                       struct Expr *default_)
+{
+    struct FunParam *self = malloc(sizeof(struct FunParam));
+    self->kind = FunParamKindDefault;
+    self->name = name;
+    self->param_data_type = param_data_type;
+    self->loc = loc;
+    self->value.default_ = default_;
+    return self;
+}
+
+struct FunParam *
+__new__FunParamNormal(struct String *name,
+                      struct Option *param_data_type,
+                      struct Location loc)
+{
+    struct FunParam *self = malloc(sizeof(struct FunParam));
+    self->kind = FunParamKindNormal;
+    self->name = name;
+    self->param_data_type = param_data_type;
+    self->loc = loc;
+    return self;
+}
+
+struct FunParam *
+__new__FunParamSelf(struct Location loc)
+{
+    struct FunParam *self = malloc(sizeof(struct FunParam));
+    self->kind = FunParamKindSelf;
+    self->param_data_type = NULL;
+    self->loc = loc;
+    return self;
+}
+
+struct String *
+to_string__FunParam(struct FunParam self)
+{
+    // switch (self.kind) {
+    //     case FunParamKindNormal:
+    //         return format(
+    //           "{S} {S}",
+    //           self.name,
+    //           to_string__DataType(
+    //             *(struct DataType *)self.param_data_type->items[0]));
+    //     case FunParamKindDefault:
+    //         return format("{S} {S} := {S}",
+    //                       self.name,
+    //                       to_string__DataType(
+    //                         *(struct DataType
+    //                         *)self.param_data_type->items[0]),
+    //                       to_string__Expr(*self.value.default_));
+    //     default:
+    //         UNREACHABLE("unknown fun param kind");
+    // }
+}
+
+void
+__free__FunParamDefault(struct FunParam *self)
+{
+    if (is_Some__Option(self->param_data_type)) {
+        struct Tuple *temp = get__Option(self->param_data_type);
+
+        FREE(DataTypeAll, temp->items[0]);
+        free(temp->items[1]);
+        FREE(Tuple, temp);
+    }
+
+    FREE(Option, self->param_data_type);
+    FREE(ExprAll, self->value.default_);
+    free(self);
+}
+
+void
+__free__FunParamNormal(struct FunParam *self)
+{
+    if (is_Some__Option(self->param_data_type)) {
+        struct Tuple *temp = get__Option(self->param_data_type);
+
+        FREE(DataTypeAll, temp->items[0]);
+        free(temp->items[1]);
+        FREE(Tuple, temp);
+    }
+
+    FREE(Option, self->param_data_type);
+    free(self);
+}
+
+void
+__free__FunParamSelf(struct FunParam *self)
+{
+    free(self);
+}
+
+void
+__free__FunParamAll(struct FunParam *self)
+{
+    switch (self->kind) {
+        case FunParamKindNormal:
+            FREE(FunParamNormal, self);
+            break;
+        case FunParamKindDefault:
+            FREE(FunParamDefault, self);
+            break;
+        case FunParamKindSelf:
+            FREE(FunParamSelf, self);
+            break;
+        default:
+            UNREACHABLE("unknown fun param kind");
     }
 }
 
@@ -2570,14 +2279,6 @@ void
 __free__ModuleBodyItemDecl(struct ModuleBodyItem *self)
 {
     FREE(DeclAll, self->value.decl);
-    free(self);
-}
-
-void
-__free__ModuleBodyItemImport(struct ModuleBodyItem *self)
-{
-    FREE(ImportStmt, self->value.import->items[0]);
-    FREE(Tuple, self->value.import);
     free(self);
 }
 
@@ -2907,27 +2608,6 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc)
 }
 
 void
-__free__ClassBodyItemProperty(struct ClassBodyItem *self)
-{
-    FREE(PropertyDecl, self->value.property);
-    free(self);
-}
-
-void
-__free__ClassBodyItemMethod(struct ClassBodyItem *self)
-{
-    FREE(MethodDecl, self->value.method);
-    free(self);
-}
-
-void
-__free__ClassBodyItemImport(struct ClassBodyItem *self)
-{
-    FREE(ImportStmt, self->value.import);
-    free(self);
-}
-
-void
 __free__ClassBodyItemAll(struct ClassBodyItem *self)
 {
     switch (self->kind) {
@@ -3042,20 +2722,6 @@ __new__TraitBodyItemImport(struct Location loc, struct ImportStmt *import)
     self->loc = loc;
     self->value.import = import;
     return self;
-}
-
-void
-__free__TraitBodyItemPrototype(struct TraitBodyItem *self)
-{
-    FREE(Prototype, self->value.prototype);
-    free(self);
-}
-
-void
-__free__TraitBodyItemImport(struct TraitBodyItem *self)
-{
-    FREE(ImportStmt, self->value.import);
-    free(self);
 }
 
 void
@@ -3251,83 +2917,6 @@ __new__DeclImport(struct Location loc, struct ImportStmt *import)
     self->loc = loc;
     self->value.import = import;
     return self;
-}
-
-void
-__free__DeclFun(struct Decl *self)
-{
-    FREE(FunDecl, self->value.fun);
-    free(self);
-}
-
-void
-__free__DeclConstant(struct Decl *self)
-{
-    FREE(ConstantDecl, self->value.constant);
-    free(self);
-}
-
-void
-__free__DeclModule(struct Decl *self)
-{
-    FREE(ModuleDecl, self->value.module);
-    free(self);
-}
-
-void
-__free__DeclAlias(struct Decl *self)
-{
-    FREE(AliasDecl, self->value.alias);
-    free(self);
-}
-
-void
-__free__DeclRecord(struct Decl *self)
-{
-    FREE(RecordDecl, self->value.record);
-    free(self);
-}
-
-void
-__free__DeclEnum(struct Decl *self)
-{
-    FREE(EnumDecl, self->value.enum_);
-    free(self);
-}
-
-void
-__free__DeclError(struct Decl *self)
-{
-    FREE(ErrorDecl, self->value.error);
-    free(self);
-}
-
-void
-__free__DeclClass(struct Decl *self)
-{
-    FREE(ClassDecl, self->value.class);
-    free(self);
-}
-
-void
-__free__DeclTrait(struct Decl *self)
-{
-    FREE(TraitDecl, self->value.trait);
-    free(self);
-}
-
-void
-__free__DeclTag(struct Decl *self)
-{
-    FREE(TagDecl, self->value.tag);
-    free(self);
-}
-
-void
-__free__DeclImport(struct Decl *self)
-{
-    FREE(ImportStmt, self->value.import);
-    free(self);
 }
 
 void

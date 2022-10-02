@@ -251,8 +251,11 @@ to_string__Generic(struct Generic self);
  *
  * @brief Free the Generic type (DataType variant).
  */
-void
-__free__GenericDataType(struct Generic *self);
+inline void
+__free__GenericDataType(struct Generic *self)
+{
+    free(self);
+}
 
 /**
  *
@@ -296,73 +299,6 @@ to_string__VariableDecl(struct VariableDecl self);
 void
 __free__VariableDecl(struct VariableDecl self);
 
-enum FunBodyItemKind
-{
-    FunBodyItemKindExpr,
-    FunBodyItemKindStmt,
-};
-
-// FunBodyItem: For function.
-typedef struct FunBodyItem
-{
-    enum FunBodyItemKind kind;
-
-    union
-    {
-        struct Expr *expr;
-        struct Stmt *stmt;
-    };
-} FunBodyItem;
-
-/**
- *
- * @brief Construct the FunBodyItem type (Expr variant).
- */
-struct FunBodyItem *
-__new__FunBodyItemExpr(struct Expr *expr);
-
-/**
- *
- * @brief Construct the FunBodyItem type (Stmt variant).
- */
-struct FunBodyItem *
-__new__FunBodyItemStmt(struct Stmt *stmt);
-
-/**
- *
- * @brief Convert FunBodyItem in String.
- */
-struct String *
-to_string__FunBodyItem(struct FunBodyItem self);
-
-/**
- *
- * @brief Free the FunBodyItem type (Expr variant).
- */
-void
-__free__FunBodyItemExpr(struct FunBodyItem *self);
-
-/**
- *
- * @brief Free the FunBodyItem type (Stmt variant).
- */
-void
-__free__FunBodyItemStmt(struct FunBodyItem *self);
-
-/**
- *
- * @brief Free the FunBodyItem type (VariableDecl variant).
- */
-void
-__free__FunBodyItemVariableDecl(struct FunBodyItem *self);
-
-/**
- *
- * @brief Free the FunBodyItem type (all variants).
- */
-void
-__free__FunBodyItemAll(struct FunBodyItem *self);
-
 enum LiteralKind
 {
     LiteralKindBool,
@@ -398,71 +334,123 @@ typedef struct Literal
  *
  * @brief Construct Literal (Bool variant).
  */
-struct Literal
-__new__LiteralBool(bool bool_);
+inline struct Literal
+__new__LiteralBool(bool bool_)
+{
+    struct Literal self = { .kind = LiteralKindBool, .value.bool_ = bool_ };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Char variant).
  */
-struct Literal
-__new__LiteralChar(char char_);
+inline struct Literal
+__new__LiteralChar(char char_)
+{
+    struct Literal self = { .kind = LiteralKindChar, .value.char_ = char_ };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (BitChar variant).
  */
-struct Literal
-__new__LiteralBitChar(UInt8 bit_char);
+inline struct Literal
+__new__LiteralBitChar(UInt8 bit_char)
+{
+    struct Literal self = { .kind = LiteralKindBitChar,
+                            .value.bit_char = bit_char };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Int32 variant).
  */
-struct Literal
-__new__LiteralInt32(Int32 int32);
+inline struct Literal
+__new__LiteralInt32(Int32 int32)
+{
+    struct Literal self = { .kind = LiteralKindInt32, .value.int32 = int32 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Int64 variant).
  */
-struct Literal
-__new__LiteralInt64(Int64 int64);
+inline struct Literal
+__new__LiteralInt64(Int64 int64)
+{
+    struct Literal self = { .kind = LiteralKindInt64, .value.int64 = int64 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Int128 variant).
  */
-struct Literal
-__new__LiteralInt128(Int128 int128);
+inline struct Literal
+__new__LiteralInt128(Int128 int128)
+{
+    struct Literal self = { .kind = LiteralKindInt128, .value.int128 = int128 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Float64 variant).
  */
-struct Literal
-__new__LiteralFloat(Float64 float_);
+inline struct Literal
+__new__LiteralFloat(Float64 float_)
+{
+    struct Literal self = { .kind = LiteralKindFloat, .value.float_ = float_ };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Str variant).
  */
-struct Literal
-__new__LiteralStr(Str str);
+inline struct Literal
+__new__LiteralStr(Str str)
+{
+    struct Literal self = { .kind = LiteralKindStr, .value.str = str };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (BitStr variant).
  */
-struct Literal
-__new__LiteralBitStr(UInt8 **bit_str);
+inline struct Literal
+__new__LiteralBitStr(UInt8 **bit_str)
+{
+    struct Literal self = { .kind = LiteralKindBitStr,
+                            .value.bit_str = bit_str };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct Literal (Unit variant).
  */
-struct Literal
-__new__LiteralUnit();
+inline struct Literal
+__new__LiteralUnit()
+{
+    struct Literal self = { .kind = LiteralKindUnit };
+
+    return self;
+}
 
 /**
  *
@@ -475,8 +463,11 @@ to_string__Literal(struct Literal self);
  *
  * @brief Free the Literal type (Str variant).
  */
-void
-__free__LiteralStr(struct Literal self);
+inline void
+__free__LiteralStr(struct Literal self)
+{
+    free(self.value.str);
+}
 
 /**
  *
@@ -502,8 +493,13 @@ typedef struct UnaryOp
  *
  * @brief Construct the UnaryOp type.
  */
-struct UnaryOp
-__new__UnaryOp(enum UnaryOpKind kind, struct Expr *right);
+inline struct UnaryOp
+__new__UnaryOp(enum UnaryOpKind kind, struct Expr *right)
+{
+    struct UnaryOp self = { .kind = kind, .right = right };
+
+    return self;
+}
 
 /**
  *
@@ -671,8 +667,13 @@ typedef struct ArrayAccess
  *
  * @brief Construct the ArrayAccess type.
  */
-struct ArrayAccess
-__new__ArrayAccess(struct Expr *id, struct Vec *access);
+inline struct ArrayAccess
+__new__ArrayAccess(struct Expr *id, struct Vec *access)
+{
+    struct ArrayAccess self = { .id = id, .access = access };
+
+    return self;
+}
 
 /**
  *
@@ -691,8 +692,13 @@ typedef struct TupleAccess
  *
  * @brief Construct the TupleAccess type.
  */
-struct TupleAccess
-__new__TupleAccess(struct Expr *id, struct Vec *access);
+inline struct TupleAccess
+__new__TupleAccess(struct Expr *id, struct Vec *access)
+{
+    struct TupleAccess self = { .id = id, .access = access };
+
+    return self;
+}
 
 /**
  *
@@ -736,8 +742,13 @@ typedef struct Variant
  *
  * @brief Construct the Variant type.
  */
-struct Variant
-__new__Variant(struct Expr *id, struct Option *value);
+inline struct Variant
+__new__Variant(struct Expr *id, struct Option *value)
+{
+    struct Variant self = { .id = id, .value = value };
+
+    return self;
+}
 
 /**
  *
@@ -964,36 +975,55 @@ to_string__Expr(struct Expr self);
  *
  * @brief Free the Expr type (UnaryOp variant).
  */
-void
-__free__ExprUnaryOp(struct Expr *self);
+inline void
+__free__ExprUnaryOp(struct Expr *self)
+{
+    FREE(UnaryOp, self->value.unary_op);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (BinaryOp variant).
  */
-void
-__free__ExprBinaryOp(struct Expr *self);
+inline void
+__free__ExprBinaryOp(struct Expr *self)
+{
+    FREE(BinaryOp, self->value.binary_op);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (FunCall variant).
  */
-void
-__free__ExprFunCall(struct Expr *self);
+inline void
+__free__ExprFunCall(struct Expr *self)
+{
+    FREE(FunCall, self->value.fun_call);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (RecordCall variant).
  */
-void
-__free__ExprRecordCall(struct Expr *self);
+inline void
+__free__ExprRecordCall(struct Expr *self)
+{
+    FREE(RecordCall, self->value.record_call);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (Identifier variant).
  */
-void
-__free__ExprIdentifier(struct Expr *self);
+inline void
+__free__ExprIdentifier(struct Expr *self)
+{
+    free(self);
+}
 
 /**
  *
@@ -1013,22 +1043,34 @@ __free__ExprSelfAccess(struct Expr *self);
  *
  * @brief Free the Expr type (ArrayAccess variant).
  */
-void
-__free__ExprArrayAccess(struct Expr *self);
+inline void
+__free__ExprArrayAccess(struct Expr *self)
+{
+    FREE(ArrayAccess, self->value.array_access);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (TupleAccess variant).
  */
-void
-__free__ExprTupleAccess(struct Expr *self);
+inline void
+__free__ExprTupleAccess(struct Expr *self)
+{
+    FREE(TupleAccess, self->value.tuple_access);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (Lambda variant).
  */
-void
-__free__ExprLambda(struct Expr *self);
+inline void
+__free__ExprLambda(struct Expr *self)
+{
+    FREE(Lambda, self->value.lambda);
+    free(self);
+}
 
 /**
  *
@@ -1048,8 +1090,12 @@ __free__ExprTuple(struct Expr *self);
  *
  * @brief Free the Expr type (Variant variant).
  */
-void
-__free__ExprVariant(struct Expr *self);
+inline void
+__free__ExprVariant(struct Expr *self)
+{
+    FREE(Variant, self->value.variant);
+    free(self);
+}
 
 /**
  *
@@ -1097,22 +1143,33 @@ __free__ExprRef(struct Expr *self);
  *
  * @brief Free the Expr type (Literal variant).
  */
-void
-__free__ExprLiteral(struct Expr *self);
+inline void
+__free__ExprLiteral(struct Expr *self)
+{
+    FREE(LiteralAll, self->value.literal);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type (Variable variant).
  */
-void
-__free__ExprVariable(struct Expr *self);
+inline void
+__free__ExprVariable(struct Expr *self)
+{
+    FREE(VariableDecl, self->value.variable);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Expr type.
  */
-void
-__free__Expr(struct Expr *self);
+inline void
+__free__Expr(struct Expr *self)
+{
+    free(self);
+}
 
 /**
  *
@@ -1120,144 +1177,6 @@ __free__Expr(struct Expr *self);
  */
 void
 __free__ExprAll(struct Expr *self);
-
-enum FunParamKind
-{
-    FunParamKindDefault,
-    FunParamKindNormal,
-    FunParamKindSelf
-};
-
-typedef struct FunParamCall
-{
-    enum FunParamKind kind;
-    struct Expr *value;
-
-    union
-    {
-        struct String *name;
-    };
-} FunParamCall;
-
-/**
- *
- * @brief Construct the FunParamCall type.
- */
-struct FunParamCall *
-__new__FunParamCall(struct Expr *value);
-
-/**
- *
- * @brief Construct the FunParamCall type (Default variant).
- */
-struct FunParamCall *
-__new__FunParamCallDefault(struct Expr *value, struct String *name);
-
-/**
- *
- * @brief Convert FunParamCall in String.
- */
-struct String *
-to_string__FunParamCall(struct FunParamCall self);
-
-/**
- *
- * @brief Free the FunParamCall type.
- */
-void
-__free__FunParamCall(struct FunParamCall *self);
-
-/**
- *
- * @brief Free the FunParamCall type (Default variant).
- */
-void
-__free__FunParamCallDefault(struct FunParamCall *self);
-
-/**
- *
- * @brief Free the FunParamCall type (all variants).
- */
-void
-__free__FunParamCallAll(struct FunParamCall *self);
-
-typedef struct FunParam
-{
-    enum FunParamKind kind;
-    struct Option *param_data_type; // struct Option<struct Tuple<struct
-                                    // DataType*, struct Location*>*>*
-    struct Location loc;
-
-    union
-    {
-        struct String *name; // struct String&
-    };
-
-    union
-    {
-        struct Expr *default_;
-    } value;
-} FunParam;
-
-/**
- *
- * @brief Construct FunParam type (Default variant).
- */
-struct FunParam *
-__new__FunParamDefault(struct String *name,
-                       struct Option *param_data_type,
-                       struct Location loc,
-                       struct Expr *default_);
-
-/**
- *
- * @brief Construct FunParam type (Normal variant).
- */
-struct FunParam *
-__new__FunParamNormal(struct String *name,
-                      struct Option *param_data_type,
-                      struct Location loc);
-
-/**
- * @brief Construct FunParam type (Self variant).
- */
-struct FunParam *
-__new__FunParamSelf(struct Location loc);
-
-/**
- *
- * @brief Convert FunParam in String.
- */
-struct String *
-to_string__FunParam(struct FunParam self);
-
-/**
- *
- * @brief Free the FunParam type (Default variant).
- */
-void
-__free__FunParamDefault(struct FunParam *self);
-
-/**
- *
- * @brief Free the FunParam type (Normal variant).
- */
-void
-__free__FunParamNormal(struct FunParam *self);
-
-/**
- *
- * @brief Free the FunParam type (Self variant).
- */
-void
-__free__FunParamSelf(struct FunParam *self);
-
-/**
- *
- * @brief Free the FunParam type (all variants).
- */
-void
-__free__FunParamAll(struct FunParam *self);
 
 typedef struct MatchStmt
 {
@@ -1708,57 +1627,88 @@ to_string__Stmt(struct Stmt self);
  *
  * @brief Free the Stmt type.
  */
-void
-__free__Stmt(struct Stmt *self);
+inline void
+__free__Stmt(struct Stmt *self)
+{
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (Return variant).
  */
-void
-__free__StmtReturn(struct Stmt *self);
+inline void
+__free__StmtReturn(struct Stmt *self)
+{
+    FREE(ExprAll, self->value.return_);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (If variant).
  */
-void
-__free__StmtIf(struct Stmt *self);
+inline void
+__free__StmtIf(struct Stmt *self)
+{
+    FREE(IfCond, self->value.if_);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (Await variant).
  */
-void
-__free__StmtAwait(struct Stmt *self);
+inline void
+__free__StmtAwait(struct Stmt *self)
+{
+    FREE(ExprAll, self->value.await);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (Try variant).
  */
-void
-__free__StmtTry(struct Stmt *self);
+inline void
+__free__StmtTry(struct Stmt *self)
+{
+    FREE(TryStmt, self->value.try);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (Match variant).
  */
-void
-__free__StmtMatch(struct Stmt *self);
+inline void
+__free__StmtMatch(struct Stmt *self)
+{
+    FREE(MatchStmt, self->value.match);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (While variant).
  */
-void
-__free__StmtWhile(struct Stmt *self);
+inline void
+__free__StmtWhile(struct Stmt *self)
+{
+    FREE(WhileStmt, self->value.while_);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Stmt type (For variant).
  */
-void
-__free__StmtFor(struct Stmt *self);
+inline void
+__free__StmtFor(struct Stmt *self)
+{
+    FREE(ForStmt, self->value.for_);
+    free(self);
+}
 
 /**
  *
@@ -1766,6 +1716,221 @@ __free__StmtFor(struct Stmt *self);
  */
 void
 __free__StmtAll(struct Stmt *self);
+
+enum FunBodyItemKind
+{
+    FunBodyItemKindExpr,
+    FunBodyItemKindStmt,
+};
+
+// FunBodyItem: For function.
+typedef struct FunBodyItem
+{
+    enum FunBodyItemKind kind;
+
+    union
+    {
+        struct Expr *expr;
+        struct Stmt *stmt;
+    };
+} FunBodyItem;
+
+/**
+ *
+ * @brief Construct the FunBodyItem type (Expr variant).
+ */
+struct FunBodyItem *
+__new__FunBodyItemExpr(struct Expr *expr);
+
+/**
+ *
+ * @brief Construct the FunBodyItem type (Stmt variant).
+ */
+struct FunBodyItem *
+__new__FunBodyItemStmt(struct Stmt *stmt);
+
+/**
+ *
+ * @brief Convert FunBodyItem in String.
+ */
+struct String *
+to_string__FunBodyItem(struct FunBodyItem self);
+
+/**
+ *
+ * @brief Free the FunBodyItem type (Expr variant).
+ */
+inline void
+__free__FunBodyItemExpr(struct FunBodyItem *self)
+{
+    FREE(ExprAll, self->expr);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the FunBodyItem type (Stmt variant).
+ */
+inline void
+__free__FunBodyItemStmt(struct FunBodyItem *self)
+{
+    FREE(StmtAll, self->stmt);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the FunBodyItem type (all variants).
+ */
+void
+__free__FunBodyItemAll(struct FunBodyItem *self);
+
+enum FunParamKind
+{
+    FunParamKindDefault,
+    FunParamKindNormal,
+    FunParamKindSelf
+};
+
+typedef struct FunParamCall
+{
+    enum FunParamKind kind;
+    struct Expr *value;
+
+    union
+    {
+        struct String *name;
+    };
+} FunParamCall;
+
+/**
+ *
+ * @brief Construct the FunParamCall type.
+ */
+struct FunParamCall *
+__new__FunParamCall(struct Expr *value);
+
+/**
+ *
+ * @brief Construct the FunParamCall type (Default variant).
+ */
+struct FunParamCall *
+__new__FunParamCallDefault(struct Expr *value, struct String *name);
+
+/**
+ *
+ * @brief Convert FunParamCall in String.
+ */
+struct String *
+to_string__FunParamCall(struct FunParamCall self);
+
+/**
+ *
+ * @brief Free the FunParamCall type.
+ */
+inline void
+__free__FunParamCall(struct FunParamCall *self)
+{
+    FREE(ExprAll, self->value);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the FunParamCall type (Default variant).
+ */
+inline void
+__free__FunParamCallDefault(struct FunParamCall *self)
+{
+    FREE(ExprAll, self->value);
+    FREE(String, self->name);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the FunParamCall type (all variants).
+ */
+void
+__free__FunParamCallAll(struct FunParamCall *self);
+
+typedef struct FunParam
+{
+    enum FunParamKind kind;
+    struct Option *param_data_type; // struct Option<struct Tuple<struct
+                                    // DataType*, struct Location*>*>*
+    struct Location loc;
+
+    union
+    {
+        struct String *name; // struct String&
+    };
+
+    union
+    {
+        struct Expr *default_;
+    } value;
+} FunParam;
+
+/**
+ *
+ * @brief Construct FunParam type (Default variant).
+ */
+struct FunParam *
+__new__FunParamDefault(struct String *name,
+                       struct Option *param_data_type,
+                       struct Location loc,
+                       struct Expr *default_);
+
+/**
+ *
+ * @brief Construct FunParam type (Normal variant).
+ */
+struct FunParam *
+__new__FunParamNormal(struct String *name,
+                      struct Option *param_data_type,
+                      struct Location loc);
+
+/**
+ * @brief Construct FunParam type (Self variant).
+ */
+struct FunParam *
+__new__FunParamSelf(struct Location loc);
+
+/**
+ *
+ * @brief Convert FunParam in String.
+ */
+struct String *
+to_string__FunParam(struct FunParam self);
+
+/**
+ *
+ * @brief Free the FunParam type (Default variant).
+ */
+void
+__free__FunParamDefault(struct FunParam *self);
+
+/**
+ *
+ * @brief Free the FunParam type (Normal variant).
+ */
+void
+__free__FunParamNormal(struct FunParam *self);
+
+/**
+ *
+ * @brief Free the FunParam type (Self variant).
+ */
+void
+__free__FunParamSelf(struct FunParam *self);
+
+/**
+ *
+ * @brief Free the FunParam type (all variants).
+ */
+void
+__free__FunParamAll(struct FunParam *self);
 
 typedef struct FunDecl
 {
@@ -1869,8 +2034,13 @@ __free__ModuleBodyItemDecl(struct ModuleBodyItem *self);
  *
  * @brief Free the ModuleBodyItem type (Import variant).
  */
-void
-__free__ModuleBodyItemImport(struct ModuleBodyItem *self);
+inline void
+__free__ModuleBodyItemImport(struct ModuleBodyItem *self)
+{
+    FREE(ImportStmt, self->value.import->items[0]);
+    FREE(Tuple, self->value.import);
+    free(self);
+}
 
 /**
  *
@@ -2160,22 +2330,34 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc);
  *
  * @brief Free the ClassBodyItem type (Property variant).
  */
-void
-__free__ClassBodyItemProperty(struct ClassBodyItem *self);
+inline void
+__free__ClassBodyItemProperty(struct ClassBodyItem *self)
+{
+    FREE(PropertyDecl, self->value.property);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ClassBodyItem type (Method variant).
  */
-void
-__free__ClassBodyItemMethod(struct ClassBodyItem *self);
+inline void
+__free__ClassBodyItemMethod(struct ClassBodyItem *self)
+{
+    FREE(MethodDecl, self->value.method);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ClassBodyItem type (Import variant).
  */
-void
-__free__ClassBodyItemImport(struct ClassBodyItem *self);
+inline void
+__free__ClassBodyItemImport(struct ClassBodyItem *self)
+{
+    FREE(ImportStmt, self->value.import);
+    free(self);
+}
 
 /**
  *
@@ -2276,15 +2458,23 @@ __new__TraitBodyItemImport(struct Location loc, struct ImportStmt *import);
  *
  * @brief Free the TraitBodyItem type (Prototype variant).
  */
-void
-__free__TraitBodyItemPrototype(struct TraitBodyItem *self);
+inline void
+__free__TraitBodyItemPrototype(struct TraitBodyItem *self)
+{
+    FREE(Prototype, self->value.prototype);
+    free(self);
+}
 
 /**
  *
  * @brief Free the TraitBodyItem type (Import variant).
  */
-void
-__free__TraitBodyItemImport(struct TraitBodyItem *self);
+inline void
+__free__TraitBodyItemImport(struct TraitBodyItem *self)
+{
+    FREE(ImportStmt, self->value.import);
+    free(self);
+}
 
 /**
  *
@@ -2459,78 +2649,122 @@ __new__DeclImport(struct Location loc, struct ImportStmt *import);
  *
  * @brief Free the Decl type (Fun variant).
  */
-void
-__free__DeclFun(struct Decl *self);
+inline void
+__free__DeclFun(struct Decl *self)
+{
+    FREE(FunDecl, self->value.fun);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Constant variant).
  */
-void
-__free__DeclConstant(struct Decl *self);
+inline void
+__free__DeclConstant(struct Decl *self)
+{
+    FREE(ConstantDecl, self->value.constant);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Module variant).
  */
-void
-__free__DeclModule(struct Decl *self);
+inline void
+__free__DeclModule(struct Decl *self)
+{
+    FREE(ModuleDecl, self->value.module);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Alias variant).
  */
-void
-__free__DeclAlias(struct Decl *self);
+inline void
+__free__DeclAlias(struct Decl *self)
+{
+    FREE(AliasDecl, self->value.alias);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Record variant).
  */
-void
-__free__DeclRecord(struct Decl *self);
+inline void
+__free__DeclRecord(struct Decl *self)
+{
+    FREE(RecordDecl, self->value.record);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Enum variant).
  */
-void
-__free__DeclEnum(struct Decl *self);
+inline void
+__free__DeclEnum(struct Decl *self)
+{
+    FREE(EnumDecl, self->value.enum_);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Error variant).
  */
-void
-__free__DeclError(struct Decl *self);
+inline void
+__free__DeclError(struct Decl *self)
+{
+    FREE(ErrorDecl, self->value.error);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Class variant).
  */
-void
-__free__DeclClass(struct Decl *self);
+inline void
+__free__DeclClass(struct Decl *self)
+{
+    FREE(ClassDecl, self->value.class);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Trait variant).
  */
-void
-__free__DeclTrait(struct Decl *self);
+inline void
+__free__DeclTrait(struct Decl *self)
+{
+    FREE(TraitDecl, self->value.trait);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Tag variant).
  */
-void
-__free__DeclTag(struct Decl *self);
+inline void
+__free__DeclTag(struct Decl *self)
+{
+    FREE(TagDecl, self->value.tag);
+    free(self);
+}
 
 /**
  *
  * @brief Free the Decl type (Import variant).
  */
-void
-__free__DeclImport(struct Decl *self);
+inline void
+__free__DeclImport(struct Decl *self)
+{
+    FREE(ImportStmt, self->value.import);
+    free(self);
+}
 
 /**
  *
