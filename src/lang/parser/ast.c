@@ -2980,8 +2980,6 @@ __new__Prototype(struct String *name,
 void
 __free__Prototype(struct Prototype *self)
 {
-    FREE(String, self->name);
-
     for (Usize i = 0; i < len__Vec(*self->params_type); i++)
         FREE(DataTypeAll, get__Vec(*self->params_type, i));
 
@@ -3042,11 +3040,13 @@ __free__TraitBodyItemAll(struct TraitBodyItem *self)
 struct TraitDecl *
 __new__TraitDecl(struct String *name,
                  struct Vec *generic_params,
+                 struct Vec *inh,
                  struct Vec *body)
 {
     struct TraitDecl *self = malloc(sizeof(struct TraitDecl));
     self->name = name;
     self->generic_params = generic_params;
+    self->inh = inh;
     self->body = body;
     return self;
 }
@@ -3054,17 +3054,27 @@ __new__TraitDecl(struct String *name,
 void
 __free__TraitDecl(struct TraitDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
+    if (self->inh != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->inh); i++)
+            FREE(DataTypeAll, get__Vec(*self->inh, i));
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
-        FREE(TraitBodyItemAll, get__Vec(*self->body, i));
+        FREE(Vec, self->inh);
+    }
 
-    FREE(Vec, self->body);
+    if (self->body != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->body); i++)
+            FREE(TraitBodyItemAll, get__Vec(*self->body, i));
+
+        FREE(Vec, self->body);
+    }
+
     free(self);
 }
 

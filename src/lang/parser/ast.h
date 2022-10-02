@@ -2202,7 +2202,7 @@ enum TraitBodyItemKind
 
 typedef struct Prototype
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Vec *params_type; // struct Vec<struct DataType*>*
     struct DataType *return_type;
     bool is_async;
@@ -2276,9 +2276,10 @@ __free__TraitBodyItemAll(struct TraitBodyItem *self);
 
 typedef struct TraitDecl
 {
-    struct String *name;
-    struct Vec *generic_params;
-    struct Vec *body;
+    struct String *name; // struct String&
+    struct Vec *generic_params; // struct Vec<struct Generic*>*
+    struct Vec *inh; // struct Vec<struct DataType*>*
+    struct Vec *body; // struct Vec<struct TraitBodyItem*>*
 } TraitDecl;
 
 /**
@@ -2288,6 +2289,7 @@ typedef struct TraitDecl
 struct TraitDecl *
 __new__TraitDecl(struct String *name,
                  struct Vec *generic_params,
+                 struct Vec *inh,
                  struct Vec *body);
 
 /**

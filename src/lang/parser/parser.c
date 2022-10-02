@@ -425,6 +425,8 @@ static struct RecordDecl *
 parse_record_declaration(struct Parser *self);
 static struct AliasDecl *
 parse_alias_declaration(struct Parser *self);
+static struct Vec *
+parse_inheritance(struct Parser self, struct ParseDecl *parse_decl);
 static struct TraitDecl *
 parse_trait_declaration(struct Parser *self);
 static struct ClassDecl *
@@ -1823,6 +1825,7 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindComma:
         case TokenKindDot:
         case TokenKindIdentifier:
+        case TokenKindSelfKw:
             return true;
 
         default: {
@@ -1832,7 +1835,7 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
                   parse_block,
                   NEW(LilyError, LilyErrorInvalidTokenInRecordField),
                   *parse_block->current->loc,
-                  format("this token is invalid inside the record, expected: "
+                  format("this token is invalid inside the trait, expected: "
                          "`(`, `)`, `[`, `]`, `ID`, `?`, `!`, `,`, `.`, `->`, "
                          "`@` or `::`"),
                   None());
@@ -2922,6 +2925,7 @@ is_data_type(struct ParseDecl *self)
         case TokenKindLHook:
         case TokenKindLParen:
         case TokenKindHat:
+        case TokenKindSelfKw:
             return true;
 
         default:
@@ -2937,6 +2941,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
     struct DataType *data_type = NULL;
 
     switch (parse_decl->previous->kind) {
+        case TokenKindSelfKw:
+            return NEW(DataType, DataTypeKindSelf);
         case TokenKindIdentifier: {
             Str identifier_str = to_Str__String(*parse_decl->previous->lit);
 
@@ -4975,9 +4981,144 @@ parse_alias_declaration(struct Parser *self)
                alias_parse_context.is_pub);
 }
 
+static struct Vec *
+parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
+{
+    struct Vec *inh = NEW(Vec, sizeof(struct DataType));
+
+    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        struct DataType *dt = parse_data_type(self, parse_decl);
+
+        switch (dt->kind) {
+            case DataTypeKindCustom:
+                push__Vec(inh, dt);
+                break;
+            default:
+                assert(0 && "error");
+                FREE(DataTypeAll, dt);
+        }
+
+        if (parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`,`");
+
+                emit__Diagnostic(err);
+            });
+        }
+    }
+
+    return inh;
+}
+
 static struct TraitDecl *
 parse_trait_declaration(struct Parser *self)
 {
+    struct TraitParseContext trait_parse_context = self->current->value.trait;
+    struct Vec *generic_params = NULL;
+    struct Vec *inh = NULL;
+    struct Vec *body = NULL;
+
+    if (trait_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, trait_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (trait_parse_context.has_inheritance) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, trait_parse_context.generic_params);
+
+        inh = parse_inheritance(*self, &parse);
+    }
+
+    if (len__Vec(*trait_parse_context.body) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, trait_parse_context.body);
+        body = NEW(Vec, sizeof(struct Prototype));
+
+        while (parse.pos < len__Vec(*parse.tokens)) {
+            if (parse.current->kind == TokenKindAsyncKw ||
+                parse.current->kind == TokenKindAt) {
+                struct String *name = NULL;
+                struct Vec *params_type = NULL;
+                struct DataType *return_type = NULL;
+                bool is_async = false;
+                bool has_first_self_param = false;
+                struct Location loc = NEW(Location);
+
+                start__Location(
+                  &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+                if (parse.current->kind == TokenKindAsyncKw) {
+                    is_async = true;
+                    next_token(&parse);
+                }
+
+                if (parse.current->kind == TokenKindAt)
+                    next_token(&parse);
+                else {
+                    assert(0 && "error");
+                }
+
+                if (parse.current->kind == TokenKindIdentifier) {
+                    name = &*parse.current->lit;
+                    next_token(&parse);
+                } else
+                    assert(0 && "error");
+
+                if (parse.current->kind == TokenKindColonColon)
+                    next_token(&parse);
+                else {
+                    assert(0 && "error");
+                }
+
+                if (is_data_type(&parse)) {
+                    params_type = NEW(Vec, sizeof(struct DataType));
+                    struct DataType *f_param = parse_data_type(*self, &parse);
+
+                    if (f_param->kind == DataTypeKindSelf)
+                        has_first_self_param = true;
+
+                    push__Vec(params_type, f_param);
+                } else
+                    assert(0 && "error");
+
+                while (parse.current->kind == TokenKindArrow &&
+                       parse.pos < len__Vec(*parse.tokens)) {
+                    next_token(&parse);
+                    push__Vec(params_type, parse_data_type(*self, &parse));
+                }
+
+                return_type = pop__Vec(params_type);
+
+                if (len__Vec(*params_type) == 0)
+                    assert(0 && "error");
+
+                end__Location(
+                  &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+
+                push__Vec(body,
+                          NEW(TraitBodyItemPrototype,
+                              loc,
+                              NEW(Prototype,
+                                  name,
+                                  params_type,
+                                  return_type,
+                                  is_async,
+                                  has_first_self_param)));
+            }
+        }
+    }
+
+    return NEW(TraitDecl, trait_parse_context.name, generic_params, inh, body);
 }
 
 static struct ClassDecl *
@@ -5038,6 +5179,10 @@ parse_declaration(struct Parser *self)
             break;
 
         case ParseContextKindTrait:
+            push__Vec(self->decls,
+                      NEW(DeclTrait,
+                          self->current->loc,
+                          parse_trait_declaration(self)));
             break;
 
         case ParseContextKindClass:
