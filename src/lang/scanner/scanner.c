@@ -1088,9 +1088,9 @@ get_token(struct Scanner *self)
         case '(': {
             struct Token *tok = NEW(Token, TokenKindLParen, NULL);
 
-            next_char_by_token(self, *tok);
             end_token(self);
             tok->loc = copy__Location(&self->loc);
+            next_char_by_token(self, *tok);
             push_token(self, tok);
 
             return get_closing(self, (char *)')');
@@ -1110,9 +1110,9 @@ get_token(struct Scanner *self)
         case '{': {
             struct Token *tok = NEW(Token, TokenKindLBrace, NULL);
 
-            next_char_by_token(self, *tok);
             end_token(self);
             tok->loc = copy__Location(&self->loc);
+            next_char_by_token(self, *tok);
             push_token(self, tok);
 
             return get_closing(self, (char *)'}');
@@ -1132,9 +1132,9 @@ get_token(struct Scanner *self)
         case '[': {
             struct Token *tok = NEW(Token, TokenKindLHook, NULL);
 
-            next_char_by_token(self, *tok);
             end_token(self);
             tok->loc = copy__Location(&self->loc);
+            next_char_by_token(self, *tok);
             push_token(self, tok);
 
             return get_closing(self, (char *)']');
@@ -1511,11 +1511,8 @@ run__Scanner(struct Scanner *self)
                     case TokenKindBar:
                     case TokenKindArrow:
                     case TokenKindAt:
-                    case TokenKindLParen:
                     case TokenKindRParen:
-                    case TokenKindLBrace:
                     case TokenKindRBrace:
-                    case TokenKindLHook:
                     case TokenKindRHook:
                     case TokenKindHashtag:
                     case TokenKindSemicolon:
