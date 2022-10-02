@@ -83,7 +83,9 @@ enum LilyErrorKind
     LilyErrorUnexpectedTokenForBeginingInGlobal,
     LilyErrorUnknownAttribute,
     LilyErrorExpectedAttribute,
-    LilyErrorMissDataType
+    LilyErrorMissDataType,
+    LilyErrorIntegerIsOutOfRange,
+    LilyErrorMissParamName
 };
 
 typedef struct LilyError

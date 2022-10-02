@@ -1557,7 +1557,7 @@ __free__FunParamCallAll(struct FunParamCall *self)
 
 struct FunParam *
 __new__FunParamDefault(struct String *name,
-                       struct Tuple *param_data_type,
+                       struct Option *param_data_type,
                        struct Location loc,
                        struct Expr *default_)
 {
@@ -1572,7 +1572,7 @@ __new__FunParamDefault(struct String *name,
 
 struct FunParam *
 __new__FunParamNormal(struct String *name,
-                      struct Tuple *param_data_type,
+                      struct Option *param_data_type,
                       struct Location loc)
 {
     struct FunParam *self = malloc(sizeof(struct FunParam));
@@ -1586,31 +1586,36 @@ __new__FunParamNormal(struct String *name,
 struct String *
 to_string__FunParam(struct FunParam self)
 {
-    switch (self.kind) {
-        case FunParamKindNormal:
-            return format(
-              "{S} {S}",
-              self.name,
-              to_string__DataType(
-                *(struct DataType *)self.param_data_type->items[0]));
-        case FunParamKindDefault:
-            return format("{S} {S} = {S}",
-                          self.name,
-                          to_string__DataType(
-                            *(struct DataType *)self.param_data_type->items[0]),
-                          to_string__Expr(*self.value.default_));
-        default:
-            UNREACHABLE("unknown fun param kind");
-    }
+    // switch (self.kind) {
+    //     case FunParamKindNormal:
+    //         return format(
+    //           "{S} {S}",
+    //           self.name,
+    //           to_string__DataType(
+    //             *(struct DataType *)self.param_data_type->items[0]));
+    //     case FunParamKindDefault:
+    //         return format("{S} {S} := {S}",
+    //                       self.name,
+    //                       to_string__DataType(
+    //                         *(struct DataType *)self.param_data_type->items[0]),
+    //                       to_string__Expr(*self.value.default_));
+    //     default:
+    //         UNREACHABLE("unknown fun param kind");
+    // }
 }
 
 void
 __free__FunParamDefault(struct FunParam *self)
 {
-    FREE(String, self->name);
-    FREE(DataTypeAll, self->param_data_type->items[0]);
-    free(self->param_data_type->items[1]);
-    FREE(Tuple, self->param_data_type);
+    if (is_Some__Option(self->param_data_type)) {
+        struct Tuple *temp = get__Option(self->param_data_type);
+
+        FREE(DataTypeAll, temp->items[0]);
+        free(temp->items[1]);
+        FREE(Tuple, temp);
+    }
+
+    FREE(Option, self->param_data_type);
     FREE(ExprAll, self->value.default_);
     free(self);
 }
@@ -1618,10 +1623,15 @@ __free__FunParamDefault(struct FunParam *self)
 void
 __free__FunParamNormal(struct FunParam *self)
 {
-    FREE(String, self->name);
-    FREE(DataTypeAll, self->param_data_type->items[0]);
-    free(self->param_data_type->items[1]);
-    FREE(Tuple, self->param_data_type);
+    if (is_Some__Option(self->param_data_type)) {
+        struct Tuple *temp = get__Option(self->param_data_type);
+
+        FREE(DataTypeAll, temp->items[0]);
+        free(temp->items[1]);
+        FREE(Tuple, temp);
+    }
+
+    FREE(Option, self->param_data_type);
     free(self);
 }
 

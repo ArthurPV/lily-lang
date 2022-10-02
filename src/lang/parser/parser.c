@@ -262,6 +262,8 @@ static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
+static struct Vec *
+parse_fun_params(struct Parser self, struct ParseDecl *parse_decl);
 static struct FunDecl *
 parse_fun_declaration(struct Parser *self);
 static void
@@ -2238,10 +2240,11 @@ static inline void
 next_token(struct ParseDecl *self)
 {
     self->pos += 1;
-    self->current = self->pos < len__Vec(*self->tokens)
-                      ? get__Vec(*self->tokens, self->pos)
-                      : NULL;
-    self->previous = get__Vec(*self->tokens, self->pos - 1);
+    
+    if (self->pos < len__Vec(*self->tokens)) {
+        self->current = get__Vec(*self->tokens, self->pos);
+        self->previous = get__Vec(*self->tokens, self->pos - 1);
+    }
 }
 
 static inline bool
@@ -2690,8 +2693,18 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
                 literal = NEW(LiteralInt64, (Int64)res);
             else if (res > INT128_MIN && res <= INT128_MAX)
                 literal = NEW(LiteralInt128, res);
-            else
-                assert(0 && "error out of range");
+            else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                      *parse_decl->previous->loc,
+                      from__String(
+                        "even the type Int128 does not support the integer"),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             free(int_str);
 
@@ -2772,7 +2785,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         case TokenKindAmpersand: {
             struct Expr *expr_ref = parse_expr(self, parse_decl);
-            
+
             end__Location(&loc,
                           parse_decl->current->loc->s_line,
                           parse_decl->current->loc->s_col);
@@ -2817,7 +2830,134 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
-    assert(0 && "todo");
+    return parse_primary_expr(self, parse_decl);
+}
+
+static struct Vec *
+parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
+{
+    struct Vec *params = NEW(Vec, sizeof(struct FunParam));
+
+    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        struct Location loc = NEW(Location);
+        struct Location loc_data_type = NEW(Location);
+        struct String *name = NULL;
+        struct DataType *data_type = NULL;
+        struct Expr *default_value = NULL;
+
+        start__Location(&loc,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
+
+        if (parse_decl->current->kind != TokenKindIdentifier) {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorMissParamName),
+                                         *parse_decl->previous->loc,
+                                         from__String(""),
+                                         None());
+
+            emit__Diagnostic(err);
+        } else {
+            name = &*parse_decl->current->lit;
+
+            next_token(parse_decl);
+        }
+
+        if (is_data_type(parse_decl)) {
+            start__Location(&loc_data_type,
+                            parse_decl->current->loc->s_line,
+                            parse_decl->current->loc->s_col);
+
+            data_type = parse_data_type(self, parse_decl);
+
+            end__Location(&loc_data_type,
+                            parse_decl->current->loc->s_line,
+                            parse_decl->current->loc->s_col);
+        }
+
+        switch (parse_decl->current->kind) {
+            case TokenKindColonEq:
+                next_token(parse_decl);
+
+                default_value = parse_expr(self, parse_decl);
+
+                break;
+            case TokenKindComma:
+                break;
+            default:
+                if (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+                    struct Diagnostic *err =
+                    NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                    err->err->s = from__String("`:=`");
+
+                    emit__Diagnostic(err);
+                }
+
+                break;
+        }
+
+        if (parse_decl->current == NULL)
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->s_col);
+        else if (data_type == NULL && default_value == NULL)
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+        else
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+        if (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+            if (parse_decl->current->kind != TokenKindComma) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`,`");
+
+                emit__Diagnostic(err);
+            } else
+                next_token(parse_decl);
+        } 
+
+        if (default_value == NULL && data_type == NULL)
+            push__Vec(params, NEW(FunParamNormal, name, None(), loc));
+        else if (default_value == NULL)
+            push__Vec(
+              params,
+              NEW(
+                FunParamNormal,
+                name,
+                Some(NEW(Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                loc));
+        else if (default_value != NULL && data_type == NULL)
+            push__Vec(params,
+                      NEW(FunParamDefault, name, None(), loc, default_value));
+        else
+            push__Vec(
+              params,
+              NEW(
+                FunParamDefault,
+                name,
+                Some(NEW(Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                loc,
+                default_value));
+    }
+
+    return params;
 }
 
 static struct FunDecl *
@@ -2844,6 +2984,9 @@ parse_fun_declaration(struct Parser *self)
     }
 
     if (fun_parse_context.has_params) {
+        struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.params);
+
+        params = parse_fun_params(*self, &parse);
     }
 
     {

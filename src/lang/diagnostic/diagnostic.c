@@ -73,25 +73,8 @@ detail_to_string(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc)
 {
-    Str string_color = NULL;
-    switch (kind) {
-        case DiagnosticKindError:
-            string_color = RED("^");
-            break;
-        case DiagnosticKindWarning:
-            string_color = YELLOW("^");
-            break;
-        case DiagnosticKindNote:
-            string_color = CYAN("^");
-            break;
-        default:
-            UNREACHABLE("unknown DiagnosticKind");
-    }
-
     Str line_str = of_int__Str((int)loc.e_line);
     Usize line_str_length = strlen(line_str);
-    const Str color_str =
-      apply_color(kind, "^"); // TODO: rename this for improve variable's name.
     struct String *s = NULL;
 
     if (loc.s_line == loc.e_line) {
@@ -149,8 +132,6 @@ detail_to_string(struct Detail self,
         TODO("diagnostic with more one line");
     }
 
-    free(string_color);
-    free(color_str);
     free(line_str);
 
     return s;
@@ -232,6 +213,10 @@ lily_error_to_string(struct LilyError err)
             return from__String("expected attribute");
         case LilyErrorMissDataType:
             return from__String("miss data type");
+        case LilyErrorIntegerIsOutOfRange:
+            return from__String("the integer is out of range");
+        case LilyErrorMissParamName:
+            return from__String("miss param name");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -330,6 +315,10 @@ get_code_of_lily_error(struct LilyError err)
             return "0035";
         case LilyErrorMissDataType:
             return "0036";
+        case LilyErrorIntegerIsOutOfRange:
+            return "0037";
+        case LilyErrorMissParamName:
+            return "0038";
         default:
             UNREACHABLE("unknown lily error kind");
     }
