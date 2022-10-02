@@ -934,6 +934,133 @@ __free__VariableSymbol(struct VariableSymbol self)
     FREE(ExprSymbolAll, self.expr);
 }
 
+struct MatchSymbol
+__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *pattern)
+{
+    struct MatchSymbol self = { .matching = matching, .pattern = pattern };
+
+    return self;
+}
+
+void
+__free_MatchSymbol(struct MatchSymbol self)
+{
+    FREE(ExprSymbolAll, self.matching);
+
+    for (Usize i = len__Vec(*self.pattern); i--;) {
+        FREE(ExprSymbolAll,
+             ((struct Tuple *)get__Vec(*self.pattern, i))->items[0]);
+
+        struct Vec *temp =
+          ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
+
+        for (Usize j = len__Vec(*temp); j--;)
+            FREE(SymbolTableAll, get__Vec(*temp, j));
+
+        FREE(Vec, temp);
+        FREE(Tuple, get__Vec(*self.pattern, i));
+    }
+
+    FREE(Vec, self.pattern);
+}
+
+struct IfBranchSymbol *
+__new__IfBranchSymbol(struct ExprSymbol *cond, struct Vec *body)
+{
+    struct IfBranchSymbol *self = malloc(sizeof(struct IfBranchSymbol));
+    self->cond = cond;
+    self->body = body;
+    return self;
+}
+
+void
+__free__IfBranchSymbol(struct IfBranchSymbol *self)
+{
+    FREE(ExprSymbolAll, self->cond);
+
+    for (Usize i = len__Vec(*self->body); i--;)
+        FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+    FREE(Vec, self->body);
+    free(self);
+}
+
+struct IfCondSymbol
+__new__IfCondSymbol(struct IfBranchSymbol *if_,
+                    struct Vec *elif,
+                    struct IfBranchSymbol *else_)
+{
+    struct IfCondSymbol self = { if_, elif, else_ };
+
+    return self;
+}
+
+void
+__free__IfCondSymbol(struct IfCondSymbol self)
+{
+    FREE(IfBranchSymbol, self.if_);
+
+    for (Usize i = len__Vec(*self.elif); i--;)
+        FREE(IfBranchSymbol, get__Vec(*self.elif, i));
+
+    FREE(Vec, self.elif);
+    FREE(IfBranchSymbol, self.else_);
+}
+
+struct TrySymbol
+__new__TrySymbol(struct ExprSymbol *try_expr,
+                 struct Vec *try_body,
+                 struct ExprSymbol *catch_expr,
+                 struct Vec *catch_body)
+{
+    struct TrySymbol self = { .try_expr = try_expr,
+                              .try_body = try_body,
+                              .catch_expr = catch_expr,
+                              .catch_body = catch_body };
+
+    return self;
+}
+
+void
+__free__TrySymbol(struct TrySymbol self)
+{
+    FREE(ExprSymbolAll, self.try_expr);
+
+    for (Usize i = len__Vec(*self.try_body); i--;)
+        FREE(SymbolTableAll, get__Vec(*self.try_body, i));
+
+    FREE(Vec, self.try_body);
+
+    if (self.catch_expr != NULL)
+        FREE(ExprSymbolAll, self.catch_expr);
+
+    if (self.catch_body != NULL) {
+        for (Usize i = len__Vec(*self.catch_body); i--;)
+            FREE(SymbolTableAll, get__Vec(*self.catch_body, i));
+
+        FREE(Vec, self.catch_body);
+    }
+}
+
+struct WhileSymbol
+__new__WhileSymbol(struct ExprSymbol *cond, struct Vec *body)
+{
+    struct WhileSymbol self = { .cond = cond, .body = body };
+
+    return self;
+}
+
+void
+__free__WhileSymbol(struct WhileSymbol self)
+{
+    FREE(ExprSymbolAll, self.cond);
+
+    for (Usize i = len__Vec(*self.body); i--;)
+        FREE(SymbolTableAll, get__Vec(*self.body, i));
+
+    FREE(Vec, self.body);
+}
+
 struct FunSymbol *
 __new__FunSymbol(struct Decl *fun_decl)
 {

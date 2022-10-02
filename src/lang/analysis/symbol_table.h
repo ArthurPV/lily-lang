@@ -1054,9 +1054,128 @@ __free__ExprSymbolVariable(struct ExprSymbol *self);
 void
 __free__ExprSymbolAll(struct ExprSymbol *self);
 
+typedef struct MatchSymbol
+{
+    struct ExprSymbol *matching;
+    struct Vec *pattern; // struct Vec<struct Tuple<struct ExprSymbol*, struct
+                         // Vec<struct SymbolTable*>*>*
+} MatchSymbol;
+
+/**
+ *
+ * @brief Construct the MatchSymbol type.
+ */
+struct MatchSymbol
+__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *pattern);
+
+/**
+ *
+ * @brief Free the MatchSymbol type.
+ */
+void
+__free_MatchSymbol(struct MatchSymbol self);
+
+typedef struct IfBranchSymbol
+{
+    struct ExprSymbol *cond;
+    struct Vec *body; // struct Vec<struct SymbolTable*>*
+} IfBranchSymbol;
+
+/**
+ *
+ * @brief Construct the IfBranchSymbol type.
+ */
+struct IfBranchSymbol *
+__new__IfBranchSymbol(struct ExprSymbol *cond, struct Vec *body);
+
+/**
+ *
+ * @brief Free the IfBranchSymbol type.
+ */
+void
+__free__IfBranchSymbol(struct IfBranchSymbol *self);
+
+typedef struct IfCondSymbol
+{
+    struct IfBranchSymbol *if_;
+    struct Vec *elif; // struct Vec<struct IfBranchSymbol*>*
+    struct IfBranchSymbol *else_;
+} IfCondSymbol;
+
+/**
+ *
+ * @brief Construct the IfCondSymbol type.
+ */
+struct IfCondSymbol
+__new__IfCondSymbol(struct IfBranchSymbol *if_,
+                    struct Vec *elif,
+                    struct IfBranchSymbol *else_);
+
+/**
+ *
+ * @brief Free the IfCondSymbol type.
+ */
+void
+__free__IfCondSymbol(struct IfCondSymbol self);
+
+typedef struct TrySymbol
+{
+    struct ExprSymbol *try_expr;
+    struct Vec *try_body; // struct Vec<struct SymbolTable*>*
+    struct ExprSymbol *catch_expr;
+    struct Vec *catch_body; // struct Vec<struct SymbolTable*>*
+} TrySymbol;
+
+/**
+ *
+ * @brief Construct the TrySymbol type.
+ */
+struct TrySymbol
+__new__TrySymbol(struct ExprSymbol *try_expr,
+                 struct Vec *try_body,
+                 struct ExprSymbol *catch_expr,
+                 struct Vec *catch_body);
+
+/**
+ *
+ * @brief Free the TrySymbol type.
+ */
+void
+__free__TrySymbol(struct TrySymbol self);
+
+typedef struct WhileSymbol
+{
+    struct ExprSymbol *cond;
+    struct Vec *body; // struct Vec<struct SymbolTable*>*
+} WhileSymbol;
+
+/**
+ *
+ * @brief Construct the WhileSymbol type.
+ */
+struct WhileSymbol
+__new__WhileSymbol(struct ExprSymbol *cond, struct Vec *body);
+
+/**
+ *
+ * @brief Free the WhileSymbol type.
+ */
+void
+__free__WhileSymbol(struct WhileSymbol self);
+
 typedef struct StmtSymbol
 {
     enum StmtKind kind;
+    struct Location loc;
+
+    union
+    {
+        struct IfCondSymbol if_;
+        struct ExprSymbol *await;
+        struct TrySymbol *try;
+        struct MatchSymbol match;
+        struct WhileSymbol while_;
+    } value;
 } StmtSymbol;
 
 enum SymbolTableKind
