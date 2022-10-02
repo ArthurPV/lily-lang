@@ -318,7 +318,7 @@ __free__DataTypeCustom(struct DataType *self)
         for (Usize i = 0; i < len__Vec(*temporary); i++)
             FREE(DataTypeAll, get__Vec(*temporary, i));
 
-        FREE(Vec, ((struct Option *)self->value.custom->items[1])->some);
+        FREE(Vec, temporary);
     }
 
     FREE(Option, self->value.custom->items[1]);
@@ -2601,11 +2601,13 @@ __free__ModuleDecl(struct ModuleDecl *self)
 }
 
 struct AliasDecl *
-__new__AliasDecl(struct Vec *generic_params,
+__new__AliasDecl(struct String *name,
+                 struct Vec *generic_params,
                  struct DataType *data_type,
                  bool is_pub)
 {
     struct AliasDecl *self = malloc(sizeof(struct AliasDecl));
+    self->name = name;
     self->generic_params = generic_params;
     self->data_type = data_type;
     self->is_pub = is_pub;
@@ -2615,11 +2617,14 @@ __new__AliasDecl(struct Vec *generic_params,
 void
 __free__AliasDecl(struct AliasDecl *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+    if (self->generic_params != NULL) {
+        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    FREE(DataType, self->data_type);
-    FREE(Vec, self->generic_params);
+        FREE(Vec, self->generic_params);
+    }
+
+    FREE(DataTypeAll, self->data_type);
     free(self);
 }
 

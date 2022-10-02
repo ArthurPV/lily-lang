@@ -1885,6 +1885,7 @@ __free__ModuleDecl(struct ModuleDecl *self);
 
 typedef struct AliasDecl
 {
+    struct String *name; // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct DataType *data_type;
     bool is_pub;
@@ -1895,7 +1896,8 @@ typedef struct AliasDecl
  * @brief Construct the AliasDecl type.
  */
 struct AliasDecl *
-__new__AliasDecl(struct Vec *generic_params,
+__new__AliasDecl(struct String *name,
+                 struct Vec *generic_params,
                  struct DataType *data_type,
                  bool is_pub);
 

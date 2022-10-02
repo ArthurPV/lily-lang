@@ -4802,6 +4802,9 @@ parse_enum_declaration(struct Parser *self)
         struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.data_type);
 
         type_value = Some(parse_data_type(*self, &parse));
+
+        if (parse.pos < len__Vec(*parse.tokens))
+            assert(0 && "error");
     } else
         type_value = None();
 
@@ -4943,6 +4946,33 @@ parse_record_declaration(struct Parser *self)
 static struct AliasDecl *
 parse_alias_declaration(struct Parser *self)
 {
+    struct AliasParseContext alias_parse_context = self->current->value.alias;
+    struct Vec *generic_params = NULL;
+    struct DataType *data_type = NULL;
+
+    if (alias_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, alias_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (len__Vec(*alias_parse_context.data_type) == 0)
+        assert(0 && "error");
+    else {
+        struct ParseDecl parse = NEW(ParseDecl, alias_parse_context.data_type);
+
+        data_type = parse_data_type(*self, &parse);
+
+        if (parse.pos < len__Vec(*parse.tokens))
+            assert(0 && "error");
+    }
+
+    return NEW(AliasDecl,
+               alias_parse_context.name,
+               generic_params,
+               data_type,
+               alias_parse_context.is_pub);
 }
 
 static struct TraitDecl *
@@ -5001,6 +5031,10 @@ parse_declaration(struct Parser *self)
             break;
 
         case ParseContextKindAlias:
+            push__Vec(self->decls,
+                      NEW(DeclAlias,
+                          self->current->loc,
+                          parse_alias_declaration(self)));
             break;
 
         case ParseContextKindTrait:
