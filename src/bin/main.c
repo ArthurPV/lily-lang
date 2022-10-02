@@ -32,50 +32,59 @@ main(int argc, char **argv)
         }
     }
 
-    if (status == BUILD_COMMAND)
-        Println("Build");
-    else if (status == COMPILE_COMMAND) {
-        if (argc > 2) {
-            #include <time.h>
+    switch (status) {
+        case BUILD_COMMAND:
+            Println("Build");
+            break;
+        case COMPILE_COMMAND:
+            if (argc > 2) {
+#include <time.h>
 
-            clock_t start = clock();
+                clock_t start = clock();
 
-            struct File file = NEW(File, argv[2]);
-            struct Source src = NEW(Source, file);
-            struct Scanner scanner = NEW(Scanner, &src);
+                struct File file = NEW(File, argv[2]);
+                struct Source src = NEW(Source, file);
+                struct Scanner scanner = NEW(Scanner, &src);
 
-            run__Scanner(&scanner);
+                run__Scanner(&scanner);
 
-            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+                struct ParseBlock parse_block = NEW(ParseBlock, scanner);
 
-            run__ParseBlock(&parse_block);
+                run__ParseBlock(&parse_block);
 
-            struct Parser parser = NEW(Parser, parse_block);
+                struct Parser parser = NEW(Parser, parse_block);
 
-            run__Parser(&parser);
+                run__Parser(&parser);
 
-            struct Typecheck tc = NEW(Typecheck, parser);
+                struct Typecheck tc = NEW(Typecheck, parser);
 
-            struct Generate gen = NEW(Generate, tc);
+                struct Generate gen = NEW(Generate, tc);
 
-            write_main_function(&gen);
+                write_main_function(&gen);
 
-            FREE(Generate, gen);
+                FREE(Generate, gen);
 
-            double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
+                double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
 
-            println("compiled in %.3fs", total_t);
-        }
-    } else if (status == HELP_COMMAND)
-        printf("%s\n", MAIN_HELP);
-    else if (status == INIT_COMMAND)
-        Println("Init");
-    else if (status == NEW_COMMAND)
-        Println("New");
-    else if (status == VERSION_COMMAND)
-        Println("Version");
-    else if (status == UNKNOWN_COMMAND) {
+                println("compiled in %.3fs", total_t);
+            }
+
+            break;
+        case HELP_COMMAND:
+            printf("%s\n", MAIN_HELP);
+            break;
+        case INIT_COMMAND:
+            Println("Init");
+            break;
+        case NEW_COMMAND:
+            Println("New");
+            break;
+        case VERSION_COMMAND:
+            Println("Version");
+            break;
+        case UNKNOWN_COMMAND: {
 #include <assert.h>
-        assert(0 && "unknown command");
+            assert(0 && "unknown command");
+        }
     }
 }

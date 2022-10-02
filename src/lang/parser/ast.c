@@ -2650,7 +2650,7 @@ __free__AliasDecl(struct AliasDecl *self)
 struct FieldRecord *
 __new__FieldRecord(struct String *name,
                    struct DataType *data_type,
-                   struct Option *value,
+                   struct Expr *value,
                    bool is_pub,
                    struct Location loc)
 {
@@ -2668,10 +2668,9 @@ __free__FieldRecord(struct FieldRecord *self)
 {
     FREE(DataTypeAll, self->data_type);
 
-    if (is_Some__Option(self->value))
-        FREE(ExprAll, get__Option(self->value));
+    if (self->value != NULL)
+        FREE(ExprAll, self->value);
 
-    FREE(Option, self->value);
     free(self);
 }
 

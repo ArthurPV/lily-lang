@@ -27,6 +27,7 @@ object Work: trait =
 	@get_salary :: self -> Int32
 end
 
+
 object Person: class =
 	@name Str;
 	@age Uint8;
@@ -57,4 +58,6 @@ end
 module calc =
 	pub fun add(x, y) = x+y;
 	pub fun sub(x, y) = x-y;
+	pub fun mul(x, y) = x*y;
+	pub fun div(x, y) = x/y;
 end

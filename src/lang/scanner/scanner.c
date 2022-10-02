@@ -69,7 +69,7 @@
       : case 'U' \
       : case 'V' : case 'W' : case 'X' : case 'Y' : case 'Z' : case '_'
 
-static inline enum TokenKind
+static enum TokenKind
 get_keyword(const Str id);
 
 static inline void
@@ -203,7 +203,7 @@ __new__Scanner(struct Source *src)
     return self;
 }
 
-static inline enum TokenKind
+static enum TokenKind
 get_keyword(const Str id)
 {
     if (!strcmp(id, "fun"))

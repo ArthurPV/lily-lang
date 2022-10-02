@@ -53,8 +53,7 @@ typedef struct DataType
         struct Tuple *lambda; // struct Tuple<struct Vec*, struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct Option<struct DataType*>*,
                               // struct Option<Usize*>*>*
-        struct Tuple *custom; // struct Tuple<struct String&, struct
-                              // Option<struct Vec<struct DataType*>*>*>*
+        struct Tuple *custom; // struct Tuple<struct String&, struct Vec<struct GenericParams*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
 } DataType;
@@ -1804,7 +1803,7 @@ __free__FunDecl(struct FunDecl *self);
 
 typedef struct ConstantDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct DataType *data_type;
     struct Expr *expr;
     bool is_pub;
@@ -1930,7 +1929,7 @@ typedef struct FieldRecord
 {
     struct String *name; // struct String&
     struct DataType *data_type;
-    struct Option *value; // struct Option<struct Expr*>*
+    struct Expr *value;
     bool is_pub;
     struct Location loc;
 } FieldRecord;
@@ -1942,7 +1941,7 @@ typedef struct FieldRecord
 struct FieldRecord *
 __new__FieldRecord(struct String *name,
                    struct DataType *data_type,
-                   struct Option *value,
+                   struct Expr *value,
                    bool is_pub,
                    struct Location loc);
 

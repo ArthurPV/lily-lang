@@ -2,32 +2,581 @@
 #include <lang/analysis/symbol_table.h>
 
 struct Scope
-__new__Scope(const Str filename, Usize id)
+__new__Scope(const Str filename,
+             struct String *name,
+             struct Vec *id,
+             enum ScopeItemKind item_kind,
+             enum ScopeKind kind)
 {
-    struct Scope self = { .filename = filename, .id = id, .sub_id = 0 };
+    struct Scope self = { .filename = filename,
+                          .name = name,
+                          .id = id,
+                          .item_kind = item_kind,
+                          .kind = kind };
+
     return self;
 }
 
-struct FunSymbol *
-__new__FunSymbol(struct Decl *fun_decl, const Str filename, Usize id)
+void
+__free__Scope(struct Scope scope)
 {
-    enum Visibility v;
+    FREE(Vec, scope.id);
+}
 
-    if (fun_decl->value.fun->is_pub)
-        v = VisibilityPublic;
-    else
-        v = VisibilityPrivate;
+struct DataTypeSymbol *
+__new__DataTypeSymbol(enum DataTypeKind kind)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = kind;
+    self->scope = NULL;
+    return self;
+}
 
+struct DataTypeSymbol *
+__new__DataTypeSymbolPtr(struct DataTypeSymbol *ptr)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindPtr;
+    self->scope = NULL;
+    self->value.ptr = ptr;
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolRef(struct DataTypeSymbol *ref)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindRef;
+    self->scope = NULL;
+    self->value.ref = ref;
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolOptional(struct DataTypeSymbol *optional)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindOptional;
+    self->scope = NULL;
+    self->value.optional = optional;
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolException(struct DataTypeSymbol *exception)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindException;
+    self->scope = NULL;
+    self->value.exception = exception;
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolLambda(struct Vec *params,
+                            struct DataTypeSymbol *return_type)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindLambda;
+    self->scope = NULL;
+    self->value.lambda = NEW(Tuple, 2, params, return_type);
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
+                           struct Option *size)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindArray;
+    self->scope = NULL;
+    self->value.array = NEW(Tuple, 2, data_type, size);
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolCustom(struct String *name,
+                            struct Vec *generic_params,
+                            struct Scope *scope)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindCustom;
+    self->scope = scope;
+    self->value.custom = NEW(Tuple, 2, name, generic_params);
+    return self;
+}
+
+struct DataTypeSymbol *
+__new__DataTypeSymbolTuple(struct Vec *tuple)
+{
+    struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
+    self->kind = DataTypeKindTuple;
+    self->scope = NULL;
+    self->value.tuple = tuple;
+    return self;
+}
+
+void
+__free__DataTypeSymbol(struct DataTypeSymbol *self)
+{
+    free(self);
+}
+
+void
+__free__DataTypeSymbolPtr(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.ptr);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolRef(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.ref);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolOptional(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.optional);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolException(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.exception);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolLambda(struct DataTypeSymbol *self)
+{
+    FREE(Vec, self->value.lambda->items[0]);
+    FREE(DataTypeSymbolAll, self->value.lambda->items[1]);
+    FREE(Tuple, self->value.lambda);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolArray(struct DataTypeSymbol *self)
+{
+    if (self->value.array->items[0] != NULL)
+        FREE(DataTypeSymbolAll, self->value.array->items[0]);
+
+    FREE(Tuple, self->value.array);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
+{
+    TODO("generic params");
+    FREE(Vec, self->value.custom->items[1]);
+    FREE(Tuple, self->value.custom);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolTuple(struct DataTypeSymbol *self)
+{
+    FREE(Vec, self->value.tuple);
+    free(self);
+}
+
+void
+__free__DataTypeSymbolAll(struct DataTypeSymbol *self)
+{
+    switch (self->kind) {
+        case DataTypeKindPtr:
+            FREE(DataTypeSymbolPtr, self);
+            break;
+        case DataTypeKindRef:
+            FREE(DataTypeSymbolRef, self);
+            break;
+        case DataTypeKindOptional:
+            FREE(DataTypeSymbolOptional, self);
+            break;
+        case DataTypeKindException:
+            FREE(DataTypeSymbolException, self);
+            break;
+        case DataTypeKindLambda:
+            FREE(DataTypeSymbolLambda, self);
+            break;
+        case DataTypeKindArray:
+            FREE(DataTypeSymbolArray, self);
+            break;
+        case DataTypeKindCustom:
+            FREE(DataTypeSymbolCustom, self);
+            break;
+        case DataTypeKindTuple:
+            FREE(DataTypeSymbolTuple, self);
+            break;
+        default:
+            FREE(DataTypeSymbol, self);
+            break;
+    }
+}
+
+void
+__free__GenericSymbolRestrictedDataType(struct Generic *self)
+{
+    FREE(
+      DataTypeSymbolAll,
+      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[0]);
+    free(
+      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
+    FREE(Tuple, self->value.restricted_data_type->items[1]);
+    FREE(Tuple, self->value.restricted_data_type);
+    free(self);
+}
+
+void
+__free__GenericSymbolAll(struct Generic *self)
+{
+    switch (self->kind) {
+        case GenericKindDataType:
+            FREE(GenericDataType, self);
+            break;
+        case GenericKindRestrictedDataType:
+            FREE(GenericSymbolRestrictedDataType, self);
+            break;
+        default:
+            UNREACHABLE("unknown generic kind");
+    }
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolBool(bool bool_)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBool,
+                                  .value.bool_ = bool_ };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolChar(char char_)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindChar,
+                                  .value.char_ = char_ };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolBitChar(UInt8 bit_char)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBitChar,
+                                  .value.bit_char = bit_char };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolInt8(Int8 int8)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt8,
+                                  .value.int8 = int8 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolInt16(Int16 int16)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt16,
+                                  .value.int16 = int16 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolInt32(Int32 int32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt32,
+                                  .value.int32 = int32 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolInt64(Int64 int64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt64,
+                                  .value.int64 = int64 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolInt128(Int128 int128)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt128,
+                                  .value.int128 = int128 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUint8(UInt8 uint8)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint8,
+                                  .value.uint8 = uint8 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUint16(UInt16 uint16)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint16,
+                                  .value.uint16 = uint16 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUint32(UInt32 uint32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint32,
+                                  .value.uint32 = uint32 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUint64(UInt64 uint64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint64,
+                                  .value.uint64 = uint64 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUint128(Int128 uint128)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint128,
+                                  .value.uint128 = uint128 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolFloat32(Float32 float32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat32,
+                                  .value.float32 = float32 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolFloat64(Float64 float64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat64,
+                                  .value.float64 = float64 };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolStr(Str str)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindStr,
+                                  .value.str = str };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolBitStr(UInt8 **bit_str)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBitStr,
+                                  .value.bit_str = bit_str };
+
+    return self;
+}
+
+struct LiteralSymbol
+__new__LiteralSymbolUnit()
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUnit };
+
+    return self;
+}
+
+struct FieldCallSymbol *
+__new__FieldCallSymbol(struct String *name, struct ExprSymbol *value)
+{
+    struct FieldCallSymbol *self = malloc(sizeof(struct FieldCallSymbol));
+    self->name = name;
+    self->value = value;
+    return self;
+}
+
+void
+__free__FieldCallSymbol(struct FieldCallSymbol *self)
+{
+    FREE(ExprSymbolAll, self->value);
+    free(self);
+}
+
+struct RecordCallSymbol
+__new__RecordCallSymbol(struct Scope id, struct Vec *fields)
+{
+    struct RecordCallSymbol self = { .id = id, .fields = fields };
+
+    return self;
+}
+
+void
+__free__RecordCallSymbol(struct RecordCallSymbol self)
+{
+    if (self.fields != NULL) {
+        for (Usize i = len__Vec(*self.fields); i--;) {
+            FREE(FieldCallSymbol,
+                 ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
+            FREE(Tuple, get__Vec(*self.fields, i));
+        }
+
+        FREE(Vec, self.fields);
+    }
+}
+
+struct ArrayAccessSymbol
+__new__ArrayAccessSymbol(struct Scope id, struct Vec *access)
+{
+    struct ArrayAccessSymbol self = { .id = id, .access = access };
+
+    return self;
+}
+
+void
+__free__ArrayAccessSymbol(struct ArrayAccessSymbol self)
+{
+    for (Usize i = len__Vec(*self.access); i--;)
+        FREE(ExprSymbolAll, get__Vec(*self.access, i));
+
+    FREE(Vec, self.access);
+}
+
+struct TupleAccessSymbol
+__new__TupleAccessSymbol(struct Scope id, struct Vec *access)
+{
+    struct TupleAccessSymbol self = { .id = id, .access = access };
+
+    return self;
+}
+
+void
+__free__TupleAccessSymbol(struct TupleAccessSymbol self)
+{
+    for (Usize i = len__Vec(*self.access); i--;)
+        FREE(ExprSymbolAll, get__Vec(*self.access, i));
+
+    FREE(Vec, self.access);
+}
+
+struct VariantSymbol
+__new__VariantSymbol(struct Scope id, struct ExprSymbol *value)
+{
+    struct VariantSymbol self = { .id = id, .value = value };
+
+    return self;
+}
+
+void
+__free__VariantSymbol(struct VariantSymbol self)
+{
+    FREE(ExprSymbolAll, self.value);
+}
+
+struct ExprSymbol *
+__new__ExprSymbol(struct Expr *expr)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr->kind;
+    self->loc = expr->loc;
+    return self;
+}
+
+struct ExprSymbol *
+__new__ExprSymbolUnaryOp(struct Expr expr, struct UnaryOpSymbol unary_op)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.unary_op = unary_op;
+    return self;
+}
+
+struct ExprSymbol *
+__new__ExprSymbolBinaryOp(struct Expr expr, struct BinaryOpSymbol binary_op)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.binary_op = binary_op;
+    return self;
+}
+
+struct ExprSymbol *
+__new__ExprSymbolFunCall(struct Expr expr, struct FunCallSymbol fun_call)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.fun_call = fun_call;
+    return self;
+}
+
+struct ExprSymbol *
+__new__ExprSymbolRecordCall(struct Expr expr,
+                            struct RecordCallSymbol record_call)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.record_call = record_call;
+    return self;
+}
+
+struct VariableSymbol
+__new__VariableSymbol(struct VariableDecl decl, struct Location decl_loc)
+{
+    struct VariableSymbol self = { .name = decl.name,
+                                   .data_type = NULL,
+                                   .expr = NULL,
+                                   .scope = NULL,
+                                   .loc = decl_loc,
+                                   .is_mut = decl.is_mut };
+
+    return self;
+}
+
+void
+__free__VariableSymbol(struct VariableSymbol self)
+{
+    FREE(DataTypeSymbol, self.data_type);
+    FREE(ExprSymbolAll, self.expr);
+}
+
+struct FunSymbol *
+__new__FunSymbol(struct Decl *fun_decl)
+{
     struct FunSymbol *self = malloc(sizeof(struct FunSymbol));
     self->name = &*fun_decl->value.fun->name;
     self->taged_type = NEW(Vec, sizeof(struct SymbolTable));
     self->generic_params = &*fun_decl->value.fun->generic_params;
     self->params = &*fun_decl->value.fun->params;
-    self->visibility = v;
+    self->visibility = VISIBILITY(fun_decl->value.fun);
     self->is_async = fun_decl->value.fun->is_async;
     self->return_type = fun_decl->value.fun->return_type;
     self->body = NEW(Vec, sizeof(struct SymbolTable));
-    self->scope = NEW(Scope, filename, id);
+    self->scope = NULL;
     self->fun_decl = &*fun_decl;
 
     return self;
@@ -38,6 +587,71 @@ __free__FunSymbol(struct FunSymbol *self)
 {
     FREE(Vec, self->taged_type);
     FREE(Vec, self->body);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct ConstantSymbol *
+__new__ConstantSymbol(struct Decl *constant_decl)
+{
+    struct ConstantSymbol *self = malloc(sizeof(struct ConstantSymbol));
+    self->name = constant_decl->value.constant->name;
+    self->data_type = constant_decl->value.constant->data_type;
+    self->expr_symbol = NULL;
+    self->scope = NULL;
+    self->constant_decl = constant_decl;
+    self->visibility = VISIBILITY(constant_decl->value.constant);
+    return self;
+}
+
+void
+__free__ConstantSymbol(struct ConstantSymbol *self)
+{
+    FREE(ExprSymbolAll, self->expr_symbol);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct ModuleSymbol *
+__new__ModuleSymbol(struct Decl *module_decl)
+{
+    struct ModuleSymbol *self = malloc(sizeof(struct ModuleSymbol));
+    self->name = module_decl->value.module->name;
+    self->body = NEW(Vec, sizeof(struct SymbolTable));
+    self->scope = NULL;
+    self->module_decl = module_decl;
+    self->visibility = VISIBILITY(module_decl->value.module);
+    return self;
+}
+
+void
+__free__ModuleSymbol(struct ModuleSymbol *self)
+{
+    for (Usize i = len__Vec(*self->body); i--;)
+        FREE(SymbolTableAll, get__Vec(*self->body, i));
+
+    FREE(Vec, self->body);
+    FREE(Scope, *self->scope);
+    free(self);
+}
+
+struct AliasSymbol *
+__new__AliasSymbol(struct Decl *alias_decl)
+{
+    struct AliasSymbol *self = malloc(sizeof(struct AliasSymbol));
+    self->name = alias_decl->value.alias->name;
+    self->generic_params = alias_decl->value.alias->generic_params;
+    self->data_type = alias_decl->value.alias->data_type;
+    self->scope = NULL;
+    self->alias_decl = alias_decl;
+    self->visibility = VISIBILITY(alias_decl->value.alias);
+    return self;
+}
+
+void
+__free__AliasSymbol(struct AliasSymbol *self)
+{
+    FREE(Scope, *self->scope);
     free(self);
 }
 
@@ -46,7 +660,7 @@ __new__UnaryOpSymbol(struct Expr unary_op,
                      struct DataType *data_type,
                      struct ExprSymbol *right)
 {
-    struct UnaryOpSymbol self = { .kind = unary_op.kind,
+    struct UnaryOpSymbol self = { .kind = unary_op.value.unary_op.kind,
                                   .data_type = data_type,
                                   .right = right };
 
@@ -65,7 +679,7 @@ __new__BinaryOpSymbol(struct Expr binary_op,
                       struct ExprSymbol *left,
                       struct ExprSymbol *right)
 {
-    struct BinaryOpSymbol self = { .kind = binary_op.kind,
+    struct BinaryOpSymbol self = { .kind = binary_op.value.binary_op.kind,
                                    .data_type = data_type,
                                    .left = left,
                                    .right = right };
@@ -80,14 +694,15 @@ __free__BinaryOpSymbol(struct BinaryOpSymbol self)
 }
 
 struct FunCallSymbol
-__new__FunCallSymbol(bool is_builtin, struct Scope loc, struct DataType *data_type, struct Vec *params)
+__new__FunCallSymbol(bool is_builtin,
+                     struct Scope *id,
+                     struct DataType *data_type,
+                     struct Vec *params)
 {
-    struct FunCallSymbol self = {
-        .is_builtin = is_builtin,
-        .loc = loc,
-        .data_type = data_type,
-        .params = params
-    };
+    struct FunCallSymbol self = { .is_builtin = is_builtin,
+                                  .id = id,
+                                  .data_type = data_type,
+                                  .params = params };
 
     return self;
 }

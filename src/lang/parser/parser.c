@@ -778,6 +778,11 @@ run__ParseBlock(struct ParseBlock *self)
         if (block != NULL)
             push__Vec(self->blocks, block);
     }
+
+    if (self->count_error > 0) {
+        emit__Summary(self->count_error, self->count_warning, "the parse block phase has been failed");
+        exit(1);
+    }
 }
 
 static inline void
@@ -2555,10 +2560,17 @@ get_error_parse_context(struct ErrorParseContext *self,
     if (parse_block->current->kind != TokenKindSemicolon) {
         self->has_data_type = true;
 
+        bool bad_token = false;
+
         while (parse_block->current->kind != TokenKindSemicolon &&
                parse_block->current->kind != TokenKindEof) {
-            push__Vec(self->data_type, &*parse_block->current);
-            next_token_pb(parse_block);
+            if (valid_token_in_enum_variants(parse_block, bad_token)) { // change this function call
+                push__Vec(self->data_type, &*parse_block->current);
+                next_token_pb(parse_block);
+            } else {
+                bad_token = true;
+                next_token_pb(parse_block);
+            }
         }
     }
 
@@ -5081,7 +5093,7 @@ parse_record_declaration(struct Parser *self,
         while (parse.pos < len__Vec(*parse.tokens)) {
             struct String *field_name = NULL;
             struct DataType *data_type = NULL;
-            struct Option *value = NULL;
+            struct Expr *value = NULL;
             bool is_pub = false;
             struct Location loc = NEW(Location);
 
@@ -5122,10 +5134,8 @@ parse_record_declaration(struct Parser *self,
                 emit__Diagnostic(err);
             }
 
-            if (parse.current->kind == TokenKindColonEq) {
-                value = Some(parse_expr(*self, &parse));
-            } else
-                value = None();
+            if (parse.current->kind == TokenKindColonEq)
+                value = parse_expr(*self, &parse);
 
             if (parse.current->kind != TokenKindComma &&
                 parse.pos != len__Vec(*parse.tokens)) {

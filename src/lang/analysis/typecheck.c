@@ -1,9 +1,9 @@
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 #include <lang/analysis/typecheck.h>
-#include <lang/parser/ast.h>
 #include <lang/builtin/builtin.h>
 #include <lang/builtin/builtin_c.h>
+#include <lang/parser/ast.h>
 
 static inline struct DataType *
 get_data_type_of_expr_symbol(struct ExprSymbol *symb);
@@ -77,7 +77,8 @@ check_variable(struct Expr expr)
     struct DataType *var_dt = NULL;
 
     if (is_Some__Option(expr.value.variable.data_type))
-        var_expr = expr_to_symbol(*expr.value.variable.expr, get__Option(expr.value.variable.data_type));
+        var_expr = expr_to_symbol(*expr.value.variable.expr,
+                                  get__Option(expr.value.variable.data_type));
     else
         var_expr = expr_to_data_type(*expr.value.variable.expr, NULL);
 
@@ -209,8 +210,8 @@ expr_to_symbol(struct Expr expr, struct DataType *already_defined_data_type)
             struct DataType *dt =
               expr_to_data_type(expr, already_defined_data_type);
 
-            return NEW(
-              ExprSymbolUnary, expr, NEW(UnaryOpSymbol, expr, dt, right));
+            /* return NEW(
+              ExprSymbolUnary, expr, NEW(UnaryOpSymbol, expr, dt, right)); */
         }
         default:
             TODO("");
