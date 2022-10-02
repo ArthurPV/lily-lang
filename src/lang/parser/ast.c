@@ -541,6 +541,14 @@ __new__LiteralChar(char char_)
 }
 
 struct Literal
+__new__LiteralBitChar(UInt8 bit_char)
+{
+    struct Literal self = { .kind = LiteralKindBitChar, .value.bit_char = bit_char };
+
+    return self;
+}
+
+struct Literal
 __new__LiteralInt32(Int32 int32)
 {
     struct Literal self = { .kind = LiteralKindInt32, .value.int32 = int32 };
@@ -576,6 +584,14 @@ struct Literal
 __new__LiteralStr(Str str)
 {
     struct Literal self = { .kind = LiteralKindStr, .value.str = str };
+
+    return self;
+}
+
+struct Literal
+__new__LiteralBitStr(UInt8 **bit_str)
+{
+    struct Literal self = { .kind = LiteralKindBitStr, .value.bit_str = bit_str };
 
     return self;
 }
@@ -623,6 +639,9 @@ __free__LiteralAll(struct Literal self)
     switch (self.kind) {
         case LiteralKindStr:
             FREE(LiteralStr, self);
+            break;
+        case LiteralKindBitStr:
+            free(self.value.bit_str);
             break;
         default:
             break;

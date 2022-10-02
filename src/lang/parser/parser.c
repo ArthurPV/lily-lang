@@ -803,10 +803,6 @@ get_type_context(struct ParseBlock *self, bool is_pub)
                               token_kind_to_string__Token(*self->current))));
 
             emit__Diagnostic(err);
-            emit__Summary(self->count_error,
-                          self->count_warning,
-                          "the parser has been failed");
-
             skip_to_next_block(self);
 
             FREE(Vec, generic_params);
@@ -1027,12 +1023,26 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             return NEW(ParseContextClass, class_parse_context, loc);
         }
 
-        default:
-            assert(0 && "error");
+        default: {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  self,
+                  NEW(LilyError, LilyErrorBadUsageOfObject),
+                  loc_inh,
+                  format(""),
+                  Some(format(
+                    "expected `class`, `trait, `enum` or `record`, found {Sr}",
+                    token_kind_to_string__Token(*self->current))));
+
+            emit__Diagnostic(err);
+            skip_to_next_block(self);
+
             FREE(Vec, impl);
             FREE(Vec, inh);
             FREE(Vec, generic_params);
+
             return NULL;
+        }
     }
 }
 
@@ -3135,9 +3145,21 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
                 next_token(parse_decl);
 
                 break;
-            default:
-                assert(0 && "error");
+            default: {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`ID`");
+
+                emit__Diagnostic(err);
+
                 break;
+            }
         }
 
         EXPECTED_TOKEN(parse_decl, TokenKindComma, {
@@ -3314,9 +3336,15 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindBitCharLit:
-            assert(0 && "todo");
+        case TokenKindBitCharLit: {
+            const Str bit_char_str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralBitChar, (UInt8)bit_char_str[0]);
+
+            free(bit_char_str);
+
             break;
+        }
 
         case TokenKindStringLit: {
             const Str str = to_Str__String(*parse_decl->previous->lit);
@@ -3326,9 +3354,19 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindBitStringLit:
-            assert(0 && "todo");
+        case TokenKindBitStringLit: {
+            struct String bit_string = *parse_decl->previous->lit;
+            UInt8 **bit_str = malloc(sizeof(UInt8) * len__String(bit_string));
+
+            for (Usize i = len__String(bit_string); i--;)
+                bit_str[i] = (UInt8 *)(UPtr)get__String(bit_string, i);
+
+            bit_str[len__String(bit_string)] = (UInt8 *)'\0';
+
+            literal = NEW(LiteralBitStr, bit_str);
+
             break;
+        }
 
         case TokenKindTrueKw:
             literal = NEW(LiteralBool, true);
@@ -4043,6 +4081,73 @@ parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Location loc)
 {
+    struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+    push__Vec(ids,
+              NEW(ExprIdentifier,
+                  &*parse_decl->previous->lit,
+                  *parse_decl->previous->loc));
+
+    while (parse_decl->current->kind == TokenKindDot) {
+        next_token(parse_decl);
+
+        switch (parse_decl->current->kind) {
+            case TokenKindIdentifier:
+                push__Vec(ids,
+                          NEW(ExprIdentifier,
+                              &*parse_decl->current->lit,
+                              *parse_decl->current->loc));
+                next_token(parse_decl);
+
+                break;
+            default:
+                assert(0 && "error");
+        }
+    }
+
+    {
+        struct Location loc_call = NEW(Location);
+
+        loc_call.s_line = loc.s_line;
+        loc_call.s_col = loc.s_col;
+
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        switch (parse_decl->current->kind) {
+            case TokenKindLParen:
+                return parse_fun_call_expr(self,
+                                           parse_decl,
+                                           NEW(ExprIdentifierAccess, ids, loc),
+                                           loc_call);
+            case TokenKindLBrace:
+                return parse_record_call_expr(
+                  self,
+                  parse_decl,
+                  NEW(ExprIdentifierAccess, ids, loc),
+                  loc_call);
+            case TokenKindLHook:
+                return parse_array_access_expr(
+                  self,
+                  parse_decl,
+                  NEW(ExprIdentifierAccess, ids, loc),
+                  loc_call);
+            case TokenKindHashtag:
+                return parse_tuple_access_expr(
+                  self,
+                  parse_decl,
+                  NEW(ExprIdentifierAccess, ids, loc),
+                  loc_call);
+            default:
+                break;
+        }
+    }
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(ExprIdentifierAccess, ids, loc);
 }
 
 static struct Expr *

@@ -361,10 +361,12 @@ enum LiteralKind
 {
     LiteralKindBool,
     LiteralKindChar,
+    LiteralKindBitChar,
     LiteralKindInt32,
     LiteralKindInt64,
     LiteralKindInt128,
     LiteralKindFloat,
+    LiteralKindBitStr,
     LiteralKindStr,
     LiteralKindUnit
 };
@@ -376,11 +378,13 @@ typedef struct Literal
     {
         bool bool_;
         char char_;
+        UInt8 bit_char;
         Int32 int32;
         Int64 int64;
         Int128 int128;
         Float64 float_;
         Str str;
+        UInt8 **bit_str;
     } value;
 } Literal;
 
@@ -397,6 +401,13 @@ __new__LiteralBool(bool bool_);
  */
 struct Literal
 __new__LiteralChar(char char_);
+
+/**
+ *
+ * @brief Construct Literal (BitChar variant).
+ */
+struct Literal
+__new__LiteralBitChar(UInt8 bit_char);
 
 /**
  *
@@ -432,6 +443,13 @@ __new__LiteralFloat(Float64 float_);
  */
 struct Literal
 __new__LiteralStr(Str str);
+
+/**
+ *
+ * @brief Construct Literal (BitStr variant).
+ */
+struct Literal
+__new__LiteralBitStr(UInt8 **bit_str);
 
 /**
  *
