@@ -68,7 +68,8 @@ enum LilyErrorKind
     LilyErrorBadUsageOfAsync,
     LilyErrorBadUsageOfPub,
     LilyErrorInvalidItemInFunBody,
-    LilyErrorBadUsageOfType
+    LilyErrorBadUsageOfType,
+    LilyErrorMissTypeName
 };
 
 typedef struct LilyError

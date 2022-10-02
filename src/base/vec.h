@@ -91,8 +91,8 @@ modify_item__Vec(struct Vec *self, void *value, Usize idx);
  * @brief Merge two Vecs.
  * @return the modify Vec.
  */
-struct Vec
-concat__Vec(struct Vec self, struct Vec self2);
+struct Vec *
+concat__Vec(struct Vec *self, struct Vec *self2);
 
 /**
  *

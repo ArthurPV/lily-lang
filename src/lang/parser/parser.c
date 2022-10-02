@@ -175,10 +175,71 @@ run__ParseBlock(struct ParseBlock *self)
 }
 
 void
+next_token_pb(struct ParseBlock *self)
+{
+    if (self->current->kind != TokenKindEof) {
+        self->pos += 1;
+        self->current =
+          &*(struct Token *)get__Vec(*self->scanner->tokens, self->pos);
+    }
+}
+
+void
+skip_to_next_block(struct ParseBlock *self)
+{
+    while (self->current->kind != TokenKindEndKw &&
+           self->current->kind != TokenKindEof) {
+        next_token_pb(self);
+    }
+
+    if (self->current->kind == TokenKindEof)
+        return;
+
+    if (self->current->kind == TokenKindEndKw)
+        next_token_pb(self);
+}
+
+struct String *
+get_type_name(struct ParseBlock *self)
+{
+    next_token_pb(self);
+
+    if (self->current->kind != TokenKindIdentifier) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorMissTypeName),
+              *self->current->loc,
+              format(""),
+              Some(format("add type's name, found `{Sr}`",
+                          token_kind_to_string__Token(*self->current))));
+
+        emit__Diagnostic(err);
+
+        return NULL;
+    }
+
+    return &*self->current->lit;
+}
+
+void
 get_type_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_type_name(self);
-    struct Vec *generic_params = get_generic_params_type(self);
+    struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
+
+    if (((struct Token *)get__Vec(*self->scanner->tokens, self->pos + 1))
+            ->kind == TokenKindLHook ||
+        self->current->kind == TokenKindIdentifier)
+        next_token_pb(self);
+
+    if (self->current->kind == TokenKindLHook) {
+        struct Vec *content = get_generic_params_type(self);
+
+        concat__Vec(generic_params, content);
+
+        FREE(Vec, content);
+    }
 
     if (self->current->kind != TokenKindColon) {
         struct Diagnostic *err =
@@ -228,28 +289,17 @@ get_type_context(struct ParseBlock *self, bool is_pub)
                           self->count_warning,
                           "the parser has been failed");
 
-            exit(1);
+            skip_to_next_block(self);
 
             break;
         }
     }
 }
 
-struct String *
-get_type_name(struct ParseBlock *self)
-{
-    next_token_pb(self);
-    assert(self->current->kind == TokenKindIdentifier && "error");
-
-    return &*self->current->lit;
-}
-
 struct Vec *
 get_generic_params_type(struct ParseBlock *self)
 {
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
-
-    next_token_pb(self);
 
     if (self->current->kind == TokenKindLHook) {
         next_token_pb(self);
@@ -263,31 +313,6 @@ get_generic_params_type(struct ParseBlock *self)
     }
 
     return generic_params;
-}
-
-void
-next_token_pb(struct ParseBlock *self)
-{
-    if (self->current->kind != TokenKindEof) {
-        self->pos += 1;
-        self->current =
-          &*(struct Token *)get__Vec(*self->scanner->tokens, self->pos);
-    }
-}
-
-void
-skip_to_next_block(struct ParseBlock *self)
-{
-    while (self->current->kind != TokenKindEndKw &&
-           self->current->kind != TokenKindEof) {
-        next_token_pb(self);
-    }
-
-    if (self->current->kind == TokenKindEof)
-        return;
-
-    if (self->current->kind == TokenKindEndKw)
-        next_token_pb(self);
 }
 
 void

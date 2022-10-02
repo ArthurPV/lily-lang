@@ -108,11 +108,11 @@ modify_item__Vec(struct Vec *self, void *value, Usize idx)
     self->items[idx] = value;
 }
 
-struct Vec
-concat__Vec(struct Vec self, struct Vec self2)
+struct Vec *
+concat__Vec(struct Vec *self, struct Vec *self2)
 {
-    for (Usize i = 0; i < self2.len; i++)
-        push__Vec(&self, get__Vec(self2, i));
+    for (Usize i = 0; i < self2->len; i++)
+        push__Vec(self, get__Vec(*self2, i));
 
     return self;
 }

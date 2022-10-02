@@ -6,3 +6,5 @@ type Name: enum(error) =
 	F,
 	G
 end
+
+fun div(x, y) = x/y;

@@ -95,9 +95,6 @@ detail_to_string(struct Detail self,
       apply_color(kind, "^"); // TODO: rename this for improve variable's name.
     struct String *s = NULL;
 
-    if (loc.s_col == loc.e_col)
-        loc.e_col++;
-
     if (loc.s_line == loc.e_line) {
         struct String *repeat1 = repeat__String(" ", line_str_length - 1);
         struct String *repeat2 = repeat__String(" ", line_str_length);
@@ -112,7 +109,7 @@ detail_to_string(struct Detail self,
                 push_str__String(repeat3, " ");
 
         if (loc.e_col - loc.s_col < 1)
-            repeat4 = repeat__String("^", loc.e_col - loc.s_col);
+            repeat4 = repeat__String("^", loc.e_col - loc.s_col + 1);
         else
             repeat4 = repeat__String("^", loc.e_col - loc.s_col + 1);
 
@@ -205,6 +202,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("invalid item in `fun` body");
         case LilyErrorBadUsageOfType:
             return from__String("bad usage of `type`");
+        case LilyErrorMissTypeName:
+            return from__String("miss type name");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -269,6 +268,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0019";
         case LilyErrorBadUsageOfType:
             return "0020";
+        case LilyErrorMissTypeName:
+            return "0021";
         default:
             UNREACHABLE("unknown lily error kind");
     }
