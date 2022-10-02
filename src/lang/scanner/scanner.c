@@ -291,7 +291,7 @@ scan_doc_description(struct Scanner *self);
 static struct Doc *
 scan_doc_file(struct Scanner *self);
 static struct Result *
-scan_doc_generics(struct Scanner *self);
+scan_doc_generic(struct Scanner *self);
 static struct Result *
 scan_doc_prototype(struct Scanner *self);
 static struct Doc *
@@ -1135,11 +1135,16 @@ align_location(struct Scanner *self)
 #define GET_TOKENS()                                                     \
     struct Vec *tokens = NEW(Vec, sizeof(struct Token));                 \
     while (self->src->pos < len__String(*self->src->file.content) &&     \
-           self->src->c != (char *)')') {                                \
+           self->src->c != (char *)'}') {                                \
         skip_space(self);                                                \
                                                                          \
         if (self->src->pos >= len__String(*self->src->file.content) - 1) \
             break;                                                       \
+                                                                         \
+        if (self->src->c == (char *)'{') {                               \
+            assert(0 && "error");                                        \
+            break;                                                       \
+        }                                                                \
                                                                          \
         struct Result *tok = get_token(self);                            \
                                                                          \
@@ -1157,6 +1162,16 @@ align_location(struct Scanner *self)
             token_ok->loc = copy;                                        \
         }                                                                \
                                                                          \
+        if (token_ok->kind == TokenKindRParen ||                         \
+            token_ok->kind == TokenKindRHook) {                          \
+            for (Usize i = 0;                                            \
+                 i < len__Vec(*self->tokens) &&                          \
+                 ((struct Token *)get__Vec(*self->tokens, i))->kind !=   \
+                   TokenKindDocComment;) {                               \
+                push__Vec(tokens, shift__Vec(self->tokens));             \
+            }                                                            \
+        }                                                                \
+                                                                         \
         push__Vec(tokens, token_ok);                                     \
         FREE(Result, tok);                                               \
     }
@@ -1164,7 +1179,7 @@ align_location(struct Scanner *self)
 #define GET_STRING(s)                                                    \
     skip_space(self);                                                    \
                                                                          \
-    while (self->src->c != (char *)')' &&                                \
+    while (self->src->c != (char *)'}' &&                                \
            self->src->pos < len__String(*self->src->file.content) - 1) { \
         push__String(s, self->src->c);                                   \
         next_char(self);                                                 \
@@ -1175,13 +1190,7 @@ scan_doc_author(struct Scanner *self)
 {
     struct String *author = NEW(String);
 
-    skip_space(self);
-
-    while (self->src->c != (char *)')' &&
-           self->src->pos < len__String(*self->src->file.content) - 1) {
-        push__String(author, self->src->c);
-        next_char(self);
-    }
+    GET_STRING(author);
 
     return NEW(DocWithString, DocKindAuthor, author);
 }
@@ -1215,11 +1224,11 @@ scan_doc_file(struct Scanner *self)
 }
 
 static struct Result *
-scan_doc_generics(struct Scanner *self)
+scan_doc_generic(struct Scanner *self)
 {
     GET_TOKENS();
 
-    return Ok(NEW(DocGenerics, tokens));
+    return Ok(NEW(DocGeneric, tokens));
 }
 
 static struct Result *
@@ -1283,8 +1292,8 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                     doc_kind = (int *)DocKindDescription;
                 else if (!strcmp(id_str, "file"))
                     doc_kind = (int *)DocKindFile;
-                else if (!strcmp(id_str, "generics"))
-                    doc_kind = (int *)DocKindGenerics;
+                else if (!strcmp(id_str, "generic"))
+                    doc_kind = (int *)DocKindGeneric;
                 else if (!strcmp(id_str, "global"))
                     doc_kind = (int *)DocKindGlobal;
                 else if (!strcmp(id_str, "prot"))
@@ -1314,6 +1323,7 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                     free(id_str);
 
                 next_char(scan_doc);
+                skip_space(scan_doc);
 
                 {
                     end_token(scan_doc);
@@ -1324,11 +1334,11 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                           NEW(LilyError, LilyErrorExpectedCharacter),
                           scan_doc->loc,
                           from__String(""),
-                          Some(from__String("add `(` this, after doc flag")));
+                          Some(from__String("add `{` this, after doc flag")));
 
                     err->err->s = format("{c}", (char)(UPtr)scan_doc->src->c);
 
-                    expected_char(self, scan_doc, err, (char *)'(');
+                    expected_char(self, scan_doc, err, (char *)'{');
                 }
 
                 if (doc_kind) {
@@ -1347,7 +1357,7 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                         }
                         case DocKindContract: {
                             struct Result *contract =
-                              scan_doc_generics(scan_doc);
+                              scan_doc_contract(scan_doc);
 
                             scan_doc->loc.s_line = s_line;
                             scan_doc->loc.s_col = s_col;
@@ -1394,9 +1404,8 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
 
                             break;
                         }
-                        case DocKindGenerics: {
-                            struct Result *generics =
-                              scan_doc_generics(scan_doc);
+                        case DocKindGeneric: {
+                            struct Result *generic = scan_doc_generic(scan_doc);
 
                             scan_doc->loc.s_line = s_line;
                             scan_doc->loc.s_col = s_col;
@@ -1404,15 +1413,15 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                             end_token(scan_doc);
                             align_location(scan_doc);
 
-                            if (is_err__Result(*generics))
-                                emit__Diagnostic(generics->err);
+                            if (is_err__Result(*generic))
+                                emit__Diagnostic(generic->err);
                             else
                                 push__Vec(scan_doc->tokens,
                                           NEW(TokenDoc,
                                               copy__Location(&scan_doc->loc),
-                                              get_ok__Result(*generics)));
+                                              get_ok__Result(*generic)));
 
-                            FREE(Result, generics);
+                            FREE(Result, generic);
 
                             break;
                         }
@@ -1474,12 +1483,12 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                           NEW(LilyError, LilyErrorExpectedCharacter),
                           scan_doc->loc,
                           from__String(""),
-                          Some(from__String("add `)` after the end of "
+                          Some(from__String("add `}` after the end of "
                                             "doc flag declaration")));
 
                     err->err->s = format("{c}", (char)(UPtr)scan_doc->src->c);
 
-                    expected_char(self, scan_doc, err, (char *)')');
+                    expected_char(self, scan_doc, err, (char *)'}');
                 }
 
                 break;

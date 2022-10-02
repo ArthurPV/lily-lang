@@ -209,7 +209,7 @@ enum DocKind
     DocKindGlobal,
     DocKindText,
     DocKindFile,
-    DocKindGenerics,
+    DocKindGeneric,
     DocKindPrototype,
     DocKindSee,
     DocKindVersion,
@@ -222,7 +222,7 @@ typedef struct Doc
     {
         struct String *s;
         struct Vec *contract; // struct Vec<struct Token*>*
-        struct Vec *generics; // struct Vec<struct Token*>*
+        struct Vec *generic; // struct Vec<struct Token*>*
         struct Vec *prot;     // struct Vec<struct Token*>*
     };
 } Doc;
@@ -243,10 +243,10 @@ __new__DocContract(struct Vec *contract);
 
 /**
  *
- * @return new instance of Doc (Generics variant).
+ * @return new instance of Doc (Generic variant).
  */
 struct Doc *
-__new__DocGenerics(struct Vec *generics);
+__new__DocGeneric(struct Vec *generic);
 
 /**
  *

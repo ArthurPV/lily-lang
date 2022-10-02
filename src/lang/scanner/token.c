@@ -108,11 +108,11 @@ __new__DocContract(struct Vec *contract)
 }
 
 struct Doc *
-__new__DocGenerics(struct Vec *generics)
+__new__DocGeneric(struct Vec *generic)
 {
     struct Doc *self = malloc(sizeof(struct Doc));
-    self->kind = DocKindGenerics;
-    self->generics = generics;
+    self->kind = DocKindGeneric;
+    self->generic = generic;
     return self;
 }
 
@@ -159,13 +159,13 @@ __free__DocContract(struct Doc *self)
 }
 
 void
-__free__DocGenerics(struct Doc *self)
+__free__DocGeneric(struct Doc *self)
 {
-    if (self->generics) {
-        for (Usize i = len__Vec(*self->generics); i--;)
-            FREE(Token, get__Vec(*self->generics, i));
+    if (self->generic) {
+        for (Usize i = len__Vec(*self->generic); i--;)
+            FREE(Token, get__Vec(*self->generic, i));
 
-        FREE(Vec, self->generics);
+        FREE(Vec, self->generic);
     }
 }
 
@@ -186,8 +186,8 @@ __free__DocAll(struct Doc *self)
     switch (self->kind) {
         case DocKindContract:
             FREE(DocContract, self);
-        case DocKindGenerics:
-            FREE(DocGenerics, self);
+        case DocKindGeneric:
+            FREE(DocGeneric, self);
         case DocKindPrototype:
             FREE(DocPrototype, self);
         default:
