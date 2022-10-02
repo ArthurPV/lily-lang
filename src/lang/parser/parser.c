@@ -780,7 +780,9 @@ run__ParseBlock(struct ParseBlock *self)
     }
 
     if (self->count_error > 0) {
-        emit__Summary(self->count_error, self->count_warning, "the parse block phase has been failed");
+        emit__Summary(self->count_error,
+                      self->count_warning,
+                      "the parse block phase has been failed");
         exit(1);
     }
 }
@@ -2564,7 +2566,8 @@ get_error_parse_context(struct ErrorParseContext *self,
 
         while (parse_block->current->kind != TokenKindSemicolon &&
                parse_block->current->kind != TokenKindEof) {
-            if (valid_token_in_enum_variants(parse_block, bad_token)) { // change this function call
+            if (valid_token_in_enum_variants(
+                  parse_block, bad_token)) { // change this function call
                 push__Vec(self->data_type, &*parse_block->current);
                 next_token_pb(parse_block);
             } else {
@@ -3127,19 +3130,21 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                         push__Vec(data_types,
                                   parse_data_type(self, parse_decl));
 
-                        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-                            struct Diagnostic *err =
-                              NEW(DiagnosticWithErrParser,
-                                  &self.parse_block,
-                                  NEW(LilyError, LilyErrorExpectedToken),
-                                  *parse_decl->current->loc,
-                                  format(""),
-                                  None());
+                        if (parse_decl->current->kind != TokenKindRHook) {
+                            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                                struct Diagnostic *err =
+                                  NEW(DiagnosticWithErrParser,
+                                      &self.parse_block,
+                                      NEW(LilyError, LilyErrorExpectedToken),
+                                      *parse_decl->current->loc,
+                                      format(""),
+                                      None());
 
-                            err->err->s = from__String("`,`");
+                                err->err->s = from__String("`,`");
 
-                            emit__Diagnostic(err);
-                        });
+                                emit__Diagnostic(err);
+                            });
+                        }
                     });
 
                     if (len__Vec(*data_types) == 0) {
@@ -3479,18 +3484,21 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
             }
         }
 
-        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
-                                         &self.parse_block,
-                                         NEW(LilyError, LilyErrorExpectedToken),
-                                         *parse_decl->current->loc,
-                                         format(""),
-                                         None());
+        if (parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
 
-            err->err->s = from__String("`,`");
+                err->err->s = from__String("`,`");
 
-            emit__Diagnostic(err);
-        });
+                emit__Diagnostic(err);
+            });
+        }
     }
 
     return generic_params;

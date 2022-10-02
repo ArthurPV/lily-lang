@@ -12,7 +12,9 @@ fun is_zero(x) = if x == 0 do true;;
 
 type Letter: enum =
 	A Int32,
-	B Int32
+	B Int32,
+	C Int32,
+	D FF[Int32]
 end
 
 type Person: record =
