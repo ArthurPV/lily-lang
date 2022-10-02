@@ -55,7 +55,7 @@ enum DataTypeKind
     DataTypeKindBool,
     DataTypeKindIsize,
     DataTypeKindUsize,
-	DataTypeKindNever,
+    DataTypeKindNever,
     DataTypeKindAny,
     DataTypeKindOptional,
     DataTypeKindUnit,
@@ -1549,7 +1549,7 @@ __free__ForStmt(struct ForStmt *self);
 enum ImportStmtValueKind
 {
     ImportStmtValueKindStd,
-	ImportStmtValueKindCore,
+    ImportStmtValueKindCore,
     ImportStmtValueKindBuiltin,
     ImportStmtValueKindFile,
     ImportStmtValueKindUrl,
@@ -1567,7 +1567,8 @@ typedef struct ImportStmtValue
         struct String *access;
         struct String *url;
         struct String *file;
-        struct Vec *selector; // struct Vec<struct Vec<struct ImportStmtValue*>*>*
+        struct Vec
+          *selector; // struct Vec<struct Vec<struct ImportStmtValue*>*>*
     } value;
 } ImportStmtValue;
 
@@ -1736,7 +1737,7 @@ typedef struct Stmt
         struct MatchStmt *match;
         struct WhileStmt *while_;
         struct ForStmt *for_;
-		struct ImportStmt *import;
+        struct ImportStmt *import;
     } value;
 } Stmt;
 
@@ -1900,8 +1901,8 @@ __free__StmtFor(struct Stmt *self)
 inline void
 __free__StmtImport(struct Stmt *self)
 {
-	FREE(ImportStmt, self->value.import);
-	free(self);
+    FREE(ImportStmt, self->value.import);
+    free(self);
 }
 
 /**
@@ -2128,6 +2129,7 @@ __free__FunParamAll(struct FunParam *self);
 
 typedef struct FunDecl
 {
+	struct Vec *doc;
     struct String *name; // struct String&
     struct Vec
       *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
@@ -2987,15 +2989,119 @@ __free__DeclImport(struct Decl *self)
 void
 __free__DeclAll(struct Decl *self);
 
-typedef struct CommentDoc {
-	enum DocKind kind;
+enum ContractKind {
+	ContractKindByValue,
+	ContractKindByDataType,
+	ContractKindByGeneric,
+};
 
-	union {
-		struct String *s;
-		struct Expr *contract;
-		// struct String *desc;
-		// struct Tuple *generics;
-	} value;
+typedef struct Contract {
+	enum ContractKind kind;
+
+	union
+	{
+		struct Expr *value;
+		struct Expr *data_type;
+		struct Expr *generic;
+	} contract;
+} Contract;
+
+/**
+ *
+ * @brief Construct the Contract type (Value variant).
+ */
+struct Contract *
+__new__ContractValue(struct Expr *value);
+
+/**
+ *
+ * @brief Construct the Contract type (DataType variant).
+ */
+struct Contract *
+__new__ContractDataType(struct Expr *data_type);
+
+/**
+ *
+ * @brief Construct the Contract type (Generic variant).
+ */
+struct Contract *
+__new__ContractGeneric(struct Expr *generic);
+
+/**
+ *
+ * @brief Free the Contract type (Value variant).
+ */
+inline void
+__free__ContractValue(struct Contract *self)
+{
+	FREE(ExprAll, self->contract.value);
+	free(self);
+}
+
+/**
+ *
+ * @brief Free the Contract type (DataType variant).
+ */
+inline void
+__free__ContractDataType(struct Contract *self)
+{
+	FREE(ExprAll, self->contract.data_type);
+	free(self);
+}
+
+/**
+ *
+ * @brief Free the Contract type (Generic variant).
+ */
+inline void
+__free__ContractGeneric(struct Contract *self)
+{
+	FREE(ExprAll, self->contract.data_type);
+	free(self);
+}
+
+/**
+ *
+ * @brief Free the Contract type (all variants).
+ */
+void
+__free__ContractAll(struct Contract *self);
+
+/**
+ *
+ * @brief Construct the Contract type (Generic variant).
+ */
+struct Contract *
+__new__ContractGeneric(struct Expr *value);
+
+enum CommentDocKind {
+	CommentDocKindAuthor,
+	CommentDocKindDesc,
+	CommentDocKindVersion
+};
+
+typedef struct CommentDoc
+{
+    enum DocKind kind;
+    struct String *s;
 } CommentDoc;
+
+/**
+ *
+ * @brief Construct the CommentDoc type.
+ */
+struct CommentDoc *
+__new__CommentDoc(enum DocKind kind, struct String *s);
+
+/**
+ *
+ * @brief Free the CommentDoc type.
+ */
+inline void
+__free__CommentDoc(struct CommentDoc *self)
+{
+	FREE(String, self->s);
+	free(self);
+}
 
 #endif // LILY_AST_H

@@ -3321,3 +3321,57 @@ __free__DeclAll(struct Decl *self)
             UNREACHABLE("unknown decl kind");
     }
 }
+
+struct Contract *
+__new__ContractValue(struct Expr *value)
+{
+	struct Contract *self = malloc(sizeof(struct Contract));
+	self->kind = ContractKindByValue;
+	self->contract.value = value;
+	return self;
+}
+
+struct Contract *
+__new__ContractDataType(struct Expr *data_type)
+{
+	struct Contract *self = malloc(sizeof(struct Contract));
+	self->kind = ContractKindByDataType;
+	self->contract.data_type = data_type;
+	return self;
+}
+
+struct Contract *
+__new__ContractGeneric(struct Expr *generic)
+{
+	struct Contract *self = malloc(sizeof(struct Contract));
+	self->kind = ContractKindByGeneric;
+	self->contract.generic = generic;
+	return self;
+}
+
+void
+__free__ContractAll(struct Contract *self)
+{
+	switch (self->kind) {
+		case ContractKindByValue:
+			FREE(ContractValue, self);
+			break;
+		case ContractKindByDataType:
+			FREE(ContractDataType, self);
+			break;
+		case ContractKindByGeneric:
+			FREE(ContractGeneric, self);
+			break;
+		default:
+			UNREACHABLE("unknown ContractKind");
+	}
+}
+
+struct CommentDoc *
+__new__CommentDoc(enum DocKind kind, struct String *s)
+{
+	struct CommentDoc *self = malloc(sizeof(struct CommentDoc));
+	self->kind = kind;
+	self->s = s;
+	return self;
+}
