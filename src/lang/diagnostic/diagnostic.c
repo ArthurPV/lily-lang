@@ -204,6 +204,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("bad usage of `type`");
         case LilyErrorMissTypeName:
             return from__String("miss type name");
+        case LilyErrorInvalidTokenInEnumVariant:
+            return format("invalid token in enum variant");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -270,6 +272,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0020";
         case LilyErrorMissTypeName:
             return "0021";
+        case LilyErrorInvalidTokenInEnumVariant:
+            return "0022";
         default:
             UNREACHABLE("unknown lily error kind");
     }

@@ -26,6 +26,10 @@ get_body_fun_parse_context(struct FunParseContext *self,
 static void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block);
+static inline bool
+valid_token_in_enum_variants(struct EnumParseContext *self,
+                             struct ParseBlock *parse_block,
+                             bool already_invalid);
 static void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
@@ -169,6 +173,8 @@ run__ParseBlock(struct ParseBlock *self)
             case TokenKindObjectKw:
                 break;
             default:
+                assert(0 && "error");
+                skip_to_next_block(self);
                 break;
         }
     }
@@ -187,7 +193,14 @@ next_token_pb(struct ParseBlock *self)
 void
 skip_to_next_block(struct ParseBlock *self)
 {
-    while (self->current->kind != TokenKindEndKw &&
+    while (self->current->kind != TokenKindFunKw &&
+           self->current->kind != TokenKindTypeKw &&
+           self->current->kind != TokenKindObjectKw &&
+           self->current->kind != TokenKindTagKw &&
+           self->current->kind != TokenKindErrorKw &&
+           self->current->kind != TokenKindMacroKw &&
+           self->current->kind != TokenKindPubKw &&
+           self->current->kind != TokenKindAsyncKw &&
            self->current->kind != TokenKindEof) {
         next_token_pb(self);
     }
@@ -677,13 +690,20 @@ get_enum_parse_context(struct EnumParseContext *self,
     assert(parse_block->current->kind == TokenKindEq && "error");
     next_token_pb(parse_block);
 
+    bool bad_token = false;
+
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
-        push__Vec(self->variants, &*parse_block->current);
-        next_token_pb(parse_block);
+        if (valid_token_in_enum_variants(self, parse_block, bad_token)) {
+            push__Vec(self->variants, &*parse_block->current);
+            next_token_pb(parse_block);
+        } else {
+            bad_token = true;
+            next_token_pb(parse_block);
+        }
     }
 
-    if (parse_block->current->kind == TokenKindEof) {
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {
         struct Diagnostic *err =
           NEW(DiagnosticWithErrParser,
               parse_block,
@@ -699,6 +719,50 @@ get_enum_parse_context(struct EnumParseContext *self,
         emit__Diagnostic(err);
     } else {
         next_token_pb(parse_block);
+    }
+}
+
+bool
+valid_token_in_enum_variants(struct EnumParseContext *self,
+                             struct ParseBlock *parse_block,
+                             bool already_invalid)
+{
+    switch (parse_block->current->kind) {
+        case TokenKindEof:
+        case TokenKindLParen:
+        case TokenKindRParen:
+        case TokenKindLHook:
+        case TokenKindRHook:
+        case TokenKindComma:
+        case TokenKindInterrogation:
+        case TokenKindBang:
+        case TokenKindIdentifier:
+            return true;
+        default: {
+            if (!already_invalid) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorInvalidTokenInEnumVariant),
+                      *parse_block->current->loc,
+                      format("this token is invalid inside the enum, expected: "
+                             "`(`, `)`, `[`, `]`, `ID`, `?`, `!` or `,`"),
+                      None());
+
+                struct Diagnostic *note =
+                  NEW(DiagnosticWithNoteParser,
+                      parse_block,
+                      format("you may have forgotten to close the block"),
+                      *parse_block->current->loc,
+                      format(""),
+                      None());
+
+                emit__Diagnostic(err);
+                emit__Diagnostic(note);
+            }
+
+            return false;
+        }
     }
 }
 
