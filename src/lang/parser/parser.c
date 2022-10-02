@@ -547,8 +547,17 @@ get_block(struct ParseBlock *self, bool in_module)
         case TokenKindBang: {
             next_token_pb(self);
 
-            if (in_module)
-                assert(0 && "error");
+            if (in_module) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      self,
+                      NEW(LilyError, LilyErrorInvalidAttributeInThisBlock),
+                      *self->current->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             if (self->current->kind != TokenKindLHook) {
                 EXPECTED_TOKEN_PB(self, TokenKindLHook, {
@@ -579,10 +588,10 @@ get_block(struct ParseBlock *self, bool in_module)
             next_token_pb(self);
 
             if (eq__String(attribute, from__String("warning"), true)) {
-                if (self->current->kind == TokenKindStringLit) {
+                if (self->current->kind == TokenKindStringLit && !in_module) {
                     push__Vec(self->disable_warning, &*self->current->lit);
                     next_token_pb(self);
-                } else {
+                } else if (self->current->kind != TokenKindStringLit) {
                     EXPECTED_TOKEN_PB(self, TokenKindStringLit, {
                         struct Diagnostic *err =
                           EXPECTED_TOKEN_PB_ERR(self, "string literal");
@@ -612,8 +621,8 @@ get_block(struct ParseBlock *self, bool in_module)
             next_token_pb(self);
 
         exit : {
-        }
             return NULL;
+        }
         }
 
         case TokenKindIdentifier: {
@@ -2357,6 +2366,19 @@ get_error_parse_context(struct ErrorParseContext *self,
         self->name = &*parse_block->current->lit;
 
     next_token_pb(parse_block);
+
+    EXPECTED_TOKEN_PB(parse_block, TokenKindSemicolon, {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorMissClosingBlock),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     None());
+
+        err->err->s = from__String("`;`");
+
+        emit__Diagnostic(err);
+    });
 }
 
 struct ModuleParseContext
@@ -3575,7 +3597,8 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                       &self.parse_block,
                       NEW(LilyError, LilyErrorExpectedRightValue),
                       *parse_decl->current->loc,
-                      from__String("binary operator must take right value"),
+                      from__String(
+                        "binary operator must take left and right value"),
                       None());
 
                 emit__Diagnostic(err);
@@ -3591,8 +3614,18 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 
                 emit__Diagnostic(err);
                 exit(1);
-            } else
-                assert(0 && "error");
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorUnexpectedExpression),
+                      *parse_decl->current->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+                exit(1);
+            }
         }
     }
 
@@ -4166,8 +4199,6 @@ parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
 
                 default_value = parse_expr(self, parse_decl);
 
-                break;
-            case TokenKindComma:
                 break;
             default:
                 break;

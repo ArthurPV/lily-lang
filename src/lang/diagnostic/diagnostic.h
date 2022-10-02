@@ -90,7 +90,9 @@ enum LilyErrorKind
     LilyErrorMissFieldCallName,
     LilyErrorMissErrorName,
     LilyErrorMissModuleName,
-    LilyErrorExpectedRightValue
+    LilyErrorExpectedRightValue,
+    LilyErrorUnexpectedExpression,
+    LilyErrorInvalidAttributeInThisBlock
 };
 
 typedef struct LilyError
