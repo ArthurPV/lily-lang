@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(lily_runtime C)
 
 set(CMAKE_C_STANDARD 23)
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -O -O2 -O3 -D BUILD")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -O -O2 -O3 -D LILY_BUILD")
 
 set(RUNTIME_SRC
         Allocator.c
