@@ -562,6 +562,79 @@ __free__UnaryOp(struct UnaryOp self)
     FREE(ExprAll, self.right);
 }
 
+Usize
+get_precedence__BinaryOpKind(enum BinaryOpKind kind)
+{
+    switch (kind) {
+        case BinaryOpKindMul:
+        case BinaryOpKindDiv:
+        case BinaryOpKindMod:
+        case BinaryOpKindExponent:
+            return 4;
+
+        case BinaryOpKindAdd:
+        case BinaryOpKindSub:
+            return 5;
+
+        case BinaryOpKindBitLShift:
+        case BinaryOpKindBitRShift:
+            return 6;
+
+        case BinaryOpKindLt:
+        case BinaryOpKindGt:
+        case BinaryOpKindLe:
+        case BinaryOpKindGe:
+        case BinaryOpKindChain:
+            return 7;
+
+        case BinaryOpKindMerge:
+        case BinaryOpKindUnmerge:
+        case BinaryOpKindRepeat:
+        case BinaryOpKindConcat:
+        case BinaryOpKindCustom:
+            return 8;
+
+        case BinaryOpKindEq:
+        case BinaryOpKindNe:
+            return 9;
+
+        case BinaryOpKindBitAnd:
+            return 10;
+
+        case BinaryOpKindXor:
+            return 11;
+
+        case BinaryOpKindBitOr:
+            return 12;
+
+        case BinaryOpKindAnd:
+            return 13;
+
+        case BinaryOpKindOr:
+            return 14;
+
+        case BinaryOpKindRange:
+            return 15;
+
+        case BinaryOpKindAssign:
+        case BinaryOpKindAddAssign:
+        case BinaryOpKindSubAssign:
+        case BinaryOpKindMulAssign:
+        case BinaryOpKindDivAssign:
+        case BinaryOpKindModAssign:
+        case BinaryOpKindConcatAssign:
+        case BinaryOpKindBitLShiftAssign:
+        case BinaryOpKindBitRShiftAssign:
+        case BinaryOpKindBitOrAssign:
+        case BinaryOpKindXorAssign:
+        case BinaryOpKindBitAndAssign:
+        case BinaryOpKindMergeAssign:
+        case BinaryOpKindUnmergeAssign:
+        case BinaryOpKindExponentAssign:
+            return 16;
+    }
+}
+
 const Str
 to_str__BinaryOpKind(enum BinaryOpKind kind)
 {
@@ -1230,75 +1303,7 @@ get_precedence__Expr(struct Expr *expr)
             return 3;
 
         case ExprKindBinaryOp:
-            switch (expr->value.binary_op.kind) {
-                case BinaryOpKindMul:
-                case BinaryOpKindDiv:
-                case BinaryOpKindMod:
-                case BinaryOpKindExponent:
-                    return 4;
-
-                case BinaryOpKindAdd:
-                case BinaryOpKindSub:
-                    return 5;
-
-                case BinaryOpKindBitLShift:
-                case BinaryOpKindBitRShift:
-                    return 6;
-
-                case BinaryOpKindLt:
-                case BinaryOpKindGt:
-                case BinaryOpKindLe:
-                case BinaryOpKindGe:
-                case BinaryOpKindChain:
-                    return 7;
-
-                case BinaryOpKindMerge:
-                case BinaryOpKindUnmerge:
-                case BinaryOpKindRepeat:
-                case BinaryOpKindConcat:
-                case BinaryOpKindCustom:
-                    return 8;
-
-                case BinaryOpKindEq:
-                case BinaryOpKindNe:
-                    return 9;
-
-                case BinaryOpKindBitAnd:
-                    return 10;
-
-                case BinaryOpKindXor:
-                    return 11;
-
-                case BinaryOpKindBitOr:
-                    return 12;
-
-                case BinaryOpKindAnd:
-                    return 13;
-
-                case BinaryOpKindOr:
-                    return 14;
-
-                case BinaryOpKindRange:
-                    return 15;
-
-                case BinaryOpKindAssign:
-                case BinaryOpKindAddAssign:
-                case BinaryOpKindSubAssign:
-                case BinaryOpKindMulAssign:
-                case BinaryOpKindDivAssign:
-                case BinaryOpKindModAssign:
-                case BinaryOpKindConcatAssign:
-                case BinaryOpKindBitLShiftAssign:
-                case BinaryOpKindBitRShiftAssign:
-                case BinaryOpKindBitOrAssign:
-                case BinaryOpKindXorAssign:
-                case BinaryOpKindBitAndAssign:
-                case BinaryOpKindMergeAssign:
-                case BinaryOpKindUnmergeAssign:
-                case BinaryOpKindExponentAssign:
-                    return 16;
-            }
-            break;
+            return get_precedence__BinaryOpKind(expr->value.binary_op.kind);
 
         case ExprKindLiteral:
         case ExprKindRecordCall:
@@ -1326,8 +1331,11 @@ to_string__Expr(struct Expr self)
 {
     switch (self.kind) {
         case ExprKindUnaryOp:
-            return format("UnaryOp: {S}",
-                          to_string__UnaryOp(self.value.unary_op));
+            return format("{S}", to_string__UnaryOp(self.value.unary_op));
+        case ExprKindBinaryOp:
+            return format("{S}", to_string__BinaryOp(self.value.binary_op));
+        case ExprKindLiteral:
+            return format("{S}", to_string__Literal(self.value.literal));
         default:
             UNREACHABLE("unknown expr kind");
     }

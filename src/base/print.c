@@ -1,9 +1,11 @@
+#include <base/format.h>
+#include <base/new.h>
 #include <base/print.h>
 #include <base/string.h>
-#include <base/new.h>
-#include <base/format.h>
 
-int Print(const Str format_, ...) {
+int
+Print(const Str format_, ...)
+{
     struct String *s = format(format_);
     Str str = to_Str__String(*s);
 
@@ -13,7 +15,9 @@ int Print(const Str format_, ...) {
     free(str);
 }
 
-int Println(const Str format_, ...) {
+int
+Println(const Str format_, ...)
+{
     Print(format_);
     printf("\n");
 }

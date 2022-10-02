@@ -137,7 +137,8 @@ run__Test(struct Test *self)
     self->time = ((double)end - start) / CLOCKS_PER_SEC;
 
     if (len__Vec(*self->suites) > 1) {
-        println("%zu suites run in %.2fs.", len__Vec(*self->suites), self->time);
+        println(
+          "%zu suites run in %.2fs.", len__Vec(*self->suites), self->time);
     } else {
         println("%zu suite run in %.2fs.", len__Vec(*self->suites), self->time);
     }

@@ -20,7 +20,7 @@ from__String(const Str s)
     struct String *self = NEW(String);
 
     for (Usize i = 0; i < strlen(s); i++)
-        push__String(self, (char*)(UPtr)s[i]);
+        push__String(self, (char *)(UPtr)s[i]);
 
     return self;
 }
@@ -32,7 +32,9 @@ push__String(struct String *self, const char *c)
     push__Vec(self->content, (char *)'\0');
 }
 
-void append__String(struct String *self, struct String *self2, bool drop) {
+void
+append__String(struct String *self, struct String *self2, bool drop)
+{
     for (Usize i = 0; i < len__String(*self2); i++)
         push__String(self, get__String(*self2, i));
 
@@ -44,7 +46,7 @@ void
 push_str__String(struct String *self, const Str s)
 {
     for (Usize i = 0; i < strlen(s); i++)
-        push__String(self, (char*)(UPtr)s[i]);
+        push__String(self, (char *)(UPtr)s[i]);
 }
 
 char *
@@ -178,8 +180,9 @@ split__String(struct String self, char c)
     for (Usize i = 0; i < len__String(self); i += 1) {
         struct String *splitted = NEW(String);
 
-        if ((UPtr) get__String(self, i) != (UPtr)c) {
-            while (i < len__String(self) && (UPtr) get__String(self, i) != (UPtr)c) {
+        if ((UPtr)get__String(self, i) != (UPtr)c) {
+            while (i < len__String(self) &&
+                   (UPtr)get__String(self, i) != (UPtr)c) {
                 push__String(splitted, get__String(self, i));
                 i += 1;
             }
@@ -192,10 +195,13 @@ split__String(struct String self, char c)
     return v;
 }
 
-bool eq__String(struct String *self, struct String *self2, bool drop) {
+bool
+eq__String(struct String *self, struct String *self2, bool drop)
+{
     bool is_equal = true;
 
-    if (len__String(*self) < len__String(*self2) || len__String(*self2) < len__String(*self))
+    if (len__String(*self) < len__String(*self2) ||
+        len__String(*self2) < len__String(*self))
         return false;
 
     for (Usize i = 0; i < len__String(*self); i++)
@@ -210,7 +216,9 @@ bool eq__String(struct String *self, struct String *self2, bool drop) {
     return is_equal;
 }
 
-struct String* copy__String(struct String *self) {
+struct String *
+copy__String(struct String *self)
+{
     struct String *copy = malloc(sizeof(struct String));
 
     copy = memcpy(copy, self, sizeof(struct String));

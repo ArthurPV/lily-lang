@@ -76,7 +76,7 @@ read_file__Path(struct Path self)
 
     c = (char)fgetc(file);
     while (c != EOF) {
-        push__String(file_content, (char *) (UPtr)c);
+        push__String(file_content, (char *)(UPtr)c);
         c = (char)fgetc(file);
     }
 #else
@@ -93,7 +93,7 @@ read_file__Path(struct Path self)
     fclose(file);
     free(path);
 
-    push__String(file_content, (char*)'\n');
+    push__String(file_content, (char *)'\n');
 
     return file_content;
 }

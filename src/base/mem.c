@@ -1,7 +1,9 @@
-#include <base/mem.h>
 #include <base/assert.h>
+#include <base/mem.h>
 
-void *lily_malloc(Usize size) {
+void *
+lily_malloc(Usize size)
+{
     void *ptr = malloc(size);
 
     if (!ptr)
@@ -10,7 +12,9 @@ void *lily_malloc(Usize size) {
     return ptr;
 }
 
-void *lily_realloc(void *ptr, Usize size) {
+void *
+lily_realloc(void *ptr, Usize size)
+{
     ptr = realloc(ptr, size);
 
     if (!ptr)

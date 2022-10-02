@@ -22,37 +22,43 @@ of_int__Str(int i);
  *
  * @brief Convert u8 in Str.
  */
-Str of_u8__Str(UInt8 u);
+Str
+of_u8__Str(UInt8 u);
 
 /**
  *
  * @brief Convert u16 in Str.
  */
-Str of_u16__Str(UInt16 u);
+Str
+of_u16__Str(UInt16 u);
 
 /**
  *
  * @brief Convert u32 in Str.
  */
-Str of_u32__Str(UInt32 u);
+Str
+of_u32__Str(UInt32 u);
 
 /**
  *
  * @brief Convert u64 in Str.
  */
-Str of_u64__Str(UInt64 u);
+Str
+of_u64__Str(UInt64 u);
 
 /**
  *
  * @brief Convert i64 in Str.
  */
-Str of_i64__Str(Int64 i);
+Str
+of_i64__Str(Int64 i);
 
 /**
  *
  * @brief Convert i128 in Str.
  */
-Str of_i128__Str(Int128 i);
+Str
+of_i128__Str(Int128 i);
 
 /**
  *
@@ -63,7 +69,7 @@ of_double__Str(double d);
 
 /**
  * @brief Convert char in Str.
- * 
+ *
  */
 Str
 of_char__Str(char c);

@@ -3557,12 +3557,12 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
     return generic_params;
 }
 
-static const Int128 Int32Min = -0x80000000;
-static const Int128 Int32Max = 0x7FFFFFFF;
+static const Int128 Int32Min = -2147483648;
+static const Int128 Int32Max = 2147483647;
 static const Int128 Int64Min = -0x8000000000000000;
 static const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
-static const Int128 Int128Min = -0x80000000000000000000000000000000;
-static const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+// static const Int128 Int128Min = -0x80000000000000000000000000000000;
+// static const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
 static struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
@@ -3579,13 +3579,13 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             const Str int_str = to_Str__String(*parse_decl->previous->lit);
             Int128 res = atoi_i128(int_str);
 
-            if (res >= Int32Min && res <= Int32Max)
+            if (res <= Int32Max && res >= Int32Min)
                 literal = NEW(LiteralInt32, (Int32)res);
-            else if (res >= Int64Min && res <= Int64Max)
+            else if (res <= Int64Max && res >= Int64Min)
                 literal = NEW(LiteralInt64, (Int64)res);
-            else if (res >= Int128Min && res <= Int128Max)
-                literal = NEW(LiteralInt128, res);
-            else {
+            else if (1) {
+                TODO("Int128");
+            } else {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
                       &self.parse_block,
@@ -3596,6 +3596,9 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
                       None());
 
                 emit__Diagnostic(err);
+                emit__Summary(
+                  count_error, count_warning, "the parser has been failed");
+                exit(1);
             }
 
             free(int_str);
@@ -4204,7 +4207,8 @@ exit_unary : {
         struct Expr *left;
         struct Expr *right;
 
-        if (get_precedence__Expr(expr2) < get_precedence__Expr(expr)) {
+        if (get_precedence__Expr(expr2) <
+            get_precedence__BinaryOpKind((enum BinaryOpKind)(UPtr)binary_op)) {
             left = expr2;
             right = expr;
         } else {

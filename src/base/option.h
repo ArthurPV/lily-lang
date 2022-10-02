@@ -54,7 +54,8 @@ is_None__Option(struct Option *self);
  *
  * @return if true if the value is equal.
  */
-bool eq__Option(struct Option self, void *ptr);
+bool
+eq__Option(struct Option self, void *ptr);
 
 /**
  * @brief Get the value of Some.
@@ -65,9 +66,10 @@ void *
 get__Option(struct Option *self);
 
 /**
- * 
+ *
  * @brief Free Option type.
  */
-void __free__Option(struct Option *self);
+void
+__free__Option(struct Option *self);
 
 #endif // LILY_OPTION_H

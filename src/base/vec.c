@@ -1,11 +1,11 @@
 #include <assert.h>
-#include <stdarg.h>
 #include <base/assert.h>
 #include <base/new.h>
 #include <base/vec.h>
+#include <math.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 struct Vec *
 __new__Vec(Usize item_size)
@@ -40,14 +40,16 @@ init__Vec(Usize item_size, Usize count, ...)
     va_start(vl, count);
 
     for (Usize i = 0; i < count; i++)
-        push__Vec(self, va_arg(vl, void*));
+        push__Vec(self, va_arg(vl, void *));
 
     va_end(vl);
 
     return self;
 }
 
-struct Vec* create__Vec(void *item, Usize item_size, Usize len) {
+struct Vec *
+create__Vec(void *item, Usize item_size, Usize len)
+{
     struct Vec *self = NEW(Vec, item_size);
 
     for (Usize i = 0; i < len; i++)
@@ -56,17 +58,20 @@ struct Vec* create__Vec(void *item, Usize item_size, Usize len) {
     return self;
 }
 
-void resize__Vec(struct Vec *self) {
+void
+resize__Vec(struct Vec *self)
+{
     Usize old_capacity = self->capacity;
     Usize new_capacity;
-     
+
     if (self->len >= self->default_capacity)
-        new_capacity = (ceil(self->len / self->default_capacity) + 1) * self->default_capacity;
+        new_capacity = (ceil(self->len / self->default_capacity) + 1) *
+                       self->default_capacity;
     else
         new_capacity = self->default_capacity;
 
     if (old_capacity != new_capacity) {
-        self->capacity = new_capacity; 
+        self->capacity = new_capacity;
         self->items = realloc(self->items, self->capacity * self->item_size);
     }
 }

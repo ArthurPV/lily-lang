@@ -8,22 +8,22 @@
 #define TEST_SUCCESS 0
 #define TEST_FAILED 1
 
-#define TEST_ASSERT_EQ(l, r)                                                   \
-    if (l != r)                                                                \
+#define TEST_ASSERT_EQ(l, r) \
+    if (l != r)              \
     return TEST_FAILED
-#define TEST_ASSERT_NE(l, r)                                                   \
-    if (l == r)                                                                \
+#define TEST_ASSERT_NE(l, r) \
+    if (l == r)              \
     return TEST_FAILED
-#define TEST_ASSERT(expr)                                                      \
-    if (!expr)                                                                 \
+#define TEST_ASSERT(expr) \
+    if (!expr)            \
     return TEST_FAILED
 
 #define CASE(suite, name, f) add_case__Suite(suite, NEW(Case, #name, f))
 #define SUITE(test, suite) add_suite__Test(test, suite)
-#define RUN_TEST(test)                                                         \
-    {                                                                          \
-        run__Test(test);                                                       \
-        FREE(Test, test);                                                      \
+#define RUN_TEST(test)    \
+    {                     \
+        run__Test(test);  \
+        FREE(Test, test); \
     }
 
 typedef struct Case

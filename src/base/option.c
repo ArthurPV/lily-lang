@@ -31,7 +31,9 @@ is_None__Option(struct Option *self)
     return self->kind == None;
 }
 
-bool eq__Option(struct Option self, void *ptr) {
+bool
+eq__Option(struct Option self, void *ptr)
+{
     if (ptr == NULL && self.kind == None)
         return true;
     else if (ptr != NULL && self.some == ptr && self.kind == Some)
@@ -47,6 +49,8 @@ get__Option(struct Option *self)
     return self->some;
 }
 
-void __free__Option(struct Option *self) {
+void
+__free__Option(struct Option *self)
+{
     free(self);
 }

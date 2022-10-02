@@ -1,6 +1,6 @@
+#include <assert.h>
 #include <base/result.h>
 #include <stdlib.h>
-#include <assert.h>
 
 struct Result *
 __new__ResultOk(void *ok)
@@ -20,24 +20,34 @@ __new__ResultErr(void *err)
     return self;
 }
 
-bool is_err__Result(struct Result self) {
+bool
+is_err__Result(struct Result self)
+{
     return self.kind == Err;
 }
 
-bool is_ok__Result(struct Result self) {
+bool
+is_ok__Result(struct Result self)
+{
     return self.kind == Ok;
 }
 
-void *get_ok__Result(struct Result self) {
+void *
+get_ok__Result(struct Result self)
+{
     assert(self.kind == Ok && "only Ok");
     return self.ok;
 }
 
-void *get_err__Result(struct Result self) {
+void *
+get_err__Result(struct Result self)
+{
     assert(self.kind == Err && "only Err");
     return self.err;
 }
 
-void __free__Result(struct Result *self) {
+void
+__free__Result(struct Result *self)
+{
     free(self);
 }

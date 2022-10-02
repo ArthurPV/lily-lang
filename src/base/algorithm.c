@@ -1,6 +1,8 @@
 #include <base/algorithm.h>
 
-void quicksort(Int32 **nums, Int32 low_index, Int32 high_index) {
+void
+quicksort(Int32 **nums, Int32 low_index, Int32 high_index)
+{
     if (low_index >= high_index)
         return;
 
@@ -13,7 +15,9 @@ void quicksort(Int32 **nums, Int32 low_index, Int32 high_index) {
     quicksort(nums, l + 1, high_index);
 }
 
-Usize quicksort_parsing(Int32 **nums, Int32 low_index, Int32 high_index, Int32 pivot) {
+Usize
+quicksort_parsing(Int32 **nums, Int32 low_index, Int32 high_index, Int32 pivot)
+{
     Usize l = low_index;
     Usize r = high_index;
 
@@ -35,6 +39,7 @@ Usize quicksort_parsing(Int32 **nums, Int32 low_index, Int32 high_index, Int32 p
     return l;
 }
 
-void swap(Int32 **nums, Usize index1, Usize index2) {
-
+void
+swap(Int32 **nums, Usize index1, Usize index2)
+{
 }

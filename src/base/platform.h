@@ -4,7 +4,7 @@
 #if defined(__linux__)
 #define OS_NAME "linux"
 #define LILY_LINUX_OS
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||   \
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
   defined(__bsdi__) || defined(__DragonFly__)
 #defined OS_NAME "BSD"
 #define LILY_BSD_OS

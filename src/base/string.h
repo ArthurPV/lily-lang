@@ -35,7 +35,8 @@ push__String(struct String *self, const char *c);
  *
  * @brief Append string to string.
  */
-void append__String(struct String *self, struct String *self2, bool drop);
+void
+append__String(struct String *self, struct String *self2, bool drop);
 
 /**
  *
@@ -136,13 +137,15 @@ split__String(struct String self, char c);
  *
  * @param drop Free the second parameter.
  */
-bool eq__String(struct String *self, struct String *self2, bool drop);
+bool
+eq__String(struct String *self, struct String *self2, bool drop);
 
 /**
  *
  * @brief Copy the String type.
  */
-struct String* copy__String(struct String *self);
+struct String *
+copy__String(struct String *self);
 
 /**
  *

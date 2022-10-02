@@ -596,6 +596,13 @@ enum BinaryOpKind
 
 /**
  *
+ * @brief Get the precedence of each BinaryOpKind.
+ */
+Usize
+get_precedence__BinaryOpKind(enum BinaryOpKind kind);
+
+/**
+ *
  * @brief Convert the BinaryOpKind to Str.
  */
 const Str

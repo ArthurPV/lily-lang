@@ -1,8 +1,8 @@
 #ifndef LILY_MEM_H
 #define LILY_MEM_H
 
-#include <base/types.h>
 #include <assert.h>
+#include <base/types.h>
 
 #define BAD_ALLOC() assert(0 && "bad alloc")
 
@@ -12,12 +12,14 @@
  *
  * @return a allocated ptr.
  */
-void *lily_malloc(Usize size);
+void *
+lily_malloc(Usize size);
 
 /**
  *
  * @return a reallocated ptr.
  */
-void *lily_realloc(void *ptr, Usize size);
+void *
+lily_realloc(void *ptr, Usize size);
 
-#endif //LILY_MEM_H
+#endif // LILY_MEM_H
