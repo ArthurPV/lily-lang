@@ -1,41 +1,41 @@
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun bitwidth = 64;
 
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun min = 0;
 
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun max = 0xFFFF_FFFF_FFFF_FFFF;
 
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun zero = 0;
 
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun one = 1;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun add(x, y) = x + y;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun sub(x, y) = x - y;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun mul(x, y) = x * y;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun div(x, y) = x / y;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun mod(x, y) = x % y;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun pow(x, y) = x ** y;
 
-/// @prot: Usize -> Usize
+/// @prot(Usize -> Usize)
 fun abs(x) = x;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Usize -> Usize -> Usize
+/// @prot(Usize -> Usize -> Usize)
 fun max(x, y) = if x > y do x else y;;

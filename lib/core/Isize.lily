@@ -1,44 +1,44 @@
-/// @prot: Unit -> Isize
+/// @prot(Unit -> Isize)
 fun bitwidth = 64;
 
-/// @prot: Unit -> Isize
+/// @prot(Unit -> Isize)
 fun min = -0x8000_0000_0000_0000;
 
-/// @prot: Unit -> Isize
+/// @prot(Unit -> Isize)
 fun max = 0x7FFF_FFFF_FFFF_FFFF;
 
-/// @prot: Unit -> Isize
+/// @prot(Unit -> Isize)
 fun zero = 0;
 
-/// @prot: Unit -> Isize
+/// @prot(Unit -> Isize)
 fun one = 1;
 
-/// @prot: Isize -> Isize
+/// @prot(Isize -> Isize)
 fun neg(x) = if x > 0 do -x else x;;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun add(x, y) = x + y;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun sub(x, y) = x - y;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun mul(x, y) = x * y;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun div(x, y) = x / y;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun mod(x, y) = x % y;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun pow(x, y) = x ** y;
 
-/// @prot: Isize -> Isize
+/// @prot(Isize -> Isize)
 fun abs(x) = -x;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Isize -> Isize -> Isize
+/// @prot(Isize -> Isize -> Isize)
 fun max(x, y) = if x > y do x else y;;

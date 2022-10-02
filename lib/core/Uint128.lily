@@ -1,41 +1,41 @@
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun bitwidth = 128;
 
-/// @prot: Unit -> Uint128
+/// @prot(Unit -> Uint128)
 fun min = 0;
 
-/// @prot: Unit -> Uint128
+/// @prot(Unit -> Uint128)
 fun max = 340282366920938463463374607431768211455;
 
-/// @prot: Unit -> Uint128
+/// @prot(Unit -> Uint128)
 fun zero = 0;
 
-/// @prot: Unit -> Uint128
+/// @prot(Unit -> Uint128)
 fun one = 1;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun add(x, y) = x + y;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun sub(x, y) = x - y;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun mul(x, y) = x * y;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun div(x, y) = x / y;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun mod(x, y) = x % y;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun pow(x, y) = x ** y;
 
-/// @prot: Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128)
 fun abs(x) = x;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Uint128 -> Uint128 -> Uint128
+/// @prot(Uint128 -> Uint128 -> Uint128)
 fun max(x, y) = if x > y do x else y;;

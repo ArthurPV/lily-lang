@@ -1,44 +1,44 @@
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun bitwidth = 32;
 
-/// @prot: Unit -> Int32
+/// @prot(Unit -> Int32)
 fun min = -0x8000_0000;
 
-/// @prot: Unit -> Int32
+/// @prot(Unit -> Int32)
 fun max = 0x7FFF_FFFF;
 
-/// @prot: Unit -> Int32
+/// @prot(Unit -> Int32)
 fun zero = 0;
 
-/// @prot: Unit -> Int32
+/// @prot(Unit -> Int32)
 fun one = 1;
 
-/// @prot: Int32 -> Int32
+/// @prot(Int32 -> Int32)
 fun neg(x) = if x > 0 do -x else x;;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun add(x, y) = x + y;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun sub(x, y) = x - y;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun mul(x, y) = x * y;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun div(x, y) = x / y;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun mod(x, y) = x % y;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun pow(x, y) = x ** y;
 
-/// @prot: Int32 -> Int32
+/// @prot(Int32 -> Int32)
 fun abs(x) = -x;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Int32 -> Int32 -> Int32
+/// @prot(Int32 -> Int32 -> Int32)
 fun max(x, y) = if x > y do x else y;;

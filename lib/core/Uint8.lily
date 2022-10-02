@@ -1,41 +1,41 @@
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun bitwidth = 8;
 
-/// @prot: Unit -> Uint8
+/// @prot(Unit -> Uint8)
 fun min = 0;
 
-/// @prot: Unit -> Uint8
+/// @prot(Unit -> Uint8)
 fun max = 0xFF;
 
-/// @prot: Unit -> Uint8
+/// @prot(Unit -> Uint8)
 fun zero = 0;
 
-/// @prot: Unit -> Uint8
+/// @prot(Unit -> Uint8)
 fun one = 1;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun add(x, y) = x + y;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun sub(x, y) = x - y;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun mul(x, y) = x * y;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun div(x, y) = x / y;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun mod(x, y) = x % y;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun pow(x, y) = x ** y;
 
-/// @prot: Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8)
 fun abs(x) = x;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Uint8 -> Uint8 -> Uint8
+/// @prot(Uint8 -> Uint8 -> Uint8)
 fun max(x, y) = if x > y do x else y;;

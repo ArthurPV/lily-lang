@@ -1,41 +1,41 @@
-/// @prot: Unit -> Usize
+/// @prot(Unit -> Usize)
 fun bitwidth = 16;
 
-/// @prot: Unit -> Uint16
+/// @prot(Unit -> Uint16)
 fun min = 0;
 
-/// @prot: Unit -> Uint16
+/// @prot(Unit -> Uint16)
 fun max = 0xFFFF;
 
-/// @prot: Unit -> Uint16
+/// @prot(Unit -> Uint16)
 fun zero = 0;
 
-/// @prot: Unit -> Uint16
+/// @prot(Unit -> Uint16)
 fun one = 1;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun add(x, y) = x + y;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun sub(x, y) = x - y;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun mul(x, y) = x * y;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun div(x, y) = x / y;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun mod(x, y) = x % y;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun pow(x, y) = x ** y;
 
-/// @prot: Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16)
 fun abs(x) = x;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun min(x, y) = if x < y do x else y;;
 
-/// @prot: Uint16 -> Uint16 -> Uint16
+/// @prot(Uint16 -> Uint16 -> Uint16)
 fun max(x, y) = if x > y do x else y;;
