@@ -80,8 +80,8 @@ typedef struct DataType
         struct Tuple *lambda; // struct Tuple<struct Vec<struct DataType*>,
                               // struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct DataType*, Usize*>*
-        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct
-                              // Vec<struct DataType*>*>*
+        struct Tuple *custom; // struct Tuple<struct Vec<struct String&>*,
+                              // struct Vec<struct DataType*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
 } DataType;
