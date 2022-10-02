@@ -534,9 +534,20 @@ parse_import_value__parse_import_stmt(struct Parser self,
 static struct String *
 get_value__parse_import_stmt(struct String buffer, Usize *pos);
 static struct String *
-get_name__parse_import_stmt(struct String buffer, Usize *pos);
-static struct ImportStmtSelector *
-get_selector__parse_import_stmt(struct String buffer, Usize *pos);
+get_name__parse_import_stmt(struct Parser self,
+                            struct String buffer,
+                            struct Location buffer_loc,
+                            Usize *pos);
+static struct Vec *
+get_value_in_selector__parse_import_stmt(struct Parser self,
+                                         struct String buffer,
+                                         struct Location buffer_loc,
+                                         Usize *pos);
+static struct Vec *
+get_selector__parse_import_stmt(struct Parser self,
+                                struct String buffer,
+                                struct Location buffer_loc,
+                                Usize *pos);
 static void
 next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos);
 static struct Stmt *
@@ -5250,6 +5261,9 @@ parse_import_stmt(struct Parser self,
                  self, import_value, as_value, import_value_loc, false));
 }
 
+#define UPDATE_CURRENT() \
+    current = i < len__String(*buffer) ? get__String(*buffer, i) : NULL;
+
 static struct ImportStmt *
 parse_import_value__parse_import_stmt(struct Parser self,
                                       struct String *buffer,
@@ -5257,9 +5271,6 @@ parse_import_value__parse_import_stmt(struct Parser self,
                                       struct Location buffer_loc,
                                       bool is_pub)
 {
-#define UPDATE_CURRENT() \
-    current = i < len__String(*buffer) ? get__String(*buffer, i) : NULL;
-
     struct Vec *import_value = NEW(Vec, sizeof(struct ImportStmtValue));
     char *current;
     Usize i = 0;
@@ -5292,7 +5303,7 @@ parse_import_value__parse_import_stmt(struct Parser self,
         if (current == (char *)'@') {
             if (++i < len__String(*buffer)) {
                 const struct String *name =
-                  get_name__parse_import_stmt(*buffer, &i);
+                  get_name__parse_import_stmt(self, *buffer, buffer_loc, &i);
                 const Str name_str = to_Str__String(*name);
 
                 UPDATE_CURRENT();
@@ -5422,21 +5433,23 @@ parse_import_value__parse_import_stmt(struct Parser self,
             }
         }
 
-        for (; current != NULL; i++) {
+        for (; current != NULL;
+             next_char__parse_import_stmt(*buffer, &current, &i)) {
             if ((current >= (char *)'a' && current <= (char *)'z') ||
                 (current >= (char *)'A' && current <= (char *)'Z') ||
                 current == (char *)'_') {
-
                 push__Vec(import_value,
                           NEW(ImportStmtValueAccess,
-                              get_name__parse_import_stmt(*buffer, &i)));
+                              get_name__parse_import_stmt(
+                                self, *buffer, buffer_loc, &i)));
 
-                current = get__String(*buffer, i);
+                UPDATE_CURRENT();
 
                 if (!((current >= (char *)'a' && current <= (char *)'z') ||
                       (current >= (char *)'A' && current <= (char *)'Z') ||
                       (current >= (char *)'0' && current <= (char *)'9') ||
-                      current == (char *)'_' || current == (char *)'.')) {
+                      current == (char *)'_' || current == (char *)'.' ||
+                      current == NULL)) {
                     struct Location loc_err = buffer_loc;
 
                     loc_err.e_line = loc_err.s_line;
@@ -5456,9 +5469,17 @@ parse_import_value__parse_import_stmt(struct Parser self,
 
                     goto exit;
                 }
-
-                next_char__parse_import_stmt(*buffer, &current, &i);
             } else if (current == (char *)'{') {
+                push__Vec(import_value,
+                          get_selector__parse_import_stmt(
+                            self, *buffer, buffer_loc, &i));
+                UPDATE_CURRENT();
+
+                if (i >= len__String(*buffer) - 1)
+                    break;
+
+                if (current == (char *)'.')
+                    next_char__parse_import_stmt(*buffer, &current, &i);
             } else if (current == (char *)'*') {
                 push__Vec(import_value, NEW(ImportStmtValueWildcard));
                 break;
@@ -5469,21 +5490,19 @@ parse_import_value__parse_import_stmt(struct Parser self,
                 loc_err.s_col += i + 1;
                 loc_err.e_col = loc_err.s_col;
 
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      &self.parse_block,
-                      NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
-                      loc_err,
-                      from__String(""),
-                      Some(format("found `{c}`, expected `ID`, `{` or `*`",
-                                  (char)(UPtr)current)));
+                struct Diagnostic *err = NEW(
+                  DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+                  loc_err,
+                  from__String(""),
+                  Some(format("found `{c}`, expected `ID`, `{{`, `}` or `*`",
+                              (char)(UPtr)current)));
 
                 emit__Diagnostic(err);
 
                 break;
             }
-
-            next_char__parse_import_stmt(*buffer, &current, &i);
         }
 
     exit : {
@@ -5525,10 +5544,14 @@ get_value__parse_import_stmt(struct String buffer, Usize *pos)
 }
 
 static struct String *
-get_name__parse_import_stmt(struct String buffer, Usize *pos)
+get_name__parse_import_stmt(struct Parser self,
+                            struct String buffer,
+                            struct Location buffer_loc,
+                            Usize *pos)
 {
     struct String *s = NEW(String);
-    char *current = get__String(buffer, *pos);
+    char *current =
+      *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
 
     while (((current >= (char *)'a' && current <= (char *)'z') ||
             (current >= (char *)'A' && current <= (char *)'Z') ||
@@ -5538,27 +5561,128 @@ get_name__parse_import_stmt(struct String buffer, Usize *pos)
         next_char__parse_import_stmt(buffer, &current, pos);
     }
 
+    if (len__String(*s) == 0) {
+        struct Location loc_err = buffer_loc;
+
+        loc_err.e_line = loc_err.s_line;
+        loc_err.s_col += *pos + 1;
+        loc_err.e_col = loc_err.s_col;
+
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              &self.parse_block,
+              NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+              loc_err,
+              from__String(""),
+              Some(format("found `{c}`, expected `ID`",
+                          (char)(UPtr)current)));
+
+        emit__Diagnostic(err);
+
+        goto exit;
+    }
+
+exit : {
+}
+
     return s;
 }
 
-static struct ImportStmtSelector *
-get_selector__parse_import_stmt(struct String buffer, Usize *pos)
+static struct Vec *
+get_value_in_selector__parse_import_stmt(struct Parser self,
+                                         struct String buffer,
+                                         struct Location buffer_loc,
+                                         Usize *pos)
 {
-    char *current = get__String(buffer, ++(*pos));
+    struct Vec *value = NEW(Vec, sizeof(struct ImportStmtValue));
+    char *current = get__String(buffer, *pos);
 
-    while (current != NULL && current != (char *)'}') {
+    do {
         if ((current >= (char *)'a' && current <= (char *)'z') ||
             (current >= (char *)'A' && current <= (char *)'Z') ||
-            (current >= (char *)'0' && current <= (char *)'9') ||
             current == (char *)'_') {
+            push__Vec(value,
+                      NEW(ImportStmtValueAccess,
+                          get_name__parse_import_stmt(
+                            self, buffer, buffer_loc, &*pos)));
+            next_char__parse_import_stmt(buffer, &current, &*pos);
         } else if (current == (char *)'*') {
-        } else {
-            assert(0 && "error");
-        }
+            push__Vec(value, NEW(ImportStmtValueWildcard));
+            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, &*pos);
 
-        *pos += 1;
-        current = *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
+            break;
+        } else if (current == (char *)'{') {
+            next_char__parse_import_stmt(buffer, &current, &*pos);
+
+            push__Vec(value,
+                      NEW(ImportStmtValueSelector,
+                          get_selector__parse_import_stmt(
+                            self, buffer, buffer_loc, &*pos)));
+        } else if (current == (char *)'}') {
+            next_char__parse_import_stmt(buffer, &current, &*pos);
+
+            break;
+        } else {
+            struct Location loc_err = buffer_loc;
+
+            loc_err.e_line = loc_err.s_line;
+            loc_err.s_col += *pos + 1;
+            loc_err.e_col = loc_err.s_col;
+
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+                  loc_err,
+                  from__String(""),
+                  Some(format("found `{c}`, expected `ID`, `{{`, `}` or `*`",
+                              (char)(UPtr)current)));
+
+            emit__Diagnostic(err);
+
+            goto exit;
+        }
+    } while (current != NULL && current == (char *)'.');
+
+exit : {
+}
+
+    return value;
+}
+
+static struct Vec *
+get_selector__parse_import_stmt(struct Parser self,
+                                struct String buffer,
+                                struct Location buffer_loc,
+                                Usize *pos)
+{
+    struct Vec *selector = NEW(Vec, sizeof(struct Vec));
+    char *current = get__String(buffer, ++(*(pos)));
+
+    while (current != (char *)'}') {
+        push__Vec(selector,
+                  get_value_in_selector__parse_import_stmt(
+                    self, buffer, buffer_loc, &*pos));
+
+        current = get__String(buffer, *pos);
+
+        if (get__String(buffer, (*(pos)-1)) == (char *)',')
+            next_char__parse_import_stmt(buffer, &current, &*pos);
+
+        while (current == (char *)' ' || current == (char *)'\t')
+            next_char__parse_import_stmt(buffer, &current, &*pos);
     }
+
+    if (current == NULL)
+        assert(0 && "error");
+    else
+        next_char__parse_import_stmt(buffer, &current, &*pos);
+
+    if (current == (char *)'.')
+        next_char__parse_import_stmt(buffer, &current, &*pos);
+
+    return selector;
 }
 
 static void

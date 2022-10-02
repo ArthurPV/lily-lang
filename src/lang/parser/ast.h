@@ -1565,7 +1565,7 @@ typedef struct ImportStmtValue
         struct String *access;
         struct String *url;
         struct String *file;
-        struct Vec *selector; // struct Vec<struct ImportStmtValue*>*
+        struct Vec *selector; // struct Vec<struct Vec<struct ImportStmtValue*>*>*
     } value;
 } ImportStmtValue;
 
