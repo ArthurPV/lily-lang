@@ -1133,6 +1133,51 @@ check_enum_obj(struct Typecheck *self,
               enum_obj->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (enum_obj->enum_decl->value.enum_->generic_params) {
+            enum_obj->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i <
+                 len__Vec(*enum_obj->enum_decl->value.enum_->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j < len__Vec(
+                           *enum_obj->enum_decl->value.enum_->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *enum_obj->enum_decl->value.enum_->generic_params,
+                            i)),
+                          get_name__Generic(get__Vec(
+                            *enum_obj->enum_decl->value.enum_->generic_params,
+                            j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of error in enum_obj->generic_params
+                switch (
+                  ((struct Generic *)get__Vec(
+                     *enum_obj->enum_decl->value.enum_->generic_params, i))
+                    ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(
+                          enum_obj->generic_params,
+                          NEW(
+                            GenericDataType,
+                            get_name__Generic(get__Vec(
+                              *enum_obj->enum_decl->value.enum_->generic_params,
+                              i)),
+                            ((struct Generic *)get__Vec(
+                               *enum_obj->enum_decl->value.enum_
+                                  ->generic_params,
+                               i))
+                              ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
         }
 
         if (enum_obj->enum_decl->value.enum_->type_value) {
@@ -1162,6 +1207,52 @@ check_record_obj(struct Typecheck *self,
               record_obj->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (record_obj->record_decl->value.record->generic_params) {
+            record_obj->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(
+                       *record_obj->record_decl->value.record->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j <
+                     len__Vec(
+                       *record_obj->record_decl->value.record->generic_params);
+                     j++)
+                    if (eq__String(get_name__Generic(
+                                     get__Vec(*record_obj->record_decl->value
+                                                 .record->generic_params,
+                                              i)),
+                                   get_name__Generic(
+                                     get__Vec(*record_obj->record_decl->value
+                                                 .record->generic_params,
+                                              j)),
+                                   false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of record_obj in enum_obj->generic_params
+                switch (
+                  ((struct Generic *)get__Vec(
+                     *record_obj->record_decl->value.record->generic_params, i))
+                    ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(record_obj->generic_params,
+                                  NEW(GenericDataType,
+                                      get_name__Generic(
+                                        get__Vec(*record_obj->record_decl->value
+                                                    .record->generic_params,
+                                                 i)),
+                                      ((struct Generic *)get__Vec(
+                                         *record_obj->record_decl->value.record
+                                            ->generic_params,
+                                         i))
+                                        ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
         }
 
         if (record_obj->record_decl->value.record->fields) {
