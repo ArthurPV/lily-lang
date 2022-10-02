@@ -112,6 +112,10 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                                    struct String *detail_msg,
                                    struct Option *help);
 static void
+resolve_global_import(struct Typecheck *self);
+static struct Vec *
+resolve_import(struct Typecheck *self, struct ImportStmt *import_stmt);
+static void
 verify_if_decl_is_duplicate(struct Typecheck self);
 static void
 verify_if_decl_is_duplicate_in_module(struct Typecheck self,
@@ -329,7 +333,9 @@ __new__Typecheck(struct Parser parser)
         .parser = parser,
         .decl =
           len__Vec(*parser.decls) == 0 ? NULL : get__Vec(*parser.decls, 0),
+        .buffer = NEW(Vec, sizeof(struct Typecheck)),
         .builtins = Load_C_builtins(),
+        .import_values = NEW(Vec, sizeof(struct SymbolTable)),
         .funs = NULL,
         .consts = NULL,
         .aliases = NULL,
@@ -349,6 +355,7 @@ void
 run__Typecheck(struct Typecheck *self)
 {
     {
+        resolve_global_import(self);
         verify_if_decl_is_duplicate(*self);
         SUMMARY();
     }
@@ -361,10 +368,19 @@ run__Typecheck(struct Typecheck *self)
 void
 __free__Typecheck(struct Typecheck self)
 {
+    for (Usize i = len__Vec(*self.buffer); i--;) {
+        FREE(Typecheck, *(struct Typecheck *)get__Vec(*self.buffer, i));
+        free(get__Vec(*self.buffer, i));
+    }
+
+    FREE(Vec, self.buffer);
+
     for (Usize i = len__Vec(*self.builtins); i--;)
         FREE(BuiltinAll, get__Vec(*self.builtins, i));
 
     FREE(Vec, self.builtins);
+
+    FREE(Vec, self.import_values);
 
     if (self.funs) {
         for (Usize i = len__Vec(*self.funs); i--;)
@@ -491,6 +507,22 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                self->parser.parse_block.scanner.src->file,
                detail_msg,
                help);
+}
+
+static void
+resolve_global_import(struct Typecheck *self)
+{
+    for (Usize i = len__Vec(*self->parser.decls); i--;)
+        push__Vec(
+          self->import_values,
+          resolve_import(
+            self,
+            ((struct Decl *)get__Vec(*self->parser.decls, i))->value.import));
+}
+
+static struct Vec *
+resolve_import(struct Typecheck *self, struct ImportStmt *import_stmt)
+{
 }
 
 static void
@@ -1115,8 +1147,35 @@ check_module(struct Typecheck *self,
                                     ((i1->kind == DeclKindModule ||
                                       i1->kind == DeclKindConstant) &&
                                      (i2->kind == DeclKindModule ||
-                                      i2->kind == DeclKindConstant)))
-                                    assert(0 && "error: duplicate module item");
+                                      i2->kind == DeclKindConstant))) {
+                                    struct Diagnostic *error = NEW(
+                                      DiagnosticWithErrTypecheck,
+                                      self,
+                                      NEW(LilyError,
+                                          LilyErrorDuplicateDeclaration),
+                                      i2->loc,
+                                      from__String(""),
+                                      Some(from__String(
+                                        "remove this declaration or move the "
+                                        "declaration in other scope")));
+
+                                    struct Diagnostic *note = NEW(
+                                      DiagnosticWithNoteTypecheck,
+                                      self,
+                                      format(
+                                        "this declaration is in conflict with "
+                                        "a "
+                                        "declaration "
+                                        "declared at the location ({d}:{d})",
+                                        i2->loc.s_line,
+                                        i2->loc.s_col),
+                                      i1->loc,
+                                      from__String(""),
+                                      None());
+
+                                    emit__Diagnostic(error);
+                                    emit__Diagnostic(note);
+                                }
                             }
 
                 switch (((struct Decl *)get__Vec(

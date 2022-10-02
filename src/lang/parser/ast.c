@@ -128,45 +128,47 @@ to_string__DataType(struct DataType self)
         case DataTypeKindRef:
             return format("&{Sr}", to_string__DataType(*self.value.ref));
         case DataTypeKindStr:
-            return from__String("str");
+            return from__String("Str");
         case DataTypeKindChar:
-            return from__String("char");
+            return from__String("Char");
         case DataTypeKindI8:
-            return from__String("i8");
+            return from__String("Int8");
         case DataTypeKindI16:
-            return from__String("i16");
+            return from__String("Int16");
         case DataTypeKindI32:
-            return from__String("i32");
+            return from__String("Int32");
         case DataTypeKindI64:
-            return from__String("i64");
+            return from__String("Int64");
         case DataTypeKindI128:
-            return from__String("i128");
+            return from__String("Int128");
         case DataTypeKindU8:
-            return from__String("u8");
+            return from__String("Uint8");
         case DataTypeKindU16:
-            return from__String("u16");
+            return from__String("Uint16");
         case DataTypeKindU32:
-            return from__String("u32");
+            return from__String("Uint32");
         case DataTypeKindU64:
-            return from__String("u64");
+            return from__String("Uint64");
         case DataTypeKindU128:
-            return from__String("u128");
+            return from__String("Uint128");
         case DataTypeKindF32:
-            return from__String("f32");
+            return from__String("Float32");
         case DataTypeKindF64:
-            return from__String("f64");
+            return from__String("Float64");
         case DataTypeKindBool:
-            return from__String("bool");
+            return from__String("Bool");
         case DataTypeKindIsize:
-            return from__String("isize");
+            return from__String("Isize");
         case DataTypeKindUsize:
-            return from__String("usize");
+            return from__String("Usize");
+        case DataTypeKindNever:
+            return from__String("Never");
         case DataTypeKindAny:
-            return from__String("any");
+            return from__String("Any");
         case DataTypeKindOptional:
             return format("?{Sr}", to_string__DataType(*self.value.optional));
         case DataTypeKindUnit:
-            return from__String("unit");
+            return from__String("Unit");
         case DataTypeKindException:
             return format("!{Sr}", to_string__DataType(*self.value.exception));
         case DataTypeKindLambda: {

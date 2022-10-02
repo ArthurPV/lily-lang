@@ -77,6 +77,12 @@ static struct Builtin *
 Load_Ref_module();
 static struct Builtin *
 Load_Custom_module();
+static struct Builtin *
+Load_Mem_module();
+static struct Builtin *
+Load_Io_module();
+static struct Builtin *
+Load_Never_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
 
@@ -5956,7 +5962,7 @@ Load_Custom_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
 
-        PARAMS(2,
+        PARAMS(3,
                NEW(DataTypeSymbolMut,
                    NEW(DataTypeSymbolCompilerDefined,
                        NEW(CompilerDefinedDataType, "A", false))),
@@ -5970,11 +5976,72 @@ Load_Custom_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Custom", items));
 }
 
+static struct Builtin *
+Load_Mem_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+        PARAMS(2,
+               NEW(DataTypeSymbol, DataTypeKindUsize),
+               NEW(DataTypeSymbolPtr,
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "malloc", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Mem", items));
+}
+
+static struct Builtin *
+Load_Io_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+        PARAMS(
+          3,
+          NEW(DataTypeSymbol, DataTypeKindStr),
+          NEW(DataTypeSymbolArray, NEW(DataTypeSymbol, DataTypeKindAny), NULL),
+          NEW(DataTypeSymbol, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "print", params)));
+    }
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+        PARAMS(
+          3,
+          NEW(DataTypeSymbol, DataTypeKindStr),
+          NEW(DataTypeSymbolArray, NEW(DataTypeSymbol, DataTypeKindAny), NULL),
+          NEW(DataTypeSymbol, DataTypeKindUnit));
+
+        push__Vec(items,
+                  NEW(BuiltinFunVar, NEW(BuiltinFun, "println", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Io", items));
+}
+
+static struct Builtin *
+Load_Never_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Never", items));
+}
+
 struct Vec *
 Load_C_builtins()
 {
     return init__Vec(sizeof(struct Builtin),
-                     24,
+                     27,
                      Load_Int8_module(),
                      Load_Int16_module(),
                      Load_Int32_module(),
@@ -5998,5 +6065,8 @@ Load_C_builtins()
                      Load_Array_module(),
                      Load_Fun_module(),
                      Load_Ref_module(),
-                     Load_Custom_module());
+                     Load_Custom_module(),
+                     Load_Mem_module(),
+                     Load_Io_module(),
+                     Load_Never_module());
 }

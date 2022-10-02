@@ -55,6 +55,7 @@ enum DataTypeKind
     DataTypeKindBool,
     DataTypeKindIsize,
     DataTypeKindUsize,
+	DataTypeKindNever,
     DataTypeKindAny,
     DataTypeKindOptional,
     DataTypeKindUnit,

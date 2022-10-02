@@ -5574,8 +5574,7 @@ get_name__parse_import_stmt(struct Parser self,
               NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
               loc_err,
               from__String(""),
-              Some(format("found `{c}`, expected `ID`",
-                          (char)(UPtr)current)));
+              Some(format("found `{c}`, expected `ID`", (char)(UPtr)current)));
 
         emit__Diagnostic(err);
 

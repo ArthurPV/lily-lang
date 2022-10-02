@@ -31,18 +31,20 @@ typedef struct Typecheck
 {
     struct Parser parser;
     struct Decl *decl;
-    struct Vec *builtins;    // struct Vec<struct Builtin*>*
-    struct Vec *funs;        // struct Vec<struct FunSymbol*>*
-    struct Vec *consts;      // struct Vec<struct ConstantSymbol*>*
-    struct Vec *modules;     // struct Vec<struct ModuleSymbol*>*
-    struct Vec *aliases;     // struct Vec<struct AliasSymbol*>*
-    struct Vec *records;     // struct Vec<struct RecordSymbol*>*
-    struct Vec *enums;       // struct Vec<struct EnumSymbol*>*
-    struct Vec *errors;      // struct Vec<struct ErrorSymbol*>*
-    struct Vec *classes;     // struct Vec<struct ClassSymbol*>*
-    struct Vec *traits;      // struct Vec<struct TraitSymbol*>*
-    struct Vec *records_obj; // struct Vec<struct RecordObjSymbol*>*
-    struct Vec *enums_obj;   // struct Vec<struct EnumObjSymbol*>
+    struct Vec *buffer;        // struct Vec<struct Typecheck*>*
+    struct Vec *builtins;      // struct Vec<struct Builtin*>*
+    struct Vec *import_values; // struct Vec<struct SymbolTable*>*
+    struct Vec *funs;          // struct Vec<struct FunSymbol*>*
+    struct Vec *consts;        // struct Vec<struct ConstantSymbol*>*
+    struct Vec *modules;       // struct Vec<struct ModuleSymbol*>*
+    struct Vec *aliases;       // struct Vec<struct AliasSymbol*>*
+    struct Vec *records;       // struct Vec<struct RecordSymbol*>*
+    struct Vec *enums;         // struct Vec<struct EnumSymbol*>*
+    struct Vec *errors;        // struct Vec<struct ErrorSymbol*>*
+    struct Vec *classes;       // struct Vec<struct ClassSymbol*>*
+    struct Vec *traits;        // struct Vec<struct TraitSymbol*>*
+    struct Vec *records_obj;   // struct Vec<struct RecordObjSymbol*>*
+    struct Vec *enums_obj;     // struct Vec<struct EnumObjSymbol*>
 } Typecheck;
 
 /**
