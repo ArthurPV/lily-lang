@@ -24,31 +24,31 @@
         format(""),                                          \
         None());
 
-#define PARSE_GENERIC_TYPE_AND_OBJECT(self)                               \
-    if (((struct Token *)get__Vec(*self->scanner->tokens, self->pos + 1)) \
-            ->kind == TokenKindLHook ||                                   \
-        self->current->kind == TokenKindIdentifier)                       \
-        next_token_pb(self);                                              \
-                                                                          \
-    if (self->current->kind == TokenKindLHook) {                          \
-        struct Vec *content = get_generic_params(self);                   \
-                                                                          \
-        concat__Vec(generic_params, content);                             \
-                                                                          \
-        FREE(Vec, content);                                               \
-    }                                                                     \
-                                                                          \
-    if (len__Vec(*generic_params) != 0)                                   \
-        has_generic_params = true;                                        \
-                                                                          \
-    if (self->current->kind != TokenKindColon && !is_object) {            \
-                                                                          \
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");         \
-                                                                          \
-        err->err->s = from__String("`:`");                                \
-                                                                          \
-        emit__Diagnostic(err);                                            \
-    } else if (self->current->kind == TokenKindColon && !is_object)       \
+#define PARSE_GENERIC_TYPE_AND_OBJECT(self)                              \
+    if (((struct Token *)get__Vec(*self->scanner.tokens, self->pos + 1)) \
+            ->kind == TokenKindLHook ||                                  \
+        self->current->kind == TokenKindIdentifier)                      \
+        next_token_pb(self);                                             \
+                                                                         \
+    if (self->current->kind == TokenKindLHook) {                         \
+        struct Vec *content = get_generic_params(self);                  \
+                                                                         \
+        concat__Vec(generic_params, content);                            \
+                                                                         \
+        FREE(Vec, content);                                              \
+    }                                                                    \
+                                                                         \
+    if (len__Vec(*generic_params) != 0)                                  \
+        has_generic_params = true;                                       \
+                                                                         \
+    if (self->current->kind != TokenKindColon && !is_object) {           \
+                                                                         \
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");        \
+                                                                         \
+        err->err->s = from__String("`:`");                               \
+                                                                         \
+        emit__Diagnostic(err);                                           \
+    } else if (self->current->kind == TokenKindColon && !is_object)      \
         next_token_pb(self);
 
 #define EXPECTED_TOKEN(parse_block, token_kind, err) \
@@ -57,22 +57,22 @@
     } else                                           \
         next_token_pb(parse_block);
 
-#define VERIFY_EOF(parse_block, bad_token, expected)                    \
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {     \
-        struct Diagnostic *err =                                        \
-          NEW(DiagnosticWithErrParser,                                  \
-              parse_block,                                              \
-              NEW(LilyError, LilyErrorMissClosingBlock),                \
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens, \
-                                         parse_block->pos - 1))         \
-                 ->loc,                                                 \
-              format("expected closing block here"),                    \
-              None());                                                  \
-                                                                        \
-        err->err->s = format("{s}", expected);                          \
-                                                                        \
-        emit__Diagnostic(err);                                          \
-    } else if (parse_block->current->kind == TokenKindEndKw)            \
+#define VERIFY_EOF(parse_block, bad_token, expected)                   \
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {    \
+        struct Diagnostic *err =                                       \
+          NEW(DiagnosticWithErrParser,                                 \
+              parse_block,                                             \
+              NEW(LilyError, LilyErrorMissClosingBlock),               \
+              *((struct Token *)get__Vec(*parse_block->scanner.tokens, \
+                                         parse_block->pos - 1))        \
+                 ->loc,                                                \
+              format("expected closing block here"),                   \
+              None());                                                 \
+                                                                       \
+        err->err->s = format("{s}", expected);                         \
+                                                                       \
+        emit__Diagnostic(err);                                         \
+    } else if (parse_block->current->kind == TokenKindEndKw)           \
         next_token_pb(parse_block);
 
 #define PARSE_GENERIC_PARAMS(self)                                             \
@@ -200,6 +200,9 @@ get_method_parse_context(struct MethodParseContext *self,
 static void
 get_property_parse_context(struct PropertyParseContext *self,
                            struct ParseBlock *parse_block);
+static void
+get_import_parse_context(struct ImportParseContext *self,
+                         struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -221,17 +224,17 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
 
 #include <base/print.h>
 struct ParseBlock
-__new__ParseBlock(struct Scanner *scanner)
+__new__ParseBlock(struct Scanner scanner)
 {
-    struct ParseBlock self = {
-        .scanner = scanner,
-        .blocks = NEW(Vec, sizeof(struct ParseContext *)),
-        .current = &*(struct Token *)get__Vec(*scanner->tokens, 0),
-        .disable_warning = NEW(Vec, sizeof(Str)),
-        .pos = 0,
-        .count_error = 0,
-        .count_warning = 0
-    };
+    struct ParseBlock self = { .scanner = scanner,
+                               .blocks =
+                                 NEW(Vec, sizeof(struct ParseContext *)),
+                               .current =
+                                 &*(struct Token *)get__Vec(*scanner.tokens, 0),
+                               .disable_warning = NEW(Vec, sizeof(Str)),
+                               .pos = 0,
+                               .count_error = 0,
+                               .count_warning = 0 };
 
     return self;
 }
@@ -334,10 +337,90 @@ get_block(struct ParseBlock *self)
         case TokenKindObjectKw:
             get_object_context(self, false);
             break;
-        default:
-            assert(0 && "error");
+        case TokenKindBang: {
+            next_token_pb(self);
+
+            if (self->current->kind != TokenKindLHook) {
+                EXPECTED_TOKEN(self, TokenKindLHook, {
+                    struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`[`");
+
+                    err->err->s = from__String("`[`");
+
+                    emit__Diagnostic(err);
+                });
+            }
+
+            next_token_pb(self);
+
+            if (self->current->kind != TokenKindIdentifier) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      self,
+                      NEW(LilyError, LilyErrorExpectedAttribute),
+                      *self->current->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
+
+            struct String *attribute = self->current->lit;
+
+            next_token_pb(self);
+
+            if (eq__String(attribute, from__String("warning"), true)) {
+                if (self->current->kind == TokenKindStringLit) {
+                    push__Vec(self->disable_warning, &*self->current->lit);
+                    next_token_pb(self);
+                } else {
+                    EXPECTED_TOKEN(self, TokenKindStringLit, {
+                        struct Diagnostic *err =
+                          EXPECTED_TOKEN_ERR(self, "string literal");
+
+                        err->err->s = from__String("string literal");
+
+                        emit__Diagnostic(err);
+                    });
+                }
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      self,
+                      NEW(LilyError, LilyErrorUnknownAttribute),
+                      *((struct Token *)get__Vec(*self->scanner.tokens,
+                                                 self->pos - 1))
+                         ->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+                skip_to_next_block(self);
+
+                goto exit;
+            }
+
+            next_token_pb(self);
+
+        exit : {
+        } break;
+        }
+        default: {
+            struct Diagnostic *err = NEW(
+              DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorUnexpectedTokenForBeginingInGlobal),
+              *self->current->loc,
+              from__String("expected `pub`, `fun`, `type`, `object`, `tag`, "
+                           "`import`, `!`"),
+              None());
+
+            err->err->s = token_kind_to_string__Token(*self->current);
+
+            emit__Diagnostic(err);
             skip_to_next_block(self);
+
             break;
+        }
     }
 }
 
@@ -361,7 +444,7 @@ next_token_pb(struct ParseBlock *self)
     if (self->current->kind != TokenKindEof) {
         self->pos += 1;
         self->current =
-          &*(struct Token *)get__Vec(*self->scanner->tokens, self->pos);
+          &*(struct Token *)get__Vec(*self->scanner.tokens, self->pos);
     }
 }
 
@@ -542,9 +625,9 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
     end__Location(
       &loc_impl,
-      ((struct Token *)get__Vec(*self->scanner->tokens, self->pos - 1))
+      ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
         ->loc->s_line,
-      ((struct Token *)get__Vec(*self->scanner->tokens, self->pos - 1))
+      ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
         ->loc->s_col);
 
     struct Location loc_inh = {};
@@ -726,12 +809,9 @@ __free__ParseBlock(struct ParseBlock self)
     for (Usize i = 0; i < len__Vec(*self.blocks); i++)
         FREE(ParseContextAll, get__Vec(*self.blocks, i));
 
-    for (Usize i = 0; i < len__Vec(*self.disable_warning); i++)
-        free(get__Vec(*self.disable_warning, i));
-
     FREE(Vec, self.blocks);
     FREE(Vec, self.disable_warning);
-    FREE(Scanner, *self.scanner);
+    FREE(Scanner, self.scanner);
 }
 
 struct FunParseContext
@@ -1294,15 +1374,13 @@ __free__AliasParseContext(AliasParseContext self)
 struct TraitParseContext
 __new__TraitParseContext()
 {
-    struct TraitParseContext self = {
-        .is_pub = false,
-        .has_generic_params = false,
-        .has_inheritance = false,
-        .name = NULL,
-        .inheritance = NULL,
-        .generic_params = NULL,
-        .body = NEW(Vec, sizeof(struct Token))
-    };
+    struct TraitParseContext self = { .is_pub = false,
+                                      .has_generic_params = false,
+                                      .has_inheritance = false,
+                                      .name = NULL,
+                                      .inheritance = NULL,
+                                      .generic_params = NULL,
+                                      .body = NEW(Vec, sizeof(struct Token)) };
 
     return self;
 }
@@ -1385,16 +1463,14 @@ __free__TraitParseContext(struct TraitParseContext self)
 struct ClassParseContext
 __new__ClassParseContext()
 {
-    struct ClassParseContext self = {
-        .is_pub = false,
-        .has_generic_params = false,
-        .has_inheritance = false,
-        .name = NULL,
-        .generic_params = NULL,
-        .inheritance = NULL,
-        .impl = NULL,
-        .body = NEW(Vec, sizeof(struct Token))
-    };
+    struct ClassParseContext self = { .is_pub = false,
+                                      .has_generic_params = false,
+                                      .has_inheritance = false,
+                                      .name = NULL,
+                                      .generic_params = NULL,
+                                      .inheritance = NULL,
+                                      .impl = NULL,
+                                      .body = NEW(Vec, sizeof(struct Token)) };
 
     return self;
 }
@@ -1540,7 +1616,14 @@ get_class_parse_context(struct ClassParseContext *self,
         goto exit;
     }
 
-        import : { goto exit;
+        import : {
+            struct ImportParseContext impor_parse_context =
+              NEW(ImportParseContext);
+
+        get_import_parse_context(&impor_parse_context, parse_block);
+        push__Vec(self->body, NEW(ParseContextImport, impor_parse_context));
+
+        goto exit;
     }
 
 property : {
@@ -1559,7 +1642,7 @@ if (parse_block->current->kind == TokenKindEof && !bad_token) {
       NEW(DiagnosticWithErrParser,
           parse_block,
           NEW(LilyError, LilyErrorMissClosingBlock),
-          *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+          *((struct Token *)get__Vec(*parse_block->scanner.tokens,
                                      parse_block->pos - 1))
              ->loc,
           format("expected closing block here"),
@@ -1658,16 +1741,15 @@ __free__TagParseContext(struct TagParseContext *self)
 struct MethodParseContext
 __new__MethodParseContext()
 {
-    struct MethodParseContext self = {
-        .is_pub = false,
-        .is_async = false,
-        .has_generic_params = false,
-        .has_params = false,
-        .name = NULL,
-        .generic_params = NEW(Vec, sizeof(struct Token)),
-        .params = NEW(Vec, sizeof(struct Token)),
-        .body = NEW(Vec, sizeof(struct Token))
-    };
+    struct MethodParseContext self = { .is_pub = false,
+                                       .is_async = false,
+                                       .has_generic_params = false,
+                                       .has_params = false,
+                                       .name = NULL,
+                                       .generic_params =
+                                         NEW(Vec, sizeof(struct Token)),
+                                       .params = NEW(Vec, sizeof(struct Token)),
+                                       .body = NEW(Vec, sizeof(struct Token)) };
 
     return self;
 }
@@ -1701,11 +1783,10 @@ __free__MethodParseContext(struct MethodParseContext self)
 struct PropertyParseContext
 __new__PropertyParseContext()
 {
-    struct PropertyParseContext self = {
-        .is_pub = false,
-        .name = NULL,
-        .data_type = NEW(Vec, sizeof(struct Token))
-    };
+    struct PropertyParseContext self = { .is_pub = false,
+                                         .name = NULL,
+                                         .data_type =
+                                           NEW(Vec, sizeof(struct Token)) };
 
     return self;
 }
@@ -1735,13 +1816,50 @@ __free__PropertyParseContext(struct PropertyParseContext self)
 struct ImportParseContext
 __new__ImportParseContext()
 {
-    struct ImportParseContext self = {
-        .is_pub = false,
-        .value = NULL,
-        .as_value = NULL
-    };
+    struct ImportParseContext self = { .is_pub = false,
+                                       .value = NULL,
+                                       .as_value = NULL };
 
     return self;
+}
+
+static void
+get_import_parse_context(struct ImportParseContext *self,
+                         struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    if (parse_block->current->kind == TokenKindStringLit) {
+        self->value = &*parse_block->current->lit;
+        next_token_pb(parse_block);
+    } else {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorMissImportValue),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     Some(format("please add `import` value")));
+
+        emit__Diagnostic(err);
+    }
+
+    if (parse_block->current->kind == TokenKindAsKw) {
+        next_token_pb(parse_block);
+
+        if (parse_block->current->kind == TokenKindIdentifier) {
+            self->as_value = &*parse_block->current->lit;
+            next_token_pb(parse_block);
+        } else {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         parse_block,
+                                         NEW(LilyError, LilyErrorMissAsValue),
+                                         *parse_block->current->loc,
+                                         format(""),
+                                         Some(format("please add `as` value")));
+
+            emit__Diagnostic(err);
+        }
+    }
 }
 
 static inline struct Diagnostic *
@@ -1753,7 +1871,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
 {
     self->count_error += 1;
     return NEW(
-      DiagnosticWithErr, err, loc, self->scanner->src->file, detail_msg, help);
+      DiagnosticWithErr, err, loc, self->scanner.src->file, detail_msg, help);
 }
 
 static inline struct Diagnostic *
@@ -1764,12 +1882,8 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct Option *help)
 {
     self->count_warning += 1;
-    return NEW(DiagnosticWithWarn,
-               warn,
-               loc,
-               self->scanner->src->file,
-               detail_msg,
-               help);
+    return NEW(
+      DiagnosticWithWarn, warn, loc, self->scanner.src->file, detail_msg, help);
 }
 
 static inline struct Diagnostic *
@@ -1779,12 +1893,8 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *detail_msg,
                                 struct Option *help)
 {
-    return NEW(DiagnosticWithNote,
-               note,
-               loc,
-               self->scanner->src->file,
-               detail_msg,
-               help);
+    return NEW(
+      DiagnosticWithNote, note, loc, self->scanner.src->file, detail_msg, help);
 }
 
 struct ParseContext *
@@ -1842,8 +1952,7 @@ __new__ParseContextTrait(struct TraitParseContext trait)
     return self;
 }
 
-struct ParseContext *
-__new__ParseContextClass(struct ClassParseContext class)
+struct ParseContext *__new__ParseContextClass(struct ClassParseContext class)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindClass;
@@ -1866,6 +1975,15 @@ __new__ParseContextProperty(struct PropertyParseContext property)
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindProperty;
     self->value.property = property;
+    return self;
+}
+
+struct ParseContext *
+__new__ParseContextImport(struct ImportParseContext import)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindImport;
+    self->value.import = import;
     return self;
 }
 
@@ -1926,6 +2044,12 @@ __free__ParseContextProperty(struct ParseContext *self)
 }
 
 void
+__free__ParseContextImport(struct ParseContext *self)
+{
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -1954,6 +2078,9 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
         case ParseContextKindProperty:
             FREE(ParseContextProperty, self);
+            break;
+        case ParseContextKindImport:
+            FREE(ParseContextImport, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");

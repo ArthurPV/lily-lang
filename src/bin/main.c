@@ -339,7 +339,7 @@ int main() {
 
     run__Scanner(&scanner);
 
-    struct ParseBlock parse_block = NEW(ParseBlock, &scanner);
+    struct ParseBlock parse_block = NEW(ParseBlock, scanner);
 
     run__ParseBlock(&parse_block);
 

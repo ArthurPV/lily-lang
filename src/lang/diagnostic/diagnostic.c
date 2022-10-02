@@ -221,6 +221,16 @@ lily_error_to_string(struct LilyError err)
             return from__String("miss name on property or method");
         case LilyErrorInvalidClassItem:
             return from__String("invalid class item");
+        case LilyErrorMissImportValue:
+            return from__String("miss `import` value (expected string literal)");
+        case LilyErrorMissAsValue:
+            return from__String("miss `as` value (expected identifier)");
+        case LilyErrorUnexpectedTokenForBeginingInGlobal:
+            return format("unexpected token for begining in global: `{S}`", err.s);
+        case LilyErrorUnknownAttribute:
+            return from__String("unknown attribute");
+        case LilyErrorExpectedAttribute:
+            return from__String("expected attribute");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -305,6 +315,16 @@ get_code_of_lily_error(struct LilyError err)
             return "0029";
         case LilyErrorInvalidClassItem:
             return "0030";
+        case LilyErrorMissImportValue:
+            return "0031";
+        case LilyErrorMissAsValue:
+            return "0032";
+        case LilyErrorUnexpectedTokenForBeginingInGlobal:
+            return "0033";
+        case LilyErrorUnknownAttribute:
+            return "0034";
+        case LilyErrorExpectedAttribute:
+            return "0035";
         default:
             UNREACHABLE("unknown lily error kind");
     }

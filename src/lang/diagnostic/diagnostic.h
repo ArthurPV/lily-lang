@@ -77,7 +77,12 @@ enum LilyErrorKind
     LilyErrorUnexpectedImplementation,
     LilyErrorInvalidTokenInTagBody,
     LilyErrorMissNameOnPropertyOrMethod,
-    LilyErrorInvalidClassItem
+    LilyErrorInvalidClassItem,
+    LilyErrorMissImportValue,
+    LilyErrorMissAsValue,
+    LilyErrorUnexpectedTokenForBeginingInGlobal,
+    LilyErrorUnknownAttribute,
+    LilyErrorExpectedAttribute
 };
 
 typedef struct LilyError

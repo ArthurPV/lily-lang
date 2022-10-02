@@ -1552,6 +1552,7 @@ run__Scanner(struct Scanner *self)
         if (self->count_error > 0) {
             emit__Summary(
               (Int32)self->count_error, 0, "the scanner phase has been failed");
+            exit(1);
         }
     } else {
         start_token(self);

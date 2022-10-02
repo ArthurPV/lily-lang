@@ -6,7 +6,7 @@
 
 typedef struct ParseBlock
 {
-    struct Scanner *scanner;
+    struct Scanner scanner;
     struct Vec *blocks;    // struct Vec<struct Vec<struct ParseContext*>*>*
     struct Token *current; // struct Token&
     struct Vec *disable_warning; // struct Vec<Str>*
@@ -20,7 +20,7 @@ typedef struct ParseBlock
  * @brief Construct the ParseBlock type.
  */
 struct ParseBlock
-__new__ParseBlock(struct Scanner *scanner);
+__new__ParseBlock(struct Scanner scanner);
 
 /**
  *
@@ -344,8 +344,7 @@ __new__ParseContextTrait(struct TraitParseContext trait);
  *
  * @brief Contruct the ParseContext type (Class variant).
  */
-struct ParseContext *
-__new__ParseContextClass(struct ClassParseContext class);
+struct ParseContext *__new__ParseContextClass(struct ClassParseContext class);
 
 /**
  *
@@ -366,7 +365,7 @@ __new__ParseContextProperty(struct PropertyParseContext property);
  * @brief Contruct the ParseContext type (Import variant).
  */
 struct ParseContext *
-__new__ParseContextImport(struct ImportParseContext *import);
+__new__ParseContextImport(struct ImportParseContext import);
 
 /**
  *
@@ -423,6 +422,13 @@ __free__ParseContextMethod(struct ParseContext *self);
  */
 void
 __free__ParseContextProperty(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Property variant).
+ */
+void
+__free__ParseContextImport(struct ParseContext *self);
 
 /**
  *
