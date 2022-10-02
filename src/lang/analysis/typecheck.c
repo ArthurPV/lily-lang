@@ -40,7 +40,16 @@ __new__Typecheck(struct Parser parser)
         .current_trait_id = 0,
         .current_record_obj_id = 0,
         .current_enum_obj_id = 0,
-        .funs = NEW(Vec, sizeof(struct FunSymbol)),
+        .funs = NULL,
+        .consts = NULL,
+        .aliases = NULL,
+        .records = NULL,
+        .enums = NULL,
+        .errors = NULL,
+        .classes = NULL,
+        .traits = NULL,
+        .records_obj = NULL,
+        .enums_obj = NULL,
         .builtins = Load_C_builtins(),
     };
 
@@ -60,10 +69,84 @@ __free__Typecheck(struct Typecheck self)
 
     FREE(Vec, self.builtins);
 
-    for (Usize i = len__Vec(*self.funs); i--;)
-        FREE(FunSymbol, (struct FunSymbol *)get__Vec(*self.funs, i));
+    if (self.funs != NULL) {
+        for (Usize i = len__Vec(*self.funs); i--;)
+            FREE(FunSymbol, get__Vec(*self.funs, i));
 
-    FREE(Vec, self.funs);
+        FREE(Vec, self.funs);
+    }
+
+    if (self.consts != NULL) {
+        for (Usize i = len__Vec(*self.consts); i--;)
+            FREE(ConstantSymbol, get__Vec(*self.consts, i));
+
+        FREE(Vec, self.consts);
+    }
+
+    if (self.modules != NULL) {
+        for (Usize i = len__Vec(*self.modules); i--;)
+            FREE(ModuleSymbol, get__Vec(*self.modules, i));
+
+        FREE(Vec, self.modules);
+    }
+
+    if (self.aliases != NULL) {
+        for (Usize i = len__Vec(*self.aliases); i--;)
+            FREE(AliasSymbol, get__Vec(*self.aliases, i));
+
+        FREE(Vec, self.aliases);
+    }
+
+    if (self.records != NULL) {
+        for (Usize i = len__Vec(*self.records); i--;)
+            FREE(RecordSymbol, get__Vec(*self.records, i));
+
+        FREE(Vec, self.records);
+    }
+
+    if (self.records_obj != NULL) {
+        for (Usize i = len__Vec(*self.records_obj); i--;)
+            FREE(RecordObjSymbol, get__Vec(*self.records_obj, i));
+
+        FREE(Vec, self.records_obj);
+    }
+
+    if (self.enums != NULL) {
+        for (Usize i = len__Vec(*self.enums); i--;)
+            FREE(EnumSymbol, get__Vec(*self.enums, i));
+
+        FREE(Vec, self.enums);
+    }
+
+    if (self.enums_obj != NULL) {
+        for (Usize i = len__Vec(*self.enums_obj); i--;)
+            FREE(EnumObjSymbol, get__Vec(*self.enums_obj, i));
+
+        FREE(Vec, self.enums_obj);
+    }
+
+    if (self.errors != NULL) {
+        for (Usize i = len__Vec(*self.errors); i--;)
+            FREE(ErrorSymbol, get__Vec(*self.errors, i));
+
+        FREE(Vec, self.errors);
+    }
+
+    if (self.classes != NULL) {
+        for (Usize i = len__Vec(*self.classes); i--;)
+            FREE(ClassSymbol, get__Vec(*self.classes, i));
+
+        FREE(Vec, self.classes);
+    }
+
+
+    if (self.traits != NULL) {
+        for (Usize i = len__Vec(*self.traits); i--;)
+            FREE(TraitSymbol, get__Vec(*self.traits, i));
+
+        FREE(Vec, self.traits);
+    }
+
     FREE(Parser, self.parser);
 }
 
