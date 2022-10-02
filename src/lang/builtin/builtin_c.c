@@ -545,7 +545,8 @@ Load_Int16_module()
     {
         struct Vec *params = NEW(Vec, sizeof(struct DataType));
 
-        PARAMS(2, NEW(DataType, DataTypeKindI16), NEW(DataType, DataTypeKindI16));
+        PARAMS(
+          2, NEW(DataType, DataTypeKindI16), NEW(DataType, DataTypeKindI16));
 
         push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "-", params)));
     }

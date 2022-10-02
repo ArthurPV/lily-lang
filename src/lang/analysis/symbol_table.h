@@ -554,6 +554,13 @@ __new__UnaryOpSymbol(struct Expr unary_op,
 
 /**
  *
+ * @brief Convert UnaryOpKind to Str.
+ */
+const Str
+to_Str__UnaryOpSymbol(unsigned int kind);
+
+/**
+ *
  * @brief Free the UnaryOpSymbol type.
  */
 void
@@ -739,17 +746,18 @@ typedef struct ExprSymbol
         struct RecordCallSymbol record_call;
         struct Scope identifier;
         struct Scope identifier_access;
-        struct ArrayAcessSymbol *array_access;
+        struct ArrayAccessSymbol array_access;
         struct TupleAccessSymbol tuple_access;
         struct LambdaSymbol lambda;
         struct Vec *array;
         struct Vec *tuple;
+        struct VariantSymbol variant;
         struct ExprSymbol *try;
         // struct IfCond
         struct Vec *block; // struct Vec<struct SymbolTable*>*
-        struct ExprSymbol *question_mark;
-        struct ExprSymbol *dereference;
-        struct ExprSymbol *ref;
+        struct Scope question_mark;
+        struct Scope dereference;
+        struct Scope ref;
         struct LiteralSymbol literal;
         struct VariableSymbol variable;
     } value;
@@ -793,10 +801,251 @@ __new__ExprSymbolRecordCall(struct Expr expr,
 
 /**
  *
+ * @brief Construct the ExprSymbol type (Identifier variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolIdentifier(struct Expr expr, struct Scope identifier);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (IdentifierAccess variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolIdentifierAccess(struct Expr expr,
+                                  struct Scope identifier_access);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (ArrayAccess variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolArrayAccess(struct Expr expr,
+                             struct ArrayAccessSymbol array_access);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (TupleAccess variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolTupleAccess(struct Expr expr,
+                             struct TupleAccessSymbol tuple_access);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Lambda variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolLambda(struct Expr expr, struct LambdaSymbol lambda);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Tuple variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolTuple(struct Expr expr, struct Vec *tuple);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Array variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolArray(struct Expr expr, struct Vec *array);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Variant variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolVariant(struct Expr expr, struct VariantSymbol variant);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Try variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolTry(struct Expr expr, struct ExprSymbol *try);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Block variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolBlock(struct Expr expr, struct Vec *block);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (QuestionMark variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope question_mark);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Dereference variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolDereference(struct Expr expr, struct Scope dereference);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Ref variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolRef(struct Expr expr, struct Scope ref);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Literal variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolLiteral(struct Expr expr, struct LiteralSymbol literal);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (Variable variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol variable);
+
+/**
+ *
+ * @brief Free the ExprSymbol type.
+ */
+void
+__free__ExprSymbol(struct ExprSymbol *self);
+
+/**
+ *
  * @brief Free the ExprSymbol type (Unary variant).
  */
 void
 __free__ExprSymbolUnaryOp(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Binary variant).
+ */
+void
+__free__ExprSymbolBinaryOp(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (FunCall variant).
+ */
+void
+__free__ExprSymbolFunCall(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (RecordCall variant).
+ */
+void
+__free__ExprSymbolRecordCall(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Identifier variant).
+ */
+void
+__free__ExprSymbolIdentifier(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (IdentifierAccess variant).
+ */
+void
+__free__ExprSymbolIdentifierAccess(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (ArrayAccess variant).
+ */
+void
+__free__ExprSymbolArrayAccess(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (TupleAccess variant).
+ */
+void
+__free__ExprSymbolTupleAccess(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Lambda variant).
+ */
+void
+__free__ExprSymbolLambda(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Tuple variant).
+ */
+void
+__free__ExprSymbolTuple(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Array variant).
+ */
+void
+__free__ExprSymbolArray(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Variant variant).
+ */
+void
+__free__ExprSymbolVariant(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Try variant).
+ */
+void
+__free__ExprSymbolTry(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Block variant).
+ */
+void
+__free__ExprSymbolBlock(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (QuestionMark variant).
+ */
+void
+__free__ExprSymbolQuestionMark(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Dereference variant).
+ */
+void
+__free__ExprSymbolDereference(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Ref variant).
+ */
+void
+__free__ExprSymbolRef(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Literal variant).
+ */
+void
+__free__ExprSymbolLiteral(struct ExprSymbol *self);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (Variable variant).
+ */
+void
+__free__ExprSymbolVariable(struct ExprSymbol *self);
 
 /**
  *
