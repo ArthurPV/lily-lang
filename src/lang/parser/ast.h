@@ -1873,8 +1873,7 @@ __free__FunParamCallAll(struct FunParamCall *self);
 typedef struct FunParam
 {
     enum FunParamKind kind;
-    struct Option *param_data_type; // struct Option<struct Tuple<struct
-                                    // DataType*, struct Location*>*>*
+    struct Tuple *param_data_type; // struct Tuple<struct DataType*, struct Location*>*
     struct Location loc;
 
     union
@@ -1894,7 +1893,7 @@ typedef struct FunParam
  */
 struct FunParam *
 __new__FunParamDefault(struct String *name,
-                       struct Option *param_data_type,
+                       struct Tuple *param_data_type,
                        struct Location loc,
                        struct Expr *default_);
 
@@ -1904,7 +1903,7 @@ __new__FunParamDefault(struct String *name,
  */
 struct FunParam *
 __new__FunParamNormal(struct String *name,
-                      struct Option *param_data_type,
+                      struct Tuple *param_data_type,
                       struct Location loc);
 
 /**

@@ -6,7 +6,15 @@
 #include <lang/builtin/builtin.h>
 #include <lang/builtin/builtin_c.h>
 #include <lang/diagnostic/diagnostic.h>
+#include <lang/diagnostic/summary.h>
 #include <lang/parser/ast.h>
+
+#define SUMMARY()                                                       \
+    if (count_error > 0) {                                              \
+        emit__Summary(                                                  \
+          count_error, count_warning, "the typecheck has been failed"); \
+        exit(1);                                                        \
+    }
 
 static Usize pos = 0;
 static Usize count_error = 0;
@@ -415,6 +423,8 @@ check_symbols(struct Typecheck *self)
                         if (dts != NULL)
                             push__Vec(tagged_type, dts);
                     }
+
+                    SUMMARY();
                 }
 
                 if (fun_decl->generic_params != NULL) {
@@ -481,14 +491,62 @@ check_symbols(struct Typecheck *self)
                             }
                         }
                     }
+
+                    SUMMARY();
                 }
 
                 if (fun_decl->params != NULL) {
-                    TODO("params");
+                    params = NEW(Vec, sizeof(struct FunParamSymbol));
+                    local_value = NEW(Vec, sizeof(struct Scope));
+
+                    for (Usize i = len__Vec(*fun_decl->params); i--;) {
+                        struct FunParamSymbol *param =
+                          NEW(FunParamSymbol, get__Vec(*fun_decl->params, i));
+                        struct Vec *ids = NEW(Vec, sizeof(Usize));
+                        struct DataTypeSymbol *dts = check_data_type(
+                          self,
+                          *(struct Location *)((struct FunParam *)get__Vec(
+                                                 *fun_decl->params, i))
+                             ->param_data_type->items[1],
+                          ((struct FunParam *)get__Vec(*fun_decl->params, i))
+                            ->param_data_type->items[0],
+                          local_data_type,
+                          false,
+                          false);
+
+                        if (dts != NULL) {
+                            param->param_data_type =
+                              ((struct FunParam *)get__Vec(*fun_decl->params,
+                                                           i))
+                                    ->param_data_type != NULL
+                                ? NEW(Tuple,
+                                      2,
+                                      dts,
+                                      ((struct FunParam *)get__Vec(
+                                         *fun_decl->params, i))
+                                        ->param_data_type->items[1])
+                                : NULL;
+                        }
+
+                        if (param->default_ != NULL)
+                            TODO("");
+
+                        push__Vec(ids, (Usize *)i);
+                        push__Vec(params, param);
+                        push__Vec(
+                          local_value,
+                          NEW(Scope,
+                              self->parser.parse_block.scanner.src->file.name,
+                              param->name,
+                              ids,
+                              ScopeItemKindParam,
+                              ScopeKindLocal));
+                    }
                 }
 
                 if (fun_decl->return_type != NULL) {
                     TODO("return type");
+                    SUMMARY();
                 }
 
                 if (fun_decl->body != NULL) {
@@ -870,6 +928,39 @@ check_data_type(struct Typecheck *self,
                         if (id_enums == NULL && id_records == NULL &&
                             id_enums_obj == NULL && id_records_obj == NULL &&
                             id_classes == NULL && id_traits == NULL) {
+                            if (len__Vec(*(struct Vec *)data_type->value.custom
+                                            ->items[0]) == 1) {
+                                for (Usize i = len__Vec(*local_data_type);
+                                     i--;) {
+                                    if (eq__String(
+                                          ((struct LocalDataType *)get__Vec(
+                                             *local_data_type, i))
+                                            ->name,
+                                          get__Vec(*(struct Vec *)data_type
+                                                      ->value.custom->items[0],
+                                                   0),
+                                          false)) {
+                                        id = NEW(Vec, sizeof(Usize));
+
+                                        push__Vec(id, (Usize *)i);
+
+                                        return NEW(
+                                          DataTypeSymbolCustom,
+                                          generic_params,
+                                          NEW(Scope,
+                                              self->parser.parse_block.scanner
+                                                .src->file.name,
+                                              (struct String *)get__Vec(
+                                                (*(struct Vec *)data_type->value
+                                                    .custom->items[0]),
+                                                0),
+                                              id,
+                                              ScopeItemKindGeneric,
+                                              ScopeKindLocal));
+                                    }
+                                }
+                            }
+
                             struct Diagnostic *err =
                               NEW(DiagnosticWithErrTypecheck,
                                   self,

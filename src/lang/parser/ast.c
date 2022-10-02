@@ -2070,7 +2070,7 @@ __free__FunParamCallAll(struct FunParamCall *self)
 
 struct FunParam *
 __new__FunParamDefault(struct String *name,
-                       struct Option *param_data_type,
+                       struct Tuple *param_data_type,
                        struct Location loc,
                        struct Expr *default_)
 {
@@ -2085,7 +2085,7 @@ __new__FunParamDefault(struct String *name,
 
 struct FunParam *
 __new__FunParamNormal(struct String *name,
-                      struct Option *param_data_type,
+                      struct Tuple *param_data_type,
                       struct Location loc)
 {
     struct FunParam *self = malloc(sizeof(struct FunParam));
@@ -2131,15 +2131,12 @@ to_string__FunParam(struct FunParam self)
 void
 __free__FunParamDefault(struct FunParam *self)
 {
-    if (is_Some__Option(self->param_data_type)) {
-        struct Tuple *temp = get__Option(self->param_data_type);
-
-        FREE(DataTypeAll, temp->items[0]);
-        free(temp->items[1]);
-        FREE(Tuple, temp);
+    if (self->param_data_type != NULL) {
+        FREE(DataTypeAll, self->param_data_type->items[0]);
+        free(self->param_data_type->items[1]);
+        FREE(Tuple, self->param_data_type);
     }
 
-    FREE(Option, self->param_data_type);
     FREE(ExprAll, self->value.default_);
     free(self);
 }
@@ -2147,15 +2144,12 @@ __free__FunParamDefault(struct FunParam *self)
 void
 __free__FunParamNormal(struct FunParam *self)
 {
-    if (is_Some__Option(self->param_data_type)) {
-        struct Tuple *temp = get__Option(self->param_data_type);
-
-        FREE(DataTypeAll, temp->items[0]);
-        free(temp->items[1]);
-        FREE(Tuple, temp);
+    if (self->param_data_type != NULL) {
+        FREE(DataTypeAll, self->param_data_type->items[0]);
+        free(self->param_data_type->items[1]);
+        FREE(Tuple, self->param_data_type);
     }
 
-    FREE(Option, self->param_data_type);
     free(self);
 }
 

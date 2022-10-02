@@ -18,7 +18,8 @@ enum ScopeItemKind
     ScopeItemKindError,
     ScopeItemKindClass,
     ScopeItemKindModule,
-    ScopeItemKindTrait
+    ScopeItemKindTrait,
+    ScopeItemKindGeneric
 };
 
 enum ScopeKind

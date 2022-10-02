@@ -4911,26 +4911,26 @@ parse_fun_params(struct Parser self,
             });
 
             if (default_value == NULL && data_type == NULL)
-                push__Vec(params, NEW(FunParamNormal, name, None(), loc));
+                push__Vec(params, NEW(FunParamNormal, name, NULL, loc));
             else if (default_value == NULL)
                 push__Vec(
                   params,
                   NEW(FunParamNormal,
                       name,
-                      Some(NEW(
-                        Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                      NEW(
+                        Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc));
             else if (default_value != NULL && data_type == NULL)
                 push__Vec(
                   params,
-                  NEW(FunParamDefault, name, None(), loc, default_value));
+                  NEW(FunParamDefault, name, NULL, loc, default_value));
             else
                 push__Vec(
                   params,
                   NEW(FunParamDefault,
                       name,
-                      Some(NEW(
-                        Tuple, 2, data_type, copy__Location(&loc_data_type))),
+                      NEW(
+                        Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc,
                       default_value));
         }
