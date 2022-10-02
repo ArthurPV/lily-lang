@@ -117,7 +117,7 @@ typedef struct CompilerDefinedDataType
 inline struct CompilerDefinedDataType
 __new__CompilerDefinedDataType(Str name, bool is_args)
 {
-    struct CompilerDefinedDataType self = {.name = name, .is_args = is_args};
+    struct CompilerDefinedDataType self = { .name = name, .is_args = is_args };
     return self;
 }
 
@@ -137,7 +137,8 @@ typedef struct DataTypeSymbol
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
         struct Vec *custom;   // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*
-        struct CompilerDefinedDataType compiler_defined; // struct CompilerDefinedDataType
+        struct CompilerDefinedDataType
+          compiler_defined; // struct CompilerDefinedDataType
     } value;
 
     union
@@ -224,7 +225,8 @@ __new__DataTypeSymbolTuple(struct Vec *tuple);
  * @brief Construct the DataTypeSymbol type (CompilerDefinedDataType variant).
  */
 struct DataTypeSymbol *
-__new__DataTypeSymbolCompilerDefined(struct CompilerDefinedDataType compiler_defined);
+__new__DataTypeSymbolCompilerDefined(
+  struct CompilerDefinedDataType compiler_defined);
 
 /**
  *
@@ -2204,6 +2206,20 @@ __new__SymbolTableExpr(struct ExprSymbol *expr);
  */
 struct SymbolTable *
 __new__SymbolTableStmt(struct StmtSymbol stmt);
+
+/**
+ *
+ * @brief Get name of SymbolTable (when it's possible).
+ */
+struct String *
+get_name__SymbolTable(struct SymbolTable *self);
+
+/**
+ *
+ * @brief Get name of SymbolTable (when it's possible).
+ */
+struct Scope *
+get_scope__SymbolTable(struct SymbolTable *self);
 
 /**
  *

@@ -111,6 +111,8 @@ enum TokenKind {
     TokenKindInKw,
     TokenKindMutKw,
     TokenKindBeginKw,
+    TokenKindGlobalKw,
+    TokenKindPackageKw,
     TokenKindStringLit,
     TokenKindCharLit,
     TokenKindBitStringLit,

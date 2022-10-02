@@ -21,17 +21,17 @@
 static Usize pos = 0;
 static Usize count_error = 0;
 static Usize count_warning = 0;
-static Usize current_fun_id = 0;
-static Usize current_const_id = 0;
-static Usize current_module_id = 0;
-static Usize current_alias_id = 0;
-static Usize current_record_id = 0;
-static Usize current_enum_id = 0;
-static Usize current_error_id = 0;
-static Usize current_class_id = 0;
-static Usize current_trait_id = 0;
-static Usize current_record_obj_id = 0;
-static Usize current_enum_obj_id = 0;
+static Usize count_fun_id = 0;
+static Usize count_const_id = 0;
+static Usize count_module_id = 0;
+static Usize count_alias_id = 0;
+static Usize count_record_id = 0;
+static Usize count_enum_id = 0;
+static Usize count_error_id = 0;
+static Usize count_class_id = 0;
+static Usize count_trait_id = 0;
+static Usize count_record_obj_id = 0;
+static Usize count_enum_obj_id = 0;
 
 static const Int128 MaxUInt8 = 0xFF;
 static const Int128 MaxUInt16 = 0xFFFF;
@@ -82,10 +82,21 @@ static void
 check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id);
 static void
 check_symbols(struct Typecheck *self);
+static struct ModuleSymbol *
+entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx);
+static struct Scope *
+search_from_access(struct Typecheck *self, struct Vec *name, struct SearchModuleContext);
 static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
                             struct Vec *name,
                             struct SearchModuleContext search_module_context);
+static struct Scope *
+search_with_search_module_context(
+  struct Typecheck *self,
+  struct Vec *name,
+  struct SearchModuleContext search_module_context);
+static Usize *
+search_in_funs_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_enums_from_name(struct Typecheck *self, struct String *name);
 static Usize *
@@ -98,6 +109,10 @@ static Usize *
 search_in_classes_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_traits_from_name(struct Typecheck *self, struct String *name);
+static struct Vec *
+search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id);
+static struct Vec *
+identifier_access_to_string_vec(struct Expr *id);
 static struct DataTypeSymbol *
 check_data_type(struct Typecheck *self,
                 struct Location data_type_loc,
@@ -611,7 +626,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
         fun->params = params;
         fun->return_type = return_type;
         fun->body = body;
-        ++current_fun_id;
+        ++count_fun_id;
 
         if (local_data_type != NULL)
             for (Usize i = len__Vec(*local_data_type); i--;)
@@ -631,9 +646,8 @@ check_symbols(struct Typecheck *self)
             case DeclKindFun: {
                 struct Vec *scope_id = NEW(Vec, sizeof(Usize));
 
-                push__Vec(scope_id, (Usize *)current_fun_id);
-                check_fun(
-                  self, get__Vec(*self->funs, current_fun_id), scope_id);
+                push__Vec(scope_id, (Usize *)count_fun_id);
+                check_fun(self, get__Vec(*self->funs, count_fun_id), scope_id);
 
                 break;
             }
@@ -645,12 +659,217 @@ check_symbols(struct Typecheck *self)
     }
 }
 
+static struct ModuleSymbol *
+entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx)
+{
+    if (self->modules == NULL)
+        assert(0 && "error unknown module");
+
+    if (len__Vec(*id) == 0)
+        return NULL;
+
+    struct ModuleSymbol *current_module = get__Vec(*self->modules, 0);
+
+    for (Usize i = 1; i < end_idx; i++) {
+        current_module =
+          ((struct SymbolTable *)get__Vec(*current_module->body,
+                                          (Usize)(UPtr)get__Vec(*id, i)))
+            ->value.module;
+    }
+
+    return current_module;
+}
+
+static struct Scope *
+search_from_access(struct Typecheck *self, struct Vec *name, struct SearchModuleContext)
+{
+}
+
+static struct Scope *
+search_in_modules_from_name(struct Typecheck *self,
+                            struct Expr *id,
+                            struct Scope *scope,
+                            struct SearchModuleContext search_module_context)
+{
+    if (self->modules == NULL)
+        return NULL;
+
+    struct Vec *name = identifier_access_to_string_vec(id);
+
+#define DEFINE_END_INDEX()                                    \
+    switch (scope->item_kind) {                               \
+        case ScopeItemKindVariable:                           \
+        case ScopeItemKindParam:                              \
+        case ScopeItemKindVariant:                            \
+        case ScopeItemKindGeneric:                            \
+            UNREACHABLE("can't determine end index");         \
+        case ScopeItemKindRecord:                             \
+        case ScopeItemKindAlias:                              \
+        case ScopeItemKindEnum:                               \
+        case ScopeItemKindConstant:                           \
+        case ScopeItemKindFun:                                \
+        case ScopeItemKindError:                              \
+        case ScopeItemKindTrait:                              \
+            if (len__Vec(*scope->id) - 1 > 0)                 \
+                *end_idx_scope_id = len__Vec(*scope->id) - 1; \
+            break;                                            \
+        case ScopeItemKindRecordObj:                          \
+        case ScopeItemKindEnumObj:                            \
+        case ScopeItemKindClass:                              \
+        case ScopeItemKindModule:                             \
+            *end_idx_scope_id = len__Vec(*scope->id);         \
+            break;                                            \
+    }
+
+#define VALID_CONTEXT(kind, symb)                      \
+    switch (kind) {                                    \
+        case DeclKindRecord:                           \
+        case DeclKindEnum:                             \
+        case DeclKindClass:                            \
+        case DeclKindTrait:                            \
+        case DeclKindAlias:                            \
+            if (!search_module_context.search_type) {  \
+                assert(0 && "error");                  \
+                return NULL;                           \
+            } else                                     \
+                return symb;                           \
+        case DeclKindFun:                              \
+            if (!search_module_context.search_fun) {   \
+                assert(0 && "error");                  \
+                return NULL;                           \
+            } else                                     \
+                return symb;                           \
+        case DeclKindConstant:                         \
+            if (!search_module_context.search_value) { \
+                assert(0 && "error");                  \
+                return NULL;                           \
+            } else                                     \
+                return symb;                           \
+        default:                                       \
+            break;                                     \
+    }
+
+    if (len__Vec(*name) == 1) {
+        Usize *end_idx_scope_id = NULL;
+
+        DEFINE_END_INDEX();
+
+        for (Usize i = (Usize)(UPtr)end_idx_scope_id; i--;) {
+            struct ModuleSymbol *current_module =
+              entry_in_module(self, scope->id, i);
+
+            if (current_module != NULL) {
+                for (Usize j = len__Vec(*current_module->body); j--;) {
+                    if (eq__String(get_name__SymbolTable(
+                                     get__Vec(*current_module->body, j)),
+                                   get__Vec(*name, 0),
+                                   false)) {
+                        FREE(Vec, name);
+                        VALID_CONTEXT(((struct SymbolTable *)get__Vec(
+                                         *current_module->body, j))
+                                        ->kind,
+                                      get_scope__SymbolTable(
+                                        get__Vec(*current_module->body, j));)
+                    }
+                }
+            } else {
+                struct Scope *res = search_with_search_module_context(
+                  self, name, search_module_context);
+
+                if (res == NULL) {
+                    assert(0 && "error");
+                    return NULL;
+                }
+
+                return res;
+            }
+        }
+    } else {
+    }
+
+    FREE(Vec, name);
+}
+
+static struct Scope *
+search_with_search_module_context(
+  struct Typecheck *self,
+  struct Vec *name,
+  struct SearchModuleContext search_module_context)
+{
+    // TODO: analysis if (*)->scope == NULL
+    if (search_module_context.search_type) {
+        {
+            Usize *enum_ = search_in_enums_from_name(self, get__Vec(*name, 0));
+
+            if (enum_ != NULL)
+                return ((struct EnumSymbol *)get__Vec(*self->enums,
+                                                      (UPtr)(Usize)enum_))
+                  ->scope;
+        }
+
+        {
+            Usize *record =
+              search_in_records_from_name(self, get__Vec(*name, 0));
+
+            if (record != NULL)
+                return ((struct RecordSymbol *)get__Vec(*self->records,
+                                                        (UPtr)(Usize)record))
+                  ->scope;
+        }
+
+        {
+            Usize *record_obj =
+              search_in_records_obj_from_name(self, get__Vec(*name, 0));
+
+            if (record_obj != NULL)
+                return ((struct RecordObjSymbol *)get__Vec(
+                          *self->records_obj, (UPtr)(Usize)record_obj))
+                  ->scope;
+        }
+
+        {
+            Usize *enum_obj =
+              search_in_enums_obj_from_name(self, get__Vec(*name, 0));
+
+            if (enum_obj != NULL)
+                return ((struct EnumObjSymbol *)get__Vec(*self->enums_obj,
+                                                         (UPtr)(Usize)enum_obj))
+                  ->scope;
+        }
+
+        {
+            Usize *class =
+              search_in_classes_from_name(self, get__Vec(*name, 0));
+
+            if (class != NULL)
+                return ((struct ClassSymbol *)get__Vec(*self->classes,
+                                                       (UPtr)(Usize) class))
+                  ->scope;
+        }
+
+        assert(0 && "error");
+
+        return NULL;
+    } else if (search_module_context.search_fun) {
+        Usize *fun = search_in_funs_from_name(self, get__Vec(*name, 0));
+
+        if (fun != NULL)
+            return ((struct FunSymbol *)get__Vec(*self->funs, (UPtr)(Usize)fun))
+              ->scope;
+
+        assert(0 && "error");
+
+        return NULL;
+    } else // TODO: not sure if `else` is correct
+        UNREACHABLE("can't search value in global");
+}
+
 static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
                             struct Vec *name,
                             struct SearchModuleContext search_module_context)
 {
-    if (self->modules != NULL)
+    if (self->modules == NULL)
         return NULL;
 
     struct Vec *ids = NEW(Vec, sizeof(Usize));
@@ -821,6 +1040,21 @@ search_in_modules_from_name(struct Typecheck *self,
 }
 
 static Usize *
+search_in_funs_from_name(struct Typecheck *self, struct String *name)
+{
+    if (self->funs == NULL)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->funs); i--;)
+        if (eq__String(name,
+                       ((struct FunSymbol *)get__Vec(*self->funs, i))->name,
+                       false))
+            return (Usize *)i;
+
+    return NULL;
+}
+
+static Usize *
 search_in_enums_from_name(struct Typecheck *self, struct String *name)
 {
     if (self->enums == NULL)
@@ -912,6 +1146,52 @@ search_in_traits_from_name(struct Typecheck *self, struct String *name)
             return (Usize *)i;
 
     return NULL;
+}
+
+static struct Vec *
+search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
+{
+    if (id->kind == ExprKindIdentifier) {
+        for (Usize i = len__Vec(*self->funs); i--;) {
+            if (eq__String(((struct FunSymbol *)get__Vec(*self->funs, i))->name,
+                           id->value.identifier,
+                           false))
+                return get__Vec(*self->funs, i);
+        }
+    } else if (id->kind == ExprKindIdentifierAccess) {
+        struct Scope *scope = search_in_modules_from_name(
+          self,
+          id->value.identifier_access,
+          (struct SearchModuleContext){ .search_fun = true,
+                                        .search_type = false,
+                                        .search_value = false,
+                                        .search_variant = false });
+    } else
+        assert(0 && "error");
+}
+
+static struct Vec *
+identifier_access_to_string_vec(struct Expr *id)
+{
+    struct Vec *name = NEW(Vec, sizeof(struct String));
+
+    if (id->kind == ExprKindIdentifier) {
+        push__Vec(name, id->value.identifier);
+
+        return name;
+    } else if (id->kind == ExprKindIdentifierAccess) {
+        for (Usize i = 0; i < len__Vec(*id->value.identifier_access); i++) {
+            struct Expr *temp = get__Vec(*id->value.identifier_access, i);
+
+            if (temp->kind == TokenKindIdentifier)
+                push__Vec(name, temp->value.identifier);
+            else
+                UNREACHABLE("expected identifier");
+        }
+
+        return name;
+    } else
+        UNREACHABLE("expected identifier or identifier access");
 }
 
 static struct DataTypeSymbol *
@@ -1805,7 +2085,8 @@ check_expression(struct Typecheck *self,
                     const Str module_name =
                       get_builtin_module_name_from_data_type(
                         get_data_type_of_expression(self, right, local_value));
-                    const Str op_str = to_str__UnaryOpKind(expr->value.unary_op.kind);
+                    const Str op_str =
+                      to_str__UnaryOpKind(expr->value.unary_op.kind);
 
                     verify_type_of_fun_builtin(
                       search_fun_builtin(self, module_name, op_str, 2),
@@ -2006,7 +2287,7 @@ check_expression(struct Typecheck *self,
                         right));
                 }
                 case BinaryOpKindCustom:
-                    TODO("check binary op");
+                    TODO("check binary op custom");
             }
         }
         case ExprKindFunCall: {

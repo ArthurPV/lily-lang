@@ -6,7 +6,7 @@
 typedef struct Typecheck
 {
     struct Parser parser;
-    struct Decl *decl; 
+    struct Decl *decl;
     struct Vec *builtins;    // struct Vec<struct Builtin*>*
     struct Vec *funs;        // struct Vec<struct FunSymbol*>*
     struct Vec *consts;      // struct Vec<struct ConstantSymbol*>*

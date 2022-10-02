@@ -296,6 +296,10 @@ get_keyword(const Str id)
         return TokenKindMutKw;
     if (!strcmp(id, "begin"))
         return TokenKindBeginKw;
+    if (!strcmp(id, "global"))
+        return TokenKindGlobalKw;
+    if (!strcmp(id, "package"))
+        return TokenKindPackageKw;
     return TokenKindIdentifier;
 }
 
@@ -423,6 +427,8 @@ next_char_by_token(struct Scanner *self, struct Token tok)
         case TokenKindInKw:
         case TokenKindMutKw:
         case TokenKindBeginKw:
+        case TokenKindGlobalKw:
+        case TokenKindPackageKw:
         case TokenKindStringLit:
         case TokenKindCharLit:
         case TokenKindBitStringLit:

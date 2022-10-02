@@ -1,3 +1,5 @@
+global module App;
+
 import "std.*" as std
 
 A := 3;

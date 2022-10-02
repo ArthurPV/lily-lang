@@ -117,7 +117,8 @@ __new__DataTypeSymbolTuple(struct Vec *tuple)
 }
 
 struct DataTypeSymbol *
-__new__DataTypeSymbolCompilerDefined(struct CompilerDefinedDataType compiler_defined)
+__new__DataTypeSymbolCompilerDefined(
+  struct CompilerDefinedDataType compiler_defined)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindCompilerDefined;
@@ -1457,6 +1458,66 @@ __new__SymbolTableStmt(struct StmtSymbol stmt)
     self->kind = SymbolTableKindStmt;
     self->value.stmt = stmt;
     return self;
+}
+
+struct String *
+get_name__SymbolTable(struct SymbolTable *self)
+{
+    switch (self->kind) {
+        case SymbolTableKindFun:
+            return self->value.fun->name;
+        case SymbolTableKindConstant:
+            return self->value.constant->name;
+        case SymbolTableKindModule:
+            return self->value.module->name;
+        case SymbolTableKindAlias:
+            return self->value.alias->name;
+        case SymbolTableKindRecord:
+            return self->value.record->name;
+        case SymbolTableKindEnum:
+            return self->value.enum_->name;
+        case SymbolTableKindClass:
+            return self->value.class->name;
+        case SymbolTableKindTrait:
+            return self->value.trait->name;
+        case SymbolTableKindRecordObj:
+            return self->value.record_obj->name;
+        case SymbolTableKindEnumObj:
+            return self->value.enum_obj->name;
+        default:
+            UNREACHABLE("can't get name of symbol");
+    }
+}
+
+struct Scope *
+get_scope__SymbolTable(struct SymbolTable *self)
+{
+    switch (self->kind) {
+        case SymbolTableKindFun:
+            return self->value.fun->scope;
+        case SymbolTableKindConstant:
+            return self->value.constant->scope;
+        case SymbolTableKindModule:
+            return self->value.module->scope;
+        case SymbolTableKindAlias:
+            return self->value.alias->scope;
+        case SymbolTableKindRecord:
+            return self->value.record->scope;
+        case SymbolTableKindEnum:
+            return self->value.enum_->scope;
+        case SymbolTableKindError:
+            return self->value.error->scope;
+        case SymbolTableKindClass:
+            return self->value.class->scope;
+        case SymbolTableKindTrait:
+            return self->value.trait->scope;
+        case SymbolTableKindRecordObj:
+            return self->value.record_obj->scope;
+        case SymbolTableKindEnumObj:
+            return self->value.enum_obj->scope;
+        default:
+            UNREACHABLE("can't get scope");
+    }
 }
 
 void

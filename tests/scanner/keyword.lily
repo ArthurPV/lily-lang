@@ -43,3 +43,5 @@ impl
 in
 mut
 begin
+global
+package

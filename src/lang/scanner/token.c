@@ -333,6 +333,10 @@ token_kind_to_string__Token(struct Token self)
             return from__String("mut");
         case TokenKindBeginKw:
             return from__String("begin");
+        case TokenKindGlobalKw:
+            return from__String("global");
+        case TokenKindPackageKw:
+            return from__String("package");
         case TokenKindStringLit:
             return format("\"{S}\"", self.lit);
         case TokenKindCharLit:
