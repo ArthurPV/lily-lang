@@ -172,7 +172,7 @@ typedef struct ClassParseContext
     struct Vec *generic_params; // struct Vec<struct Token&>*
     struct Vec *inheritance;    // struct Vec<struct Token&>*
     struct Vec *impl;           // struct Vec<struct Token&>*
-    struct Vec *body;           // struct Vec<struct Token&>*
+    struct Vec *body;           // struct Vec<struct ParseContext*>*
 } ClassParseContext;
 
 /**

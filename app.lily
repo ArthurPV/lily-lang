@@ -26,6 +26,6 @@ object Work: trait =
 end
 
 object Person: class =
-	@name string
-	@age u32
+	@name string;
+	@age u32;
 end

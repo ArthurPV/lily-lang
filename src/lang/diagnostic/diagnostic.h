@@ -67,7 +67,7 @@ enum LilyErrorKind
     LilyErrorMisuseOfSpecialClosingBlock,
     LilyErrorBadUsageOfAsync,
     LilyErrorBadUsageOfPub,
-    LilyErrorInvalidItemInFunOrClassBody,
+    LilyErrorInvalidItemInFunOrMethodBody,
     LilyErrorBadUsageOfType,
     LilyErrorMissTypeName,
     LilyErrorInvalidTokenInEnumVariant,
