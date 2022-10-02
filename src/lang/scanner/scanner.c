@@ -1436,10 +1436,9 @@ get_token(struct Scanner *self)
 
                 return get_token(self);
 
-            } else if (c2 == (char *)'/') {
+            } else if (c2 == (char *)'/')
                 kind = scan_comment_one(self);
-                next_char(self);
-            } else if (c2 == (char *)'=')
+            else if (c2 == (char *)'=')
                 kind = TokenKindSlashEq;
             else if (c2 == (char *)'*')
                 return scan_comment_multi(self);
