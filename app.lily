@@ -9,8 +9,8 @@ fun add(x, y) = return x+y;
 fun is_zero(x) = if x == 0 do true;;
 
 type Letter: enum =
-	A i32,
-	B i32
+	A Int32,
+	B Int32
 end
 
 type Person: record =
@@ -18,7 +18,7 @@ type Person: record =
 	age Uint8
 end
 
-type Persons: alias = i32;
+type Persons: alias = Int32;
 
 object Work: trait =
 	@get_work :: self -> Str

@@ -285,7 +285,7 @@ __free__DataTypeLambda(struct DataType *self)
 {
     struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
 
-    for (Usize i = 0; i < len__Vec(*temporary); i++)
+    for (Usize i = len__Vec(*temporary); i--;)
         FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));
 
     FREE(Vec, self->value.lambda->items[0]);
@@ -315,7 +315,7 @@ __free__DataTypeCustom(struct DataType *self)
         struct Vec *temporary =
           (struct Vec *)get__Option(self->value.custom->items[1]);
 
-        for (Usize i = 0; i < len__Vec(*temporary); i++)
+        for (Usize i = len__Vec(*temporary); i--;)
             FREE(DataTypeAll, get__Vec(*temporary, i));
 
         FREE(Vec, temporary);
@@ -329,7 +329,7 @@ __free__DataTypeCustom(struct DataType *self)
 void
 __free__DataTypeTuple(struct DataType *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.tuple); i++)
+    for (Usize i = len__Vec(*self->value.tuple); i--;)
         FREE(DataTypeAll, get__Vec(*self->value.tuple, i));
 
     FREE(Vec, self->value.tuple);
@@ -913,7 +913,7 @@ __free__FunCall(struct FunCall self)
 {
     FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self.params); i++) {
+    for (Usize i = len__Vec(*self.params); i--;) {
         FREE(FunParamCallAll,
              ((struct Tuple *)get__Vec(*self.params, i))->items[0]);
         free(((struct Tuple *)get__Vec(*self.params, i))->items[1]);
@@ -954,7 +954,7 @@ __free__RecordCall(struct RecordCall self)
 {
     FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self.fields); i++) {
+    for (Usize i = len__Vec(*self.fields); i--;) {
         FREE(FieldCall, ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
         free(((struct Tuple *)get__Vec(*self.fields, i))->items[1]);
         FREE(Tuple, ((struct Tuple *)get__Vec(*self.fields, i)));
@@ -976,7 +976,7 @@ __free__ArrayAccess(struct ArrayAccess self)
 {
     FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self.access); i++)
+    for (Usize i = len__Vec(*self.access); i--;)
         FREE(ExprAll, get__Vec(*self.access, i));
 
     FREE(Vec, self.access);
@@ -995,7 +995,7 @@ __free__TupleAccess(struct TupleAccess self)
 {
     FREE(ExprAll, self.id);
 
-    for (Usize i = 0; i < len__Vec(*self.access); i++)
+    for (Usize i = len__Vec(*self.access); i--;)
         FREE(ExprAll, get__Vec(*self.access, i));
 
     FREE(Vec, self.access);
@@ -1018,7 +1018,7 @@ __new__Lambda(struct Vec *params,
 void
 __free__Lambda(struct Lambda self)
 {
-    for (Usize i = 0; i < len__Vec(*self.params); i++)
+    for (Usize i = len__Vec(*self.params); i--;)
         FREE(FunParamAll, get__Vec(*self.params, i));
 
     FREE(Vec, self.params);
@@ -1028,7 +1028,7 @@ __free__Lambda(struct Lambda self)
 
     FREE(Option, self.return_type);
 
-    for (Usize i = 0; i < len__Vec(*self.body); i++)
+    for (Usize i = len__Vec(*self.body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self.body, i));
 
     FREE(Vec, self.body);
@@ -1313,7 +1313,7 @@ __free__ExprIdentifier(struct Expr *self)
 void
 __free__ExprIdentifierAccess(struct Expr *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.identifier_access); i++)
+    for (Usize i = len__Vec(*self->value.identifier_access); i--;)
         FREE(ExprAll, get__Vec(*self->value.identifier_access, i));
 
     FREE(Vec, self->value.identifier_access);
@@ -1344,7 +1344,7 @@ __free__ExprLambda(struct Expr *self)
 void
 __free__ExprArray(struct Expr *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.array); i++)
+    for (Usize i = len__Vec(*self->value.array); i--;)
         FREE(ExprAll, get__Vec(*self->value.array, i));
 
     FREE(Vec, self->value.array);
@@ -1354,7 +1354,7 @@ __free__ExprArray(struct Expr *self)
 void
 __free__ExprTuple(struct Expr *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.tuple); i++)
+    for (Usize i = len__Vec(*self->value.tuple); i--;)
         FREE(ExprAll, get__Vec(*self->value.tuple, i));
 
     FREE(Vec, self->value.tuple);
@@ -1385,7 +1385,7 @@ __free__ExprIf(struct Expr *self)
 void
 __free__ExprBlock(struct Expr *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.block); i++)
+    for (Usize i = len__Vec(*self->value.block); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->value.block, i));
 
     FREE(Vec, self->value.block);
@@ -1725,13 +1725,13 @@ __free__MatchStmt(struct MatchStmt *self)
 {
     FREE(ExprAll, self->matching);
 
-    for (Usize i = 0; i < len__Vec(*self->pattern); i++) {
+    for (Usize i = len__Vec(*self->pattern); i--;) {
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[0]);
 
         struct Vec *temp =
           ((struct Tuple *)get__Vec(*self->pattern, i))->items[1];
 
-        for (Usize j = 0; j < len__Vec(*temp); j++) {
+        for (Usize j = len__Vec(*temp); j--;) {
             FREE(FunBodyItemAll, get__Vec(*temp, j));
         }
 
@@ -1757,7 +1757,7 @@ __free__IfBranch(struct IfBranch *self)
 {
     FREE(ExprAll, self->cond);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
@@ -1845,7 +1845,7 @@ __free__IfCond(struct IfCond *self)
     if (is_Some__Option(self->elif)) {
         struct Vec *temp = get__Option(self->elif);
 
-        for (Usize i = 0; i < len__Vec(*temp); i++)
+        for (Usize i = len__Vec(*temp); i--;)
             FREE(IfBranch, get__Vec(*temp, i));
 
         FREE(Vec, temp);
@@ -1856,7 +1856,7 @@ __free__IfCond(struct IfCond *self)
     if (is_Some__Option(self->else_)) {
         struct Vec *temp = get__Option(self->else_);
 
-        for (Usize i = 0; i < len__Vec(*temp); i++)
+        for (Usize i = len__Vec(*temp); i--;)
             FREE(FunBodyItemAll, get__Vec(*temp, i));
 
         FREE(Vec, temp);
@@ -1929,7 +1929,7 @@ __free__TryStmt(struct TryStmt *self)
 {
     FREE(ExprAll, self->try_expr);
 
-    for (Usize i = 0; i < len__Vec(*self->try_body); i++)
+    for (Usize i = len__Vec(*self->try_body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->try_body, i));
 
     FREE(Vec, self->try_body);
@@ -1942,7 +1942,7 @@ __free__TryStmt(struct TryStmt *self)
     if (is_Some__Option(self->catch_body)) {
         struct Vec *temp = get__Option(self->catch_body);
 
-        for (Usize i = 0; i < len__Vec(*temp); i++)
+        for (Usize i = len__Vec(*temp); i--;)
             FREE(FunBodyItemAll, get__Vec(*temp, i));
     }
 
@@ -1985,7 +1985,7 @@ __free__WhileStmt(struct WhileStmt *self)
 {
     FREE(ExprAll, self->cond);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
@@ -2162,7 +2162,7 @@ __free__ForStmt(struct ForStmt *self)
 {
     FREE(ForStmtExprAll, self->expr);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
@@ -2216,7 +2216,7 @@ __free__ImportStmtValueAccess(struct ImportStmtValue *self)
 void
 __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->value.selector); i++)
+    for (Usize i = len__Vec(*self->value.selector); i--;)
         FREE(ImportStmtSelector, get__Vec(*self->value.selector, i));
 
     FREE(Vec, self->value.selector);
@@ -2255,7 +2255,7 @@ to_string__ImportStmt(struct ImportStmt self)
 void
 __free__ImportStmt(struct ImportStmt *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->import_value); i++)
+    for (Usize i = len__Vec(*self->import_value); i--;)
         FREE(ImportStmtValueAll, get__Vec(*self->import_value, i));
 
     FREE(Vec, self->import_value);
@@ -2488,7 +2488,7 @@ void
 __free__FunDecl(struct FunDecl *self)
 {
     if (self->tags != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->tags); i++) {
+        for (Usize i = len__Vec(*self->tags); i--;) {
             struct Tuple *temporary = (struct Tuple *)get__Vec(*self->tags, i);
             FREE(String, (struct String *)temporary->items[0]);
             FREE(Tuple, (struct Tuple *)get__Vec(*self->tags, i));
@@ -2498,14 +2498,14 @@ __free__FunDecl(struct FunDecl *self)
     }
 
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->params); i++)
+        for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamAll, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
@@ -2515,7 +2515,7 @@ __free__FunDecl(struct FunDecl *self)
         FREE(DataTypeAll, self->return_type);
 
     if (self->body != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->body); i++)
+        for (Usize i = len__Vec(*self->body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
         FREE(Vec, self->body);
@@ -2612,7 +2612,7 @@ __free__ModuleDecl(struct ModuleDecl *self)
 {
     FREE(String, self->name);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
@@ -2637,7 +2637,7 @@ void
 __free__AliasDecl(struct AliasDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
@@ -2695,14 +2695,14 @@ void
 __free__RecordDecl(struct RecordDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->fields != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->fields); i++)
+        for (Usize i = len__Vec(*self->fields); i--;)
             FREE(FieldRecord, get__Vec(*self->fields, i));
 
         FREE(Vec, self->fields);
@@ -2757,14 +2757,14 @@ void
 __free__EnumDecl(struct EnumDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->variants != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->variants); i++)
+        for (Usize i = len__Vec(*self->variants); i--;)
             FREE(VariantEnum, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
@@ -2796,7 +2796,7 @@ __free__ErrorDecl(struct ErrorDecl *self)
 {
     FREE(String, self->name);
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+    for (Usize i = len__Vec(*self->generic_params); i--;)
         FREE(GenericAll, get__Vec(*self->generic_params, i));
 
     FREE(Vec, self->generic_params);
@@ -2849,14 +2849,14 @@ void
 __free__MethodDecl(struct MethodDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->params); i++)
+        for (Usize i = len__Vec(*self->params); i--;)
             FREE(FunParamAll, get__Vec(*self->params, i));
 
         FREE(Vec, self->params);
@@ -2866,7 +2866,7 @@ __free__MethodDecl(struct MethodDecl *self)
         FREE(DataTypeAll, self->return_type);
 
     if (self->body != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->body); i++)
+        for (Usize i = len__Vec(*self->body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->body, i));
 
         FREE(Vec, self->body);
@@ -2966,28 +2966,28 @@ void
 __free__ClassDecl(struct ClassDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->inheritance); i++)
+        for (Usize i = len__Vec(*self->inheritance); i--;)
             FREE(DataTypeAll, get__Vec(*self->inheritance, i));
 
         FREE(Vec, self->inheritance);
     }
 
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->impl); i++)
+        for (Usize i = len__Vec(*self->impl); i--;)
             FREE(DataTypeAll, get__Vec(*self->impl, i));
 
         FREE(Vec, self->impl);
     }
 
     if (self->body != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->body); i++)
+        for (Usize i = len__Vec(*self->body); i--;)
             FREE(ClassBodyItemAll, get__Vec(*self->body, i));
 
         FREE(Vec, self->body);
@@ -3015,7 +3015,7 @@ __new__Prototype(struct String *name,
 void
 __free__Prototype(struct Prototype *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->params_type); i++)
+    for (Usize i = len__Vec(*self->params_type); i--;)
         FREE(DataTypeAll, get__Vec(*self->params_type, i));
 
     FREE(Vec, self->params_type);
@@ -3090,21 +3090,21 @@ void
 __free__TraitDecl(struct TraitDecl *self)
 {
     if (self->generic_params != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+        for (Usize i = len__Vec(*self->generic_params); i--;)
             FREE(GenericAll, get__Vec(*self->generic_params, i));
 
         FREE(Vec, self->generic_params);
     }
 
     if (self->inh != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->inh); i++)
+        for (Usize i = len__Vec(*self->inh); i--;)
             FREE(DataTypeAll, get__Vec(*self->inh, i));
 
         FREE(Vec, self->inh);
     }
 
     if (self->body != NULL) {
-        for (Usize i = 0; i < len__Vec(*self->body); i++)
+        for (Usize i = len__Vec(*self->body); i--;)
             FREE(TraitBodyItemAll, get__Vec(*self->body, i));
 
         FREE(Vec, self->body);
@@ -3130,12 +3130,12 @@ __free__TagDecl(struct TagDecl *self)
 {
     FREE(String, self->name);
 
-    for (Usize i = 0; i < len__Vec(*self->generic_params); i++)
+    for (Usize i = len__Vec(*self->generic_params); i--;)
         FREE(GenericAll, get__Vec(*self->generic_params, i));
 
     FREE(Vec, self->generic_params);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);

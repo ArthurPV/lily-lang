@@ -5510,7 +5510,7 @@ __free__Parser(struct Parser self)
 {
     FREE(ParseBlock, self.parse_block);
 
-    for (Usize i = 0; i < len__Vec(*self.decls); i++)
+    for (Usize i = len__Vec(*self.decls); i--;)
         FREE(DeclAll, get__Vec(*self.decls, i));
 
     FREE(Vec, self.decls);
