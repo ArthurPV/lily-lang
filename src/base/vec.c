@@ -379,11 +379,11 @@ clear__Vec(struct Vec *self)
 struct Vec *
 copy__Vec(struct Vec *self)
 {
-	struct Vec *copy = malloc(sizeof(struct Vec));
+    struct Vec *copy = malloc(sizeof(struct Vec));
 
-	memcpy(copy, self, sizeof(struct Vec));
+    memcpy(copy, self, sizeof(struct Vec));
 
-	return copy;
+    return copy;
 }
 
 bool
