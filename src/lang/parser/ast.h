@@ -573,7 +573,7 @@ typedef struct FunCall
 {
     struct Expr *id; 
     struct Vec *params;  // struct Vec<struct Tuple<struct FunParamCall*, struct
-                         // Location&>*>*
+                         // Location*>*>*
 } FunCall;
 
 /**
@@ -619,16 +619,16 @@ __free__FieldCall(struct FieldCall *self);
 
 typedef struct RecordCall
 {
-    struct String *name; // struct String&
+    struct Expr *id;
     struct Vec *
-      fields; // struct Vec<struct Tuple<struct FieldCall*, struct Location&>*>*
+      fields; // struct Vec<struct Tuple<struct FieldCall*, struct Location*>*>*
 } RecordCall;
 
 /**
  * @brief Construct the RecordCall type.
  */
 struct RecordCall
-__new__RecordCall(struct String *name, struct Vec *fields);
+__new__RecordCall(struct Expr *id, struct Vec *fields);
 
 /**
  *

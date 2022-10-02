@@ -86,7 +86,8 @@ enum LilyErrorKind
     LilyErrorMissDataType,
     LilyErrorIntegerIsOutOfRange,
     LilyErrorMissParamName,
-    LilyErrorOperatorIdentifierCannotBeAKeyword
+    LilyErrorOperatorIdentifierCannotBeAKeyword,
+    LilyErrorMissFieldCallName
 };
 
 typedef struct LilyError

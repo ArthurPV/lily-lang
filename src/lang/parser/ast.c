@@ -884,8 +884,7 @@ __free__FunCall(struct FunCall self)
     for (Usize i = 0; i < len__Vec(*self.params); i++) {
         FREE(FunParamCallAll,
              ((struct Tuple *)get__Vec(*self.params, i))->items[0]);
-        //        FREE(Location, ((struct Tuple *)get__Vec(*self->params,
-        //        i))->items[1]);
+        free(((struct Tuple *)get__Vec(*self.params, i))->items[1]);
         FREE(Tuple, ((struct Tuple *)get__Vec(*self.params, i)));
     }
 
@@ -911,9 +910,9 @@ __free__FieldCall(struct FieldCall *self)
 }
 
 struct RecordCall
-__new__RecordCall(struct String *name, struct Vec *fields)
+__new__RecordCall(struct Expr *id, struct Vec *fields)
 {
-    struct RecordCall self = { .name = name, .fields = fields };
+    struct RecordCall self = { .id = id, .fields = fields };
 
     return self;
 }
@@ -921,10 +920,11 @@ __new__RecordCall(struct String *name, struct Vec *fields)
 void
 __free__RecordCall(struct RecordCall self)
 {
+    FREE(ExprAll, self.id);
+
     for (Usize i = 0; i < len__Vec(*self.fields); i++) {
         FREE(FieldCall, ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
-        //        FREE(Location, ((struct Tuple *)get__Vec(*self->fields,
-        //        i))->items[1]);
+        free(((struct Tuple *)get__Vec(*self.fields, i))->items[1]);
         FREE(Tuple, ((struct Tuple *)get__Vec(*self.fields, i)));
     }
 

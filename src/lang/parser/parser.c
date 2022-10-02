@@ -3242,10 +3242,22 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                                              loc);
                         break;
                     case TokenKindLParen:
-                        TODO("");
+                        expr =
+                          parse_fun_call_expr(self,
+                                              parse_decl,
+                                              NEW(ExprIdentifier,
+                                                  &*parse_decl->previous->lit,
+                                                  *parse_decl->previous->loc),
+                                              loc);
                         break;
                     case TokenKindLBrace:
-                        TODO("");
+                        expr = parse_record_call_expr(
+                          self,
+                          parse_decl,
+                          NEW(ExprIdentifier,
+                              &*parse_decl->previous->lit,
+                              *parse_decl->previous->loc),
+                          loc);
                         break;
                     case TokenKindLHook:
                         TODO("");
@@ -3667,6 +3679,11 @@ parse_fun_call_expr(struct Parser self,
             emit__Diagnostic(err);
         });
     });
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(ExprFunCall, NEW(FunCall, id, params_call), loc);
 }
 
 static struct Expr *
@@ -3675,6 +3692,78 @@ parse_record_call_expr(struct Parser self,
                        struct Expr *id,
                        struct Location loc)
 {
+    struct Vec *fields = NEW(Vec, sizeof(struct Tuple));
+
+    next_token(parse_decl);
+
+    PARSE_BRACE(parse_decl, {
+        struct Location loc_field = NEW(Location);
+        struct String *name = NULL;
+
+        start__Location(&loc_field,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
+
+        if (parse_decl->current->kind == TokenKindIdentifier) {
+            name = &*parse_decl->current->lit;
+
+            next_token(parse_decl);
+        } else {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorMissFieldCallName),
+                  *parse_decl->previous->loc,
+                  from__String(""),
+                  None());
+
+            emit__Diagnostic(err);
+        }
+
+        if (parse_decl->current->kind == TokenKindColonEq) {
+            next_token(parse_decl);
+
+            struct Expr *expr = parse_expr(self, parse_decl);
+
+            end__Location(&loc_field,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+            push__Vec(fields,
+                      NEW(Tuple,
+                          2,
+                          NEW(FieldCall, name, Some(expr)),
+                          copy__Location(&loc_field)));
+        } else {
+            end__Location(&loc_field,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+            push__Vec(fields,
+                      NEW(Tuple,
+                          2,
+                          NEW(FieldCall, name, None()),
+                          copy__Location(&loc_field)));
+        }
+
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         format(""),
+                                         None());
+
+            err->err->s = from__String("`,`");
+
+            emit__Diagnostic(err);
+        });
+    });
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(ExprRecordCall, NEW(RecordCall, id, fields), loc);
 }
 
 static struct Expr *

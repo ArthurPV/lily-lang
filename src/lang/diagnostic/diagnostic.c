@@ -219,6 +219,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("miss param name");
         case LilyErrorOperatorIdentifierCannotBeAKeyword:
             return from__String("the operator identifier cannot be a keyword");
+        case LilyErrorMissFieldCallName:
+            return from__String("miss field call name");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -323,6 +325,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0038";
         case LilyErrorOperatorIdentifierCannotBeAKeyword:
             return "0039";
+        case LilyErrorMissFieldCallName:
+            return "0040";
         default:
             UNREACHABLE("unknown lily error kind");
     }
