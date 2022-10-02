@@ -6,6 +6,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#define MIN(x, y) (((x)<(y))?(x):(y))
+#define MAX(x, y) (((x)>(y))?(x):(y))
+
 typedef char* MutStr;
 typedef const char* Str;
 
@@ -50,6 +53,9 @@ typedef const long long Isize;
 typedef void Unit;
 
 #define RUNTIME_ASSERT(expr) if (!expr) assert(0 && "runtime error");
+#define RUNTIME_ERROR(msg) \
+    printf("Runtime Error: %s", msg); \
+    exit(1)
 
 typedef struct Exception {
     void *val;

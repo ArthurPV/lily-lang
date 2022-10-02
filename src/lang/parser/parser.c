@@ -3066,7 +3066,7 @@ is_data_type(struct ParseDecl *self)
         case TokenKindBang:
         case TokenKindLHook:
         case TokenKindLParen:
-        case TokenKindHat:
+        case TokenKindStar:
         case TokenKindSelfKw:
             return true;
 
@@ -3336,7 +3336,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindHat:
+        case TokenKindStar:
             data_type = NEW(DataTypePtr, parse_data_type(self, parse_decl));
             break;
 

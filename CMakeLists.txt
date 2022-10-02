@@ -37,9 +37,20 @@ set(LANG_SRC
         src/lang/parser/ast.c
         src/lang/parser/parser.c
         src/lang/runtime/io.c
-	src/lang/runtime/generic.c
+	      src/lang/runtime/generic.c
         src/lang/runtime/runtime.c
-	src/lang/runtime/vec.c
+	      src/lang/runtime/vec.c
+        src/lang/runtime/Int8.c
+        src/lang/runtime/Int16.c
+        src/lang/runtime/Int32.c
+        src/lang/runtime/Int32.c
+        src/lang/runtime/Int64.c
+        src/lang/runtime/Int128.c
+        src/lang/runtime/Uint8.c
+        src/lang/runtime/Uint16.c
+        src/lang/runtime/Uint32.c
+        src/lang/runtime/Uint64.c
+        src/lang/runtime/Uint128.c
         src/lang/scanner/scanner.c
         src/lang/scanner/token.c)
 
