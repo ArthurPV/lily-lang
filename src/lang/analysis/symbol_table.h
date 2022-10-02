@@ -486,6 +486,7 @@ typedef struct ModuleSymbol
     struct Vec *body;         // struct Vec<SymbolTable*>*
     struct Scope *scope;      // struct Scope&
     struct Decl *module_decl; // struct Decl&
+	struct Location *loc_import; // for `as` module
     enum Visibility visibility;
 } ModuleSymbol;
 

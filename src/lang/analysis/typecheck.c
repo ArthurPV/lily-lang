@@ -122,6 +122,16 @@ static void
                             struct Typecheck *buffer,
                             struct String *access,
                             struct Location loc);
+static void
+resolve_import_value(struct Typecheck *self,
+                     struct Typecheck *tc,
+                     struct Location import_loc,
+                     struct Vec *import_value,
+                     struct String *as_value,
+                     struct Vec *import_symbs,
+                     struct SymbolTable *current_symb,
+                     bool is_selector,
+                     bool is_pub);
 static struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
@@ -336,7 +346,7 @@ __new__Typecheck(struct Parser parser)
           len__Vec(*parser.decls) == 0 ? NULL : get__Vec(*parser.decls, 0),
         .buffers = NEW(Vec, sizeof(struct Typecheck)),
         .builtins = Load_C_builtins(),
-        .import_values = NEW(Vec, sizeof(struct SymbolTable)),
+        .import_values = NEW(Vec, sizeof(struct Tuple)),
         .funs = NULL,
         .consts = NULL,
         .aliases = NULL,
@@ -380,6 +390,14 @@ __free__Typecheck(struct Typecheck self)
         FREE(BuiltinAll, get__Vec(*self.builtins, i));
 
     FREE(Vec, self.builtins);
+
+    for (Usize i = len__Vec(*self.import_values); i--;) {
+        if ((int)(UPtr)((struct Tuple *)get__Vec(*self.import_values, i))
+              ->items[1])
+            free(((struct Tuple *)get__Vec(*self.import_values, i))->items[0]);
+
+        FREE(Tuple, get__Vec(*self.import_values, i));
+    }
 
     FREE(Vec, self.import_values);
 
@@ -530,23 +548,35 @@ resolve_global_import(struct Typecheck *self)
             ->kind;
 
         if (kind == ImportStmtValueKindCore || kind == ImportStmtValueKindStd) {
-            push__Vec(self->import_values,
-                      resolve_import(
-                        self,
-                        ((struct Decl *)get__Vec(*imports, i))->loc,
-                        ((struct Decl *)get__Vec(*imports, i))->value.import));
+            struct Vec *res = resolve_import(
+              self,
+              ((struct Decl *)get__Vec(*imports, i))->loc,
+              ((struct Decl *)get__Vec(*imports, i))->value.import);
+
+            concat__Vec(self->import_values, res);
             remove__Vec(imports, i);
+
+            if (res)
+                FREE(Vec, res);
 
             i = 0;
         }
     }
 
-    for (Usize i = 0; i < len__Vec(*imports); i++)
-        push__Vec(
-          self->import_values,
+    for (Usize i = 0; i < len__Vec(*imports); i++) {
+        struct Vec *res =
           resolve_import(self,
                          ((struct Decl *)get__Vec(*imports, i))->loc,
-                         ((struct Decl *)get__Vec(*imports, i))->value.import));
+                         ((struct Decl *)get__Vec(*imports, i))->value.import);
+
+        concat__Vec(self->import_values, res);
+
+        if (res)
+            FREE(Vec, res);
+    }
+
+    if (imports)
+        FREE(Vec, imports);
 }
 
 static void *
@@ -741,6 +771,214 @@ search_access_from_buffer(struct Typecheck *self,
         UNREACHABLE("symb and buffer dont't be equal to NULL in the same time");
 }
 
+static void
+resolve_import_value(struct Typecheck *self,
+                     struct Typecheck *tc,
+                     struct Location import_loc,
+                     struct Vec *import_value,
+                     struct String *as_value,
+                     struct Vec *import_symbs,
+                     struct SymbolTable *current_symb,
+                     bool is_selector,
+                     bool is_pub)
+{
+    for (Usize i = !current_symb ? 1 : 0; i < len__Vec(*import_value); i++) {
+        switch (((struct ImportStmtValue *)get__Vec(*import_value, i))->kind) {
+            case ImportStmtValueKindAccess: {
+                if (i == 1 && !current_symb) {
+                    struct Tuple *res = search_access_from_buffer(
+                      self,
+                      NULL,
+                      tc,
+                      ((struct ImportStmtValue *)get__Vec(*import_value, i))
+                        ->value.access,
+                      import_loc);
+
+                    struct SymbolTable *symb = NULL;
+
+                    switch (((struct Decl *)res->items[0])->kind) {
+                        case DeclKindFun:
+                            symb = NEW(SymbolTableFun, res->items[1]);
+
+                            break;
+                        case DeclKindConstant:
+                            symb = NEW(SymbolTableConstant, res->items[1]);
+
+                            break;
+                        case DeclKindModule:
+                            symb = NEW(SymbolTableModule, res->items[1]);
+
+                            break;
+                        case DeclKindAlias:
+                            symb = NEW(SymbolTableAlias, res->items[1]);
+
+                            break;
+                        case DeclKindRecord:
+                            if (((struct Decl *)res->items[0])
+                                  ->value.record->is_object)
+                                symb = NEW(SymbolTableRecordObj, res->items[1]);
+                            else
+                                symb = NEW(SymbolTableRecord, res->items[1]);
+
+                            break;
+                        case DeclKindEnum:
+                            if (((struct Decl *)res->items[0])
+                                  ->value.enum_->is_object)
+                                symb = NEW(SymbolTableEnumObj, res->items[1]);
+                            else
+                                symb = NEW(SymbolTableEnum, res->items[1]);
+
+                            break;
+                        case DeclKindError:
+                            symb = NEW(SymbolTableError, res->items[1]);
+
+                            break;
+                        case DeclKindClass:
+                            symb = NEW(SymbolTableClass, res->items[1]);
+
+                            break;
+                        case DeclKindTrait:
+                            symb = NEW(SymbolTableTrait, res->items[1]);
+
+                            break;
+                        default:
+                            UNREACHABLE("");
+                    }
+
+                    if (!symb)
+                        goto exit;
+
+                    if (++i < len__Vec(*import_value)) {
+                        current_symb = search_access_from_buffer(
+                          self,
+                          symb,
+                          NULL,
+                          ((struct ImportStmtValue *)get__Vec(*import_value, i))
+                            ->value.access,
+                          import_loc);
+
+                        if (symb)
+                            free(symb);
+                    } else
+                        current_symb = symb;
+                } else {
+                    current_symb = search_access_from_buffer(
+                      self,
+                      current_symb,
+                      NULL,
+                      ((struct ImportStmtValue *)get__Vec(*import_value, i))
+                        ->value.access,
+                      import_loc);
+                }
+
+                break;
+            }
+            case ImportStmtValueKindSelector: {
+                // "a.b.c.{d, e, f}"
+                // 		^ last access
+                struct SymbolTable *last_access = current_symb;
+                struct Vec *selector =
+                  ((struct ImportStmtValue *)get__Vec(*import_value, i))
+                    ->value.selector;
+                struct Vec *import_symbs_selector =
+                  NEW(Vec, sizeof(struct Tuple));
+
+                for (Usize i = len__Vec(*selector); i--;) {
+                    resolve_import_value(
+                      self,
+                      tc,
+                      import_loc,
+                      get__Vec(*selector, i),
+                      NULL, // NULL by default, note: if in the future it is
+                            // implemented `as` in the NULL selector it will no
+                            // longer be
+                      import_symbs_selector,
+                      current_symb,
+                      true,
+                      is_pub);
+
+                    current_symb = last_access;
+                }
+
+                if (i + 1 != len__Vec(*import_value)) {
+                    struct Diagnostic *error =
+                      NEW(DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorExpectedFinalImportValue),
+                          import_loc,
+                          from__String(""),
+                          Some(from__String("remove the next import values")));
+
+                    emit__Diagnostic(error);
+                }
+
+                if (as_value) {
+                    struct Vec *body = NEW(Vec, sizeof(struct SymbolTable));
+
+                    for (Usize i = len__Vec(*import_symbs_selector); i--;) {
+                        push__Vec(
+                          body,
+                          ((struct Tuple *)get__Vec(*import_symbs_selector, i))
+                            ->items[1]);
+                    }
+
+                    free(last_access);
+
+                    current_symb =
+                      NEW(SymbolTableModule, NEW(ModuleSymbol, NULL));
+                    current_symb->value.module->name = as_value;
+                    current_symb->value.module->body = body;
+                    current_symb->value.module->visibility =
+                      is_pub ? VisibilityPublic : VisibilityPrivate;
+                    current_symb->value.module->loc_import = &import_loc;
+                } else
+                    concat__Vec(import_symbs, import_symbs_selector);
+
+                if (import_symbs_selector)
+                    FREE(Vec, import_symbs_selector);
+
+                goto exit;
+            }
+            default:
+                UNREACHABLE(
+                  "found @core, @std or @builtin import value is impossible");
+        }
+
+        if (!current_symb)
+            goto exit;
+    }
+
+exit : {
+    if (((ImportStmtValue *)get__Vec(*import_value,
+                                     len__Vec(*import_value) - 1))
+            ->kind != ImportStmtValueKindSelector &&
+        !as_value) {
+        if ((!is_selector &&
+             (len__Vec(*import_value) == 2 ||
+              (len__Vec(*import_value) == 3 &&
+               ((struct ImportStmtValue *)get__Vec(*import_value,
+                                                   len__Vec(*import_value) - 1))
+                   ->kind == ImportStmtValueKindWildcard)) &&
+             current_symb) ||
+            as_value) {
+            push__Vec(import_symbs,
+                      NEW(Tuple,
+                          3,
+                          current_symb,
+                          (int *)1,
+                          tc->parser.parse_block.scanner.src->file.name));
+        } else if (current_symb) {
+            push__Vec(import_symbs,
+                      NEW(Tuple,
+                          3,
+                          current_symb,
+                          (int *)0,
+                          tc->parser.parse_block.scanner.src->file.name));
+        }
+    }
+}
+}
+
 static struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
@@ -748,7 +986,7 @@ resolve_import(struct Typecheck *self,
 {
     struct String *path = NULL;
     Str path_str = NULL;
-    struct Vec *import_decls = NEW(Vec, sizeof(struct Decl));
+    struct Vec *import_symbs = NEW(Vec, sizeof(struct Tuple));
 
     switch (((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, 0))
               ->kind) {
@@ -878,124 +1116,19 @@ resolve_import(struct Typecheck *self,
 
     FREE(Typecheck, tc);
 
-    struct SymbolTable *current_symb = NULL;
-
-    for (Usize i = 1; i < len__Vec(*import_stmt->import_value); i++) {
-        switch (
-          ((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, i))
-            ->kind) {
-            case ImportStmtValueKindAccess: {
-                if (i == 1) {
-                    struct Tuple *res = search_access_from_buffer(
-                      self,
-                      NULL,
-                      tc_copy,
-                      ((struct ImportStmtValue *)get__Vec(
-                         *import_stmt->import_value, i))
-                        ->value.access,
-                      import_loc);
-
-                    struct SymbolTable *symb = NULL;
-
-                    switch (((struct Decl *)res->items[0])->kind) {
-                        case DeclKindFun:
-                            symb = NEW(SymbolTableFun, res->items[1]);
-
-                            break;
-                        case DeclKindConstant:
-                            symb = NEW(SymbolTableConstant, res->items[1]);
-
-                            break;
-                        case DeclKindModule:
-                            symb = NEW(SymbolTableModule, res->items[1]);
-
-                            break;
-                        case DeclKindAlias:
-                            symb = NEW(SymbolTableAlias, res->items[1]);
-
-                            break;
-                        case DeclKindRecord:
-                            if (((struct Decl *)res->items[0])
-                                  ->value.record->is_object)
-                                symb = NEW(SymbolTableRecordObj, res->items[1]);
-                            else
-                                symb = NEW(SymbolTableRecord, res->items[1]);
-
-                            break;
-                        case DeclKindEnum:
-                            if (((struct Decl *)res->items[0])
-                                  ->value.enum_->is_object)
-                                symb = NEW(SymbolTableEnumObj, res->items[1]);
-                            else
-                                symb = NEW(SymbolTableEnum, res->items[1]);
-
-                            break;
-                        case DeclKindError:
-                            symb = NEW(SymbolTableError, res->items[1]);
-
-                            break;
-                        case DeclKindClass:
-                            symb = NEW(SymbolTableClass, res->items[1]);
-
-                            break;
-                        case DeclKindTrait:
-                            symb = NEW(SymbolTableTrait, res->items[1]);
-
-                            break;
-                        default:
-                            UNREACHABLE("");
-                    }
-
-                    if (!symb)
-                        goto exit;
-
-                    if (++i < len__Vec(*import_stmt->import_value)) {
-                        current_symb = search_access_from_buffer(
-                          self,
-                          symb,
-                          NULL,
-                          ((struct ImportStmtValue *)get__Vec(
-                             *import_stmt->import_value, i))
-                            ->value.access,
-                          import_loc);
-
-                        free(symb);
-                    } else
-                        current_symb = symb;
-                } else {
-                    current_symb = search_access_from_buffer(
-                      self,
-                      current_symb,
-                      NULL,
-                      ((struct ImportStmtValue *)get__Vec(
-                         *import_stmt->import_value, i))
-                        ->value.access,
-                      import_loc);
-                }
-            }
-            case ImportStmtValueKindSelector:
-                TODO("selector");
-            default:
-                UNREACHABLE(
-                  "found @core, @std or @builtin import value is impossible");
-        }
-
-        if (!current_symb)
-            goto exit;
-    }
+    resolve_import_value(
+      self,
+      tc_copy,
+      import_loc,
+      import_stmt->import_value,
+      is_Some__Option(import_stmt->as) ? get__Option(import_stmt->as) : NULL,
+      import_symbs,
+      NULL,
+      false,
+      import_stmt->is_pub);
 
 exit : {
-    if ((len__Vec(*import_stmt->import_value) == 2 ||
-         (len__Vec(*import_stmt->import_value) == 3 &&
-          ((struct ImportStmtValue *)get__Vec(
-             *import_stmt->import_value,
-             len__Vec(*import_stmt->import_value) - 1))
-              ->kind == ImportStmtValueKindWildcard)) &&
-        current_symb) {
-        free(current_symb);
-    }
-
-    return import_decls;
+    return import_symbs;
 }
 }
 
