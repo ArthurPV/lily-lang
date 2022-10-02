@@ -700,6 +700,62 @@ check_alias(struct Typecheck *self,
             struct AliasSymbol *alias,
             struct Vec *scope_id)
 {
+    if (!alias->scope) {
+        alias->scope = NEW(Scope,
+                           self->parser.parse_block.scanner.src->file.name,
+                           alias->name,
+                           scope_id,
+                           ScopeItemKindAlias,
+                           ScopeKindGlobal);
+
+        if (alias->alias_decl->value.alias->generic_params) {
+
+            alias->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*alias->alias_decl->value.alias->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j <
+                     len__Vec(*alias->alias_decl->value.alias->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *alias->alias_decl->value.alias->generic_params,
+                            i)),
+                          get_name__Generic(get__Vec(
+                            *alias->alias_decl->value.alias->generic_params,
+                            j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of enum_decl in enum_->generic_params
+                switch (((struct Generic *)get__Vec(
+                           *alias->alias_decl->value.alias->generic_params, i))
+                          ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(
+                          alias->generic_params,
+                          NEW(
+                            GenericDataType,
+                            get_name__Generic(get__Vec(
+                              *alias->alias_decl->value.alias->generic_params,
+                              i)),
+                            ((struct Generic *)get__Vec(
+                               *alias->alias_decl->value.alias->generic_params,
+                               i))
+                              ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
+        }
+
+        TODO("Search data type");
+    }
 }
 
 static void
