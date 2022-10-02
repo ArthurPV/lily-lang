@@ -2070,12 +2070,6 @@ static void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block)
 {
-    struct Location loc = NEW(Location);
-
-    start__Location(&loc,
-                    parse_block->current->loc->s_line,
-                    parse_block->current->loc->s_col);
-
     next_token_pb(parse_block);
 
     // 1. Body
@@ -2097,6 +2091,9 @@ get_class_parse_context(struct ClassParseContext *self,
         bool is_pub = false;
         bool is_async = false;
         struct Location *async_loc = NULL;
+		struct Location loc_item = NEW(Location);
+
+		start__Location(&loc_item, parse_block->current->loc->s_line, parse_block->current->loc->s_col);
 
         if (valid_class_token_in_body(parse_block, bad_token)) {
             // push__Vec(self->body, &*parse_block->current);
@@ -2197,11 +2194,15 @@ get_class_parse_context(struct ClassParseContext *self,
 
     method : {
         get_method_parse_context(&method_parse_context, parse_block);
-        end__Location(&loc,
-                      parse_block->current->loc->s_line,
-                      parse_block->current->loc->s_col);
+        end__Location(&loc_item,
+                      ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                                parse_block->pos - 1))
+                        ->loc->s_line,
+                      ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                                parse_block->pos - 1))
+                        ->loc->s_col);
         push__Vec(self->body,
-                  NEW(ParseContextMethod, method_parse_context, loc));
+                  NEW(ParseContextMethod, method_parse_context, loc_item));
 
         goto exit;
     }
@@ -2211,22 +2212,30 @@ get_class_parse_context(struct ClassParseContext *self,
               NEW(ImportParseContext);
 
         get_import_parse_context(&impor_parse_context, parse_block);
-        end__Location(&loc,
-                      parse_block->current->loc->s_line,
-                      parse_block->current->loc->s_col);
+        end__Location(&loc_item,
+                      ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                                parse_block->pos - 1))
+                        ->loc->s_line,
+                      ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                                parse_block->pos - 1))
+                        ->loc->s_col);
         push__Vec(self->body,
-                  NEW(ParseContextImport, impor_parse_context, loc));
+                  NEW(ParseContextImport, impor_parse_context, loc_item));
 
         goto exit;
     }
 
 property : {
     get_property_parse_context(&property_parse_context, parse_block);
-    end__Location(&loc,
-                  parse_block->current->loc->s_line,
-                  parse_block->current->loc->s_col);
+    end__Location(&loc_item,
+                  ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                            parse_block->pos - 1))
+                    ->loc->s_line,
+                  ((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                            parse_block->pos - 1))
+                    ->loc->s_col);
     push__Vec(self->body,
-              NEW(ParseContextProperty, property_parse_context, loc));
+              NEW(ParseContextProperty, property_parse_context, loc_item));
 
     goto exit;
 }
@@ -3376,7 +3385,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                     emit__Diagnostic(err);
                 });
             } else
-				next_token(parse_decl);
+                next_token(parse_decl);
 
             if (is_data_type(parse_decl)) {
                 if (!size)
@@ -5654,7 +5663,7 @@ parse_record_declaration(struct Parser *self,
                 next_token(&parse);
 
             end__Location(
-              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
+              &loc, parse.previous->loc->s_line, parse.previous->loc->s_col);
 
             push__Vec(
               fields,
@@ -5970,17 +5979,21 @@ parse_class_declaration(struct Parser *self,
                 case ParseContextKindProperty: {
                     struct PropertyDecl *prop =
                       parse_property_declaration(self, &parse);
+
                     push__Vec(
                       body,
                       NEW(ClassBodyItemProperty, prop, parse.current->loc));
+
                     break;
                 }
                 case ParseContextKindMethod: {
                     struct MethodDecl *method =
                       parse_method_declaration(self, &parse);
+
                     push__Vec(
                       body,
                       NEW(ClassBodyItemMethod, method, parse.current->loc));
+
                     break;
                 }
                 case ParseContextKindImport:

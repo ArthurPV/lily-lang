@@ -2448,7 +2448,7 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc);
 
 /**
  *
- * @brief Convert ClassBodyItem in String.
+ * @brief Get name of ClassBodyItem.
  */
 struct String *
 get_name__ClassBodyItem(struct ClassBodyItem *self);

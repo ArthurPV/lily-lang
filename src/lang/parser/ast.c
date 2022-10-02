@@ -2919,14 +2919,14 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc)
 struct String *
 get_name__ClassBodyItem(struct ClassBodyItem *self)
 {
-	switch (self->kind) {
-		case ClassBodyItemKindProperty:
-			return self->value.property->name;
-		case ClassBodyItemKindMethod:
-			return self->value.method->name;
-		default:
-			return NULL;
-	}
+    switch (self->kind) {
+        case ClassBodyItemKindProperty:
+            return self->value.property->name;
+        case ClassBodyItemKindMethod:
+            return self->value.method->name;
+        default:
+            return NULL;
+    }
 }
 
 void
