@@ -190,6 +190,8 @@ expr_to_data_type(struct Expr expr, struct DataType *already_defined_data_type)
                     } else
                         return infer_on_integer(expr);
                 }
+                default:
+                    TODO("")
             }
         }
         default:

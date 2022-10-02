@@ -3,13 +3,13 @@
 
 #include <base/print.h>
 #include <command/command.h>
+#include <command/help.h>
 #include <lang/analysis/typecheck.h>
 #include <lang/generate/generate.h>
 #include <lang/generate/generate_c.h>
 #include <lang/parser/parser.h>
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
-#include <command/command.h>
 
 int
 main(int argc, char **argv)
@@ -35,28 +35,40 @@ main(int argc, char **argv)
     if (status == BUILD_COMMAND)
         Println("Build");
     else if (status == COMPILE_COMMAND) {
-        struct File file = NEW(File, "./app.lily");
-        struct Source src = NEW(Source, file);
-        struct Scanner scanner = NEW(Scanner, &src);
+        if (argc > 2) {
+            #include <time.h>
 
-        run__Scanner(&scanner);
+            clock_t start = clock();
 
-        struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+            struct File file = NEW(File, argv[2]);
+            struct Source src = NEW(Source, file);
+            struct Scanner scanner = NEW(Scanner, &src);
 
-        run__ParseBlock(&parse_block);
+            run__Scanner(&scanner);
 
-        struct Parser parser = NEW(Parser, parse_block);
+            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
 
-        run__Parser(&parser);
+            run__ParseBlock(&parse_block);
 
-        struct Typecheck tc = NEW(Typecheck, parser);
+            struct Parser parser = NEW(Parser, parse_block);
 
-        struct Generate gen = NEW(Generate, tc);
+            run__Parser(&parser);
 
-        write_main_function(&gen);
+            struct Typecheck tc = NEW(Typecheck, parser);
 
-        FREE(Generate, gen);
-    } else if (status == INIT_COMMAND)
+            struct Generate gen = NEW(Generate, tc);
+
+            write_main_function(&gen);
+
+            FREE(Generate, gen);
+
+            double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
+
+            println("compiled in %.3fs", total_t);
+        }
+    } else if (status == HELP_COMMAND)
+        printf("%s\n", MAIN_HELP);
+    else if (status == INIT_COMMAND)
         Println("Init");
     else if (status == NEW_COMMAND)
         Println("New");

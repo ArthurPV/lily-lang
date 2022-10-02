@@ -1824,6 +1824,8 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
             }
+
+            return false;
         }
     }
 }
