@@ -24,8 +24,8 @@ enum ScopeItemKind
 
 enum ScopeKind
 {
-    ScopeKindGlobal,
-    ScopeKindLocal
+    ScopeKindLocal = 0,
+    ScopeKindGlobal = 1
 };
 
 typedef struct Scope

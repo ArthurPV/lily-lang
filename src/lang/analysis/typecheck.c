@@ -81,45 +81,58 @@ push_all_symbols(struct Typecheck *self);
 static void
 check_constant(struct Typecheck *self,
                struct ConstantSymbol *constant,
-               struct Vec *scope_id);
+               struct Vec *scope_id,
+               bool is_global);
 static void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
-             struct Vec *scope_id);
+             struct Vec *scope_id,
+             bool is_global);
 static void
 check_alias(struct Typecheck *self,
             struct AliasSymbol *alias,
-            struct Vec *scope_id);
+            struct Vec *scope_id,
+            bool is_global);
 static void
 check_enum(struct Typecheck *self,
            struct EnumSymbol *enum_,
-           struct Vec *scope_id);
+           struct Vec *scope_id,
+           bool is_global);
 static void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
-             struct Vec *scope_id);
+             struct Vec *scope_id,
+             bool is_global);
 static void
 check_error(struct Typecheck *self,
             struct ErrorSymbol *error,
-            struct Vec *scope_id);
+            struct Vec *scope_id,
+            bool is_global);
 static void
 check_enum_obj(struct Typecheck *self,
                struct EnumObjSymbol *enum_obj,
-               struct Vec *scope_id);
+               struct Vec *scope_id,
+               bool is_global);
 static void
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
-                 struct Vec *scope_id);
+                 struct Vec *scope_id,
+                 bool is_global);
 static void
 check_class(struct Typecheck *self,
             struct ClassSymbol *class,
-            struct Vec *scope_id);
+            struct Vec *scope_id,
+            bool is_global);
 static void
 check_trait(struct Typecheck *self,
             struct TraitSymbol *trait,
-            struct Vec *scope_id);
+            struct Vec *scope_id,
+            bool is_global);
 static void
-check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id);
+check_fun(struct Typecheck *self,
+          struct FunSymbol *fun,
+          struct Vec *scope_id,
+          bool is_global);
 static void
 check_symbols(struct Typecheck *self);
 static struct ModuleSymbol *
@@ -527,17 +540,29 @@ push_all_symbols(struct Typecheck *self)
 static void
 check_constant(struct Typecheck *self,
                struct ConstantSymbol *constant,
-               struct Vec *scope_id)
+               struct Vec *scope_id,
+               bool is_global)
 {
+    if (is_global)
+        ++count_const_id;
 }
 
 static void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
-             struct Vec *scope_id)
+             struct Vec *scope_id,
+             bool is_global)
 {
     if (!module->scope) {
-		struct Vec *local_import_value = NEW(Vec, sizeof(struct Vec));
+        module->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              module->name,
+              scope_id,
+              ScopeItemKindModule,
+              module->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        struct Vec *local_import_value = NEW(Vec, sizeof(struct Vec));
 
         if (module->module_decl->value.module->body) {
             module->body = NEW(Vec, sizeof(struct SymbolTable));
@@ -610,7 +635,8 @@ check_module(struct Typecheck *self,
                         struct Vec *fun_scope_id = copy__Vec(scope_id);
 
                         push__Vec(fun_scope_id, (Usize *)i);
-                        check_fun(self, fun_symb->value.fun, fun_scope_id);
+                        check_fun(
+                          self, fun_symb->value.fun, fun_scope_id, false);
                         push__Vec(module->body, fun_symb);
 
                         break;
@@ -626,7 +652,8 @@ check_module(struct Typecheck *self,
                         push__Vec(constant_scope_id, (Usize *)i);
                         check_constant(self,
                                        constant_symb->value.constant,
-                                       constant_scope_id);
+                                       constant_scope_id,
+                                       false);
                         push__Vec(module->body, constant_symb);
 
                         break;
@@ -640,8 +667,10 @@ check_module(struct Typecheck *self,
                         struct Vec *module_scope_id = copy__Vec(scope_id);
 
                         push__Vec(module_scope_id, (Usize *)i);
-                        check_module(
-                          self, module_symb->value.module, module_scope_id);
+                        check_module(self,
+                                     module_symb->value.module,
+                                     module_scope_id,
+                                     false);
                         push__Vec(module->body, module_symb);
 
                         break;
@@ -656,7 +685,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(alias_scope_id, (Usize *)i);
                         check_alias(
-                          self, alias_symb->value.alias, alias_scope_id);
+                          self, alias_symb->value.alias, alias_scope_id, false);
                         push__Vec(module->body, alias_symb);
 
                         break;
@@ -670,8 +699,10 @@ check_module(struct Typecheck *self,
                         struct Vec *record_scope_id = copy__Vec(scope_id);
 
                         push__Vec(record_scope_id, (Usize *)i);
-                        check_alias(
-                          self, record_symb->value.alias, record_scope_id);
+                        check_alias(self,
+                                    record_symb->value.alias,
+                                    record_scope_id,
+                                    false);
                         push__Vec(module->body, record_symb);
 
                         break;
@@ -685,7 +716,8 @@ check_module(struct Typecheck *self,
                         struct Vec *enum_scope_id = copy__Vec(scope_id);
 
                         push__Vec(enum_scope_id, (Usize *)i);
-                        check_enum(self, enum_symb->value.enum_, enum_scope_id);
+                        check_enum(
+                          self, enum_symb->value.enum_, enum_scope_id, false);
                         push__Vec(module->body, enum_symb);
 
                         break;
@@ -700,7 +732,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(error_scope_id, (Usize *)i);
                         check_error(
-                          self, error_symb->value.error, error_scope_id);
+                          self, error_symb->value.error, error_scope_id, false);
                         push__Vec(module->body, error_symb);
 
                         break;
@@ -715,7 +747,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(class_scope_id, (Usize *)i);
                         check_class(
-                          self, class_symb->value.class, class_scope_id);
+                          self, class_symb->value.class, class_scope_id, false);
                         push__Vec(module->body, class_symb);
 
                         break;
@@ -730,7 +762,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(trait_scope_id, (Usize *)i);
                         check_trait(
-                          self, trait_symb->value.trait, trait_scope_id);
+                          self, trait_symb->value.trait, trait_scope_id, false);
                         push__Vec(module->body, trait_symb);
 
                         break;
@@ -743,22 +775,25 @@ check_module(struct Typecheck *self,
             }
         }
 
-        ++count_module_id;
+        if (is_global)
+            ++count_module_id;
     }
 }
 
 static void
 check_alias(struct Typecheck *self,
             struct AliasSymbol *alias,
-            struct Vec *scope_id)
+            struct Vec *scope_id,
+            bool is_global)
 {
     if (!alias->scope) {
-        alias->scope = NEW(Scope,
-                           self->parser.parse_block.scanner.src->file.name,
-                           alias->name,
-                           scope_id,
-                           ScopeItemKindAlias,
-                           ScopeKindGlobal);
+        alias->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              alias->name,
+              scope_id,
+              ScopeItemKindAlias,
+              alias->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (alias->alias_decl->value.alias->generic_params) {
 
@@ -806,7 +841,8 @@ check_alias(struct Typecheck *self,
             }
         }
 
-        ++count_alias_id;
+        if (is_global)
+            ++count_alias_id;
 
         TODO("Search data type");
     }
@@ -815,15 +851,17 @@ check_alias(struct Typecheck *self,
 static void
 check_enum(struct Typecheck *self,
            struct EnumSymbol *enum_,
-           struct Vec *scope_id)
+           struct Vec *scope_id,
+           bool is_global)
 {
     if (!enum_->scope) {
-        enum_->scope = NEW(Scope,
-                           self->parser.parse_block.scanner.src->file.name,
-                           enum_->name,
-                           scope_id,
-                           ScopeItemKindEnum,
-                           ScopeKindGlobal);
+        enum_->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              enum_->name,
+              scope_id,
+              ScopeItemKindEnum,
+              enum_->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (enum_->enum_decl->value.enum_->generic_params) {
 
@@ -902,22 +940,25 @@ check_enum(struct Typecheck *self,
             }
         }
 
-        ++count_enum_id;
+        if (is_global)
+            ++count_enum_id;
     }
 }
 
 static void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
-             struct Vec *scope_id)
+             struct Vec *scope_id,
+             bool is_global)
 {
     if (!record->scope) {
-        record->scope = NEW(Scope,
-                            self->parser.parse_block.scanner.src->file.name,
-                            record->name,
-                            scope_id,
-                            ScopeItemKindRecord,
-                            ScopeKindGlobal);
+        record->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              record->name,
+              scope_id,
+              ScopeItemKindRecord,
+              record->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (record->record_decl->value.record->generic_params) {
 
@@ -1001,49 +1042,65 @@ check_record(struct Typecheck *self,
             }
         }
 
-        ++count_record_id;
+        if (is_global)
+            ++count_record_id;
     }
 }
 
 static void
 check_error(struct Typecheck *self,
             struct ErrorSymbol *error,
-            struct Vec *scope_id)
+            struct Vec *scope_id,
+            bool is_global)
 {
 }
 
 static void
 check_enum_obj(struct Typecheck *self,
                struct EnumObjSymbol *enum_obj,
-               struct Vec *scope_id)
+               struct Vec *scope_id,
+               bool is_global)
 {
 }
 
 static void
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
-                 struct Vec *scope_id)
+                 struct Vec *scope_id,
+                 bool is_global)
 {
 }
 
 static void
 check_class(struct Typecheck *self,
             struct ClassSymbol *class,
-            struct Vec *scope_id)
+            struct Vec *scope_id,
+            bool is_global)
 {
 }
 
 static void
 check_trait(struct Typecheck *self,
             struct TraitSymbol *trait,
-            struct Vec *scope_id)
+            struct Vec *scope_id,
+            bool is_global)
 {
 }
 
 static void
-check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
+check_fun(struct Typecheck *self,
+          struct FunSymbol *fun,
+          struct Vec *scope_id,
+          bool is_global)
 {
     if (!fun->scope) {
+        fun->scope = NEW(Scope,
+                         self->parser.parse_block.scanner.src->file.name,
+                         fun->name,
+                         scope_id,
+                         ScopeItemKindFun,
+                         fun->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
         struct FunDecl *fun_decl = fun->fun_decl->value.fun;
         struct Vec *local_data_type = NULL;
         struct Vec *local_value = NULL;
@@ -1136,7 +1193,7 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
 
         if (fun_decl->params) {
             params = NEW(Vec, sizeof(struct FunParamSymbol));
-            local_value = NEW(Vec, sizeof(struct Scope)); // TODO: Scope* -> Vec*
+            local_value = NEW(Vec, sizeof(struct Scope));
 
             for (Usize i = 0; i < len__Vec(*fun_decl->params); i++) {
                 struct FunParamSymbol *param =
@@ -1200,18 +1257,14 @@ check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
             TODO("body");
         }
 
-        fun->scope = NEW(Scope,
-                         self->parser.parse_block.scanner.src->file.name,
-                         fun->name,
-                         scope_id,
-                         ScopeItemKindFun,
-                         ScopeKindGlobal);
         fun->tagged_type = tagged_type;
         fun->generic_params = generic_params;
         fun->params = params;
         fun->return_type = return_type;
         fun->body = body;
-        ++count_fun_id;
+
+        if (is_global)
+            ++count_fun_id;
 
         if (local_data_type)
             for (Usize i = len__Vec(*local_data_type); i--;)
@@ -1232,7 +1285,8 @@ check_symbols(struct Typecheck *self)
                 struct Vec *scope_id = NEW(Vec, sizeof(Usize));
 
                 push__Vec(scope_id, (Usize *)count_fun_id);
-                check_fun(self, get__Vec(*self->funs, count_fun_id), scope_id);
+                check_fun(
+                  self, get__Vec(*self->funs, count_fun_id), scope_id, false);
 
                 break;
             }
