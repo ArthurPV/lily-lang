@@ -74,6 +74,13 @@ static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 #define MinInt128 -(1 << 127)
 #define MaxInt128 (1 << 127) - 1
 
+static const Str BuiltinFirstLayer[] = {
+    "Int8",   "Int16",  "Int32",   "Int64",    "Int128",  "Uint8",   "Uint16",
+    "Uint32", "Uint64", "Uint128", "Bool",     "Float32", "Float64", "Char",
+    "Str",    "Isize",  "Usize",   "Optional", "Ptr",     "Tuple",   "Array",
+    "Fun",    "Ref",    "Custom",  "Mem",      "Io",      "Never"
+};
+
 static struct SearchContext
 {
     bool search_type;
@@ -115,6 +122,10 @@ verify_if_decl_is_duplicate_in_record(struct Typecheck self,
                                       struct Decl *record);
 static void
 verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class);
+static void
+verify_if_decl_is_duplicate_in_tag(struct Typecheck self, struct Decl *tag);
+static void
+verify_if_decl_is_duplicate_in_trait(struct Typecheck self, struct Decl *trait);
 static void
 push_all_symbols(struct Typecheck *self);
 static struct Vec *
@@ -489,6 +500,22 @@ verify_if_decl_is_duplicate(struct Typecheck self)
             if (eq__String(get_name__Decl(get__Vec(*self.parser.decls, i)),
                            get_name__Decl(get__Vec(*self.parser.decls, j)),
                            false)) {
+                {
+                    struct Decl *di = get__Vec(*self.parser.decls, i);
+                    struct Decl *dj = get__Vec(*self.parser.decls, j);
+
+                    if ((di->kind == DeclKindTag &&
+                         (dj->kind == DeclKindRecord ||
+                          dj->kind == DeclKindEnum)) ||
+                        (dj->kind == DeclKindTag &&
+                         (di->kind == DeclKindRecord ||
+                          di->kind == DeclKindEnum))) {
+                        goto exit;
+                    } else
+                        goto error;
+                }
+
+            error : {
                 struct Diagnostic *error =
                   NEW(DiagnosticWithErrTypecheck,
                       &self,
@@ -516,6 +543,10 @@ verify_if_decl_is_duplicate(struct Typecheck self)
 
                 break;
             }
+
+            exit : {
+            }
+            }
         }
 
         switch (((struct Decl *)get__Vec(*self.parser.decls, i))->kind) {
@@ -536,6 +567,16 @@ verify_if_decl_is_duplicate(struct Typecheck self)
                 break;
             case DeclKindClass:
                 verify_if_decl_is_duplicate_in_class(
+                  self, get__Vec(*self.parser.decls, i));
+
+                break;
+            case DeclKindTag:
+                verify_if_decl_is_duplicate_in_tag(
+                  self, get__Vec(*self.parser.decls, i));
+
+                break;
+            case DeclKindTrait:
+                verify_if_decl_is_duplicate_in_trait(
                   self, get__Vec(*self.parser.decls, i));
 
                 break;
@@ -567,6 +608,28 @@ verify_if_decl_is_duplicate_in_module(struct Typecheck self,
                                                 *module->value.module->body, j))
                                                ->value.decl),
                               false)) {
+                            {
+                                struct Decl *di =
+                                  ((struct ModuleBodyItem *)get__Vec(
+                                     *module->value.module->body, i))
+                                    ->value.decl;
+                                struct Decl *dj =
+                                  ((struct ModuleBodyItem *)get__Vec(
+                                     *module->value.module->body, j))
+                                    ->value.decl;
+
+                                if ((di->kind == DeclKindTag &&
+                                     (dj->kind == DeclKindRecord ||
+                                      dj->kind == DeclKindEnum)) ||
+                                    (dj->kind == DeclKindTag &&
+                                     (di->kind == DeclKindRecord ||
+                                      di->kind == DeclKindEnum))) {
+                                    goto exit;
+                                } else
+                                    goto error;
+                            }
+
+                        error : {
                             struct Diagnostic *error =
                               NEW(DiagnosticWithErrTypecheck,
                                   &self,
@@ -602,6 +665,10 @@ verify_if_decl_is_duplicate_in_module(struct Typecheck self,
 
                             break;
                         }
+
+                        exit : {
+                        }
+                        }
                     }
                 }
 
@@ -635,6 +702,22 @@ verify_if_decl_is_duplicate_in_module(struct Typecheck self,
                         break;
                     case DeclKindClass:
                         verify_if_decl_is_duplicate_in_class(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
+
+                        break;
+                    case DeclKindTag:
+                        verify_if_decl_is_duplicate_in_tag(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
+
+                        break;
+                    case DeclKindTrait:
+                        verify_if_decl_is_duplicate_in_trait(
                           self,
                           ((struct ModuleBodyItem *)get__Vec(
                              *module->value.module->body, i))
@@ -772,6 +855,20 @@ verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class)
                 }
             }
         }
+    }
+}
+
+static void
+verify_if_decl_is_duplicate_in_tag(struct Typecheck self, struct Decl *tag)
+{
+    if (tag->value.tag->body)
+        verify_if_decl_is_duplicate_in_module(self, tag);
+}
+
+static void
+verify_if_decl_is_duplicate_in_trait(struct Typecheck self, struct Decl *trait)
+{
+    if (trait->value.trait->body) {
     }
 }
 

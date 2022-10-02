@@ -32,6 +32,62 @@
 #include <lang/parser/parser.h>
 #include <string.h>
 
+/*
+
+  ____
+ |  _ \    __ _   _ __   ___    ___   _ __
+ | |_) |  / _` | | '__| / __|  / _ \ | '__|
+ |  __/  | (_| | | |    \__ \ |  __/ | |
+ |_|      \__,_| |_|    |___/  \___| |_|
+
+The parser is the second major compilation phase in a traditional compiler. The
+purpose of this step is to transform the set of tokens that was generated during
+the scan into a node.
+
+Ex:
+
+                             fun add(x) = x;
+
+                                    ↓
+
+                    [fun, id(add), (, ), id(x), =, id(x), ;]
+
+                                    ↓
+
+        Function(name: add, Params([(name: x, data_type: NULL)]), Body([Id(x)]))
+        ^ --> we are here
+
+This parser goes through several sub-steps:
+
+                           Analysis of the blocks
+
+                                    ↓
+
+                           The creation of nodes
+
+                                    ↓
+
+                                  Nodes
+
+1. Analysis of the blocks:
+
+During this step the parser will try to check if all the blocks (function,
+module, record, class, enum...) are closed with the keyword end or the semicolon
+token and to get as much information about these blocks as possible like
+visibility, name, etc.
+
+2. Creation of nodes:
+
+This step will finish collecting all the information about the blocks like for
+example parsing the body of a function. Then, it will transform the blocks into
+a declaration (node).
+
+3. Nodes
+
+This last step will just add the analyzer declarations into a vector (decls).
+
+ */
+
 #define EXPECTED_TOKEN_PB_ERR(parse_block, expected) \
     NEW(DiagnosticWithErrParser,                     \
         parse_block,                                 \
@@ -465,6 +521,10 @@ static struct Stmt *
 parse_for_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc);
+static struct String *
+get_name__parse_import_stmt(struct String buffer, Usize *pos);
+static struct ImportStmtSelector *
+get_selector__parse_import_stmt(struct String buffer, Usize *pos);
 static struct Stmt *
 parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
@@ -866,6 +926,8 @@ get_block(struct ParseBlock *self, bool in_module)
             return NULL;
         }
     }
+
+    return NULL;
 }
 
 void
@@ -2091,9 +2153,11 @@ get_class_parse_context(struct ClassParseContext *self,
         bool is_pub = false;
         bool is_async = false;
         struct Location *async_loc = NULL;
-		struct Location loc_item = NEW(Location);
+        struct Location loc_item = NEW(Location);
 
-		start__Location(&loc_item, parse_block->current->loc->s_line, parse_block->current->loc->s_col);
+        start__Location(&loc_item,
+                        parse_block->current->loc->s_line,
+                        parse_block->current->loc->s_col);
 
         if (valid_class_token_in_body(parse_block, bad_token)) {
             // push__Vec(self->body, &*parse_block->current);
@@ -5213,6 +5277,89 @@ parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc)
 {
+    next_token(parse_decl);
+
+    struct Vec *import_value = NEW(Vec, sizeof(struct ImportStmtValue));
+
+    if (parse_decl->current->kind == TokenKindStringLit) {
+        char *current = get__String(*parse_decl->current->lit, 0);
+
+        for (Usize i = 0; i < len__String(*parse_decl->current->lit); i++) {
+            if ((current >= (char *)'a' && current <= (char *)'z') ||
+                (current >= (char *)'A' && current <= (char *)'Z') ||
+                current == (char *)'_') {
+                push__Vec(import_value,
+                          NEW(ImportStmtValueAccess,
+                              get_name__parse_import_stmt(
+                                *parse_decl->current->lit, &i)));
+
+                if (i >= len__String(*parse_decl->current->lit))
+                    break;
+
+                current = get__String(*parse_decl->current->lit, ++i);
+
+                if (current != (char *)'.') {
+                    assert(0 && "error");
+
+                    break;
+                }
+            } else if (current == (char *)'{') {
+            } else if (current == (char *)'*') {
+                push__Vec(import_value, NEW(ImportStmtValueWildcard));
+
+                if (i != len__String(*parse_decl->current->lit)) {
+                    assert(0 && "error");
+                }
+
+                break;
+            } else {
+                assert(0 && "error");
+
+                break;
+            }
+
+            current = get__String(*parse_decl->current->lit, i + 1);
+        }
+    } else
+        assert(0 && "error");
+}
+
+static struct String *
+get_name__parse_import_stmt(struct String buffer, Usize *pos)
+{
+    struct String *s = NEW(String);
+    char *current = get__String(buffer, *pos);
+
+    while (current != NULL && current != (char *)'.' &&
+           current != (char *)',' &&
+           ((current >= (char *)'a' && current <= (char *)'z') ||
+            (current >= (char *)'A' && current <= (char *)'Z') ||
+            current == (char *)'_')) {
+        push__String(s, get__String(buffer, *pos));
+        *pos += 1;
+        current = *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
+    }
+
+    return s;
+}
+
+static struct ImportStmtSelector *
+get_selector__parse_import_stmt(struct String buffer, Usize *pos)
+{
+    char *current = get__String(buffer, ++(*pos));
+
+    while (current != NULL && current != (char *)'}') {
+        if ((current >= (char *)'a' && current <= (char *)'z') ||
+            (current >= (char *)'A' && current <= (char *)'Z') ||
+            current == (char *)'_') {
+        } else if (current == (char *)'*') {
+        } else {
+            assert(0 && "error");
+        }
+
+        *pos += 1;
+        current = *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
+    }
 }
 
 // struct Vec<struct FunParam*>*

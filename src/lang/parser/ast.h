@@ -1571,7 +1571,8 @@ __free__ImportStmtSelector(struct ImportStmtSelector *self);
 enum ImportStmtValueKind
 {
     ImportStmtValueKindAccess,
-    ImportStmtValueKindSelector
+    ImportStmtValueKindSelector,
+	ImportStmtValueKindWildcard
 };
 
 typedef struct ImportStmtValue
@@ -1598,6 +1599,18 @@ __new__ImportStmtValueAccess(struct String *access);
  */
 struct ImportStmtValue *
 __new__ImportStmtValueSelector(struct Vec *selector);
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (Wildcard variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueWildcard()
+{
+	struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+	self->kind = ImportStmtValueKindWildcard;
+	return self;
+}
 
 /**
  *
