@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 
-#define VERIFY_I8(res, x, y)                              \
+#define CHECK_I8_RES_OVERFLOW(res, x, y)                  \
     if ((x > 0 && y > 0 && (int8_t)(uintptr_t)res < 0) || \
         (x < 0 && y < 0 && (int8_t)(uintptr_t)res > 0)) { \
         RUNTIME_ERROR("Int8 overflow: -128..127");        \

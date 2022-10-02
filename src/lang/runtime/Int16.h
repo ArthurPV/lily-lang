@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 
-#define VERIFY_I16(res, x, y)                              \
+#define CHECK_I16_RES_OVERFLOW(res, x, y)                  \
     if ((x > 0 && y > 0 && (int16_t)(uintptr_t)res < 0) || \
         (x < 0 && y < 0 && (int16_t)(uintptr_t)res > 0)) { \
         RUNTIME_ERROR("Int16 overflow: -32768..32767");    \

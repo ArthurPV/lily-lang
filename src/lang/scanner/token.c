@@ -241,6 +241,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("|>");
         case TokenKindXorEq:
             return from__String("xor=");
+        case TokenKindColonDollar:
+            return from__String(":$");
         case TokenKindFunKw:
             return from__String("fun");
         case TokenKindImportKw:

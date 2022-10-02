@@ -171,27 +171,32 @@ bit_xor_assign__Int64(MutI64 *x, I64 y)
     *x = bit_xor__Int64(*x, y);
 }
 
-LILY_API struct Range range__Int64(MutI64 x, MutI64 y)
+LILY_API struct Range
+range__Int64(MutI64 x, MutI64 y)
 {
     return __new__Range(&x, &y);
 }
 
-LILY_API Bool lt__Int64(I64 x, I64 y)
+LILY_API Bool
+lt__Int64(I64 x, I64 y)
 {
     return x < y;
 }
 
-LILY_API Bool gt__Int64(I64 x, I64 y)
+LILY_API Bool
+gt__Int64(I64 x, I64 y)
 {
     return x > y;
 }
 
-LILY_API Bool le__Int64(I64 x, I64 y)
+LILY_API Bool
+le__Int64(I64 x, I64 y)
 {
     return x <= y;
 }
 
-LILY_API Bool ge__Int64(I64 x, I64 y)
+LILY_API Bool
+ge__Int64(I64 x, I64 y)
 {
     return x >= y;
 }

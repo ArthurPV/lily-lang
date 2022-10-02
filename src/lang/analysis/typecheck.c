@@ -33,23 +33,22 @@ static Usize current_trait_id = 0;
 static Usize current_record_obj_id = 0;
 static Usize current_enum_obj_id = 0;
 
-static Int128 MinUInt8 = 0x0;
-static Int128 MaxUInt8 = 0xFF;
-static Int128 MinUInt16 = 0x100;
-static Int128 MaxUInt16 = 0xFFFF;
-static Int128 MinUInt32 = 0x10000;
-static Int128 MaxUInt32 = 0xFFFFFFFF;
-static Int128 MinUInt64 = 0x100000000;
-static Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
+static const Int128 MaxUInt8 = 0xFF;
+static const Int128 MaxUInt16 = 0xFFFF;
+static const Int128 MaxUInt32 = 0xFFFFFFFF;
+static const Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
+#define MaxUInt128 (1 << 128) - 1
 
-static Int128 MinInt8 = -0x80;
-static Int128 MaxInt8 = 0x7F;
-static Int128 MinInt16 = -0x8000;
-static Int128 MaxInt16 = 0x7FFF;
-static Int128 MinInt32 = -0x80000000;
-static Int128 MaxInt32 = 0x7FFFFFFF;
-static Int128 MinInt64 = -0x8000000000000000;
-static Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
+static const Int128 MinInt8 = -0x80;
+static const Int128 MaxInt8 = 0x7F;
+static const Int128 MinInt16 = -0x8000;
+static const Int128 MaxInt16 = 0x7FFF;
+static const Int128 MinInt32 = -0x80000000;
+static const Int128 MaxInt32 = 0x7FFFFFFF;
+static const Int128 MinInt64 = -0x8000000000000000;
+static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
+#define MinInt128 -(1 << 127)
+#define MaxInt128 (1 << 127) - 1
 
 static struct SearchModuleContext
 {

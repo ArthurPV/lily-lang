@@ -12,7 +12,7 @@ extern "C"
 #define MIN_I128 1 << 127
 #define MAX_I128 ~MIN_I128
 
-#define VERIFY_I128(res, x, y)                                     \
+#define CHECK_I128_RES_OVERFLOW(res, x, y)                         \
     if ((x > 0 && y > 0 && (__int128_t)(uintptr_t)res < 0) ||      \
         (x < 0 && y < 0 && (__int128_t)(uintptr_t)res > 0)) {      \
         RUNTIME_ERROR("Int128 overflow: "                          \

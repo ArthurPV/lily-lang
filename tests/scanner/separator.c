@@ -51,6 +51,8 @@ int test_separator() {
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 18))->kind,
                    TokenKindDollar);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 19))->kind,
+                   TokenKindColonDollar);
+    TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 20))->kind,
                    TokenKindEof);
 
     FREE(Scanner, scanner);

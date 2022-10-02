@@ -171,27 +171,32 @@ bit_xor_assign__Int128(MutI128 *x, I128 y)
     *x = bit_xor__Int128(*x, y);
 }
 
-LILY_API struct Range range__Int128(MutI128 x, MutI128 y)
+LILY_API struct Range
+range__Int128(MutI128 x, MutI128 y)
 {
     return __new__Range(&x, &y);
 }
 
-LILY_API Bool lt__Int128(I128 x, I128 y)
+LILY_API Bool
+lt__Int128(I128 x, I128 y)
 {
     return x < y;
 }
 
-LILY_API Bool gt__Int128(I128 x, I128 y)
+LILY_API Bool
+gt__Int128(I128 x, I128 y)
 {
     return x > y;
 }
 
-LILY_API Bool le__Int128(I128 x, I128 y)
+LILY_API Bool
+le__Int128(I128 x, I128 y)
 {
     return x <= y;
 }
 
-LILY_API Bool ge__Int128(I128 x, I128 y)
+LILY_API Bool
+ge__Int128(I128 x, I128 y)
 {
     return x >= y;
 }

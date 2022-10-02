@@ -169,27 +169,32 @@ bit_xor_assign__Int16(MutI16 *x, I16 y)
     *x = bit_xor__Int16(*x, y);
 }
 
-LILY_API struct Range range__Int16(MutI16 x, MutI16 y)
+LILY_API struct Range
+range__Int16(MutI16 x, MutI16 y)
 {
     return __new__Range(&x, &y);
 }
 
-LILY_API Bool lt__Int16(I16 x, I16 y)
+LILY_API Bool
+lt__Int16(I16 x, I16 y)
 {
     return x < y;
 }
 
-LILY_API Bool gt__Int16(I16 x, I16 y)
+LILY_API Bool
+gt__Int16(I16 x, I16 y)
 {
     return x > y;
 }
 
-LILY_API Bool le__Int16(I16 x, I16 y)
+LILY_API Bool
+le__Int16(I16 x, I16 y)
 {
     return x <= y;
 }
 
-LILY_API Bool ge__Int16(I16 x, I16 y)
+LILY_API Bool
+ge__Int16(I16 x, I16 y)
 {
     return x >= y;
 }

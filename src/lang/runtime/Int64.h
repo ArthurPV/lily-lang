@@ -9,10 +9,11 @@ extern "C"
 {
 #endif
 
-#define VERIFY_I64(res, x, y)                                     \
-    if ((x > 0 && y > 0 && (int64_t)(uintptr_t)res < 0) ||        \
-        (x < 0 && y < 0 && (int64_t)(uintptr_t)res > 0)) {        \
-        RUNTIME_ERROR("Int64 overflow: -9223372036854775808..9223372036854775807"); \
+#define CHECK_I64_RES_OVERFLOW(res, x, y)                               \
+    if ((x > 0 && y > 0 && (int64_t)(uintptr_t)res < 0) ||              \
+        (x < 0 && y < 0 && (int64_t)(uintptr_t)res > 0)) {              \
+        RUNTIME_ERROR(                                                  \
+          "Int64 overflow: -9223372036854775808..9223372036854775807"); \
     }
 
     LILY_API I64 add__Int64(I64 x, I64 y);
@@ -48,6 +49,5 @@ extern "C"
 #if defined(__cplusplus)
 }
 #endif
-
 
 #endif // LILY_RUNTIME_INT64_H

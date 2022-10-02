@@ -169,27 +169,32 @@ bit_xor_assign__Int32(MutI32 *x, I32 y)
     *x = bit_xor__Int32(*x, y);
 }
 
-LILY_API struct Range range__Int32(MutI32 x, MutI32 y)
+LILY_API struct Range
+range__Int32(MutI32 x, MutI32 y)
 {
     return __new__Range(&x, &y);
 }
 
-LILY_API Bool lt__Int32(I32 x, I32 y)
+LILY_API Bool
+lt__Int32(I32 x, I32 y)
 {
     return x < y;
 }
 
-LILY_API Bool gt__Int32(I32 x, I32 y)
+LILY_API Bool
+gt__Int32(I32 x, I32 y)
 {
     return x > y;
 }
 
-LILY_API Bool le__Int32(I32 x, I32 y)
+LILY_API Bool
+le__Int32(I32 x, I32 y)
 {
     return x <= y;
 }
 
-LILY_API Bool ge__Int32(I32 x, I32 y)
+LILY_API Bool
+ge__Int32(I32 x, I32 y)
 {
     return x >= y;
 }

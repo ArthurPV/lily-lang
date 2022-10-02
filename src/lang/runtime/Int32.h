@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 
-#define VERIFY_I32(res, x, y)                                     \
+#define CHECK_I32_RES_OVERFLOW(res, x, y)                         \
     if ((x > 0 && y > 0 && (int32_t)(uintptr_t)res < 0) ||        \
         (x < 0 && y < 0 && (int32_t)(uintptr_t)res > 0)) {        \
         RUNTIME_ERROR("Int32 overflow: -2147483648..2147483647"); \

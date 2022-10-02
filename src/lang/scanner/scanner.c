@@ -1061,6 +1061,8 @@ get_token(struct Scanner *self)
                 kind = TokenKindColonEq;
             else if (c2 == (char *)':')
                 kind = TokenKindColonColon;
+            else if (c2 == (char *)'$')
+                kind = TokenKindColonDollar;
             else
                 kind = TokenKindColon;
             break;

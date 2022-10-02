@@ -2479,7 +2479,9 @@ get_constant_parse_context(struct ConstantParseContext *self,
 {
     next_token_pb(parse_block);
 
-    if (parse_block->current->kind != TokenKindColonEq) {
+    if (parse_block->current->kind == TokenKindColonColon) {
+        next_token_pb(parse_block);
+
         bool bad_token = false;
 
         while (parse_block->current->kind != TokenKindColonEq &&
@@ -3681,7 +3683,9 @@ parse_variable(struct Parser self,
     struct String *name = &*parse_decl->previous->lit;
     struct DataType *data_type = NULL;
 
-    if (is_data_type(parse_decl)) {
+    if (parse_decl->current->kind == TokenKindColonColon) {
+        next_token(parse_decl);
+
         data_type = parse_data_type(self, parse_decl);
     }
 
@@ -3868,7 +3872,7 @@ exit_unary : {
                         break;
                     }
                     case TokenKindColon:
-                    case TokenKindColonColon:
+                    case TokenKindColonDollar:
                         expr =
                           parse_variant_expr(self,
                                              parse_decl,
@@ -3915,15 +3919,10 @@ exit_unary : {
                         break;
                     }
                     case TokenKindColonEq:
+                    case TokenKindColonColon:
                         free(id_str);
                         return parse_variable(self, parse_decl, loc, false);
                     default:
-                        if (is_data_type(parse_decl) &&
-                            parse_decl->pos < len__Vec(*parse_decl->tokens)) {
-                            free(id_str);
-                            return parse_variable(self, parse_decl, loc, false);
-                        }
-
                         end__Location(&loc,
                                       parse_decl->previous->loc->e_line,
                                       parse_decl->previous->loc->e_col);
@@ -4195,16 +4194,28 @@ exit_unary : {
 
         next_token(parse_decl);
 
-        struct Expr *right = parse_primary_expr(self, parse_decl);
+        struct Expr *expr2 =
+          parse_primary_expr(self, parse_decl); // right value
 
         end__Location(&loc,
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
+        struct Expr *left;
+        struct Expr *right;
+
+        if (get_precedence__Expr(expr2) < get_precedence__Expr(expr)) {
+            left = expr2;
+            right = expr;
+        } else {
+            left = expr;
+            right = expr2;
+        }
+
         return NEW(ExprBinaryOp,
                    NEW(BinaryOp,
                        (enum BinaryOpKind)(UPtr)(binary_op),
-                       expr,
+                       left,
                        right,
                        binop_string),
                    loc);

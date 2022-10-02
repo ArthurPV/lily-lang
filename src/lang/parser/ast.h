@@ -53,9 +53,11 @@ typedef struct DataType
         struct DataType *optional;
         struct DataType *exception;
         struct DataType *mut;
-        struct Tuple *lambda; // struct Tuple<struct Vec<struct DataType*>, struct DataType*>*
+        struct Tuple *lambda; // struct Tuple<struct Vec<struct DataType*>,
+                              // struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct DataType*, Usize*>*
-        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct Vec<struct DataType*>*>*
+        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct
+                              // Vec<struct DataType*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
 } DataType;
@@ -126,7 +128,8 @@ __new__DataTypeCustom(struct Vec *names, struct Vec *generic_params);
 /**
  *
  * @brief Construct DataType type (Tuple variant).
- */;
+ */
+;
 struct DataType *
 __new__DataTypeTuple(struct Vec *tuple);
 
@@ -615,7 +618,10 @@ typedef struct BinaryOp
  * @brief Construct the BinaryOp type.
  */
 struct BinaryOp
-__new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right, struct String *op);
+__new__BinaryOp(enum BinaryOpKind kind,
+                struct Expr *left,
+                struct Expr *right,
+                struct String *op);
 
 /**
  *
@@ -1014,6 +1020,14 @@ __new__ExprVariable(struct VariableDecl variable, struct Location loc);
  */
 struct Expr *
 __new__ExprGrouping(struct Expr *grouping, struct Location loc);
+
+/**
+ *
+ * @brief Get the precedence of each expression (1 is the value with more
+ * priority).
+ */
+UInt32
+get_precedence__Expr(struct Expr *expr);
 
 /**
  *
@@ -1915,7 +1929,8 @@ __free__FunParamCallAll(struct FunParamCall *self);
 typedef struct FunParam
 {
     enum FunParamKind kind;
-    struct Tuple *param_data_type; // struct Tuple<struct DataType*, struct Location*>*
+    struct Tuple
+      *param_data_type; // struct Tuple<struct DataType*, struct Location*>*
     struct Location loc;
 
     union
@@ -1996,7 +2011,8 @@ typedef struct FunDecl
       *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *params;         // struct Vec<struct FunParam*>*
-    struct Tuple *return_type; // struct Tuple<struct DataType*, struct Location*>*
+    struct Tuple
+      *return_type;   // struct Tuple<struct DataType*, struct Location*>*
     struct Vec *body; // struct Vec<struct FunBodyItem*>*
     bool is_pub;
     bool is_async;

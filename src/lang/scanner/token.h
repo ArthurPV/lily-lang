@@ -65,6 +65,7 @@ enum TokenKind {
     TokenKindDotInterrogation,
     TokenKindBarRShift,
     TokenKindXorEq,
+    TokenKindColonDollar,
     TokenKindFunKw,
     TokenKindImportKw,
     TokenKindAsKw,
