@@ -265,6 +265,10 @@ lily_error_to_string(struct LilyError err)
 			return from__String("bad import value");
 		case LilyErrorUnexpectedCharInImportValue:
 			return from__String("unexpected char in import value");
+		case LilyErrorExpectedCharacter:
+			return format("there is expected character, found: `{S}`", err.s);
+		case LilyErrorUnknownDocFlag:
+			return from__String("unknown doc flag");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -419,6 +423,10 @@ get_code_of_lily_error(struct LilyError err)
 			return "0063";
 		case LilyErrorUnexpectedCharInImportValue:
 			return "0064";
+		case LilyErrorExpectedCharacter:
+			return "0065";
+		case LilyErrorUnknownDocFlag:
+			return "0066";
         default:
             UNREACHABLE("unknown lily error kind");
     }

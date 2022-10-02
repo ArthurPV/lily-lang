@@ -203,9 +203,10 @@ copy__Location(struct Location *self);
 
 enum DocKind
 {
-    DocKindAuthor,
+    DocKindAuthor = 1,
     DocKindContract,
     DocKindDescription,
+	DocKindGlobal,
     DocKindText,
     DocKindFile,
     DocKindGenerics,

@@ -276,7 +276,10 @@ scan_bin(struct Scanner *self);
 static struct Result *
 scan_num(struct Scanner *self);
 
-static struct Result *
+static void
+align_location(struct Scanner *self);
+
+static struct Doc *
 scan_doc_author(struct Scanner *self);
 static struct Result *
 scan_doc_contract(struct Scanner *self);
@@ -288,9 +291,9 @@ static struct Result *
 scan_doc_generics(struct Scanner *self);
 static struct Result *
 scan_doc_prototype(struct Scanner *self);
-static struct Result *
+static struct Doc *
 scan_doc_see(struct Scanner *self);
-static struct Result *
+static struct Doc *
 scan_doc_version(struct Scanner *self);
 static void
 get_doc(struct Scanner *self);
@@ -693,10 +696,16 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
 static inline void
 expected_char(struct Scanner *self, struct Diagnostic *dgn, char *expected)
 {
-    if (expected == (char *)'\\' && self->src->c == (char *)'n')
+    skip_space(self);
+
+    if (expected == self->src->c)
         next_char(self);
-    else
+    else {
+        dgn->loc.s_col += 3;
+        dgn->loc.e_col += 3;
+
         emit__Diagnostic(dgn);
+    }
 }
 
 static struct Result *
@@ -791,10 +800,6 @@ static struct String *
 scan_comment_doc(struct Scanner *self)
 {
     struct String *doc = NEW(String);
-
-    if (self->src->c == (char *)' ') {
-        next_char(self);
-    }
 
     while (self->src->c != (char *)'\n') {
         next_char(self);
@@ -1110,9 +1115,27 @@ scan_num(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, num));
 }
 
-static struct Result *
+static void
+align_location(struct Scanner *self)
+{
+    self->loc.s_col += 3;
+    self->loc.e_col += 3;
+}
+
+static struct Doc *
 scan_doc_author(struct Scanner *self)
 {
+    struct String *author = NEW(String);
+
+    skip_space(self);
+
+    while (self->src->c != (char *)')' &&
+           self->src->pos < len__String(*self->src->file.content) - 1) {
+        push__String(author, self->src->c);
+        next_char(self);
+    }
+
+    return NEW(DocWithString, DocKindAuthor, author);
 }
 
 static struct Result *
@@ -1140,20 +1163,45 @@ scan_doc_prototype(struct Scanner *self)
 {
 }
 
-static struct Result *
+static struct Doc *
 scan_doc_see(struct Scanner *self)
 {
+    struct String *see = NEW(String);
+
+    skip_space(self);
+
+    while (self->src->c != (char *)')' &&
+           self->src->pos < len__String(*self->src->file.content) - 1) {
+        push__String(see, self->src->c);
+        next_char(self);
+    }
+
+    return NEW(DocWithString, DocKindSee, see);
 }
 
-static struct Result *
+static struct Doc *
 scan_doc_version(struct Scanner *self)
 {
+    struct String *version = NEW(String);
+
+    skip_space(self);
+
+    while (self->src->c != (char *)')' &&
+           self->src->pos < len__String(*self->src->file.content) - 1) {
+        push__String(version, self->src->c);
+        next_char(self);
+    }
+
+    return NEW(DocWithString, DocKindVersion, version);
 }
 
 static void
 get_doc(struct Scanner *self)
 {
     for (Usize i = 0; i < len__String(*self->src->file.content); i++) {
+        skip_space(self);
+        start_token(self);
+
         switch ((char)(UPtr)self->src->c) {
             case '@': {
                 next_char(self);
@@ -1161,26 +1209,151 @@ get_doc(struct Scanner *self)
                 const struct String *id = scan_identifier(self);
                 const Str id_str = to_Str__String(*id);
 
-                if (strcmp(id_str, "")) {
+                int *doc_kind = NULL;
+
+                if (!strcmp(id_str, "")) {
                     assert(0 && "error");
-                } else if (strcmp(id_str, "author")) {
-                    TODO("@author");
-                } else if (strcmp(id_str, "contract")) {
-                    TODO("@contract");
-                } else if (strcmp(id_str, "desc")) {
-                    TODO("@desc");
-                } else if (strcmp(id_str, "file")) {
-                    TODO("@file");
-                } else if (strcmp(id_str, "generics")) {
-                    TODO("@generics");
-                } else if (strcmp(id_str, "prot")) {
-                    TODO("@prot");
-                } else if (strcmp(id_str, "see")) {
-                    TODO("@see");
-                } else if (strcmp(id_str, "version")) {
-                    TODO("@version");
-                } else {
-                    assert(0 && "error");
+                } else if (!strcmp(id_str, "author"))
+                    doc_kind = (int *)DocKindAuthor;
+                else if (!strcmp(id_str, "contract"))
+                    doc_kind = (int *)DocKindContract;
+                else if (!strcmp(id_str, "desc"))
+                    doc_kind = (int *)DocKindDescription;
+                else if (!strcmp(id_str, "file"))
+                    doc_kind = (int *)DocKindFile;
+                else if (!strcmp(id_str, "generics"))
+                    doc_kind = (int *)DocKindGenerics;
+                else if (!strcmp(id_str, "global"))
+                    doc_kind = (int *)DocKindGlobal;
+                else if (!strcmp(id_str, "prot"))
+                    doc_kind = (int *)DocKindPrototype;
+                else if (!strcmp(id_str, "see"))
+                    doc_kind = (int *)DocKindSee;
+                else if (!strcmp(id_str, "version"))
+                    doc_kind = (int *)DocKindVersion;
+                else {
+                    end_token(self);
+
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrScanner,
+                          self,
+                          NEW(LilyError, LilyErrorUnknownDocFlag),
+                          self->loc,
+                          from__String(""),
+                          None());
+
+                    emit__Diagnostic(err);
+                }
+
+                if (id)
+                    FREE(String, (struct String *)id);
+
+                if (id_str)
+                    free(id_str);
+
+                next_char(self);
+
+                {
+                    end_token(self);
+
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrScanner,
+                          self,
+                          NEW(LilyError, LilyErrorExpectedCharacter),
+                          self->loc,
+                          from__String(""),
+                          Some(from__String("add `(` this, after doc flag")));
+
+                    err->err->s = format("{c}", (char)(UPtr)self->src->c);
+
+                    expected_char(self, err, (char *)'(');
+                }
+
+                if (doc_kind) {
+                    switch ((int)(UPtr)doc_kind) {
+                        case DocKindAuthor: {
+                            struct Doc *author = scan_doc_author(self);
+
+                            end_token(self);
+                            align_location(self);
+                            push__Vec(self->tokens,
+                                      NEW(TokenDoc,
+                                          copy__Location(&self->loc),
+                                          author));
+
+                            break;
+                        }
+                        case DocKindContract:
+                            TODO("@contract");
+                            break;
+                        case DocKindDescription:
+                            TODO("@desc");
+                            break;
+                        case DocKindText:
+                            TODO("@text");
+                            break;
+                        case DocKindFile:
+                            TODO("@file");
+                            break;
+                        case DocKindGenerics:
+                            TODO("@generics");
+                            break;
+                        case DocKindGlobal:
+                            TODO("@global");
+                            break;
+                        case DocKindPrototype:
+                            TODO("@prototype");
+                            break;
+                        case DocKindSee: {
+                            struct Doc *see = scan_doc_see(self);
+
+                            end_token(self);
+                            align_location(self);
+                            push__Vec(
+                              self->tokens,
+                              NEW(TokenDoc, copy__Location(&self->loc), see));
+
+                            break;
+                        }
+                        case DocKindVersion: {
+                            struct Doc *version = scan_doc_version(self);
+
+                            end_token(self);
+                            align_location(self);
+                            push__Vec(self->tokens,
+                                      NEW(TokenDoc,
+                                          copy__Location(&self->loc),
+                                          version));
+
+                            break;
+                        }
+                    }
+
+                    switch ((int)(UPtr)doc_kind) {
+                        case DocKindAuthor:
+                        case DocKindVersion: {
+                            end_token(self);
+                            align_location(self);
+
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrScanner,
+                                  self,
+                                  NEW(LilyError, LilyErrorExpectedCharacter),
+                                  self->loc,
+                                  from__String(""),
+                                  Some(from__String("add `)` after the end of "
+                                                    "doc flag declaration")));
+
+                            err->err->s =
+                              format("{c}", (char)(UPtr)self->src->c);
+
+                            expected_char(self, err, (char *)')');
+
+                            break;
+                        }
+                        default:
+                            break;
+                    }
                 }
 
                 break;
@@ -1507,7 +1680,6 @@ get_token(struct Scanner *self)
 
                     if (self->src->c == (char *)'/' && c2_doc == (char *)'/' &&
                         c3_doc == (char *)'/') {
-                        skip_space(self);
                         jump(self, 3);
 
                         struct String *doc2 = scan_comment_doc(self);
@@ -1529,8 +1701,6 @@ get_token(struct Scanner *self)
                     }
                 }
 
-                bool is_eof = false;
-
                 struct Source scan_doc_src =
                   NEW(Source,
                       (struct File){ .content = doc,
@@ -1542,14 +1712,18 @@ get_token(struct Scanner *self)
 
                 get_doc(&scan_doc);
 
-                TODO("Get flags");
-                // GET FLAGS
-                // ...
+                for (Usize i = 0; i < len__Vec(*scan_doc.tokens) - 1; i++)
+                    push__Vec(self->tokens, get__Vec(*scan_doc.tokens, i));
 
-                skip_space(self);
+                struct Result *last_doc = Ok(
+                  get__Vec(*scan_doc.tokens, len__Vec(*scan_doc.tokens) - 1));
 
-                return get_token(self);
+                if (doc)
+                    FREE(String, doc);
 
+                FREE(Vec, scan_doc.tokens);
+
+                return last_doc;
             } else if (c2 == (char *)'/')
                 kind = scan_comment_one(self);
             else if (c2 == (char *)'=')

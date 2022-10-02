@@ -133,7 +133,9 @@ enum LilyErrorKind
 	LilyErrorDuplicateVariant,
 	LilyErrorDuplicateField,
 	LilyErrorBadImportValue,
-	LilyErrorUnexpectedCharInImportValue
+	LilyErrorUnexpectedCharInImportValue,
+	LilyErrorExpectedCharacter,
+	LilyErrorUnknownDocFlag
 };
 
 typedef struct LilyError
