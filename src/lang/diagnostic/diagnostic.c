@@ -239,6 +239,18 @@ lily_error_to_string(struct LilyError err)
             return from__String("bad usage of object");
         case LilyErrorExpectedExpression:
             return from__String("expected expression");
+        case LilyErrorMissVariantName:
+            return from__String("miss variant name");
+        case LilyErrorExpectedUserDefinedDataType:
+            return from__String("expected user defined data type");
+        case LilyErrorMissPrototypeName:
+            return from__String("miss prototype name");
+        case LilyErrorMissParamsPrototype:
+            return from__String("miss params prototype");
+        case LilyErrorUnexpectedSelfParamInFunction:
+            return from__String("unexpected self param in function");
+        case LilyErrorSelfParamMustBeTheFirstParam:
+            return from__String("the self param must be in first");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -363,6 +375,22 @@ get_code_of_lily_error(struct LilyError err)
             return "0048";
         case LilyErrorExpectedExpression:
             return "0049";
+        case LilyErrorMissVariantName:
+            return "0050";
+        case LilyErrorMissFieldName:
+            return "0051";
+        case LilyErrorExpectedUserDefinedDataType:
+            return "0052";
+        case LilyErrorMissPrototypeName:
+            return "0053";
+        case LilyErrorMissParamsPrototype:
+            return "0054";
+        case LilyErrorUnexpectedSelfParamInFunction:
+            return "0055";
+        case LilyErrorDupliateSelfParam:
+            return "0056";
+        case LilyErrorSelfParamMustBeTheFirstParam:
+            return "0057";
         default:
             UNREACHABLE("unknown lily error kind");
     }

@@ -94,7 +94,15 @@ enum LilyErrorKind
     LilyErrorUnexpectedExpression,
     LilyErrorInvalidAttributeInThisBlock,
     LilyErrorBadUsageOfObject,
-    LilyErrorExpectedExpression
+    LilyErrorExpectedExpression,
+    LilyErrorMissVariantName,
+    LilyErrorMissFieldName,
+    LilyErrorExpectedUserDefinedDataType,
+    LilyErrorMissPrototypeName,
+    LilyErrorMissParamsPrototype,
+    LilyErrorUnexpectedSelfParamInFunction,
+    LilyErrorDupliateSelfParam,
+    LilyErrorSelfParamMustBeTheFirstParam,
 };
 
 typedef struct LilyError

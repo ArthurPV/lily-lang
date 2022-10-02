@@ -1807,6 +1807,17 @@ get_alias_parse_context(struct AliasParseContext *self,
         }
     }
 
+    if (len__Vec(*self->data_type) == 0) {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     parse_block,
+                                     NEW(LilyError, LilyErrorMissDataType),
+                                     *parse_block->current->loc,
+                                     format(""),
+                                     None());
+
+        emit__Diagnostic(err);
+    }
+
     VERIFY_EOF(parse_block, bad_token, "`;`");
     next_token_pb(parse_block);
 }
@@ -4736,14 +4747,39 @@ parse_fun_params(struct Parser self,
             });
 
             push__Vec(params, NEW(FunParamSelf, loc));
-        } else if (parse_decl->current->kind == TokenKindSelfKw && !is_method)
-            assert(0 && "error");
-        else if (parse_decl->current->kind == TokenKindSelfKw && has_self_param)
-            assert(0 && "error");
-        else if (parse_decl->current->kind == TokenKindSelfKw &&
-                 parse_decl->pos != 0)
-            assert(0 && "error");
-        else {
+        } else if (parse_decl->current->kind == TokenKindSelfKw && !is_method) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedSelfParamInFunction),
+                  *parse_decl->current->loc,
+                  format(""),
+                  None());
+
+            emit__Diagnostic(err);
+        } else if (parse_decl->current->kind == TokenKindSelfKw &&
+                   has_self_param) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorDupliateSelfParam),
+                  *parse_decl->current->loc,
+                  format(""),
+                  None());
+
+            emit__Diagnostic(err);
+        } else if (parse_decl->current->kind == TokenKindSelfKw &&
+                   parse_decl->pos != 0) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self.parse_block,
+                  NEW(LilyError, LilyErrorSelfParamMustBeTheFirstParam),
+                  *parse_decl->current->loc,
+                  format(""),
+                  None());
+
+            emit__Diagnostic(err);
+        } else {
             if (parse_decl->current->kind != TokenKindIdentifier) {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -4939,8 +4975,19 @@ parse_enum_declaration(struct Parser *self,
 
         type_value = Some(parse_data_type(*self, &parse));
 
-        if (parse.pos < len__Vec(*parse.tokens))
-            assert(0 && "error");
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  from__String(""),
+                  None());
+
+            err->err->s = token_kind_to_string__Token(*parse.current);
+
+            emit__Diagnostic(err);
+        }
     } else
         type_value = None();
 
@@ -4959,8 +5006,17 @@ parse_enum_declaration(struct Parser *self,
             if (parse.current->kind == TokenKindIdentifier) {
                 variant_name = &*parse.current->lit;
                 next_token(&parse);
-            } else
-                assert(0 && "error");
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self->parse_block,
+                      NEW(LilyError, LilyErrorMissVariantName),
+                      *parse.current->loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             if (parse.current->kind != TokenKindComma &&
                 parse.pos != len__Vec(*parse.tokens)) {
@@ -5041,13 +5097,31 @@ parse_record_declaration(struct Parser *self,
             if (parse.current->kind == TokenKindIdentifier) {
                 field_name = &*parse.current->lit;
                 next_token(&parse);
-            } else
-                assert(0 && "error");
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self->parse_block,
+                      NEW(LilyError, LilyErrorMissFieldName),
+                      *parse.current->loc,
+                      format(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             if (is_data_type(&parse)) {
                 data_type = parse_data_type(*self, &parse);
-            } else
-                assert(0 && "error");
+            } else {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self->parse_block,
+                      NEW(LilyError, LilyErrorMissDataType),
+                      *parse.current->loc,
+                      format(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             if (parse.current->kind == TokenKindColonEq) {
                 value = Some(parse_expr(*self, &parse));
@@ -5056,7 +5130,17 @@ parse_record_declaration(struct Parser *self,
 
             if (parse.current->kind != TokenKindComma &&
                 parse.pos != len__Vec(*parse.tokens)) {
-                assert(0 && "error");
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self->parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse.current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`,`");
+
+                emit__Diagnostic(err);
             } else
                 next_token(&parse);
 
@@ -5091,15 +5175,24 @@ parse_alias_declaration(struct Parser *self,
         generic_params = parse_generic_params(*self, &parse);
     }
 
-    if (len__Vec(*alias_parse_context.data_type) == 0)
-        assert(0 && "error");
-    else {
+    {
         struct ParseDecl parse = NEW(ParseDecl, alias_parse_context.data_type);
 
         data_type = parse_data_type(*self, &parse);
 
-        if (parse.pos < len__Vec(*parse.tokens))
-            assert(0 && "error");
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  format(""),
+                  None());
+
+            err->err->s = token_kind_to_string__Token(*parse.current);
+
+            emit__Diagnostic(err);
+        }
     }
 
     return NEW(AliasDecl,
@@ -5121,9 +5214,19 @@ parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
             case DataTypeKindCustom:
                 push__Vec(inh, dt);
                 break;
-            default:
-                assert(0 && "error");
+            default: {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedUserDefinedDataType),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                emit__Diagnostic(err);
+
                 FREE(DataTypeAll, dt);
+            }
         }
 
         if (parse_decl->pos != len__Vec(*parse_decl->tokens)) {
@@ -5193,19 +5296,48 @@ parse_trait_declaration(struct Parser *self,
                 if (parse.current->kind == TokenKindAt)
                     next_token(&parse);
                 else {
-                    assert(0 && "error");
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`@`");
+
+                    emit__Diagnostic(err);
                 }
 
                 if (parse.current->kind == TokenKindIdentifier) {
                     name = &*parse.current->lit;
                     next_token(&parse);
-                } else
-                    assert(0 && "error");
+                } else {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorMissPrototypeName),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    emit__Diagnostic(err);
+                }
 
                 if (parse.current->kind == TokenKindColonColon)
                     next_token(&parse);
                 else {
-                    assert(0 && "error");
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`::`");
+
+                    emit__Diagnostic(err);
                 }
 
                 if (is_data_type(&parse)) {
@@ -5216,8 +5348,17 @@ parse_trait_declaration(struct Parser *self,
                         has_first_self_param = true;
 
                     push__Vec(params_type, f_param);
-                } else
-                    assert(0 && "error");
+                } else {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorMissDataType),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    emit__Diagnostic(err);
+                }
 
                 while (parse.current->kind == TokenKindArrow &&
                        parse.pos < len__Vec(*parse.tokens)) {
@@ -5227,8 +5368,17 @@ parse_trait_declaration(struct Parser *self,
 
                 return_type = pop__Vec(params_type);
 
-                if (len__Vec(*params_type) == 0)
-                    assert(0 && "error");
+                if (len__Vec(*params_type) == 0) {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self->parse_block,
+                          NEW(LilyError, LilyErrorMissParamsPrototype),
+                          *parse.current->loc,
+                          format(""),
+                          None());
+
+                    emit__Diagnostic(err);
+                }
 
                 end__Location(
                   &loc, parse.current->loc->s_line, parse.current->loc->s_col);
@@ -5441,8 +5591,19 @@ parse_constant_declaration(struct Parser *self,
 
         data_type = Some(parse_data_type(*self, &parse));
 
-        if (parse.pos != len__Vec(*parse.tokens))
-            assert(0 && "error");
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  format(""),
+                  None());
+
+            err->err->s = token_kind_to_string__Token(*parse.current);
+
+            emit__Diagnostic(err);
+        }
     } else
         data_type = None();
 
@@ -5451,10 +5612,21 @@ parse_constant_declaration(struct Parser *self,
 
         expr = parse_expr(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens))
-            assert(0 && "error");
-    } else
-        assert(0 && "error");
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  format(""),
+                  None());
+
+            err->err->s = token_kind_to_string__Token(*parse.current);
+
+            emit__Diagnostic(err);
+        }
+    } else {
+    }
 
     return NEW(ConstantDecl,
                constant_parse_context.name,
@@ -5482,8 +5654,19 @@ parse_error_declaration(struct Parser *self,
 
         data_type = parse_data_type(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens))
-            assert(0 && "error");
+        if (parse.pos != len__Vec(*parse.tokens)) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  &self->parse_block,
+                  NEW(LilyError, LilyErrorUnexpectedToken),
+                  *parse.current->loc,
+                  format(""),
+                  None());
+
+            err->err->s = token_kind_to_string__Token(*parse.current);
+
+            emit__Diagnostic(err);
+        }
     }
 
     return NEW(ErrorDecl,
