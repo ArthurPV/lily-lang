@@ -67,7 +67,7 @@ enum LilyErrorKind
     LilyErrorMisuseOfSpecialClosingBlock,
     LilyErrorBadUsageOfAsync,
     LilyErrorBadUsageOfPub,
-    LilyErrorInvalidItemInFunBody,
+    LilyErrorInvalidItemInFunOrClassBody,
     LilyErrorBadUsageOfType,
     LilyErrorMissTypeName,
     LilyErrorInvalidTokenInEnumVariant,
@@ -81,10 +81,7 @@ enum LilyErrorKind
 typedef struct LilyError
 {
     enum LilyErrorKind kind;
-    union
-    {
-        struct String *s;
-    };
+    struct String *s;
 } LilyError;
 
 /**

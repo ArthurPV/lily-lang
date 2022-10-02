@@ -66,8 +66,7 @@ get_object_context(struct ParseBlock *self, bool is_pub);
 static struct Vec *
 get_generic_params(struct ParseBlock *self);
 static inline bool
-valid_fun_body_item(struct FunParseContext *self,
-                    struct ParseBlock *parse_block,
+valid_fun_body_item(struct ParseBlock *parse_block,
                     bool already_invalid);
 static void
 get_body_fun_parse_context(struct FunParseContext *self,
@@ -97,6 +96,11 @@ static inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid);
 static void
 get_trait_parse_context(struct TraitParseContext *self,
+                        struct ParseBlock *parse_block);
+static inline bool
+valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
+static void
+get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
@@ -455,7 +459,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
         } else
             next_token_pb(self);
 
-        while (self->current->kind != TokenKindLHook &&
+        while (self->current->kind != TokenKindRHook &&
                self->current->kind != TokenKindEof) {
             push__Vec(inh, &*self->current);
             next_token_pb(self);
@@ -484,7 +488,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
           NEW(DiagnosticWithErrParser,
               self,
               NEW(LilyError, LilyErrorUnexpectedImplementation),
-              loc_inh,
+              loc_impl,
               format("unexpected implementation in record object, enum object "
                      "or trait declaration"),
               None());
@@ -504,7 +508,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
           NEW(DiagnosticWithErrParser,
               self,
               NEW(LilyError, LilyErrorUnexpectedInheritance),
-              loc_impl,
+              loc_inh,
               format("unexpected inheritance in record object or enum object "
                      "declaration"),
               None());
@@ -565,8 +569,28 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
-        case TokenKindClassKw:
+        case TokenKindClassKw: {
+            struct ClassParseContext *class_parse_context = NEW(ClassParseContext);
+
+            class_parse_context->name = name;
+            class_parse_context->generic_params = generic_params;
+            class_parse_context->is_pub = is_pub;
+            class_parse_context->has_generic_params = has_generic_params;
+            class_parse_context->inheritance = inh;
+            class_parse_context->impl = impl;
+
+            if (len__Vec(*impl) > 0)
+                class_parse_context->has_impl = true;
+
+            if (len__Vec(*inh) > 0)
+                class_parse_context->has_inheritance = true;
+
+            get_class_parse_context(class_parse_context, self);
+
+            push__Vec(self->blocks, NEW(ParseContextClass, class_parse_context));
+
             break;
+        }
         default:
             assert(0 && "error");
     }
@@ -625,8 +649,7 @@ __new__FunParseContext()
 }
 
 static inline bool
-valid_fun_body_item(struct FunParseContext *self,
-                    struct ParseBlock *parse_block,
+valid_fun_body_item(struct ParseBlock *parse_block,
                     bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -652,9 +675,9 @@ valid_fun_body_item(struct FunParseContext *self,
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
                       parse_block,
-                      NEW(LilyError, LilyErrorInvalidItemInFunBody),
+                      NEW(LilyError, LilyErrorInvalidItemInFunOrClassBody),
                       *parse_block->current->loc,
-                      format("this token is invalid inside the function"),
+                      format("this token is invalid inside the function or class"),
                       None());
 
                 struct Diagnostic *note = CLOSE_BLOCK_NOTE();
@@ -680,7 +703,7 @@ get_body_fun_parse_context(struct FunParseContext *self,
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_fun_body_item(self, parse_block, bad_item)) {
+        if (valid_fun_body_item(parse_block, bad_item)) {
             switch (parse_block->current->kind) {
                 case TokenKindDoKw:
                 case TokenKindIfKw:
@@ -1333,6 +1356,89 @@ __free__TraitParseContext(struct TraitParseContext *self)
     free(self);
 }
 
+struct ClassParseContext *
+__new__ClassParseContext()
+{
+    struct ClassParseContext *self = malloc(sizeof(struct ClassParseContext));
+    self->is_pub = false;
+    self->has_generic_params = false;
+    self->has_inheritance = false;
+    self->has_impl = false;
+    self->name = NULL;
+    self->generic_params = NULL;
+    self->inheritance = NULL;
+    self->impl = NULL;
+    self->body = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static inline bool
+valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
+{
+    bool is_valid = valid_fun_body_item(parse_block, already_invalid);
+
+    if (parse_block->current->kind == TokenKindAt || is_valid)
+        return true;
+    else
+        return false;
+}
+
+static void
+get_class_parse_context(struct ClassParseContext *self,
+                        struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    // 1. Body
+    if (parse_block->current->kind != TokenKindEq) {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+
+        err->err->s = from__String("=");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+
+    bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindEndKw && parse_block->current->kind != TokenKindEof) {
+        if (valid_class_token_in_body(parse_block, bad_token)) {
+            push__Vec(self->body, &*parse_block->current);
+            next_token_pb(parse_block);
+        } else {
+            bad_token = true;
+            next_token_pb(parse_block);
+        }
+    }
+
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissClosingBlock),
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+                                         parse_block->pos - 1))
+                 ->loc,
+              format("expected closing block here"),
+              None());
+
+        err->err->s = from__String("`end`");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+}
+
+void
+__free__ClassParseContext(struct ClassParseContext *self)
+{
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->inheritance);
+    FREE(Vec, self->impl);
+    FREE(Vec, self->body);
+    free(self);
+}
+
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -1431,6 +1537,15 @@ __new__ParseContextTrait(struct TraitParseContext *trait)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextClass(struct ClassParseContext *class)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindClass;
+    self->value.class = class;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -1467,6 +1582,13 @@ __free__ParseContextTrait(struct ParseContext *self)
 }
 
 void
+__free__ParseContextClass(struct ParseContext *self)
+{
+    FREE(ClassParseContext, self->value.class);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -1486,6 +1608,9 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
         case ParseContextKindTrait:
             FREE(ParseContextTrait, self);
+            break;
+        case ParseContextKindClass:
+            FREE(ParseContextClass, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");

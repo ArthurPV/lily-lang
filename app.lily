@@ -24,3 +24,8 @@ end
 object Work: trait =
 	@ff
 end
+
+object Person: class =
+	@name string
+	@age u32
+end

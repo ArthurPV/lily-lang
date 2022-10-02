@@ -198,8 +198,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("bad usage of `async`");
         case LilyErrorBadUsageOfPub:
             return from__String("bad usage of `pub`");
-        case LilyErrorInvalidItemInFunBody:
-            return from__String("invalid item in `fun` body");
+        case LilyErrorInvalidItemInFunOrClassBody:
+            return from__String("invalid item in `fun` or `class` body");
         case LilyErrorBadUsageOfType:
             return from__String("bad usage of `type`");
         case LilyErrorMissTypeName:
@@ -276,7 +276,7 @@ get_code_of_lily_error(struct LilyError err)
             return "0017";
         case LilyErrorBadUsageOfPub:
             return "0018";
-        case LilyErrorInvalidItemInFunBody:
+        case LilyErrorInvalidItemInFunOrClassBody:
             return "0019";
         case LilyErrorBadUsageOfType:
             return "0020";
@@ -327,6 +327,7 @@ __new__LilyError(enum LilyErrorKind kind)
 {
     struct LilyError *self = malloc(sizeof(struct LilyError));
     self->kind = kind;
+    self->s = NULL;
     return self;
 }
 
