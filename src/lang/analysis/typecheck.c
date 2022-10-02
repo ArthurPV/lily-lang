@@ -537,25 +537,66 @@ check_module(struct Typecheck *self,
              struct Vec *scope_id)
 {
     if (!module->scope) {
+		struct Vec *local_import_value = NEW(Vec, sizeof(struct Vec));
+
         if (module->module_decl->value.module->body) {
             module->body = NEW(Vec, sizeof(struct SymbolTable));
 
             for (Usize i = 0;
                  i < len__Vec(*module->module_decl->value.module->body);
                  i++) {
-                for (Usize j = i + 1;
-                     j < len__Vec(*module->module_decl->value.module->body);
-                     j++)
-                    if (!get_name__SymbolTable(get__Vec(
-                          *module->module_decl->value.module->body, i)) ||
-                        eq__String(
-                          get_name__SymbolTable(get__Vec(
-                            *module->module_decl->value.module->body, i)),
-                          get_name__SymbolTable(get__Vec(
-                            *module->module_decl->value.module->body, j)),
-                          false)) {
-                        assert(0 && "error: duplicate module item");
-                    }
+                if (((struct ModuleBodyItem *)get__Vec(
+                       *module->module_decl->value.module->body, i))
+                      ->kind == ModuleBodyItemKindDecl)
+                    for (Usize j = i + 1;
+                         j < len__Vec(*module->module_decl->value.module->body);
+                         j++)
+                        if (((struct ModuleBodyItem *)get__Vec(
+                               *module->module_decl->value.module->body, j))
+                              ->kind == ModuleBodyItemKindDecl)
+                            if (eq__String(
+                                  get_name__Decl(
+                                    ((struct ModuleBodyItem *)get__Vec(
+                                       *module->module_decl->value.module->body,
+                                       i))
+                                      ->value.decl),
+                                  get_name__Decl(
+                                    ((struct ModuleBodyItem *)get__Vec(
+                                       *module->module_decl->value.module->body,
+                                       j))
+                                      ->value.decl),
+                                  false)) {
+                                struct Decl *i1 =
+                                  ((struct ModuleBodyItem *)get__Vec(
+                                     *module->module_decl->value.module->body,
+                                     i))
+                                    ->value.decl;
+                                struct Decl *i2 =
+                                  ((struct ModuleBodyItem *)get__Vec(
+                                     *module->module_decl->value.module->body,
+                                     j))
+                                    ->value.decl;
+
+                                if (((i1->kind == DeclKindAlias ||
+                                      i1->kind == DeclKindClass ||
+                                      i1->kind == DeclKindEnum ||
+                                      i1->kind == DeclKindError ||
+                                      i1->kind == DeclKindRecord ||
+                                      i1->kind == DeclKindTrait) &&
+                                     (i2->kind == DeclKindAlias ||
+                                      i2->kind == DeclKindClass ||
+                                      i2->kind == DeclKindEnum ||
+                                      i2->kind == DeclKindError ||
+                                      i2->kind == DeclKindRecord ||
+                                      i2->kind == DeclKindTrait)) ||
+                                    (i1->kind == DeclKindFun &&
+                                     i2->kind == DeclKindFun) ||
+                                    ((i1->kind == DeclKindModule ||
+                                      i1->kind == DeclKindConstant) &&
+                                     (i2->kind == DeclKindModule ||
+                                      i2->kind == DeclKindConstant)))
+                                    assert(0 && "error: duplicate module item");
+                            }
 
                 switch (((struct Decl *)get__Vec(
                            *module->module_decl->value.module->body, i))
@@ -570,6 +611,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(fun_scope_id, (Usize *)i);
                         check_fun(self, fun_symb->value.fun, fun_scope_id);
+                        push__Vec(module->body, fun_symb);
 
                         break;
                     }
@@ -585,6 +627,7 @@ check_module(struct Typecheck *self,
                         check_constant(self,
                                        constant_symb->value.constant,
                                        constant_scope_id);
+                        push__Vec(module->body, constant_symb);
 
                         break;
                     }
@@ -599,6 +642,7 @@ check_module(struct Typecheck *self,
                         push__Vec(module_scope_id, (Usize *)i);
                         check_module(
                           self, module_symb->value.module, module_scope_id);
+                        push__Vec(module->body, module_symb);
 
                         break;
                     }
@@ -613,6 +657,7 @@ check_module(struct Typecheck *self,
                         push__Vec(alias_scope_id, (Usize *)i);
                         check_alias(
                           self, alias_symb->value.alias, alias_scope_id);
+                        push__Vec(module->body, alias_symb);
 
                         break;
                     }
@@ -627,6 +672,7 @@ check_module(struct Typecheck *self,
                         push__Vec(record_scope_id, (Usize *)i);
                         check_alias(
                           self, record_symb->value.alias, record_scope_id);
+                        push__Vec(module->body, record_symb);
 
                         break;
                     }
@@ -640,6 +686,7 @@ check_module(struct Typecheck *self,
 
                         push__Vec(enum_scope_id, (Usize *)i);
                         check_enum(self, enum_symb->value.enum_, enum_scope_id);
+                        push__Vec(module->body, enum_symb);
 
                         break;
                     }
@@ -654,6 +701,7 @@ check_module(struct Typecheck *self,
                         push__Vec(error_scope_id, (Usize *)i);
                         check_error(
                           self, error_symb->value.error, error_scope_id);
+                        push__Vec(module->body, error_symb);
 
                         break;
                     }
@@ -668,6 +716,7 @@ check_module(struct Typecheck *self,
                         push__Vec(class_scope_id, (Usize *)i);
                         check_class(
                           self, class_symb->value.class, class_scope_id);
+                        push__Vec(module->body, class_symb);
 
                         break;
                     }
@@ -682,6 +731,7 @@ check_module(struct Typecheck *self,
                         push__Vec(trait_scope_id, (Usize *)i);
                         check_trait(
                           self, trait_symb->value.trait, trait_scope_id);
+                        push__Vec(module->body, trait_symb);
 
                         break;
                     }

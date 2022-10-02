@@ -3206,6 +3206,35 @@ __new__DeclImport(struct Location loc, struct ImportStmt *import)
     return self;
 }
 
+struct String *
+get_name__Decl(struct Decl *decl)
+{
+	switch (decl->kind) {
+		case DeclKindFun:
+			return decl->value.fun->name;
+		case DeclKindConstant:
+			return decl->value.constant->name;
+		case DeclKindModule:
+			return decl->value.module->name;
+		case DeclKindAlias:
+			return decl->value.alias->name;
+		case DeclKindRecord:
+			return decl->value.record->name;
+		case DeclKindEnum:
+			return decl->value.enum_->name;
+		case DeclKindError:
+			return decl->value.error->name;
+		case DeclKindClass:
+			return decl->value.class->name;
+		case DeclKindTrait:
+			return decl->value.trait->name;
+		case DeclKindTag:
+			return decl->value.tag->name;
+		case DeclKindImport:
+			return NULL;
+	}
+}
+
 void
 __free__DeclAll(struct Decl *self)
 {

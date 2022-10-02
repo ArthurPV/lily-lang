@@ -2745,6 +2745,13 @@ __new__DeclImport(struct Location loc, struct ImportStmt *import);
 
 /**
  *
+ * @brief Get name of Decl.
+ */
+struct String *
+get_name__Decl(struct Decl *decl);
+
+/**
+ *
  * @brief Free the Decl type (Fun variant).
  */
 inline void
