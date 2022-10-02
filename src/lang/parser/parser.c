@@ -3359,7 +3359,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 }
             }
 
-            if (!is_wildcard && !size) {
+            if (is_wildcard || size) {
                 next_token(parse_decl);
 
                 EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
@@ -3375,7 +3375,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
                     emit__Diagnostic(err);
                 });
-            }
+            } else
+				next_token(parse_decl);
 
             if (is_data_type(parse_decl)) {
                 if (!size)
