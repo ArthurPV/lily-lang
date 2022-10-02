@@ -1,6 +1,16 @@
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 
+void
+__free__LocalDataType(struct LocalDataType *self) {
+    if (self->restricted != NULL) {
+        FREE(DataTypeSymbolAll, self->restricted->items[0]);
+        FREE(Tuple, self->restricted);
+    }
+
+    free(self);
+}
+
 struct DataTypeSymbol *
 __new__DataTypeSymbol(enum DataTypeKind kind)
 {

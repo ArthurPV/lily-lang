@@ -1,1 +1,1 @@
-fun add = 3;
+fun add[T](x T) T = x;

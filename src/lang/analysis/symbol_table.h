@@ -67,6 +67,30 @@ __free__Scope(struct Scope *scope)
     free(scope);
 }
 
+typedef struct LocalDataType {
+    struct String *name; // struct String&
+    struct Tuple *restricted; // struct Tuple<struct DataTypeSymbol*, struct Location&>*
+} LocalDataType;
+
+/**
+ *
+ * @brief Construct the LocalDataType type.
+ */
+inline struct LocalDataType *
+__new__LocalDataType(struct String *name, struct Tuple *restricted) {
+    struct LocalDataType *self = malloc(sizeof(struct LocalDataType));
+    self->name = name;
+    self->restricted = restricted;
+    return self;
+}
+
+/**
+ *
+ * @brief Free the LocalDataType type.
+ */
+void
+__free__LocalDataType(struct LocalDataType *self);
+
 enum Visibility
 {
     VisibilityPublic,

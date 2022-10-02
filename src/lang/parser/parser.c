@@ -3474,6 +3474,8 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
                 next_token(parse_decl);
 
                 if (parse_decl->current->kind == TokenKindColon) {
+                    next_token(parse_decl);
+
                     struct Location loc_data_type = NEW(Location);
 
                     start__Location(&loc_data_type,
