@@ -336,10 +336,10 @@ __new__Typecheck(struct Parser parser)
 void
 run__Typecheck(struct Typecheck *self)
 {
-	{
-		verify_if_decl_is_duplicate(*self);
-		SUMMARY();
-	}
+    {
+        verify_if_decl_is_duplicate(*self);
+        SUMMARY();
+    }
 
     push_all_symbols(self);
     check_symbols(self);
@@ -513,6 +513,8 @@ verify_if_decl_is_duplicate(struct Typecheck self)
 
                 emit__Diagnostic(error);
                 emit__Diagnostic(note);
+
+                break;
             }
         }
 
@@ -547,91 +549,101 @@ static void
 verify_if_decl_is_duplicate_in_module(struct Typecheck self,
                                       struct Decl *module)
 {
-    for (Usize i = 0; i < len__Vec(*module->value.module->body); i++) {
-        if (((struct ModuleBodyItem *)get__Vec(*module->value.module->body, i))
-              ->kind == ModuleBodyItemKindDecl) {
-            for (Usize j = i + 1; j < len__Vec(*module->value.module->body);
-                 j++) {
-                if (((struct ModuleBodyItem *)get__Vec(
-                       *module->value.module->body, j))
-                      ->kind == ModuleBodyItemKindDecl) {
-                    if (eq__String(
-                          get_name__Decl(((struct ModuleBodyItem *)get__Vec(
-                                            *module->value.module->body, i))
-                                           ->value.decl),
-                          get_name__Decl(((struct ModuleBodyItem *)get__Vec(
-                                            *module->value.module->body, j))
-                                           ->value.decl),
-                          false)) {
-                        struct Diagnostic *error = NEW(
-                          DiagnosticWithErrTypecheck,
-                          &self,
-                          NEW(LilyError, LilyErrorDuplicateDeclaration),
-                          ((struct ModuleBodyItem *)get__Vec(*module->value.module->body, j))->value.decl->loc,
-                          from__String(""),
-                          Some(
-                            from__String("remove this declaration or move the "
-                                         "declaration in other scope")));
+    if (module->value.module->body) {
+        for (Usize i = 0; i < len__Vec(*module->value.module->body); i++) {
+            if (((struct ModuleBodyItem *)get__Vec(*module->value.module->body,
+                                                   i))
+                  ->kind == ModuleBodyItemKindDecl) {
+                for (Usize j = i + 1; j < len__Vec(*module->value.module->body);
+                     j++) {
+                    if (((struct ModuleBodyItem *)get__Vec(
+                           *module->value.module->body, j))
+                          ->kind == ModuleBodyItemKindDecl) {
+                        if (eq__String(
+                              get_name__Decl(((struct ModuleBodyItem *)get__Vec(
+                                                *module->value.module->body, i))
+                                               ->value.decl),
+                              get_name__Decl(((struct ModuleBodyItem *)get__Vec(
+                                                *module->value.module->body, j))
+                                               ->value.decl),
+                              false)) {
+                            struct Diagnostic *error =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  &self,
+                                  NEW(LilyError, LilyErrorDuplicateDeclaration),
+                                  ((struct ModuleBodyItem *)get__Vec(
+                                     *module->value.module->body, j))
+                                    ->value.decl->loc,
+                                  from__String(""),
+                                  Some(from__String(
+                                    "remove this declaration or move the "
+                                    "declaration in other scope")));
 
-                        struct Diagnostic *note = NEW(
-                          DiagnosticWithNoteTypecheck,
-                          &self,
-                          format(
-                            "this declaration is in conflict with a "
-                            "declaration "
-                            "declared at the location ({d}:{d})",
-                            ((struct ModuleBodyItem *)get__Vec(*module->value.module->body, j))->value.decl
-                              ->loc.s_line,
-                            ((struct ModuleBodyItem *)get__Vec(*module->value.module->body, j))->value.decl
-                              ->loc.s_col),
-                          ((struct ModuleBodyItem *)get__Vec(*module->value.module->body, i))->value.decl->loc,
-                          from__String(""),
-                          None());
+                            struct Diagnostic *note = NEW(
+                              DiagnosticWithNoteTypecheck,
+                              &self,
+                              format("this declaration is in conflict with a "
+                                     "declaration "
+                                     "declared at the location ({d}:{d})",
+                                     ((struct ModuleBodyItem *)get__Vec(
+                                        *module->value.module->body, j))
+                                       ->value.decl->loc.s_line,
+                                     ((struct ModuleBodyItem *)get__Vec(
+                                        *module->value.module->body, j))
+                                       ->value.decl->loc.s_col),
+                              ((struct ModuleBodyItem *)get__Vec(
+                                 *module->value.module->body, i))
+                                ->value.decl->loc,
+                              from__String(""),
+                              None());
 
-                        emit__Diagnostic(error);
-                        emit__Diagnostic(note);
+                            emit__Diagnostic(error);
+                            emit__Diagnostic(note);
+
+                            break;
+                        }
                     }
                 }
-            }
 
-            switch (((struct Decl *)((struct ModuleBodyItem *)get__Vec(
-                                       *module->value.module->body, i))
-                       ->value.decl)
-                      ->kind) {
-                case DeclKindModule:
-                    verify_if_decl_is_duplicate_in_module(
-                      self,
-                      ((struct ModuleBodyItem *)get__Vec(
-                         *module->value.module->body, i))
-                        ->value.decl);
+                switch (((struct Decl *)((struct ModuleBodyItem *)get__Vec(
+                                           *module->value.module->body, i))
+                           ->value.decl)
+                          ->kind) {
+                    case DeclKindModule:
+                        verify_if_decl_is_duplicate_in_module(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
 
-                    break;
-                case DeclKindEnum:
-                    verify_if_decl_is_duplicate_in_enum(
-                      self,
-                      ((struct ModuleBodyItem *)get__Vec(
-                         *module->value.module->body, i))
-                        ->value.decl);
+                        break;
+                    case DeclKindEnum:
+                        verify_if_decl_is_duplicate_in_enum(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
 
-                    break;
-                case DeclKindRecord:
-                    verify_if_decl_is_duplicate_in_record(
-                      self,
-                      ((struct ModuleBodyItem *)get__Vec(
-                         *module->value.module->body, i))
-                        ->value.decl);
+                        break;
+                    case DeclKindRecord:
+                        verify_if_decl_is_duplicate_in_record(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
 
-                    break;
-                case DeclKindClass:
-                    verify_if_decl_is_duplicate_in_class(
-                      self,
-                      ((struct ModuleBodyItem *)get__Vec(
-                         *module->value.module->body, i))
-                        ->value.decl);
+                        break;
+                    case DeclKindClass:
+                        verify_if_decl_is_duplicate_in_class(
+                          self,
+                          ((struct ModuleBodyItem *)get__Vec(
+                             *module->value.module->body, i))
+                            ->value.decl);
 
-                    break;
-                default:
-                    break;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
@@ -640,25 +652,31 @@ verify_if_decl_is_duplicate_in_module(struct Typecheck self,
 static void
 verify_if_decl_is_duplicate_in_enum(struct Typecheck self, struct Decl *enum_)
 {
-    for (Usize i = 0; i < len__Vec(*enum_->value.enum_->variants); i++) {
-        for (Usize j = i + 1; j < len__Vec(*enum_->value.enum_->variants);
-             j++) {
-            if (eq__String(((struct VariantEnum *)get__Vec(
-                              *enum_->value.enum_->variants, i))
-                             ->name,
-                           ((struct VariantEnum *)get__Vec(
-                              *enum_->value.enum_->variants, j))
-                             ->name,
-                           false)) {
-                struct Diagnostic *error =
-                  NEW(DiagnosticWithErrTypecheck,
-                      &self,
-                      NEW(LilyError, LilyErrorDuplicateVariant),
-                      ((struct VariantEnum *)get__Vec(*enum_->value.enum_->variants, j))->loc,
-                      from__String(""),
-                      Some(from__String("remove this variant")));
+    if (enum_->value.enum_->variants) {
+        for (Usize i = 0; i < len__Vec(*enum_->value.enum_->variants); i++) {
+            for (Usize j = i + 1; j < len__Vec(*enum_->value.enum_->variants);
+                 j++) {
+                if (eq__String(((struct VariantEnum *)get__Vec(
+                                  *enum_->value.enum_->variants, i))
+                                 ->name,
+                               ((struct VariantEnum *)get__Vec(
+                                  *enum_->value.enum_->variants, j))
+                                 ->name,
+                               false)) {
+                    struct Diagnostic *error =
+                      NEW(DiagnosticWithErrTypecheck,
+                          &self,
+                          NEW(LilyError, LilyErrorDuplicateVariant),
+                          ((struct VariantEnum *)get__Vec(
+                             *enum_->value.enum_->variants, j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("remove this variant")));
 
-                emit__Diagnostic(error);
+                    emit__Diagnostic(error);
+
+                    break;
+                }
             }
         }
     }
@@ -668,25 +686,31 @@ static void
 verify_if_decl_is_duplicate_in_record(struct Typecheck self,
                                       struct Decl *record)
 {
-    for (Usize i = 0; i < len__Vec(*record->value.record->fields); i++) {
-        for (Usize j = i + 1; j < len__Vec(*record->value.record->fields);
-             j++) {
-            if (eq__String(((struct FieldRecord *)get__Vec(
-                              *record->value.record->fields, i))
-                             ->name,
-                           ((struct FieldRecord *)get__Vec(
-                              *record->value.record->fields, j))
-                             ->name,
-                           false)) {
-                struct Diagnostic *error =
-                  NEW(DiagnosticWithErrTypecheck,
-                      &self,
-                      NEW(LilyError, LilyErrorDuplicateField),
-                      ((struct FieldRecord *)get__Vec(*record->value.record->fields, j))->loc,
-                      from__String(""),
-                      Some(from__String("remove this field")));
+    if (record->value.record->fields) {
+        for (Usize i = 0; i < len__Vec(*record->value.record->fields); i++) {
+            for (Usize j = i + 1; j < len__Vec(*record->value.record->fields);
+                 j++) {
+                if (eq__String(((struct FieldRecord *)get__Vec(
+                                  *record->value.record->fields, i))
+                                 ->name,
+                               ((struct FieldRecord *)get__Vec(
+                                  *record->value.record->fields, j))
+                                 ->name,
+                               false)) {
+                    struct Diagnostic *error =
+                      NEW(DiagnosticWithErrTypecheck,
+                          &self,
+                          NEW(LilyError, LilyErrorDuplicateField),
+                          ((struct FieldRecord *)get__Vec(
+                             *record->value.record->fields, j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("remove this field")));
 
-                emit__Diagnostic(error);
+                    emit__Diagnostic(error);
+
+                    break;
+                }
             }
         }
     }
@@ -695,20 +719,55 @@ verify_if_decl_is_duplicate_in_record(struct Typecheck self,
 static void
 verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class)
 {
-    for (Usize i = 0; i < len__Vec(*class->value.class->body); i++) {
-        if (((struct ClassBodyItem *)get__Vec(*class->value.class->body, i))
-              ->kind != ClassBodyItemKindImport) {
-            for (Usize j = i + 1; j < len__Vec(*class->value.class->body);
-                 j++) {
-                if (((struct ClassBodyItem *)get__Vec(*class->value.class->body,
-                                                      j))
-                      ->kind != ClassBodyItemKindImport) {
-                    if (eq__String(get_name__ClassBodyItem(
-                                     get__Vec(*class->value.class->body, i)),
-                                   get_name__ClassBodyItem(
-                                     get__Vec(*class->value.class->body, j)),
-                                   false)) {
-                        assert(0 && "duplicate declaration");
+    if (class->value.class->body) {
+        for (Usize i = 0; i < len__Vec(*class->value.class->body); i++) {
+            if (((struct ClassBodyItem *)get__Vec(*class->value.class->body, i))
+                  ->kind != ClassBodyItemKindImport) {
+                for (Usize j = i + 1; j < len__Vec(*class->value.class->body);
+                     j++) {
+                    if (((struct ClassBodyItem *)get__Vec(
+                           *class->value.class->body, j))
+                          ->kind != ClassBodyItemKindImport) {
+                        if (eq__String(get_name__ClassBodyItem(get__Vec(
+                                         *class->value.class->body, i)),
+                                       get_name__ClassBodyItem(get__Vec(
+                                         *class->value.class->body, j)),
+                                       false)) {
+                            struct Diagnostic *error =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  &self,
+                                  NEW(LilyError, LilyErrorDuplicateDeclaration),
+                                  ((struct ClassBodyItem *)get__Vec(
+                                     *class->value.class->body, j))
+                                    ->loc,
+                                  from__String(""),
+                                  Some(from__String(
+                                    "remove this declaration or move the "
+                                    "declaration in other scope")));
+
+                            struct Diagnostic *note = NEW(
+                              DiagnosticWithNoteTypecheck,
+                              &self,
+                              format("this declaration is in conflict with a "
+                                     "declaration "
+                                     "declared at the location ({d}:{d})",
+                                     ((struct ClassBodyItem *)get__Vec(
+                                        *class->value.class->body, j))
+                                       ->loc.s_line,
+                                     ((struct ClassBodyItem *)get__Vec(
+                                        *class->value.class->body, j))
+                                       ->loc.s_col),
+                              ((struct ClassBodyItem *)get__Vec(
+                                 *class->value.class->body, i))
+                                ->loc,
+                              from__String(""),
+                              None());
+
+                            emit__Diagnostic(error);
+                            emit__Diagnostic(note);
+
+                            break;
+                        }
                     }
                 }
             }
