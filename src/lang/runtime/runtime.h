@@ -41,6 +41,7 @@ extern "C"
 {
 #endif
 
+#if __clang_major__ < 15
     typedef struct u128_t
     {
         uint64_t x, y;
@@ -55,6 +56,7 @@ extern "C"
     LILY_API U128 add__u128_t(U128 self, U128 v);
     LILY_API U128 sub__u128_t(U128 self, U128 v);
     LILY_API U128 mul__u128_t(U128 self, U128 v);
+#endif
 
     typedef char *MutStr;
     typedef const char *Str;

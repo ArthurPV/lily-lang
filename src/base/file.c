@@ -28,12 +28,11 @@
 #include <base/file.h>
 #include <base/new.h>
 #include <base/platform.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #if defined(_WIN32) // TODO: Add support for Windows
-#include <windows.h>
+#include <direct.h>
 #else
 #include <dirent.h>
 #endif
@@ -50,6 +49,13 @@ bool
 is_directory__Path(struct Path self)
 {
     Str path_str = to_Str__String(*self.path);
+
+#ifdef LILY_WINDOWS_OS
+    if (_chdir(path_str)) {
+        free(path_str);
+        return false;
+    }
+#else
     DIR *dir = opendir(path_str);
 
     if (ENOENT == errno || dir == NULL) {
@@ -57,8 +63,10 @@ is_directory__Path(struct Path self)
         return false;
     }
 
-    free(path_str);
     closedir(dir);
+#endif
+
+    free(path_str);
 
     return true;
 }

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <base/platform.h>
 #include <base/print.h>
 #include <command/command.h>
 #include <command/help.h>
@@ -74,9 +75,17 @@ main(int argc, char **argv)
             break;
         case COMPILE_COMMAND:
             if (argc > 2) {
+#ifdef LILY_WINDOWS_OS
+#include <windows.h>
+#else
 #include <time.h>
+#endif
 
+#ifdef LILY_WINDOWS_OS
+                DWORD start = GetTickCount();
+#else
                 clock_t start = clock();
+#endif
 
                 struct File file = NEW(File, argv[2]);
                 struct Source src = NEW(Source, file);
@@ -103,7 +112,11 @@ main(int argc, char **argv)
 
                 FREE(Generate, gen);
 
+#ifdef LILY_WINDOWS_OS
+                double total_t = (double)(GetTickCount() - start);
+#else
                 double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
+#endif
 
                 println("compiled in %.3fs", total_t);
             }
