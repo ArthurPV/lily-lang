@@ -5533,7 +5533,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindRecordObject:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclRecord,
                                       current->loc,
@@ -5541,7 +5541,7 @@ parse_module_declaration(struct Parser *self,
                                         self, current->value.record, true))));
                     break;
                 case ParseContextKindRecord:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclRecord,
                                       current->loc,
@@ -5550,7 +5550,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindAlias:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclAlias,
                                       current->loc,
@@ -5559,7 +5559,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindTrait:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclTrait,
                                       current->loc,
@@ -5568,7 +5568,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindClass:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclClass,
                                       current->loc,
@@ -5580,7 +5580,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindConstant:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclConstant,
                                       current->loc,
@@ -5589,7 +5589,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindError:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclError,
                                       current->loc,
@@ -5598,7 +5598,7 @@ parse_module_declaration(struct Parser *self,
                     break;
 
                 case ParseContextKindModule:
-                    push__Vec(self->decls,
+                    push__Vec(body,
                               NEW(ModuleBodyItemDecl,
                                   NEW(DeclModule,
                                       current->loc,
