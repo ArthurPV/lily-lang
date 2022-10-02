@@ -94,7 +94,7 @@ read_file__Path(struct Path self)
     fclose(file);
     free(path);
 
-    push__String(file_content, "\n");
+    push__String(file_content, (char*)'\n');
 
     return file_content;
 }

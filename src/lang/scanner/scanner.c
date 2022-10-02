@@ -12,6 +12,63 @@
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
+#define IS_DIGIT \
+    '0'          \
+      : case '1' \
+      : case '2' \
+      : case '3' \
+      : case '4' : case '5' : case '6' : case '7' : case '8' : case '9'
+
+#define IS_ID    \
+    'a'          \
+      : case 'b' \
+      : case 'c' \
+      : case 'd' \
+      : case 'e' \
+      : case 'f' \
+      : case 'g' \
+      : case 'h' \
+      : case 'i' \
+      : case 'j' \
+      : case 'k' \
+      : case 'l' \
+      : case 'm' \
+      : case 'n' \
+      : case 'o' \
+      : case 'p' \
+      : case 'q' \
+      : case 'r' \
+      : case 's' \
+      : case 't' \
+      : case 'u' \
+      : case 'v' \
+      : case 'w' \
+      : case 'x' \
+      : case 'y' \
+      : case 'z' \
+      : case 'A' \
+      : case 'B' \
+      : case 'C' \
+      : case 'D' \
+      : case 'E' \
+      : case 'F' \
+      : case 'G' \
+      : case 'H' \
+      : case 'I' \
+      : case 'J' \
+      : case 'K' \
+      : case 'L' \
+      : case 'M' \
+      : case 'N' \
+      : case 'O' \
+      : case 'P' \
+      : case 'Q' \
+      : case 'R' \
+      : case 'S' \
+      : case 'T' \
+      : case 'U' \
+      : case 'V' : case 'W' : case 'X' : case 'Y' : case 'Z' : case '_'
+
 static inline enum TokenKind
 get_keyword(const Str id);
 
@@ -997,374 +1054,418 @@ get_token(struct Scanner *self)
 
     start_token(self);
 
-    if (self->src->c == (char *)'.' && eq__Option(*c2, (char *)'.') &&
-        eq__Option(*c3, (char *)'.'))
-        kind = TokenKindDotDotDot;
-    else if (self->src->c == (char *)'.' && eq__Option(*c2, (char *)'.'))
-        kind = TokenKindDotDot;
-    else if (self->src->c == (char *)'.' && eq__Option(*c2, (char *)'*'))
-        kind = TokenKindDotStar;
-    else if (self->src->c == (char *)'.' && eq__Option(*c2, (char *)'?'))
-        kind = TokenKindDotInterrogation;
-    else if (self->src->c == (char *)'.')
-        kind = TokenKindDot;
-    else if (self->src->c == (char *)',')
-        kind = TokenKindComma;
-    else if (self->src->c == (char *)':' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindColonEq;
-    else if (self->src->c == (char *)':' && eq__Option(*c2, (char *)':'))
-        kind = TokenKindColonColon;
-    else if (self->src->c == (char *)':')
-        kind = TokenKindColon;
-    else if (self->src->c == (char *)'|' && eq__Option(*c2, (char *)'>'))
-        kind = TokenKindBarRShift;
-    else if (self->src->c == (char *)'|')
-        kind = TokenKindBar;
-    else if (self->src->c == (char *)'-' && eq__Option(*c2, (char *)'>'))
-        kind = TokenKindArrow;
-    else if (self->src->c == (char *)'<' && eq__Option(*c2, (char *)'-'))
-        kind = TokenKindInverseArrow;
-    else if (self->src->c == (char *)'=' && eq__Option(*c2, (char *)'>'))
-        kind = TokenKindFatArrow;
-    else if (self->src->c == (char *)'@')
-        kind = TokenKindAt;
-    else if (self->src->c == (char *)'(') {
-        struct Token *tok = NEW(Token, TokenKindLParen, NULL);
+    switch ((UPtr)self->src->c) {
+        case '.':
+            if (eq__Option(*c2, (char *)'.') && eq__Option(*c3, (char *)'.'))
+                kind = TokenKindDotDotDot;
+            else if (eq__Option(*c2, (char *)'.'))
+                kind = TokenKindDotDot;
+            else if (eq__Option(*c2, (char *)'*'))
+                kind = TokenKindDotStar;
+            else if (eq__Option(*c2, (char *)'?'))
+                kind = TokenKindDotInterrogation;
+            else
+                kind = TokenKindDot;
+            break;
+        case ',':
+            kind = TokenKindComma;
+            break;
+        case ':':
+            if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindColonEq;
+            else if (eq__Option(*c2, (char *)':'))
+                kind = TokenKindColonColon;
+            else
+                kind = TokenKindColon;
+            break;
+        case '|':
+            if (eq__Option(*c2, (char *)'>'))
+                kind = TokenKindBarRShift;
+            else
+                kind = TokenKindBar;
+            break;
+        case '@':
+            kind = TokenKindAt;
+            break;
+        case '(': {
+            struct Token *tok = NEW(Token, TokenKindLParen, NULL);
 
-        next_char_by_token(self, *tok);
-        end_token(self);
-        tok->loc = copy__Location(self->loc);
-        push_token(self, tok);
+            next_char_by_token(self, *tok);
+            end_token(self);
+            tok->loc = copy__Location(self->loc);
+            push_token(self, tok);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return get_closing(self, (char *)')');
-    } else if (self->src->c == (char *)')') {
-        end_token(self);
+            return get_closing(self, (char *)')');
+        }
+        case ')': {
+            end_token(self);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return Err(NEW(DiagnosticWithErrScanner,
-                       self,
-                       NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                       *self->loc,
-                       format(""),
-                       Some(format("remove this `)`"))));
-    } else if (self->src->c == (char *)'{') {
-        struct Token *tok = NEW(Token, TokenKindLBrace, NULL);
+            return Err(NEW(DiagnosticWithErrScanner,
+                           self,
+                           NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
+                           *self->loc,
+                           format(""),
+                           Some(format("remove this `)`"))));
+        }
+        case '{': {
+            struct Token *tok = NEW(Token, TokenKindLBrace, NULL);
 
-        next_char_by_token(self, *tok);
-        end_token(self);
-        tok->loc = copy__Location(self->loc);
-        push_token(self, tok);
+            next_char_by_token(self, *tok);
+            end_token(self);
+            tok->loc = copy__Location(self->loc);
+            push_token(self, tok);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return get_closing(self, (char *)'}');
-    } else if (self->src->c == (char *)'}') {
-        end_token(self);
+            return get_closing(self, (char *)'}');
+        }
+        case '}': {
+            end_token(self);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return Err(NEW(DiagnosticWithErrScanner,
-                       self,
-                       NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                       *self->loc,
-                       format(""),
-                       Some(format("remove this `}`"))));
-    } else if (self->src->c == (char *)'[') {
-        struct Token *tok = NEW(Token, TokenKindLHook, NULL);
+            return Err(NEW(DiagnosticWithErrScanner,
+                           self,
+                           NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
+                           *self->loc,
+                           format(""),
+                           Some(format("remove this `}`"))));
+        }
+        case '[': {
+            struct Token *tok = NEW(Token, TokenKindLHook, NULL);
 
-        next_char_by_token(self, *tok);
-        end_token(self);
-        tok->loc = copy__Location(self->loc);
-        push_token(self, tok);
+            next_char_by_token(self, *tok);
+            end_token(self);
+            tok->loc = copy__Location(self->loc);
+            push_token(self, tok);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return get_closing(self, (char *)']');
-    } else if (self->src->c == (char *)']') {
-        end_token(self);
+            return get_closing(self, (char *)']');
+        }
+        case ']': {
+            end_token(self);
 
-        FREE(Option, c2);
-        FREE(Option, c3);
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        return Err(NEW(DiagnosticWithErrScanner,
-                       self,
-                       NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                       *self->loc,
-                       format(""),
-                       Some(format("remove this `]`"))));
-    } else if (self->src->c == (char *)'#')
-        kind = TokenKindHashtag;
-    else if (self->src->c == (char *)';')
-        kind = TokenKindSemicolon;
-    else if (self->src->c == (char *)'$')
-        kind = TokenKindDollar;
-    else if (self->src->c == (char *)'`')
-        kind = TokenKindBacktrick;
-    else if (self->src->c == (char *)'+' && eq__Option(*c2, (char *)'+') &&
-             eq__Option(*c3, (char *)'='))
-        kind = TokenKindPlusPlusEq;
-    else if (self->src->c == (char *)'+' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindPlusEq;
-    else if (self->src->c == (char *)'+' && eq__Option(*c2, (char *)'+'))
-        kind = TokenKindPlusPlus;
-    else if (self->src->c == (char *)'+')
-        kind = TokenKindPlus;
-    else if (self->src->c == (char *)'~' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindWaveEq;
-    else if (self->src->c == (char *)'~')
-        kind = TokenKindWave;
-    else if (self->src->c == (char *)'-' && eq__Option(*c2, (char *)'-') &&
-             eq__Option(*c3, (char *)'='))
-        kind = TokenKindMinusMinusEq;
-    else if (self->src->c == (char *)'-' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindMinusEq;
-    else if (self->src->c == (char *)'-' && eq__Option(*c2, (char *)'-'))
-        kind = TokenKindMinusMinus;
-    else if (self->src->c == (char *)'-')
-        kind = TokenKindMinus;
-    else if (self->src->c == (char *)'*' && eq__Option(*c2, (char *)'*') &&
-             eq__Option(*c3, (char *)'='))
-        kind = TokenKindStarStarEq;
-    else if (self->src->c == (char *)'*' && eq__Option(*c2, (char *)'*'))
-        kind = TokenKindStarStar;
-    else if (self->src->c == (char *)'*' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindStarEq;
-    else if (self->src->c == (char *)'*')
-        kind = TokenKindStar;
-    else if (self->src->c == (char *)'/' && eq__Option(*c2, (char *)'/') &&
-             eq__Option(*c3, (char *)'/')) {
-        jump(self, 3);
-
-        struct String *doc = scan_comment_doc(self);
-
-        push__String(doc, (char *)'\n');
-        next_char(self);
-        skip_space(self);
-
-        while (true) {
-            struct Option *c2_doc = peek_char(*self, 1);
-            struct Option *c3_doc = peek_char(*self, 2);
-
-            if (self->src->c == (char *)'/' &&
-                eq__Option(*c2_doc, (char *)'/') &&
-                eq__Option(*c3_doc, (char *)'/')) {
-                skip_space(self);
+            return Err(NEW(DiagnosticWithErrScanner,
+                           self,
+                           NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
+                           *self->loc,
+                           format(""),
+                           Some(format("remove this `]`"))));
+        }
+        case '#':
+            kind = TokenKindHashtag;
+            break;
+        case ';':
+            kind = TokenKindSemicolon;
+            break;
+        case '$':
+            kind = TokenKindDollar;
+            break;
+        case '`':
+            kind = TokenKindBacktrick;
+            break;
+        case '+':
+            if (eq__Option(*c2, (char *)'+') && eq__Option(*c3, (char *)'='))
+                kind = TokenKindPlusPlusEq;
+            else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindPlusEq;
+            else if (eq__Option(*c2, (char *)'+'))
+                kind = TokenKindPlusPlus;
+            else
+                kind = TokenKindPlus;
+            break;
+        case '~':
+            if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindWaveEq;
+            else
+                kind = TokenKindWave;
+            break;
+        case '-':
+            if (eq__Option(*c2, (char *)'-') && eq__Option(*c3, (char *)'='))
+                kind = TokenKindMinusMinusEq;
+            else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindMinusEq;
+            else if (eq__Option(*c2, (char *)'-'))
+                kind = TokenKindMinusMinus;
+            else if (eq__Option(*c2, (char *)'>'))
+                kind = TokenKindArrow;
+            else
+                kind = TokenKindMinus;
+            break;
+        case '*':
+            if (eq__Option(*c2, (char *)'*') && eq__Option(*c3, (char *)'='))
+                kind = TokenKindStarStarEq;
+            else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindStarEq;
+            else if (eq__Option(*c2, (char *)'*'))
+                kind = TokenKindStarStar;
+            else
+                kind = TokenKindStar;
+            break;
+        case '/':
+            if (eq__Option(*c2, (char *)'/') && eq__Option(*c3, (char *)'/')) {
                 jump(self, 3);
 
-                struct String *doc2 = scan_comment_doc(self);
-                struct Option *next_one = peek_char(*self, 1);
+                struct String *doc = scan_comment_doc(self);
 
-                push__String(doc2, (char *)'\n');
-
-                if (eq__Option(*next_one, NULL)) {
-                    append__String(doc, doc2, true);
-                    next_char(self);
-                    break;
-                }
-
-                append__String(doc, doc2, true);
+                push__String(doc, (char *)'\n');
                 next_char(self);
                 skip_space(self);
 
-                FREE(Option, next_one);
-            } else {
-                FREE(Option, c2_doc);
-                FREE(Option, c3_doc);
+                while (true) {
+                    struct Option *c2_doc = peek_char(*self, 1);
+                    struct Option *c3_doc = peek_char(*self, 2);
 
-                break;
+                    if (self->src->c == (char *)'/' &&
+                        eq__Option(*c2_doc, (char *)'/') &&
+                        eq__Option(*c3_doc, (char *)'/')) {
+                        skip_space(self);
+                        jump(self, 3);
+
+                        struct String *doc2 = scan_comment_doc(self);
+                        struct Option *next_one = peek_char(*self, 1);
+
+                        push__String(doc2, (char *)'\n');
+
+                        if (eq__Option(*next_one, NULL)) {
+                            append__String(doc, doc2, true);
+                            next_char(self);
+                            break;
+                        }
+
+                        append__String(doc, doc2, true);
+                        next_char(self);
+                        skip_space(self);
+
+                        FREE(Option, next_one);
+                    } else {
+                        FREE(Option, c2_doc);
+                        FREE(Option, c3_doc);
+
+                        break;
+                    }
+
+                    FREE(Option, c2_doc);
+                    FREE(Option, c3_doc);
+                }
+
+                bool is_eof = false;
+
+                // GET FLAGS
+                // ...
+
+                skip_space(self);
+
+                FREE(Option, c2);
+                FREE(Option, c3);
+
+                return get_token(self);
+
+            } else if (eq__Option(*c2, (char *)'/')) {
+                kind = scan_comment_one(self);
+                next_char(self);
+            } else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindSlashEq;
+            else if (eq__Option(*c2, (char *)'*')) {
+                FREE(Option, c2);
+                FREE(Option, c3);
+
+                return scan_comment_multi(self);
+            } else
+                kind = TokenKindSlash;
+            break;
+        case '%':
+            if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindPercentageEq;
+            else
+                kind = TokenKindPercentage;
+            break;
+        case '^':
+            if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindHatEq;
+            else
+                kind = TokenKindHat;
+            break;
+        case '=':
+            if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindEqEq;
+            else if (eq__Option(*c2, (char *)'>'))
+                kind = TokenKindFatArrow;
+            else
+                kind = TokenKindEq;
+            break;
+        case '<':
+            if (eq__Option(*c2, (char *)'<') && eq__Option(*c3, (char *)'='))
+                kind = TokenKindLShiftLShiftEq;
+            else if (eq__Option(*c2, (char *)'<'))
+                kind = TokenKindLShiftLShift;
+            else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindLShiftEq;
+            else if (eq__Option(*c2, (char *)'-'))
+                kind = TokenKindInverseArrow;
+            else
+                kind = TokenKindLShift;
+            break;
+        case '>':
+            if (eq__Option(*c2, (char *)'>') && eq__Option(*c3, (char *)'='))
+                kind = TokenKindRShiftRShiftEq;
+            else if (eq__Option(*c2, (char *)'>'))
+                kind = TokenKindRShiftRShift;
+            else if (eq__Option(*c2, (char *)'='))
+                kind = TokenKindRShiftEq;
+            else
+                kind = TokenKindRShift;
+            break;
+        case '!':
+            kind = TokenKindBang;
+            break;
+        case '?':
+            kind = TokenKindInterrogation;
+            break;
+        case '&':
+            kind = TokenKindAmpersand;
+            break;
+        case IS_DIGIT:
+            FREE(Option, c2);
+            FREE(Option, c3);
+
+            return get_all_num(self);
+        case '\"': {
+            struct Result *string = scan_string(self);
+            struct String *string_ok = NULL;
+
+            FREE(Option, c2);
+            FREE(Option, c3);
+
+            if (is_err__Result(*string))
+                return string;
+            else {
+                end_token(self);
+
+                string_ok = get_ok__Result(*string);
+
+                FREE(Result, string);
+
+                struct Location *copy = copy__Location(self->loc);
+
+                return Ok(NEW(TokenLit, TokenKindStringLit, copy, string_ok));
             }
-
-            FREE(Option, c2_doc);
-            FREE(Option, c3_doc);
         }
+        case '\'': {
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        bool is_eof = false;
-
-        // GET FLAGS
-        // ...
-
-        skip_space(self);
-
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        return get_token(self);
-    } else if (self->src->c == (char *)'/' && eq__Option(*c2, (char *)'/')) {
-        kind = scan_comment_one(self);
-        next_char(self);
-    } else if (self->src->c == (char *)'/' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindSlashEq;
-    else if (self->src->c == (char *)'/' && eq__Option(*c2, (char *)'*')) {
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        return scan_comment_multi(self);
-    } else if (self->src->c == (char *)'/')
-        kind = TokenKindSlash;
-    else if (self->src->c == (char *)'%' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindPercentageEq;
-    else if (self->src->c == (char *)'%')
-        kind = TokenKindPercentage;
-    else if (self->src->c == (char *)'^' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindHatEq;
-    else if (self->src->c == (char *)'^')
-        kind = TokenKindHat;
-    else if (self->src->c == (char *)'=' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindEqEq;
-    else if (self->src->c == (char *)'=')
-        kind = TokenKindEq;
-    else if (self->src->c == (char *)'<' && eq__Option(*c2, (char *)'<') &&
-             eq__Option(*c3, (char *)'='))
-        kind = TokenKindLShiftLShiftEq;
-    else if (self->src->c == (char *)'<' && eq__Option(*c2, (char *)'<'))
-        kind = TokenKindLShiftLShift;
-    else if (self->src->c == (char *)'<' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindLShiftEq;
-    else if (self->src->c == (char *)'<')
-        kind = TokenKindLShift;
-    else if (self->src->c == (char *)'>' && eq__Option(*c2, (char *)'>') &&
-             eq__Option(*c3, (char *)'='))
-        kind = TokenKindRShiftRShiftEq;
-    else if (self->src->c == (char *)'>' && eq__Option(*c2, (char *)'>'))
-        kind = TokenKindRShiftRShift;
-    else if (self->src->c == (char *)'>' && eq__Option(*c2, (char *)'='))
-        kind = TokenKindRShiftEq;
-    else if (self->src->c == (char *)'>')
-        kind = TokenKindRShift;
-    else if (self->src->c == (char *)'!')
-        kind = TokenKindBang;
-    else if (self->src->c == (char *)'?')
-        kind = TokenKindInterrogation;
-    else if (self->src->c == (char *)'&')
-        kind = TokenKindAmpersand;
-    else if (self->src->c >= (char *)'0' && self->src->c <= (char *)'9') {
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        return get_all_num(self);
-    } else if (self->src->c == (char *)'b' && eq__Option(*c2, (char *)'\"')) {
-        next_char(self);
-
-        struct Result *string = scan_string(self);
-        struct String *string_ok = NULL;
-
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        if (is_err__Result(*string)) {
-            return string;
-        } else {
-            end_token(self);
-
-            string_ok = get_ok__Result(*string);
-
-            FREE(Result, string);
-
-            struct Location *copy = copy__Location(self->loc);
-
-            return Ok(NEW(TokenLit, TokenKindBitStringLit, copy, string_ok));
+            return scan_char(self, false);
         }
-    } else if (self->src->c == (char *)'\"') {
-        struct Result *string = scan_string(self);
-        struct String *string_ok = NULL;
-
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        if (is_err__Result(*string))
-            return string;
-        else {
-            end_token(self);
-
-            string_ok = get_ok__Result(*string);
-
-            FREE(Result, string);
-
-            struct Location *copy = copy__Location(self->loc);
-
-            return Ok(NEW(TokenLit, TokenKindStringLit, copy, string_ok));
-        }
-    } else if (self->src->c == (char *)'b' && eq__Option(*c2, (char *)'\'')) {
-        next_char(self);
-
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        return scan_char(self, true);
-    } else if (self->src->c == (char *)'\'') {
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        return scan_char(self, false);
-    } else if ((self->src->c >= (char *)'a' && self->src->c <= (char *)'z') ||
-               (self->src->c >= (char *)'A' && self->src->c <= (char *)'Z') ||
-               self->src->c == (char *)'_') {
-        struct String *id = scan_identifier(self);
-        Str id_str = to_Str__String(*id);
-        enum TokenKind tok_kw = get_keyword(id_str);
-
-        end_token(self);
-
-        free(id_str);
-        FREE(Option, c2);
-        FREE(Option, c3);
-
-        if (tok_kw == TokenKindIdentifier) {
-            struct Location *copy = copy__Location(self->loc);
-
-            return Ok(NEW(TokenLit, tok_kw, copy, id));
-        } else {
-            FREE(String, id);
-
-            struct Option *next_one = peek_char(*self, 1);
-
-            if (tok_kw == TokenKindXorKw &&
-                eq__Option(*next_one, (char *)'=')) {
+        case IS_ID: {
+            if (self->src->c == (char*)'b' && eq__Option(*c2, (char *)'\"')) {
                 next_char(self);
 
-                FREE(Option, next_one);
+                struct Result *string = scan_string(self);
+                struct String *string_ok = NULL;
 
-                return Ok(NEW(Token, TokenKindXorEq, NULL));
-            } else if (tok_kw == TokenKindNotKw &&
-                       eq__Option(*next_one, (char *)'=')) {
+                FREE(Option, c2);
+                FREE(Option, c3);
+
+                if (is_err__Result(*string)) {
+                    return string;
+                } else {
+                    end_token(self);
+
+                    string_ok = get_ok__Result(*string);
+
+                    FREE(Result, string);
+
+                    struct Location *copy = copy__Location(self->loc);
+
+                    return Ok(
+                      NEW(TokenLit, TokenKindBitStringLit, copy, string_ok));
+                }
+            } else if (self->src->c == (char*)'b' && eq__Option(*c2, (char *)'\'')) {
                 next_char(self);
 
-                FREE(Option, next_one);
+                FREE(Option, c2);
+                FREE(Option, c3);
 
-                return Ok(NEW(Token, TokenKindNotEq, NULL));
+                return scan_char(self, true);
             }
 
-            FREE(Option, next_one);
+            struct String *id = scan_identifier(self);
+            Str id_str = to_Str__String(*id);
+            enum TokenKind tok_kw = get_keyword(id_str);
 
-            struct Location *copy = copy__Location(self->loc);
+            end_token(self);
 
-            return Ok(NEW(Token, tok_kw, copy));
+            free(id_str);
+            FREE(Option, c2);
+            FREE(Option, c3);
+
+            switch (tok_kw) {
+                case TokenKindIdentifier: {
+                    struct Location *copy = copy__Location(self->loc);
+
+                    return Ok(NEW(TokenLit, tok_kw, copy, id));
+                }
+                default: {
+                    FREE(String, id);
+
+                    struct Option *next_one = peek_char(*self, 1);
+    
+                    if (tok_kw == TokenKindXorKw &&
+                        eq__Option(*next_one, (char *)'=')) {
+                        next_char(self);
+
+                        FREE(Option, next_one);
+
+                        return Ok(NEW(Token, TokenKindXorEq, NULL));
+                    } else if (tok_kw == TokenKindNotKw &&
+                               eq__Option(*next_one, (char *)'=')) {
+                        next_char(self);
+
+                        FREE(Option, next_one);
+
+                        return Ok(NEW(Token, TokenKindNotEq, NULL));
+                    }
+
+                    FREE(Option, next_one);
+
+                    struct Location *copy = copy__Location(self->loc);
+
+                    return Ok(NEW(Token, tok_kw, copy));
+                }
+            }
         }
-    } else {
-        FREE(Option, c2);
-        FREE(Option, c3);
+        default: {
+            FREE(Option, c2);
+            FREE(Option, c3);
 
-        end_token(self);
+            end_token(self);
 
-        struct Diagnostic *dgn =
-          NEW(DiagnosticWithErrScanner,
+            struct Diagnostic *dgn = NEW(
+              DiagnosticWithErrScanner,
               self,
               NEW(LilyError, LilyErrorInvalidCharacter),
               *self->loc,
               format("unexpected character"),
               Some(format("remove this character: `{c}`", (UPtr)self->src->c)));
 
-        dgn->err->s = format("{c}", (UPtr)self->src->c);
+            dgn->err->s = format("{c}", (UPtr)self->src->c);
 
-        return Err(dgn);
+            return Err(dgn);
+        }
     }
 
     FREE(Option, c2);
@@ -1480,7 +1581,7 @@ run__Scanner(struct Scanner *self)
                 push_token(self, token_ok);
 #endif
 
-            FREE(Result, token);
+                FREE(Result, token);
 
                 if (self->src->pos >=
                     len__String(*self->src->file->content) - 1)
@@ -1518,7 +1619,7 @@ run__Scanner(struct Scanner *self)
 void
 __free__Scanner(struct Scanner *self)
 {
-    for (Usize i = 0; i < len__Vec(*self->tokens); i++)
+    for (Usize i = len__Vec(*self->tokens); i--;)
         FREE(TokenAll, get__Vec(*self->tokens, i));
 
     FREE(Vec, self->tokens);

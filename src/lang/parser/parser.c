@@ -1560,7 +1560,7 @@ __free__ClassParseContext(struct ClassParseContext *self)
     FREE(Vec, self->inheritance);
     FREE(Vec, self->impl);
 
-    for (Usize i = 0; i < len__Vec(*self->body); i++)
+    for (Usize i = len__Vec(*self->body); i--;)
         FREE(ParseContextAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
