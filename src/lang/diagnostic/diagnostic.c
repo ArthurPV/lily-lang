@@ -101,14 +101,20 @@ detail_to_string(struct Detail self,
     if (loc.s_line == loc.e_line) {
         struct String *repeat1 = repeat__String(" ", line_str_length - 1);
         struct String *repeat2 = repeat__String(" ", line_str_length);
-        struct String *repeat3 = repeat__String(" ", loc.s_col - 1);
+        struct String *repeat3 = NEW(String);
         struct String *repeat4 = NULL;
         struct String *line = (struct String *)get__Vec(*self.lines, 0);
 
+        for (Usize i = 0; i < loc.s_col - 1; i++)
+            if (get__String(*line, i) == (char*)'\t')
+                push_str__String(repeat3, "\t");
+            else
+                push_str__String(repeat3, " ");
+
         if (loc.e_col - loc.s_col <= 1)
-            repeat4 = repeat__String(color_str, loc.e_col - loc.s_col);
+            repeat4 = repeat__String("^", loc.e_col - loc.s_col);
         else
-            repeat4 = repeat__String(color_str, loc.e_col - loc.s_col + 1);
+            repeat4 = repeat__String("^", loc.e_col - loc.s_col + 1);
 
         if (kind == DiagnosticKindError) {
             s = format("{S} |\n{d} | \x1b[31m{S}\x1b[0m\n{S} | {S}{S} {S}",

@@ -14,7 +14,8 @@ static inline struct Vec *
 get_generic_params_type(struct ParseBlock *self);
 static inline bool
 valid_fun_body_item(struct FunParseContext *self,
-                    struct ParseBlock *parse_block);
+                    struct ParseBlock *parse_block,
+                    bool already_invalid);
 static void
 get_body_fun_parse_context(struct FunParseContext *self,
                            struct ParseBlock *parse_block);
@@ -119,9 +120,23 @@ run__ParseBlock(struct ParseBlock *self)
                         struct Vec *generic_params =
                           get_generic_params_type(self);
 
-                        assert(self->current->kind == TokenKindColon &&
-                               "error");
-                        next_token_pb(self);
+                        if (self->current->kind != TokenKindColon) {
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrParser,
+                                  self,
+                                  NEW(LilyError, LilyErrorExpectedToken),
+                                  *self->current->loc,
+                                  format(""),
+                                  Some(format("expected `:`, found `{Sr}`",
+                                              token_kind_to_string__Token(
+                                                *self->current))));
+
+                            err->err->s = from__String(":");
+
+                            emit__Diagnostic(err);
+                        } else {
+                            next_token_pb(self);
+                        }
 
                         switch (self->current->kind) {
                             case TokenKindEnumKw: {
@@ -277,7 +292,8 @@ __new__FunParseContext()
 
 bool
 valid_fun_body_item(struct FunParseContext *self,
-                    struct ParseBlock *parse_block)
+                    struct ParseBlock *parse_block,
+                    bool already_invalid)
 {
     switch (parse_block->current->kind) {
         case TokenKindEof:
@@ -298,24 +314,26 @@ valid_fun_body_item(struct FunParseContext *self,
         case TokenKindAsmKw:
         case TokenKindMacroKw:
         case TokenKindImplKw: {
-            struct Diagnostic *err =
-              NEW(DiagnosticWithErrParser,
-                  parse_block,
-                  NEW(LilyError, LilyErrorInvalidItemInFunBody),
-                  *parse_block->current->loc,
-                  format("this token is invalid inside the function"),
-                  None());
+            if (!already_invalid) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorInvalidItemInFunBody),
+                      *parse_block->current->loc,
+                      format("this token is invalid inside the function"),
+                      None());
 
-            struct Diagnostic *note =
-              NEW(DiagnosticWithNoteParser,
-                  parse_block,
-                  format("you may have forgotten to close the block"),
-                  *parse_block->current->loc,
-                  format(""),
-                  None());
+                struct Diagnostic *note =
+                  NEW(DiagnosticWithNoteParser,
+                      parse_block,
+                      format("you may have forgotten to close the block"),
+                      *parse_block->current->loc,
+                      format(""),
+                      None());
 
-            emit__Diagnostic(err);
-            emit__Diagnostic(note);
+                emit__Diagnostic(err);
+                emit__Diagnostic(note);
+            }
 
             return false;
         }
@@ -334,7 +352,7 @@ get_body_fun_parse_context(struct FunParseContext *self,
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_fun_body_item(self, parse_block)) {
+        if (valid_fun_body_item(self, parse_block, bad_item)) {
             switch (parse_block->current->kind) {
                 case TokenKindDoKw:
                 case TokenKindIfKw:
@@ -567,8 +585,26 @@ get_enum_parse_context(struct EnumParseContext *self,
 
         if (parse_block->current->kind == TokenKindErrorKw) {
             self->is_error = true;
+
             next_token_pb(parse_block);
-            assert(parse_block->current->kind == TokenKindRParen && "error");
+
+            if (parse_block->current->kind != TokenKindRParen) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_block->current->loc,
+                      format(""),
+                      Some(format(
+                        "expected `)`, found `{Sr}`",
+                        token_kind_to_string__Token(*parse_block->current))));
+
+                err->err->s = from__String(")");
+
+                emit__Diagnostic(err);
+            } else {
+                next_token_pb(parse_block);
+            }
         } else {
             while (parse_block->current->kind != TokenKindRParen) {
                 push__Vec(self->data_type, &*parse_block->current);
@@ -583,14 +619,29 @@ get_enum_parse_context(struct EnumParseContext *self,
     assert(parse_block->current->kind == TokenKindEq && "error");
     next_token_pb(parse_block);
 
-    while (parse_block->current->kind != TokenKindEndKw) {
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
         push__Vec(self->variants, &*parse_block->current);
         next_token_pb(parse_block);
     }
 
-    assert(parse_block->current->kind != TokenKindEof && "error");
+    if (parse_block->current->kind == TokenKindEof) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissClosingBlock),
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+                                         parse_block->pos - 1))
+                 ->loc,
+              format("expected closing block here"),
+              None());
 
-    next_token_pb(parse_block);
+        err->err->s = from__String("`end`");
+
+        emit__Diagnostic(err);
+    } else {
+        next_token_pb(parse_block);
+    }
 }
 
 void
