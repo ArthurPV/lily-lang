@@ -1,0 +1,41 @@
+/// @prot: Unit -> Usize
+fun bitwidth = 32;
+
+/// @prot: Unit -> Uint32
+fun min = 0;
+
+/// @prot: Unit -> Uint32
+fun max = 0xFFFF_FFFF;
+
+/// @prot: Unit -> Uint32
+fun zero = 0;
+
+/// @prot: Unit -> Uint32
+fun one = 1;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun add(x, y) = x + y;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun sub(x, y) = x - y;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun mul(x, y) = x * y;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun div(x, y) = x / y;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun mod(x, y) = x % y;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun pow(x, y) = x ** y;
+
+/// @prot: Uint32 -> Uint32
+fun abs(x) = x;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun min(x, y) = if x < y do x else y;;
+
+/// @prot: Uint32 -> Uint32 -> Uint32
+fun max(x, y) = if x > y do x else y;;

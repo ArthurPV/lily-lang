@@ -32,7 +32,7 @@ fun div(x, y) = x / y;
 fun mod(x, y) = x % y;
 
 /// @prot: Isize -> Isize -> Isize
-fun exp(x, y) = x ** y;
+fun pow(x, y) = x ** y;
 
 /// @prot: Isize -> Isize
 fun abs(x) = -x;

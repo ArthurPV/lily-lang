@@ -1,0 +1,41 @@
+/// @prot: Unit -> Usize
+fun bitwidth = 64;
+
+/// @prot: Unit -> Uint64
+fun min = 0;
+
+/// @prot: Unit -> Uint64
+fun max = 0xFFFF_FFFF_FFFF_FFFF;
+
+/// @prot: Unit -> Uint64
+fun zero = 0;
+
+/// @prot: Unit -> Uint64
+fun one = 1;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun add(x, y) = x + y;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun sub(x, y) = x - y;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun mul(x, y) = x * y;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun div(x, y) = x / y;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun mod(x, y) = x % y;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun pow(x, y) = x ** y;
+
+/// @prot: Uint64 -> Uint64
+fun abs(x) = x;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun min(x, y) = if x < y do x else y;;
+
+/// @prot: Uint64 -> Uint64 -> Uint64
+fun max(x, y) = if x > y do x else y;;
