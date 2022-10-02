@@ -56,6 +56,8 @@ static struct SearchModuleContext
     bool search_fun;
     bool search_variant;
     bool search_value;
+    bool search_trait;
+    bool search_class;
 } SearchModuleContext;
 
 static inline struct Diagnostic *
@@ -543,8 +545,18 @@ check_constant(struct Typecheck *self,
                struct Vec *scope_id,
                bool is_global)
 {
-    if (is_global)
-        ++count_const_id;
+    if (!constant->scope) {
+        constant->scope =
+          NEW(Scope,
+              self->parser.parse_block.scanner.src->file.name,
+              constant->name,
+              scope_id,
+              ScopeItemKindConstant,
+              constant->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+        if (is_global)
+            ++count_const_id;
+    }
 }
 
 static void
@@ -1191,7 +1203,7 @@ check_enum_obj(struct Typecheck *self,
     }
 }
 
-static void 
+static void
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
                  struct Vec *scope_id,
@@ -1325,6 +1337,33 @@ check_class(struct Typecheck *self,
                         TODO("check data type");
                         break;
                 }
+            }
+        }
+
+        if (class->class_decl->value.class->impl) {
+            struct SearchModuleContext s = { .search_value = false,
+                                             .search_fun = false,
+                                             .search_type = false,
+                                             .search_variant = false,
+                                             .search_trait = true,
+                                             .search_class = false };
+
+            for (Usize i = len__Vec(*class->class_decl->value.class->impl);
+                 i--;) {
+            }
+        }
+
+        if (class->class_decl->value.class->inheritance) {
+            struct SearchModuleContext s = { .search_value = false,
+                                             .search_fun = false,
+                                             .search_type = false,
+                                             .search_variant = false,
+                                             .search_trait = false,
+                                             .search_class = true };
+
+            for (Usize i =
+                   len__Vec(*class->class_decl->value.class->inheritance);
+                 i--;) {
             }
         }
 
@@ -1550,17 +1589,97 @@ check_symbols(struct Typecheck *self)
 {
     while (pos < len__Vec(*self->parser.decls)) {
         switch (self->decl->kind) {
-            case DeclKindFun: {
-                struct Vec *scope_id = NEW(Vec, sizeof(Usize));
-
-                push__Vec(scope_id, (Usize *)count_fun_id);
-                check_fun(
-                  self, get__Vec(*self->funs, count_fun_id), scope_id, false);
+            case DeclKindFun:
+                check_fun(self,
+                          get__Vec(*self->funs, count_fun_id),
+                          init__Vec(sizeof(Usize), 1, (Usize *)count_fun_id),
+                          true);
 
                 break;
-            }
-            default:
-                TODO("check symbols");
+            case DeclKindConstant:
+                check_constant(
+                  self,
+                  get__Vec(*self->consts, count_const_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_const_id),
+                  true);
+
+                break;
+            case DeclKindModule:
+                check_module(
+                  self,
+                  get__Vec(*self->modules, count_module_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_module_id),
+                  true);
+
+                break;
+            case DeclKindAlias:
+                check_alias(
+                  self,
+                  get__Vec(*self->aliases, count_alias_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_alias_id),
+                  true);
+
+                break;
+            case DeclKindRecord:
+                if (((struct RecordDecl *)get__Vec(*self->parser.decls, pos))
+                      ->is_object)
+                    check_record_obj(
+                      self,
+                      get__Vec(*self->records_obj, count_record_obj_id),
+                      init__Vec(sizeof(Usize), 1, (Usize *)count_record_obj_id),
+                      true);
+                else
+                    check_record(
+                      self,
+                      get__Vec(*self->records, count_record_id),
+                      init__Vec(sizeof(Usize), 1, (Usize *)count_record_id),
+                      true);
+
+                break;
+            case DeclKindEnum:
+                if (((struct EnumDecl *)get__Vec(*self->parser.decls, pos))
+                      ->is_object)
+                    check_enum_obj(
+                      self,
+                      get__Vec(*self->enums_obj, count_enum_obj_id),
+                      init__Vec(sizeof(Usize), 1, (Usize *)count_enum_obj_id),
+                      true);
+                else
+                    check_enum(
+                      self,
+                      get__Vec(*self->enums, count_enum_id),
+                      init__Vec(sizeof(Usize), 1, (Usize *)count_enum_id),
+                      true);
+
+                break;
+            case DeclKindError:
+                check_error(
+                  self,
+                  get__Vec(*self->errors, count_error_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_error_id),
+                  true);
+
+                break;
+            case DeclKindClass:
+                check_class(
+                  self,
+                  get__Vec(*self->classes, count_class_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_class_id),
+                  true);
+
+                break;
+            case DeclKindTrait:
+                check_trait(
+                  self,
+                  get__Vec(*self->traits, count_trait_id),
+                  init__Vec(sizeof(Usize), 1, (Usize *)count_trait_id),
+                  true);
+
+                break;
+			case DeclKindTag:
+				TODO("push tag");
+			case DeclKindImport:
+				break;
         }
 
         NEXT_DECL();
@@ -2286,7 +2405,9 @@ check_data_type(struct Typecheck *self,
                         .search_fun = false,
                         .search_type = true,
                         .search_value = false,
-                        .search_variant = false
+                        .search_variant = false,
+                        .search_trait = false,
+                        .search_class = false
                     };
                     /* return NEW(DataTypeSymbolCustom,
                                data_type->value.custom->items[1],
@@ -2447,6 +2568,8 @@ check_data_type(struct Typecheck *self,
             }
             case DataTypeKindCustom:
                 goto custom_data_type;
+            case DataTypeKindCompilerDefined:
+                UNREACHABLE("this type is not accessible in AST");
         }
     }
 
