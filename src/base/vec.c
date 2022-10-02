@@ -392,10 +392,9 @@ is_clear__Vec(struct Vec self)
     return self.len == 0;
 }
 
-Usize
-len__Vec(struct Vec self)
+Usize len__Vec(struct Vec self)
 {
-    return self.len;
+	return self.len;
 }
 
 Usize

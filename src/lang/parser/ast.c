@@ -2037,25 +2037,6 @@ __free__ForStmt(struct ForStmt *self)
     free(self);
 }
 
-struct ImportStmtSelector *
-__new__ImportStmtSelector(struct String *name,
-                          struct Location loc,
-                          bool has_wildcard)
-{
-    struct ImportStmtSelector *self = malloc(sizeof(struct ImportStmtSelector));
-    self->name = name;
-    self->loc = loc;
-    self->has_wildcard = has_wildcard;
-    return self;
-}
-
-void
-__free__ImportStmtSelector(struct ImportStmtSelector *self)
-{
-    FREE(String, self->name);
-    free(self);
-}
-
 struct ImportStmtValue *
 __new__ImportStmtValueAccess(struct String *access)
 {
@@ -2085,7 +2066,7 @@ void
 __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 {
     for (Usize i = len__Vec(*self->value.selector); i--;)
-        FREE(ImportStmtSelector, get__Vec(*self->value.selector, i));
+        FREE(ImportStmtValueAll, get__Vec(*self->value.selector, i));
 
     FREE(Vec, self->value.selector);
     free(self);

@@ -261,6 +261,10 @@ lily_error_to_string(struct LilyError err)
 			return from__String("duplicate variant");
 		case LilyErrorDuplicateField:
 			return from__String("duplicate field");
+		case LilyErrorBadImportValue:
+			return from__String("bad import value");
+		case LilyErrorUnexpectedCharInImportValue:
+			return from__String("unexpected char in import value");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -411,6 +415,10 @@ get_code_of_lily_error(struct LilyError err)
 			return "0061";
 		case LilyErrorDuplicateField:
 			return "0062";
+		case LilyErrorBadImportValue:
+			return "0063";
+		case LilyErrorUnexpectedCharInImportValue:
+			return "0064";
         default:
             UNREACHABLE("unknown lily error kind");
     }

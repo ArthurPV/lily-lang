@@ -289,6 +289,7 @@ typedef struct ImportParseContext
 {
     bool is_pub;
     struct String *value;    // struct String&
+	struct Location value_loc;
     struct String *as_value; // struct String& (Optional value)
 } ImportParseContext;
 

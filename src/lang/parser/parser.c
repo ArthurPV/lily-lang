@@ -82,7 +82,7 @@ This step will finish collecting all the information about the blocks like for
 example parsing the body of a function. Then, it will transform the blocks into
 a declaration (node).
 
-3. Nodes
+3. Nodes:
 
 This last step will just add the analyzer declarations into a vector (decls).
 
@@ -521,10 +521,18 @@ static struct Stmt *
 parse_for_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc);
+static struct ImportStmt *
+parse_import_value__parse_import_stmt(struct Parser self,
+                                      struct String *buffer,
+                                      struct String *as_value,
+                                      struct Location buffer_loc,
+                                      bool is_pub);
 static struct String *
 get_name__parse_import_stmt(struct String buffer, Usize *pos);
 static struct ImportStmtSelector *
 get_selector__parse_import_stmt(struct String buffer, Usize *pos);
+static void
+next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos);
 static struct Stmt *
 parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
@@ -566,7 +574,8 @@ static struct MethodDecl *
 parse_method_declaration(struct Parser *self,
                          struct ParseClassBody *parse_class);
 static struct ImportStmt *
-parse_import_declaration(struct Parser *self);
+parse_import_declaration(struct Parser *self,
+                         struct ImportParseContext import_parse_context);
 static struct ConstantDecl *
 parse_constant_declaration(struct Parser *self,
                            struct ConstantParseContext constant_parse_context);
@@ -2516,6 +2525,7 @@ get_import_parse_context(struct ImportParseContext *self,
 
     if (parse_block->current->kind == TokenKindStringLit) {
         self->value = &*parse_block->current->lit;
+        self->value_loc = *parse_block->current->loc;
         next_token_pb(parse_block);
     } else {
         struct Diagnostic *err = NEW(DiagnosticWithErrParser,
@@ -5277,40 +5287,148 @@ parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc)
 {
-    next_token(parse_decl);
+}
 
+static struct ImportStmt *
+parse_import_value__parse_import_stmt(struct Parser self,
+                                      struct String *buffer,
+                                      struct String *as_value,
+                                      struct Location buffer_loc,
+                                      bool is_pub)
+{
     struct Vec *import_value = NEW(Vec, sizeof(struct ImportStmtValue));
+    char *current;
+    Usize i = 0;
 
-    if (parse_decl->current->kind == TokenKindStringLit) {
-        char *current = get__String(*parse_decl->current->lit, 0);
+    if (buffer) {
+        if (len__String(*buffer) == 0) {
+            current = NULL;
+            assert(0 && "error");
 
-        for (Usize i = 0; i < len__String(*parse_decl->current->lit); i++) {
+            goto exit;
+        } else
+            current = get__String(*buffer, 0);
+
+        if (current == (char *)'@') {
+            if (++i < len__String(*buffer)) {
+                const struct String *name =
+                  get_name__parse_import_stmt(*buffer, &i);
+                const Str name_str = to_Str__String(*name);
+
+                if (!strcmp(name_str, "std"))
+                    push__Vec(import_value, NEW(ImportStmtValueStd));
+                else if (!strcmp(name_str, "builtin"))
+                    push__Vec(import_value, NEW(ImportStmtValueBuiltin));
+                else if (!strcmp(name_str, "file"))
+                    push__Vec(import_value, NEW(ImportStmtValueFile));
+                else if (!strcmp(name_str, "url"))
+                    push__Vec(import_value, NEW(ImportStmtValueUrl));
+                else {
+                    struct Location loc_err = buffer_loc;
+
+                    loc_err.e_line = loc_err.s_line;
+                    loc_err.s_col += 1;
+                    loc_err.e_col = loc_err.s_col;
+
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorBadImportValue),
+                          loc_err,
+                          format("bad `@` import value, replace `{s}` by "
+                                 "`std`, builtin`, `file` or `url`",
+                                 name_str),
+                          Some(from__String(
+                            "an import value starting with `@` can take the "
+                            "names: `std`, `builtin`, `file` or `url`")));
+
+                    emit__Diagnostic(err);
+
+                    goto exit;
+                }
+
+                if (name_str)
+                    free(name_str);
+
+                if (name)
+                    FREE(String, (struct String *)name);
+
+                current = get__String(*buffer, i);
+
+                if (((current >= (char *)'a' && current <= (char *)'z') ||
+                     (current >= (char *)'A' && current <= (char *)'Z') ||
+                     current == (char *)'_')) {
+                    goto exit;
+                } else if (current == (char *)'.') {
+                    next_char__parse_import_stmt(*buffer, &current, &i);
+                } else {
+                    struct Location loc_err = buffer_loc;
+
+                    loc_err.e_line = loc_err.s_line;
+                    loc_err.s_col += i + 1;
+                    loc_err.e_col = loc_err.s_col;
+
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
+                          loc_err,
+                          from__String(""),
+                          Some(format("found `{c}`, expected `.`, `ID`, `{{`, "
+                                      "`}`, `@` or `*`",
+                                      (char)(UPtr)current)));
+
+                    emit__Diagnostic(err);
+
+                    goto exit;
+                }
+            } else {
+                assert(0 && "error");
+
+                goto exit;
+            }
+        }
+
+        for (; current != NULL; i++) {
             if ((current >= (char *)'a' && current <= (char *)'z') ||
                 (current >= (char *)'A' && current <= (char *)'Z') ||
                 current == (char *)'_') {
+
                 push__Vec(import_value,
                           NEW(ImportStmtValueAccess,
-                              get_name__parse_import_stmt(
-                                *parse_decl->current->lit, &i)));
+                              get_name__parse_import_stmt(*buffer, &i)));
 
-                if (i >= len__String(*parse_decl->current->lit))
-                    break;
+                current = get__String(*buffer, i);
 
-                current = get__String(*parse_decl->current->lit, ++i);
+                if (!((current >= (char *)'a' && current <= (char *)'z') ||
+                      (current >= (char *)'A' && current <= (char *)'Z') ||
+                      (current >= (char *)'0' && current <= (char *)'9') ||
+                      current == (char *)'_' || current == (char *)'.')) {
+                    struct Location loc_err = buffer_loc;
 
-                if (current != (char *)'.') {
-                    assert(0 && "error");
+                    loc_err.e_line = loc_err.s_line;
+                    loc_err.s_col += i + 1;
+                    loc_err.e_col = loc_err.s_col;
 
-                    break;
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
+                          loc_err,
+                          from__String(""),
+                          Some(format("found `{c}`, expected `.`, `ID`, `{{`, "
+                                      "`}`, `@` or `*`",
+                                      (char)(UPtr)current)));
+
+                    emit__Diagnostic(err);
+
+                    goto exit;
                 }
+
+                next_char__parse_import_stmt(*buffer, &current, &i);
             } else if (current == (char *)'{') {
             } else if (current == (char *)'*') {
                 push__Vec(import_value, NEW(ImportStmtValueWildcard));
-
-                if (i != len__String(*parse_decl->current->lit)) {
-                    assert(0 && "error");
-                }
-
                 break;
             } else {
                 assert(0 && "error");
@@ -5318,10 +5436,20 @@ parse_import_stmt(struct Parser self,
                 break;
             }
 
-            current = get__String(*parse_decl->current->lit, i + 1);
+            next_char__parse_import_stmt(*buffer, &current, &i);
         }
-    } else
+
+    exit : {
+    }
+    } else {
         assert(0 && "error");
+    }
+
+    if (!as_value)
+        return NEW(ImportStmt, import_value, is_pub, None());
+    else {
+        TODO("as value");
+    }
 }
 
 static struct String *
@@ -5330,14 +5458,12 @@ get_name__parse_import_stmt(struct String buffer, Usize *pos)
     struct String *s = NEW(String);
     char *current = get__String(buffer, *pos);
 
-    while (current != NULL && current != (char *)'.' &&
-           current != (char *)',' &&
-           ((current >= (char *)'a' && current <= (char *)'z') ||
+    while (((current >= (char *)'a' && current <= (char *)'z') ||
             (current >= (char *)'A' && current <= (char *)'Z') ||
+            (current >= (char *)'0' && current <= (char *)'9') ||
             current == (char *)'_')) {
         push__String(s, get__String(buffer, *pos));
-        *pos += 1;
-        current = *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
+        next_char__parse_import_stmt(buffer, &current, pos);
     }
 
     return s;
@@ -5351,6 +5477,7 @@ get_selector__parse_import_stmt(struct String buffer, Usize *pos)
     while (current != NULL && current != (char *)'}') {
         if ((current >= (char *)'a' && current <= (char *)'z') ||
             (current >= (char *)'A' && current <= (char *)'Z') ||
+            (current >= (char *)'0' && current <= (char *)'9') ||
             current == (char *)'_') {
         } else if (current == (char *)'*') {
         } else {
@@ -5360,6 +5487,16 @@ get_selector__parse_import_stmt(struct String buffer, Usize *pos)
         *pos += 1;
         current = *pos < len__String(buffer) ? get__String(buffer, *pos) : NULL;
     }
+}
+
+static void
+next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos)
+{
+    if (*pos + 1 < len__String(buffer)) {
+        ++(*pos);
+        *current = get__String(buffer, *pos);
+    } else
+        *current = NULL;
 }
 
 // struct Vec<struct FunParam*>*
@@ -6253,8 +6390,14 @@ parse_method_declaration(struct Parser *self,
 }
 
 static struct ImportStmt *
-parse_import_declaration(struct Parser *self)
+parse_import_declaration(struct Parser *self,
+                         struct ImportParseContext import_parse_context)
 {
+    return parse_import_value__parse_import_stmt(*self,
+                                                 import_parse_context.value,
+                                                 import_parse_context.as_value,
+                                                 import_parse_context.value_loc,
+                                                 import_parse_context.is_pub);
 }
 
 static struct ConstantDecl *
@@ -6549,6 +6692,11 @@ parse_declaration(struct Parser *self)
             break;
 
         case ParseContextKindImport:
+            push__Vec(
+              self->decls,
+              NEW(DeclImport,
+                  self->current->loc,
+                  parse_import_declaration(self, self->current->value.import)));
             break;
 
         case ParseContextKindConstant:
@@ -6593,6 +6741,12 @@ run__Parser(struct Parser *self)
     while (self->pos < len__Vec(*self->parse_block.blocks)) {
         parse_declaration(self);
         NEXT_BLOCK();
+    }
+
+    if (count_error > 0) {
+        emit__Summary(
+          count_error, count_warning, "the parser phase has been failed");
+        exit(1);
     }
 }
 

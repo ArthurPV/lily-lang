@@ -1545,34 +1545,15 @@ to_string__ForStmt(struct ForStmt self);
 void
 __free__ForStmt(struct ForStmt *self);
 
-typedef struct ImportStmtSelector
-{
-    struct String *name;
-    struct Location loc;
-    bool has_wildcard;
-} ImportStmtSelector;
-
-/**
- *
- * @brief Construct the ImportStmtSelector type.
- */
-struct ImportStmtSelector *
-__new__ImportStmtSelector(struct String *name,
-                          struct Location loc,
-                          bool has_wildcard);
-
-/**
- *
- * @brief Free the ImportStmtSelector type.
- */
-void
-__free__ImportStmtSelector(struct ImportStmtSelector *self);
-
 enum ImportStmtValueKind
 {
+    ImportStmtValueKindStd,
+    ImportStmtValueKindBuiltin,
+    ImportStmtValueKindFile,
+    ImportStmtValueKindUrl,
     ImportStmtValueKindAccess,
     ImportStmtValueKindSelector,
-	ImportStmtValueKindWildcard
+    ImportStmtValueKindWildcard
 };
 
 typedef struct ImportStmtValue
@@ -1582,9 +1563,57 @@ typedef struct ImportStmtValue
     union
     {
         struct String *access;
-        struct Vec *selector; // struct Vec<struct ImportStmtSelector*>*
+        struct Vec *selector; // struct Vec<struct ImportStmtValue*>*
     } value;
 } ImportStmtValue;
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (Std variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueStd()
+{
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindStd;
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (Builtin variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueBuiltin()
+{
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindBuiltin;
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (File variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueFile()
+{
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindFile;
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (Url variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueUrl()
+{
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindUrl;
+    return self;
+}
 
 /**
  *
@@ -1607,9 +1636,9 @@ __new__ImportStmtValueSelector(struct Vec *selector);
 inline struct ImportStmtValue *
 __new__ImportStmtValueWildcard()
 {
-	struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
-	self->kind = ImportStmtValueKindWildcard;
-	return self;
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindWildcard;
+    return self;
 }
 
 /**

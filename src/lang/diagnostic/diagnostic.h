@@ -131,7 +131,9 @@ enum LilyErrorKind
     LilyErrorExpectedEnumObjectOrRecordObject,
 	LilyErrorDuplicateDeclaration,
 	LilyErrorDuplicateVariant,
-	LilyErrorDuplicateField
+	LilyErrorDuplicateField,
+	LilyErrorBadImportValue,
+	LilyErrorUnexpectedCharInImportValue
 };
 
 typedef struct LilyError

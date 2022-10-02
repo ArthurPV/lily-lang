@@ -75,10 +75,11 @@ static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 #define MaxInt128 (1 << 127) - 1
 
 static const Str BuiltinFirstLayer[] = {
-    "Int8",   "Int16",  "Int32",   "Int64",    "Int128",  "Uint8",   "Uint16",
-    "Uint32", "Uint64", "Uint128", "Bool",     "Float32", "Float64", "Char",
-    "Str",    "Isize",  "Usize",   "Optional", "Ptr",     "Tuple",   "Array",
-    "Fun",    "Ref",    "Custom",  "Mem",      "Io",      "Never"
+    "Int8",    "Int16",  "Int32",  "Int64",   "Int128", "Uint8",
+    "Uint16",  "Uint32", "Uint64", "Uint128", "Bool",   "Float32",
+    "Float64", "Char",   "Str",    "Isize",   "Usize",  "Optional",
+    "Ptr",     "Tuple",  "Array",  "Fun",     "Ref",    "Custom",
+    "Mem",     "Io",     "Never",  "sizeof",  "typeof"
 };
 
 static struct SearchContext
@@ -496,56 +497,66 @@ static void
 verify_if_decl_is_duplicate(struct Typecheck self)
 {
     for (Usize i = 0; i < len__Vec(*self.parser.decls); i++) {
-        for (Usize j = i + 1; j < len__Vec(*self.parser.decls); j++) {
-            if (eq__String(get_name__Decl(get__Vec(*self.parser.decls, i)),
-                           get_name__Decl(get__Vec(*self.parser.decls, j)),
-                           false)) {
-                {
-                    struct Decl *di = get__Vec(*self.parser.decls, i);
-                    struct Decl *dj = get__Vec(*self.parser.decls, j);
+        if (((struct Decl *)get__Vec(*self.parser.decls, i))->kind !=
+            DeclKindImport) {
+            for (Usize j = i + 1; j < len__Vec(*self.parser.decls); j++) {
+                if (((struct Decl *)get__Vec(*self.parser.decls, j))->kind !=
+                    DeclKindImport) {
+                    if (eq__String(
+                          get_name__Decl(get__Vec(*self.parser.decls, i)),
+                          get_name__Decl(get__Vec(*self.parser.decls, j)),
+                          false)) {
+                        {
+                            struct Decl *di = get__Vec(*self.parser.decls, i);
+                            struct Decl *dj = get__Vec(*self.parser.decls, j);
 
-                    if ((di->kind == DeclKindTag &&
-                         (dj->kind == DeclKindRecord ||
-                          dj->kind == DeclKindEnum)) ||
-                        (dj->kind == DeclKindTag &&
-                         (di->kind == DeclKindRecord ||
-                          di->kind == DeclKindEnum))) {
-                        goto exit;
-                    } else
-                        goto error;
+                            if ((di->kind == DeclKindTag &&
+                                 (dj->kind == DeclKindRecord ||
+                                  dj->kind == DeclKindEnum)) ||
+                                (dj->kind == DeclKindTag &&
+                                 (di->kind == DeclKindRecord ||
+                                  di->kind == DeclKindEnum))) {
+                                goto exit;
+                            } else
+                                goto error;
+                        }
+
+                    error : {
+                        struct Diagnostic *error = NEW(
+                          DiagnosticWithErrTypecheck,
+                          &self,
+                          NEW(LilyError, LilyErrorDuplicateDeclaration),
+                          ((struct Decl *)get__Vec(*self.parser.decls, j))->loc,
+                          from__String(""),
+                          Some(
+                            from__String("remove this declaration or move the "
+                                         "declaration in other scope")));
+
+                        struct Diagnostic *note = NEW(
+                          DiagnosticWithNoteTypecheck,
+                          &self,
+                          format(
+                            "this declaration is in conflict with a "
+                            "declaration "
+                            "declared at the location ({d}:{d})",
+                            ((struct Decl *)get__Vec(*self.parser.decls, j))
+                              ->loc.s_line,
+                            ((struct Decl *)get__Vec(*self.parser.decls, j))
+                              ->loc.s_col),
+                          ((struct Decl *)get__Vec(*self.parser.decls, i))->loc,
+                          from__String(""),
+                          None());
+
+                        emit__Diagnostic(error);
+                        emit__Diagnostic(note);
+
+                        break;
+                    }
+                    }
+
+                exit : {
                 }
-
-            error : {
-                struct Diagnostic *error =
-                  NEW(DiagnosticWithErrTypecheck,
-                      &self,
-                      NEW(LilyError, LilyErrorDuplicateDeclaration),
-                      ((struct Decl *)get__Vec(*self.parser.decls, j))->loc,
-                      from__String(""),
-                      Some(from__String("remove this declaration or move the "
-                                        "declaration in other scope")));
-
-                struct Diagnostic *note = NEW(
-                  DiagnosticWithNoteTypecheck,
-                  &self,
-                  format("this declaration is in conflict with a declaration "
-                         "declared at the location ({d}:{d})",
-                         ((struct Decl *)get__Vec(*self.parser.decls, j))
-                           ->loc.s_line,
-                         ((struct Decl *)get__Vec(*self.parser.decls, j))
-                           ->loc.s_col),
-                  ((struct Decl *)get__Vec(*self.parser.decls, i))->loc,
-                  from__String(""),
-                  None());
-
-                emit__Diagnostic(error);
-                emit__Diagnostic(note);
-
-                break;
-            }
-
-            exit : {
-            }
+                }
             }
         }
 
