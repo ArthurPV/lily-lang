@@ -1,0 +1,11 @@
+--- macros.h	2022-10-01 17:34:31.038435867 -0400
++++ ../../../src/base/macros.h	2022-10-01 17:34:31.038435867 -0400
+@@ -33,7 +33,7 @@
+ #undef DEBUG
+ 
+ #define INSTALL
+-// #undef INSTALL
++#undef INSTALL
+ 
+ #define LOCAL
+ #undef LOCAL
