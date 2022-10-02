@@ -9,11 +9,11 @@
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/ast.h>
 
-#define SUMMARY()                                                       \
-    if (count_error > 0) {                                              \
-        emit__Summary(                                                  \
-          count_error, count_warning, "the typecheck has been failed"); \
-        exit(1);                                                        \
+#define SUMMARY()                                                             \
+    if (count_error > 0) {                                                    \
+        emit__Summary(                                                        \
+          count_error, count_warning, "the typecheck phase has been failed"); \
+        exit(1);                                                              \
     }
 
 static Usize pos = 0;
@@ -78,6 +78,8 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
 static void
 push_all_symbols(struct Typecheck *self);
 static void
+check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id);
+static void
 check_symbols(struct Typecheck *self);
 static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
@@ -102,6 +104,21 @@ check_data_type(struct Typecheck *self,
                 struct Vec *local_data_type,
                 bool must_object,
                 bool must_trait);
+static struct StmtSymbol *
+check_stmt(struct Typecheck *self,
+           struct Stmt *stmt,
+           struct Vec *local_value,
+           bool is_return_type);
+static struct ExprSymbol *
+check_expression(struct Typecheck *self,
+                 struct Expr *expr,
+                 struct Vec *local_value,
+                 bool is_return_type);
+static void
+check_fun_body(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Vec *local_value,
+               struct Vec *local_data_type);
 
 struct Typecheck
 __new__Typecheck(struct Parser parser)
@@ -387,6 +404,189 @@ push_all_symbols(struct Typecheck *self)
 }
 
 static void
+check_fun(struct Typecheck *self, struct FunSymbol *fun, struct Vec *scope_id)
+{
+    if (fun->scope == NULL) {
+        struct FunDecl *fun_decl = fun->fun_decl->value.fun;
+        struct Vec *local_data_type = NULL;
+        struct Vec *local_value = NULL;
+        struct Vec *tagged_type = NULL;
+        struct Vec *generic_params = NULL;
+        struct Vec *params = NULL;
+        struct DataTypeSymbol *return_type = NULL;
+        struct Vec *body = NULL;
+
+        if (fun_decl->tags != NULL) {
+            tagged_type = NEW(Vec, sizeof(struct Tuple));
+
+            for (Usize i = len__Vec(*fun_decl->tags); i--;) {
+                struct Tuple *current = get__Vec(*fun_decl->tags, i);
+                struct DataTypeSymbol *dts =
+                  check_data_type(self,
+                                  *(struct Location *)current->items[1],
+                                  current->items[0],
+                                  NULL,
+                                  true,
+                                  false);
+
+                if (dts != NULL)
+                    push__Vec(tagged_type, dts);
+            }
+
+            SUMMARY();
+        }
+
+        if (fun_decl->generic_params != NULL) {
+            local_data_type = NEW(Vec, sizeof(struct LocalDataType));
+
+            for (Usize i = len__Vec(*fun_decl->generic_params); i--;) {
+                switch (
+                  ((struct Generic *)get__Vec(*fun_decl->generic_params, i))
+                    ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(local_data_type,
+                                  NEW(LocalDataType,
+                                      ((struct Generic *)get__Vec(
+                                         *fun_decl->generic_params, i))
+                                        ->value.data_type,
+                                      NULL));
+                        break;
+                    case GenericKindRestrictedDataType: {
+                        struct DataTypeSymbol *dts = check_data_type(
+                          self,
+                          *(struct Location
+                              *)((struct Tuple *)((struct Generic *)get__Vec(
+                                                    *fun_decl->generic_params,
+                                                    i))
+                                   ->value.restricted_data_type->items[1])
+                             ->items[1],
+                          ((struct Tuple *)((struct Generic *)get__Vec(
+                                              *fun_decl->generic_params, i))
+                             ->value.restricted_data_type->items[1])
+                            ->items[0],
+                          NULL,
+                          false,
+                          false);
+
+                        if (dts != NULL)
+                            push__Vec(
+                              local_data_type,
+                              NEW(LocalDataType,
+                                  ((struct Generic *)get__Vec(
+                                     *fun_decl->generic_params, i))
+                                    ->value.restricted_data_type->items[0],
+                                  NEW(Tuple,
+                                      2,
+                                      dts,
+                                      *(struct Location
+                                          *)((struct Tuple
+                                                *)((struct Generic *)get__Vec(
+                                                     *fun_decl->generic_params,
+                                                     i))
+                                               ->value.restricted_data_type
+                                               ->items[1])
+                                         ->items[1])));
+                        else
+                            assert(0 && "error");
+
+                        break;
+                    }
+                }
+            }
+
+            SUMMARY();
+        }
+
+        if (fun_decl->params != NULL) {
+            params = NEW(Vec, sizeof(struct FunParamSymbol));
+            local_value = NEW(Vec, sizeof(struct Scope));
+
+            for (Usize i = 0; i < len__Vec(*fun_decl->params); i++) {
+                struct FunParamSymbol *param =
+                  NEW(FunParamSymbol, get__Vec(*fun_decl->params, i));
+                struct Vec *ids = NEW(Vec, sizeof(Usize));
+                struct DataTypeSymbol *dts = check_data_type(
+                  self,
+                  *(struct Location *)((struct FunParam *)get__Vec(
+                                         *fun_decl->params, i))
+                     ->param_data_type->items[1],
+                  ((struct FunParam *)get__Vec(*fun_decl->params, i))
+                    ->param_data_type->items[0],
+                  local_data_type,
+                  false,
+                  false);
+
+                if (dts != NULL) {
+                    param->param_data_type =
+                      ((struct FunParam *)get__Vec(*fun_decl->params, i))
+                            ->param_data_type != NULL
+                        ? NEW(
+                            Tuple,
+                            2,
+                            dts,
+                            ((struct FunParam *)get__Vec(*fun_decl->params, i))
+                              ->param_data_type->items[1])
+                        : NULL;
+                }
+
+                if (param->default_ != NULL)
+                    TODO("");
+
+                push__Vec(ids, (Usize *)i);
+                push__Vec(params, param);
+                push__Vec(local_value,
+                          NEW(Scope,
+                              self->parser.parse_block.scanner.src->file.name,
+                              param->name,
+                              ids,
+                              ScopeItemKindParam,
+                              ScopeKindLocal));
+            }
+        }
+
+        if (fun_decl->return_type != NULL) {
+            struct DataTypeSymbol *dts = check_data_type(
+              self,
+              *(struct Location *)fun_decl->return_type->items[1],
+              fun_decl->return_type->items[0],
+              local_data_type,
+              false,
+              false);
+
+            if (dts != NULL)
+                return_type = dts;
+
+            SUMMARY();
+        }
+
+        if (fun_decl->body != NULL) {
+            TODO("body");
+        }
+
+        fun->scope = NEW(Scope,
+                         self->parser.parse_block.scanner.src->file.name,
+                         fun->name,
+                         scope_id,
+                         ScopeItemKindFun,
+                         ScopeKindGlobal);
+        fun->tagged_type = tagged_type;
+        fun->generic_params = generic_params;
+        fun->params = params;
+        fun->return_type = return_type;
+        fun->body = body;
+        ++current_fun_id;
+
+        if (local_data_type != NULL)
+            for (Usize i = len__Vec(*local_data_type); i--;)
+                FREE(LocalDataType, get__Vec(*local_data_type, i));
+
+        if (local_value != NULL)
+            for (Usize i = len__Vec(*local_value); i--;)
+                FREE(Scope, get__Vec(*local_value, i));
+    }
+}
+
+static void
 check_symbols(struct Typecheck *self)
 {
     while (pos < len__Vec(*self->parser.decls)) {
@@ -395,198 +595,8 @@ check_symbols(struct Typecheck *self)
                 struct Vec *scope_id = NEW(Vec, sizeof(Usize));
 
                 push__Vec(scope_id, (Usize *)current_fun_id);
-
-                struct FunDecl *fun_decl =
-                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                    ->fun_decl->value.fun;
-                struct Vec *local_data_type = NULL;
-                struct Vec *local_value = NULL;
-                struct Vec *tagged_type = NULL;
-                struct Vec *generic_params = NULL;
-                struct Vec *params = NULL;
-                struct DataTypeSymbol *return_type = NULL;
-                struct Vec *body = NULL;
-
-                if (fun_decl->tags != NULL) {
-                    tagged_type = NEW(Vec, sizeof(struct Tuple));
-
-                    for (Usize i = len__Vec(*fun_decl->tags); i--;) {
-                        struct Tuple *current = get__Vec(*fun_decl->tags, i);
-                        struct DataTypeSymbol *dts =
-                          check_data_type(self,
-                                          *(struct Location *)current->items[1],
-                                          current->items[0],
-                                          NULL,
-                                          true,
-                                          false);
-
-                        if (dts != NULL)
-                            push__Vec(tagged_type, dts);
-                    }
-
-                    SUMMARY();
-                }
-
-                if (fun_decl->generic_params != NULL) {
-                    local_data_type = NEW(Vec, sizeof(struct LocalDataType));
-
-                    for (Usize i = len__Vec(*fun_decl->generic_params); i--;) {
-                        switch (((struct Generic *)get__Vec(
-                                   *fun_decl->generic_params, i))
-                                  ->kind) {
-                            case GenericKindDataType:
-                                push__Vec(local_data_type,
-                                          NEW(LocalDataType,
-                                              ((struct Generic *)get__Vec(
-                                                 *fun_decl->generic_params, i))
-                                                ->value.data_type,
-                                              NULL));
-                                break;
-                            case GenericKindRestrictedDataType: {
-                                struct DataTypeSymbol *dts = check_data_type(
-                                  self,
-                                  *(struct Location
-                                      *)((struct Tuple
-                                            *)((struct Generic *)get__Vec(
-                                                 *fun_decl->generic_params, i))
-                                           ->value.restricted_data_type
-                                           ->items[1])
-                                     ->items[1],
-                                  ((struct Tuple *)((struct Generic *)get__Vec(
-                                                      *fun_decl->generic_params,
-                                                      i))
-                                     ->value.restricted_data_type->items[1])
-                                    ->items[0],
-                                  NULL,
-                                  false,
-                                  false);
-
-                                if (dts != NULL)
-                                    push__Vec(
-                                      local_data_type,
-                                      NEW(
-                                        LocalDataType,
-                                        ((struct Generic *)get__Vec(
-                                           *fun_decl->generic_params, i))
-                                          ->value.restricted_data_type
-                                          ->items[0],
-                                        NEW(
-                                          Tuple,
-                                          2,
-                                          dts,
-                                          *(struct Location
-                                              *)((struct Tuple
-                                                    *)((struct Generic *)
-                                                         get__Vec(
-                                                           *fun_decl
-                                                              ->generic_params,
-                                                           i))
-                                                   ->value.restricted_data_type
-                                                   ->items[1])
-                                             ->items[1])));
-                                else
-                                    assert(0 && "error");
-
-                                break;
-                            }
-                        }
-                    }
-
-                    SUMMARY();
-                }
-
-                if (fun_decl->params != NULL) {
-                    params = NEW(Vec, sizeof(struct FunParamSymbol));
-                    local_value = NEW(Vec, sizeof(struct Scope));
-
-                    for (Usize i = len__Vec(*fun_decl->params); i--;) {
-                        struct FunParamSymbol *param =
-                          NEW(FunParamSymbol, get__Vec(*fun_decl->params, i));
-                        struct Vec *ids = NEW(Vec, sizeof(Usize));
-                        struct DataTypeSymbol *dts = check_data_type(
-                          self,
-                          *(struct Location *)((struct FunParam *)get__Vec(
-                                                 *fun_decl->params, i))
-                             ->param_data_type->items[1],
-                          ((struct FunParam *)get__Vec(*fun_decl->params, i))
-                            ->param_data_type->items[0],
-                          local_data_type,
-                          false,
-                          false);
-
-                        if (dts != NULL) {
-                            param->param_data_type =
-                              ((struct FunParam *)get__Vec(*fun_decl->params,
-                                                           i))
-                                    ->param_data_type != NULL
-                                ? NEW(Tuple,
-                                      2,
-                                      dts,
-                                      ((struct FunParam *)get__Vec(
-                                         *fun_decl->params, i))
-                                        ->param_data_type->items[1])
-                                : NULL;
-                        }
-
-                        if (param->default_ != NULL)
-                            TODO("");
-
-                        push__Vec(ids, (Usize *)i);
-                        push__Vec(params, param);
-                        push__Vec(
-                          local_value,
-                          NEW(Scope,
-                              self->parser.parse_block.scanner.src->file.name,
-                              param->name,
-                              ids,
-                              ScopeItemKindParam,
-                              ScopeKindLocal));
-                    }
-                }
-
-                if (fun_decl->return_type != NULL) {
-                    struct DataTypeSymbol *dts = check_data_type(
-                      self,
-                      *(struct Location *)fun_decl->return_type->items[1],
-                      fun_decl->return_type->items[0],
-                      local_data_type,
-                      false,
-                      false);
-
-                    if (dts != NULL)
-                        return_type = dts;
-
-                    SUMMARY();
-                }
-
-                if (fun_decl->body != NULL) {
-                    TODO("body");
-                }
-
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->scope = NEW(
-                  Scope,
-                  self->parser.parse_block.scanner.src->file.name,
-                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                    ->name,
-                  scope_id,
-                  ScopeItemKindFun,
-                  ScopeKindGlobal);
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->tagged_type = tagged_type;
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->generic_params = generic_params;
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->params = params;
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->return_type = return_type;
-                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->body = body;
-                ++current_fun_id;
-
-                if (local_data_type != NULL)
-                    for (Usize i = len__Vec(*local_data_type); i--;)
-                        FREE(LocalDataType, get__Vec(*local_data_type, i));
+                check_fun(
+                  self, get__Vec(*self->funs, current_fun_id), scope_id);
 
                 break;
             }
@@ -939,7 +949,8 @@ check_data_type(struct Typecheck *self,
                             id_enums_obj == NULL && id_records_obj == NULL &&
                             id_classes == NULL && id_traits == NULL) {
                             if (len__Vec(*(struct Vec *)data_type->value.custom
-                                            ->items[0]) == 1) {
+                                            ->items[0]) == 1 &&
+                                local_data_type != NULL) {
                                 for (Usize i = len__Vec(*local_data_type);
                                      i--;) {
                                     if (eq__String(
@@ -1321,4 +1332,45 @@ check_data_type(struct Typecheck *self,
     }
 
     return NULL;
+}
+
+static struct StmtSymbol *
+check_stmt(struct Typecheck *self,
+           struct Stmt *stmt,
+           struct Vec *local_value,
+           bool is_return_type)
+{
+}
+
+static struct ExprSymbol *
+check_expression(struct Typecheck *self,
+                 struct Expr *expr,
+                 struct Vec *local_value,
+                 bool is_return_type)
+{
+}
+
+static void
+check_fun_body(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Vec *local_value,
+               struct Vec *local_data_type)
+{
+    for (Usize i = 0; i < len__Vec(*fun->fun_decl->value.fun->body); i++) {
+        switch (
+          ((struct FunBodyItem *)get__Vec(*fun->fun_decl->value.fun->body, i))
+            ->kind) {
+            case FunBodyItemKindExpr: {
+                struct Expr *expr = ((struct FunBodyItem *)get__Vec(
+                                       *fun->fun_decl->value.fun->body, i))
+                                      ->expr;
+
+                switch (expr->kind) {
+                }
+                break;
+            }
+            case FunBodyItemKindStmt:
+                break;
+        }
+    }
 }
