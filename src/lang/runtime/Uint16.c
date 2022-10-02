@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Uint16.h>
+#include "Uint16.h"
 #include <stdio.h>
 
 LILY_API U16

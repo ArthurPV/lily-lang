@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Uint8.h>
+#include "Uint8.h"
 #include <stdio.h>
 
 LILY_API U8

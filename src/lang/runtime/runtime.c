@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/runtime.h>
+#include "runtime.h"
 #include <limits.h>
 
 LILY_API struct u128_t

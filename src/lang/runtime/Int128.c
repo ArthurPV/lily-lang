@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Int128.h>
+#include "Int128.h"
 #include <stdio.h>
 
 LILY_API I128

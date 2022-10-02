@@ -25,8 +25,8 @@
 #ifndef LILY_RUNTIME_H
 #define LILY_RUNTIME_H
 
+#include "api.h"
 #include <assert.h>
-#include <lang/runtime/api.h>
 #include <stdbool.h>
 #if __clang_major__ < 15
 #include <stdint.h>

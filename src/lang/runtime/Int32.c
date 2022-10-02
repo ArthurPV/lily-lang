@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Int32.h>
+#include "Int32.h"
 #include <stdio.h>
 
 LILY_API I32

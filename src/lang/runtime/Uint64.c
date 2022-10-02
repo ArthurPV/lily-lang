@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Uint64.h>
+#include "Uint64.h"
 #include <stdio.h>
 
 LILY_API U64

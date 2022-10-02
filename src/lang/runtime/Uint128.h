@@ -1,8 +1,8 @@
 #ifndef LILY_RUNTIME_UINT128_H
 #define LILY_RUNTIME_UINT128_H
 
-#include <lang/runtime/api.h>
-#include <lang/runtime/runtime.h>
+#include "api.h"
+#include "runtime.h"
 
 #if defined(__cplusplus)
 extern "C"

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <lang/runtime/Int8.h>
+#include "Int8.h"
 #include <stdio.h>
 
 LILY_API I8

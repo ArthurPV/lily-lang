@@ -25,8 +25,8 @@
 #ifndef LILY_RUNTIME_GENERIC_H
 #define LILY_RUNTIME_GENERIC_H
 
-#include <lang/runtime/Array.h>
-#include <lang/runtime/runtime.h>
+#include "Array.h"
+#include "runtime.h"
 
 #if defined(__cplusplus)
 extern "C"

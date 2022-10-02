@@ -25,8 +25,8 @@
 #ifndef LILY_RUNTIME_NET_H
 #define LILY_RUNTIME_NET_H
 
-#include <lang/runtime/api.h>
-#include <lang/runtime/runtime.h>
+#include "api.h"
+#include "runtime.h"
 // #include <sys/socket.h>
 
 #if defined(__cplusplus)

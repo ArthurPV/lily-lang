@@ -25,8 +25,8 @@
 #ifndef LILY_RUNTIME_UINT16_H
 #define LILY_RUNTIME_UINT16_H
 
-#include <lang/runtime/api.h>
-#include <lang/runtime/runtime.h>
+#include "api.h"
+#include "runtime.h"
 
 #if defined(__cplusplus)
 extern "C"

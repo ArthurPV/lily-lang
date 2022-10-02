@@ -39,27 +39,6 @@ set(LANG_SRC
         src/lang/scanner/scanner.c
         src/lang/scanner/token.c)
 
-set(RUNTIME_SRC
-        src/lang/runtime/Allocator.c
-        src/lang/runtime/Array.c
-        src/lang/runtime/io.c
-	    src/lang/runtime/generic.c
-        src/lang/runtime/runtime.c
-        src/lang/runtime/Int8.c
-        src/lang/runtime/Int16.c
-        src/lang/runtime/Int32.c
-        src/lang/runtime/Int32.c
-        src/lang/runtime/Int64.c
-        src/lang/runtime/Int128.c
-		src/lang/runtime/Mem.c
-        src/lang/runtime/Net.c
-        src/lang/runtime/Tuple.c
-        src/lang/runtime/Uint8.c
-        src/lang/runtime/Uint16.c
-        src/lang/runtime/Uint32.c
-        src/lang/runtime/Uint64.c
-        src/lang/runtime/Uint128.c)
-
 add_library(lily_base ${BASE_SRC})
 target_include_directories(lily_base PRIVATE src)
 
@@ -72,9 +51,6 @@ add_executable(lily src/bin/main.c
 target_link_libraries(lily lily_lang lily_base)
 target_include_directories(lily PRIVATE src)
 
-add_library(lily_runtime SHARED ${RUNTIME_SRC})
-target_include_directories(lily_runtime PRIVATE src)
-
 add_executable(scanner_test
         tests/scanner/test.c
         tests/scanner/operator.c
@@ -86,3 +62,5 @@ target_link_libraries(scanner_test lily_base lily_lang)
 target_include_directories(scanner_test PRIVATE src)
 
 add_test(NAME scanner_test COMMAND scanner_test)
+
+add_subdirectory(src/lang/runtime)
