@@ -731,6 +731,24 @@ get_block(struct ParseBlock *self, bool in_module)
                     return NEW(ParseContextModule, module_parse_context, loc);
                 }
 
+                case TokenKindImportKw: {
+                    struct ImportParseContext import_parse_context =
+                      NEW(ImportParseContext);
+
+                    import_parse_context.is_pub = true;
+
+                    get_import_parse_context(&import_parse_context, self);
+                    end__Location(&loc,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_line,
+                                  ((struct Token *)get__Vec(
+                                     *self->scanner.tokens, self->pos - 1))
+                                    ->loc->s_col);
+
+                    return NEW(ParseContextImport, import_parse_context, loc);
+                }
+
                 case TokenKindIdentifier: {
                     struct ConstantParseContext constant_parse_context =
                       NEW(ConstantParseContext);
@@ -757,7 +775,7 @@ get_block(struct ParseBlock *self, bool in_module)
                           NEW(LilyError, LilyErrorBadUsageOfPub),
                           *self->current->loc,
                           format("expected `fun`, `async`, `type`, tag`, "
-                                 "`error`, `ID` or "
+                                 "`error`, `import`, `ID` or "
                                  "`object` after `pub` declaration"),
                           None());
 
@@ -5329,6 +5347,8 @@ parse_import_value__parse_import_stmt(struct Parser self,
 
                 if (!strcmp(name_str, "std"))
                     push__Vec(import_value, NEW(ImportStmtValueStd));
+                else if (!strcmp(name_str, "core"))
+                    push__Vec(import_value, NEW(ImportStmtValueCore));
                 else if (!strcmp(name_str, "builtin"))
                     push__Vec(import_value, NEW(ImportStmtValueBuiltin));
                 else if (!strcmp(name_str, "file")) {
@@ -5525,8 +5545,8 @@ parse_import_value__parse_import_stmt(struct Parser self,
 
     if (!as_value)
         return NEW(ImportStmt, import_value, is_pub, None());
-    else
-        return NEW(ImportStmt, import_value, is_pub, Some(as_value));
+
+    return NEW(ImportStmt, import_value, is_pub, Some(as_value));
 }
 
 static struct String *

@@ -59,7 +59,7 @@ __new__Typecheck(struct Parser parser);
  * @brief Run the typecheck phase.
  */
 void
-run__Typecheck(struct Typecheck *self);
+run__Typecheck(struct Typecheck *self, struct Vec *primary_buffer);
 
 /**
  *

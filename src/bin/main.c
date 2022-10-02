@@ -94,7 +94,7 @@ main(int argc, char **argv)
 
                 struct Typecheck tc = NEW(Typecheck, parser);
 
-                run__Typecheck(&tc);
+                run__Typecheck(&tc, NULL);
 
                 struct Generate gen = NEW(Generate, tc);
 

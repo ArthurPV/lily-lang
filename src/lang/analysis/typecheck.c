@@ -24,6 +24,7 @@
 
 #include <base/format.h>
 #include <base/macros.h>
+#include <base/platform.h>
 #include <base/string.h>
 #include <lang/analysis/symbol_table.h>
 #include <lang/analysis/typecheck.h>
@@ -114,7 +115,9 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
 static void
 resolve_global_import(struct Typecheck *self);
 static struct Vec *
-resolve_import(struct Typecheck *self, struct ImportStmt *import_stmt);
+resolve_import(struct Typecheck *self,
+               struct Location import_loc,
+               struct ImportStmt *import_stmt);
 static void
 verify_if_decl_is_duplicate(struct Typecheck self);
 static void
@@ -352,7 +355,7 @@ __new__Typecheck(struct Parser parser)
 }
 
 void
-run__Typecheck(struct Typecheck *self)
+run__Typecheck(struct Typecheck *self, struct Vec *primary_buffer)
 {
     {
         resolve_global_import(self);
@@ -512,17 +515,201 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
 static void
 resolve_global_import(struct Typecheck *self)
 {
+    struct Vec *imports = NEW(Vec, sizeof(struct Decl));
+
     for (Usize i = len__Vec(*self->parser.decls); i--;)
+        if (((struct Decl *)get__Vec(*self->parser.decls, i))->kind ==
+            DeclKindImport)
+            push__Vec(imports, get__Vec(*self->parser.decls, i));
+
+	// Resolve import in priority @core and @std import value
+    for (Usize i = 0; i < len__Vec(*imports); i++) {
+        enum ImportStmtValueKind kind =
+          ((struct ImportStmtValue *)get__Vec(
+             *((struct Decl *)get__Vec(*imports, i))
+                ->value.import->import_value,
+             i))
+            ->kind;
+
+        if (kind == ImportStmtValueKindCore || kind == ImportStmtValueKindStd) {
+            push__Vec(self->import_values,
+                      resolve_import(
+                        self,
+                        ((struct Decl *)get__Vec(*imports, i))->loc,
+                        ((struct Decl *)get__Vec(*imports, i))->value.import));
+            remove__Vec(imports, i);
+
+            i = 0;
+        }
+    }
+
+    for (Usize i = 0; i < len__Vec(*imports); i++)
         push__Vec(
           self->import_values,
-          resolve_import(
-            self,
-            ((struct Decl *)get__Vec(*self->parser.decls, i))->value.import));
+          resolve_import(self,
+                         ((struct Decl *)get__Vec(*imports, i))->loc,
+                         ((struct Decl *)get__Vec(*imports, i))->value.import));
 }
 
 static struct Vec *
-resolve_import(struct Typecheck *self, struct ImportStmt *import_stmt)
+resolve_import(struct Typecheck *self,
+               struct Location import_loc,
+               struct ImportStmt *import_stmt)
 {
+    switch (((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, 0))
+              ->kind) {
+        case ImportStmtValueKindStd: {
+#ifdef LOCAL
+#if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
+            struct String *path = from__String("lib/std/std.lily");
+            Str path_str = to_Str__String(*path);
+#elif defined(LILY_WINDOWS_OS)
+            struct String *path = from__String("lib\\std\\std.lily");
+            Str path_str = to_Str__String(*path);
+#else
+#error "unknown OS"
+#endif
+#else
+#if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
+            struct String *path = from__String("");
+            Str path_str = to_Str__String(*path);
+#elif defined(LILY_WINDOWS_OS)
+            struct String *path = from__String("");
+            Str path_str = to_Str__String(*path);
+#else
+#error "unknown OS"
+#endif
+#endif
+            struct File file = NEW(File, path_str);
+            struct Source src = NEW(Source, file);
+            struct Scanner scanner = NEW(Scanner, &src);
+
+            run__Scanner(&scanner);
+
+            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+
+            run__ParseBlock(&parse_block);
+
+            struct Parser parser = NEW(Parser, parse_block);
+
+            run__Parser(&parser);
+
+            struct Typecheck tc = NEW(Typecheck, parser);
+
+            run__Typecheck(&tc, self->buffer);
+
+            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
+
+            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
+            push__Vec(self->buffer, tc_copy);
+
+            if (path)
+                FREE(String, path);
+
+            FREE(Typecheck, tc);
+        }
+        case ImportStmtValueKindCore: {
+#ifdef LOCAL
+#if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
+            struct String *path = from__String("lib/core/core.lily");
+            Str path_str = to_Str__String(*path);
+#elif defined(LILY_WINDOWS_OS)
+            struct String *path = from__String("lib\\core\\core.lily");
+            Str path_str = to_Str__String(*path);
+#else
+#error "unknown OS"
+#endif
+#else
+#if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
+            struct String *path = from__String("");
+            Str path_str = to_Str__String(*path);
+#elif defined(LILY_WINDOWS_OS)
+            struct String *path = from__String("");
+            Str path_str = to_Str__String(*path);
+#else
+#error "unknown OS"
+#endif
+#endif
+            struct File file = NEW(File, path_str);
+            struct Source src = NEW(Source, file);
+            struct Scanner scanner = NEW(Scanner, &src);
+
+            run__Scanner(&scanner);
+
+            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+
+            run__ParseBlock(&parse_block);
+
+            struct Parser parser = NEW(Parser, parse_block);
+
+            run__Parser(&parser);
+
+            struct Typecheck tc = NEW(Typecheck, parser);
+
+            run__Typecheck(&tc, self->buffer);
+
+            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
+
+            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
+            push__Vec(self->buffer, tc_copy);
+
+            if (path)
+                FREE(String, path);
+
+            FREE(Typecheck, tc);
+        }
+        case ImportStmtValueKindBuiltin:
+            TODO("@builtin");
+        case ImportStmtValueKindFile:
+            TODO("@file");
+        case ImportStmtValueKindUrl:
+            TODO("@url");
+        case ImportStmtValueKindAccess: {
+            struct String *path = format("{S}.lily",
+                                         ((struct ImportStmtValue *)get__Vec(
+                                            *import_stmt->import_value, 0))
+                                           ->value.access);
+            Str path_str = to_Str__String(*path);
+
+            if (!strcmp(path_str,
+                        self->parser.parse_block.scanner.src->file.name))
+                assert(0 && "error");
+
+            struct File file = NEW(File, path_str);
+            struct Source src = NEW(Source, file);
+            struct Scanner scanner = NEW(Scanner, &src);
+
+            run__Scanner(&scanner);
+
+            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+
+            run__ParseBlock(&parse_block);
+
+            struct Parser parser = NEW(Parser, parse_block);
+
+            run__Parser(&parser);
+
+            struct Typecheck tc = NEW(Typecheck, parser);
+
+            run__Typecheck(&tc, self->buffer);
+
+            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
+
+            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
+            push__Vec(self->buffer, tc_copy);
+
+            if (path)
+                FREE(String, path);
+
+            FREE(Typecheck, tc);
+        }
+        case ImportStmtValueKindSelector:
+        case ImportStmtValueKindWildcard:
+            assert(0 && "error");
+    }
+
+    for (Usize i = 1; i < len__Vec(*import_stmt->import_value); i++) {
+    }
 }
 
 static void

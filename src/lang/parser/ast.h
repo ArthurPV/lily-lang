@@ -1549,6 +1549,7 @@ __free__ForStmt(struct ForStmt *self);
 enum ImportStmtValueKind
 {
     ImportStmtValueKindStd,
+	ImportStmtValueKindCore,
     ImportStmtValueKindBuiltin,
     ImportStmtValueKindFile,
     ImportStmtValueKindUrl,
@@ -1579,6 +1580,18 @@ __new__ImportStmtValueStd()
 {
     struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
     self->kind = ImportStmtValueKindStd;
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the ImportStmtValue type (Core variant).
+ */
+inline struct ImportStmtValue *
+__new__ImportStmtValueCore()
+{
+    struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
+    self->kind = ImportStmtValueKindCore;
     return self;
 }
 

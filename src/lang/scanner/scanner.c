@@ -1249,6 +1249,9 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
         if (i >= len__String(*scan_doc->src->file.content) - 2)
             break;
 
+		Usize s_line = scan_doc->line;
+		Usize s_col = scan_doc->col;
+
         start_token(scan_doc);
 
         switch ((char)(UPtr)scan_doc->src->c) {
@@ -1361,9 +1364,6 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                             TODO("@global");
                             break;
                         case DocKindPrototype: {
-                            Usize s_line = scan_doc->line;
-                            Usize s_col = scan_doc->col;
-
                             struct Result *prot = scan_doc_prototype(scan_doc);
 
                             scan_doc->loc.s_line = s_line;
