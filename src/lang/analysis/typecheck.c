@@ -1350,6 +1350,7 @@ check_class(struct Typecheck *self,
 
             for (Usize i = len__Vec(*class->class_decl->value.class->impl);
                  i--;) {
+				TODO("check data type");
             }
         }
 
@@ -1364,6 +1365,7 @@ check_class(struct Typecheck *self,
             for (Usize i =
                    len__Vec(*class->class_decl->value.class->inheritance);
                  i--;) {
+				TODO("check data type");
             }
         }
 
@@ -1389,6 +1391,16 @@ check_trait(struct Typecheck *self,
               scope_id,
               ScopeItemKindTrait,
               trait->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+		if (trait->trait_decl->value.trait->inh) {
+			for (Usize i = len__Vec(*trait->trait_decl->value.trait->inh); i--;) {
+				TODO("check data type");
+			}
+		}
+
+		if (trait->trait_decl->value.trait->body) {
+			TODO("check body");
+		}
 
         if (is_global)
             ++count_trait_id;
