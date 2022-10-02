@@ -147,21 +147,18 @@
         next_token_pb(parse_block);
 
 #define PARSE_PAREN(parse_decl, block)                     \
-    next_token(parse_decl);                                \
     while (parse_decl->current->kind != TokenKindRParen) { \
         block;                                             \
     }                                                      \
     next_token(parse_decl);
 
 #define PARSE_HOOK(parse_decl, block)                     \
-    next_token(parse_decl);                               \
     while (parse_decl->current->kind != TokenKindRHook) { \
         block;                                            \
     }                                                     \
     next_token(parse_decl);
 
 #define PARSE_BRACE(parse_decl, block)                     \
-    next_token(parse_decl);                                \
     while (parse_decl->current->kind != TokenKindRBrace) { \
         block;                                             \
     }                                                      \
@@ -2703,6 +2700,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 if (parse_decl->current->kind == TokenKindLHook) {
                     struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
 
+                    next_token(parse_decl);
+
                     PARSE_HOOK(parse_decl, {
                         push__Vec(data_types,
                                   parse_data_type(self, parse_decl));
@@ -3209,11 +3208,75 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
         case TokenKindSelfKw:
             break;
 
-        case TokenKindLParen:
-            break;
+        case TokenKindLParen: {
+            if (parse_decl->current->kind == TokenKindRParen) {
+                next_token(parse_decl);
+                end__Location(&loc,
+                              parse_decl->current->loc->s_line,
+                              parse_decl->current->loc->s_col);
 
-        case TokenKindLHook:
+                expr = NEW(ExprLiteral, NEW(LiteralUnit), loc);
+            } else {
+
+                struct Vec *tuple = NEW(Vec, sizeof(struct Expr));
+
+                PARSE_PAREN(parse_decl, {
+                    push__Vec(tuple, parse_expr(self, parse_decl));
+
+                    EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrParser,
+                              &self.parse_block,
+                              NEW(LilyError, LilyErrorExpectedToken),
+                              *parse_decl->current->loc,
+                              format(""),
+                              None());
+
+                        err->err->s = from__String("`,`");
+
+                        emit__Diagnostic(err);
+                    });
+                });
+
+                end__Location(&loc,
+                              parse_decl->current->loc->s_line,
+                              parse_decl->current->loc->s_col);
+
+                expr = NEW(ExprTuple, tuple, loc);
+            }
+
             break;
+        }
+
+        case TokenKindLHook: {
+            struct Vec *array = NEW(Vec, sizeof(struct Expr));
+
+            PARSE_HOOK(parse_decl, {
+                push__Vec(array, parse_expr(self, parse_decl));
+
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`,`");
+
+                    emit__Diagnostic(err);
+                });
+            });
+
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+            expr = NEW(ExprArray, array, loc);
+
+            break;
+        }
 
         case TokenKindTryKw:
             break;

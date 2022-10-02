@@ -217,8 +217,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("the integer is out of range");
         case LilyErrorMissParamName:
             return from__String("miss param name");
-        case LilyErrorIdentifierOperatorSymbolCannotBeAKeyword:
-            return from__String("the identifier operator symbol cannot be a keyword");
+        case LilyErrorOperatorIdentifierCannotBeAKeyword:
+            return from__String("the operator identifier cannot be a keyword");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -321,7 +321,7 @@ get_code_of_lily_error(struct LilyError err)
             return "0037";
         case LilyErrorMissParamName:
             return "0038";
-        case LilyErrorIdentifierOperatorSymbolCannotBeAKeyword:
+        case LilyErrorOperatorIdentifierCannotBeAKeyword:
             return "0039";
         default:
             UNREACHABLE("unknown lily error kind");

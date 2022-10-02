@@ -1169,9 +1169,14 @@ get_token(struct Scanner *self)
             next_char(self);
 
             while (self->src->c != (char *)'`' &&
-                   self->src->pos != len__String(*self->src->file.content)) {
+                   self->src->pos !=
+                     len__String(*self->src->file.content) - 1) {
                 push__String(id, self->src->c);
                 next_char(self);
+            }
+
+            if (self->src->pos == len__String(*self->src->file.content) - 1) {
+                assert(0 && "error");
             }
 
             Str id_str = to_Str__String(*id);
@@ -1190,14 +1195,14 @@ get_token(struct Scanner *self)
                 default: {
                     end_token(self);
 
-                    struct Diagnostic *dgn = NEW(
-                      DiagnosticWithErrScanner,
-                      self,
-                      NEW(LilyError,
-                          LilyErrorIdentifierOperatorSymbolCannotBeAKeyword),
-                      self->loc,
-                      format(""),
-                      None());
+                    struct Diagnostic *dgn =
+                      NEW(DiagnosticWithErrScanner,
+                          self,
+                          NEW(LilyError,
+                              LilyErrorOperatorIdentifierCannotBeAKeyword),
+                          self->loc,
+                          format(""),
+                          None());
 
                     return Err(dgn);
                 }
