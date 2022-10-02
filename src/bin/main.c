@@ -339,11 +339,11 @@ int main() {
 
     run__Scanner(&scanner);
 
-    struct ParseBlock *parse_block = NEW(ParseBlock, &scanner);
+    struct ParseBlock parse_block = NEW(ParseBlock, &scanner);
 
-    run__ParseBlock(parse_block);
+    run__ParseBlock(&parse_block);
 
-    struct Parser *parser = NEW(Parser, parse_block);
+    struct Parser *parser = NEW(Parser, &parse_block);
 
     // run__Parser(parser);
     run_without_multi_thread__Parser(parser);

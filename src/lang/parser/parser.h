@@ -19,7 +19,7 @@ typedef struct ParseBlock
  *
  * @brief Construct the ParseBlock type.
  */
-struct ParseBlock *
+struct ParseBlock
 __new__ParseBlock(struct Scanner *scanner);
 
 /**
@@ -34,7 +34,7 @@ run__ParseBlock(struct ParseBlock *self);
  * @brief Free the ParseBlock type.
  */
 void
-__free__ParseBlock(struct ParseBlock *self);
+__free__ParseBlock(struct ParseBlock self);
 
 typedef struct FunParseContext
 {

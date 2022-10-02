@@ -155,6 +155,8 @@ valid_body_item(struct ParseBlock *parse_block,
                 bool already_invalid,
                 bool is_fun);
 static void
+verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun);
+static void
 get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun);
 static void
 get_fun_parse_context(struct FunParseContext *self,
@@ -218,17 +220,19 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct Option *help);
 
 #include <base/print.h>
-struct ParseBlock *
+struct ParseBlock
 __new__ParseBlock(struct Scanner *scanner)
 {
-    struct ParseBlock *self = malloc(sizeof(struct ParseBlock));
-    self->scanner = scanner;
-    self->blocks = NEW(Vec, sizeof(struct Vec *));
-    self->current = &*(struct Token *)get__Vec(*scanner->tokens, 0);
-    self->disable_warning = NEW(Vec, sizeof(Str));
-    self->pos = 0;
-    self->count_error = 0;
-    self->count_warning = 0;
+    struct ParseBlock self = {
+        .scanner = scanner,
+        .blocks = NEW(Vec, sizeof(struct ParseContext *)),
+        .current = &*(struct Token *)get__Vec(*scanner->tokens, 0),
+        .disable_warning = NEW(Vec, sizeof(Str)),
+        .pos = 0,
+        .count_error = 0,
+        .count_warning = 0
+    };
+
     return self;
 }
 
@@ -716,18 +720,17 @@ get_generic_params(struct ParseBlock *self)
 }
 
 void
-__free__ParseBlock(struct ParseBlock *self)
+__free__ParseBlock(struct ParseBlock self)
 {
-    for (Usize i = 0; i < len__Vec(*self->blocks); i++)
-        FREE(ParseContextAll, get__Vec(*self->blocks, i));
+    for (Usize i = 0; i < len__Vec(*self.blocks); i++)
+        FREE(ParseContextAll, get__Vec(*self.blocks, i));
 
-    for (Usize i = 0; i < len__Vec(*self->disable_warning); i++)
-        free(get__Vec(*self->disable_warning, i));
+    for (Usize i = 0; i < len__Vec(*self.disable_warning); i++)
+        free(get__Vec(*self.disable_warning, i));
 
-    FREE(Vec, self->blocks);
-    FREE(Vec, self->disable_warning);
-    FREE(Scanner, *self->scanner);
-    free(self);
+    FREE(Vec, self.blocks);
+    FREE(Vec, self.disable_warning);
+    FREE(Scanner, *self.scanner);
 }
 
 struct FunParseContext *
@@ -797,6 +800,48 @@ valid_body_item(struct ParseBlock *parse_block,
     }
 }
 
+#define PUSH_BODY()                                          \
+    if (is_fun)                                              \
+        push__Vec(((struct FunParseContext *)self)->body,    \
+                  &*parse_block->current);                   \
+    else                                                     \
+        push__Vec(((struct MethodParseContext *)self)->body, \
+                  &*parse_block->current);
+
+static void
+verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
+{
+    if (parse_block->current->kind == TokenKindDoKw) {
+        Usize start_line = parse_block->current->loc->s_line;
+        bool bad_item = false;
+
+        PUSH_BODY();
+
+        next_token_pb(parse_block);
+
+        while (parse_block->current->kind != TokenKindEndKw &&
+               parse_block->current->kind != TokenKindSemicolon &&
+               parse_block->current->kind != TokenKindEof) {
+            if (valid_body_item(parse_block, bad_item, is_fun)) {
+                if (parse_block->current->kind == TokenKindDoKw)
+                    verify_stmt(self, parse_block, is_fun);
+
+                PUSH_BODY();
+
+                next_token_pb(parse_block);
+            } else {
+                bad_item = true;
+                next_token_pb(parse_block);
+            }
+        }
+
+        Usize end_line = parse_block->current->loc->e_line;
+
+        VERIFY_CLOSING_BODY(parse_block);
+    } else
+        return;
+}
+
 static void
 get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
@@ -809,28 +854,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
         if (valid_body_item(parse_block, bad_item, is_fun)) {
             switch (parse_block->current->kind) {
                 case TokenKindDoKw:
-                case TokenKindIfKw:
-                    next_token_pb(parse_block);
-
-                    Usize start_line = parse_block->current->loc->s_line;
-
-                    while (parse_block->current->kind != TokenKindEndKw &&
-                           parse_block->current->kind != TokenKindSemicolon &&
-                           parse_block->current->kind != TokenKindEof) {
-                        if (is_fun)
-                            push__Vec(((struct FunParseContext *)self)->body,
-                                      &*parse_block->current);
-                        else
-                            push__Vec(((struct MethodParseContext *)self)->body,
-                                      &*parse_block->current);
-
-                        next_token_pb(parse_block);
-                    }
-
-                    Usize end_line = parse_block->current->loc->e_line;
-
-                    VERIFY_CLOSING_BODY(parse_block);
-
+                    verify_stmt(self, parse_block, is_fun);
                     break;
                 default:
                     if (is_fun)
@@ -1430,7 +1454,14 @@ get_class_parse_context(struct ClassParseContext *self,
 
                 goto method_or_property;
             } else {
-                struct Diagnostic *err = NEW(DiagnosticWithErrParser, parse_block, NEW(LilyError, LilyErrorInvalidClassItem), *parse_block->current->loc, format("expected `@`, `import`, `pub` or `async` for begin each declaration in class"), None());
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorInvalidClassItem),
+                      *parse_block->current->loc,
+                      format("expected `@`, `import`, `pub` or `async` for "
+                             "begin each declaration in class"),
+                      None());
 
                 emit__Diagnostic(err);
                 skip_to_next_block(parse_block);
@@ -1962,6 +1993,6 @@ run_without_multi_thread__Parser(struct Parser *self)
 void
 __free__Parser(struct Parser *self)
 {
-    FREE(ParseBlock, self->parse_block);
+    FREE(ParseBlock, *self->parse_block);
     free(self);
 }
