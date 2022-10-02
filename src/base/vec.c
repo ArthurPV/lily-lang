@@ -29,7 +29,6 @@ from__Vec(void **items, Usize item_size, Usize len)
     return self;
 }
 
-
 struct Vec* create__Vec(void *item, Usize item_size, Usize len) {
     struct Vec *self = NEW(Vec, item_size);
 

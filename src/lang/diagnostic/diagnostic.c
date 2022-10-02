@@ -212,6 +212,10 @@ lily_error_to_string(struct LilyError err)
             return from__String("miss object name");
         case LilyErrorInvalidTokenInAliasDataType:
             return from__String("invalid token in alias data type");
+        case LilyErrorUnexpectedInheritance:
+            return from__String("unexpected inheritance");
+        case LilyErrorUnexpectedImplementation:
+            return from__String("unexpected implementation");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -286,6 +290,10 @@ get_code_of_lily_error(struct LilyError err)
             return "0024";
         case LilyErrorInvalidTokenInAliasDataType:
             return "0025";
+        case LilyErrorUnexpectedInheritance:
+            return "0026";
+        case LilyErrorUnexpectedImplementation:
+            return "0027";
         default:
             UNREACHABLE("unknown lily error kind");
     }

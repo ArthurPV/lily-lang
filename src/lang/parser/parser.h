@@ -137,6 +137,31 @@ __new__AliasParseContext();
 void
 __free__AliasParseContext(AliasParseContext *self);
 
+typedef struct TraitParseContext
+{
+    bool is_pub;
+    bool has_generic_params;
+    bool has_inheritance;
+    struct String *name;        // struct String&
+    struct Vec *inheritance;    // struct Vec<struct Token&>*
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *body;           // struct Vec<struct Token&>*
+} TraitParseContext;
+
+/**
+ *
+ * @brief Contruct the TraitParseContext type.
+ */
+struct TraitParseContext *
+__new__TraitParseContext();
+
+/**
+ *
+ * @brief Free the TraitParseContext type.
+ */
+void
+__free__TraitParseContext(struct TraitParseContext *self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,
@@ -144,7 +169,8 @@ enum ParseContextKind
     ParseContextKindRecord,
     ParseContextKindAlias,
     ParseContextKindEnumObject,
-    ParseContextKindRecordObject
+    ParseContextKindRecordObject,
+    ParseContextKindTrait
 };
 
 typedef struct ParseContext
@@ -157,6 +183,7 @@ typedef struct ParseContext
         struct EnumParseContext *enum_;
         struct RecordParseContext *record;
         struct AliasParseContext *alias;
+        struct TraitParseContext *trait;
     } value;
 } ParseContext;
 
@@ -190,6 +217,13 @@ __new__ParseContextAlias(struct AliasParseContext *alias);
 
 /**
  *
+ * @brief Contruct the ParseContext type (Trait variant).
+ */
+struct ParseContext *
+__new__ParseContextTrait(struct TraitParseContext *trait);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -215,6 +249,13 @@ __free__ParseContextRecord(struct ParseContext *self);
  */
 void
 __free__ParseContextAlias(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Trait variant).
+ */
+void
+__free__ParseContextTrait(struct ParseContext *self);
 
 /**
  *

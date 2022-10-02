@@ -1472,22 +1472,20 @@ run__Scanner(struct Scanner *self)
                 if (token_ok->kind != TokenKindOneComment &&
                     token_ok->kind != TokenKindMultiComment)
                     push_token(self, token_ok);
-                else {
-                    FREE(Result, token);
+                else
                     FREE(Token, token_ok);
-                }
 #endif
 
 #ifndef HIDDEN_UNUSED_COMMENT
                 push_token(self, token_ok);
 #endif
 
+            FREE(Result, token);
+
                 if (self->src->pos >=
                     len__String(*self->src->file->content) - 1)
                     break;
             }
-
-            FREE(Result, token);
         }
 
         start_token(self);
