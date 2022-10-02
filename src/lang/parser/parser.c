@@ -8,7 +8,7 @@
 #include <lang/parser/parser.h>
 #include <string.h>
 
-#define EXPECTED_TOKEN_ERR(parse_block, expected) \
+#define EXPECTED_TOKEN_PB_ERR(parse_block, expected) \
     NEW(DiagnosticWithErrParser,                  \
         parse_block,                              \
         NEW(LilyError, LilyErrorExpectedToken),   \
@@ -45,7 +45,7 @@
                                                                          \
     if (self->current->kind != TokenKindColon && !is_object) {           \
                                                                          \
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");        \
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`:`");        \
                                                                          \
         err->err->s = from__String("`:`");                               \
                                                                          \
@@ -53,7 +53,7 @@
     } else if (self->current->kind == TokenKindColon && !is_object)      \
         next_token_pb(self);
 
-#define EXPECTED_TOKEN(self, token_kind, err) \
+#define EXPECTED_TOKEN_PB(self, token_kind, err) \
     if (self->current->kind != token_kind) {  \
         err;                                  \
     } else                                    \
@@ -402,8 +402,8 @@ get_block(struct ParseBlock *self)
             next_token_pb(self);
 
             if (self->current->kind != TokenKindLHook) {
-                EXPECTED_TOKEN(self, TokenKindLHook, {
-                    struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`[`");
+                EXPECTED_TOKEN_PB(self, TokenKindLHook, {
+                    struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`[`");
 
                     err->err->s = from__String("`[`");
 
@@ -434,9 +434,9 @@ get_block(struct ParseBlock *self)
                     push__Vec(self->disable_warning, &*self->current->lit);
                     next_token_pb(self);
                 } else {
-                    EXPECTED_TOKEN(self, TokenKindStringLit, {
+                    EXPECTED_TOKEN_PB(self, TokenKindStringLit, {
                         struct Diagnostic *err =
-                          EXPECTED_TOKEN_ERR(self, "string literal");
+                          EXPECTED_TOKEN_PB_ERR(self, "string literal");
 
                         err->err->s = from__String("string literal");
 
@@ -714,8 +714,8 @@ get_object_context(struct ParseBlock *self, bool is_pub)
     if (self->current->kind == TokenKindFatArrow) {
         next_token_pb(self);
 
-        EXPECTED_TOKEN(self, TokenKindLHook, {
-            struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`[`");
+        EXPECTED_TOKEN_PB(self, TokenKindLHook, {
+            struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`[`");
 
             err->err->s = from__String("`[`");
 
@@ -734,8 +734,8 @@ get_object_context(struct ParseBlock *self, bool is_pub)
         next_token_pb(self);
     }
 
-    EXPECTED_TOKEN(self, TokenKindColon, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, "`:`");
+    EXPECTED_TOKEN_PB(self, TokenKindColon, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(self, "`:`");
 
         err->err->s = from__String("`:`");
 
@@ -1178,8 +1178,8 @@ get_fun_parse_context(struct FunParseContext *self,
     }
 
     // 6. Get body.
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1231,8 +1231,8 @@ get_enum_parse_context(struct EnumParseContext *self,
 
             next_token_pb(parse_block);
 
-            EXPECTED_TOKEN(parse_block, TokenKindRParen, {
-                struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`)`");
+            EXPECTED_TOKEN_PB(parse_block, TokenKindRParen, {
+                struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`)`");
 
                 err->err->s = from__String("`)`");
 
@@ -1255,8 +1255,8 @@ get_enum_parse_context(struct EnumParseContext *self,
     // 2. Variants
     bool bad_token = false;
 
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1380,8 +1380,8 @@ get_record_parse_context(struct RecordParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Fields
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1467,8 +1467,8 @@ get_alias_parse_context(struct AliasParseContext *self,
     next_token_pb(parse_block);
 
     // 1. DataType
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1556,8 +1556,8 @@ get_trait_parse_context(struct TraitParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Body
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1627,8 +1627,8 @@ get_class_parse_context(struct ClassParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Body
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1720,7 +1720,7 @@ get_class_parse_context(struct ClassParseContext *self,
                       None());
 
                 struct Diagnostic *err =
-                  EXPECTED_TOKEN_ERR(parse_block, "`(`, `[` or `=`");
+                  EXPECTED_TOKEN_PB_ERR(parse_block, "`(`, `[` or `=`");
 
                 err->err->s = from__String("`(`, `[` or `=`");
 
@@ -1857,8 +1857,8 @@ get_tag_parse_context(struct TagParseContext *self,
     next_token_pb(parse_block);
 
     // 1. Body
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -1907,8 +1907,8 @@ get_method_parse_context(struct MethodParseContext *self,
     PARSE_GENERIC_PARAMS(self);
     PARSE_PARAMS(self);
 
-    EXPECTED_TOKEN(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
 
         err->err->s = from__String("`=`");
 
@@ -2553,7 +2553,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             push__Vec(params, parse_data_type(self, parse_decl));
 
-            while (parse_decl->current != TokenKindBar) {
+            while (parse_decl->current->kind != TokenKindBar) {
                 next_token(parse_decl);
 
                 push__Vec(params, parse_data_type(self, parse_decl));
@@ -2649,7 +2649,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 
                 next_token(parse_decl);
 
-                if (parse_decl->current->lit == TokenKindColon) {
+                if (parse_decl->current->kind == TokenKindColon) {
                     struct Location loc_data_type = NEW(Location);
 
                     start__Location(&loc_data_type,
@@ -2717,12 +2717,12 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
     return generic_params;
 }
 
-#define INT32_MIN -2147483648
-#define INT32_MAX 2147483647
-#define INT64_MIN -9223372036854775808
-#define INT64_MAX 9223372036854775807
-#define INT128_MIN -2E127
-#define INT128_MAX 2E127 - 1
+static const Int128 Int32Min = -0x80000000;
+static const Int128 Int32Max = 0x7FFFFFFF;
+static const Int128 Int64Min = -0x8000000000000000;
+static const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
+static const Int128 Int128Min = -0x80000000000000000000000000000000;
+static const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
 static struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
@@ -2739,11 +2739,11 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             const Str int_str = to_Str__String(*parse_decl->previous->lit);
             Int128 res = atoi_i128(int_str);
 
-            if (res > INT32_MIN && res <= INT32_MAX)
+            if (res > Int32Min && res < Int32Max)
                 literal = NEW(LiteralInt32, (Int32)res);
-            else if (res > INT64_MIN && res <= INT64_MAX)
+            else if (res > Int64Min && res < Int64Max)
                 literal = NEW(LiteralInt64, (Int64)res);
-            else if (res > INT128_MIN && res <= INT128_MAX)
+            else if (res > Int128Min && res < Int128Max)
                 literal = NEW(LiteralInt128, res);
             else {
                 struct Diagnostic *err =
