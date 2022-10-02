@@ -277,8 +277,8 @@ lily_error_to_string(struct LilyError err)
 			return from__String("empty import value");
 		case LilyErrorNotExpectedImportValue:
 			return from__String("not expected import value");
-		case LilyErrorDependencyCycleImportValue:
-			return from__String("dependency cycle import value");
+		case LilyErrorDependencyCycleOnImportValue:
+			return from__String("dependency cycle on import value");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -443,7 +443,7 @@ get_code_of_lily_error(struct LilyError err)
 			return "0068";
 		case LilyErrorNotExpectedImportValue:
 			return "0069";
-		case LilyErrorDependencyCycleImportValue:
+		case LilyErrorDependencyCycleOnImportValue:
 			return "0070";
         default:
             UNREACHABLE("unknown lily error kind");

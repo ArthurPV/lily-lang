@@ -650,7 +650,7 @@ resolve_import(struct Typecheck *self,
         struct Diagnostic *error =
           NEW(DiagnosticWithErrTypecheck,
               self,
-              NEW(LilyError, LilyErrorDependencyCycleImportValue),
+              NEW(LilyError, LilyErrorDependencyCycleOnImportValue),
               import_loc,
               from__String(""),
               Some(from__String("remove this import")));
