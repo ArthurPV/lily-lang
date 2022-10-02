@@ -2541,8 +2541,6 @@ __new__ConstantDecl(struct String *name,
 void
 __free__ConstantDecl(struct ConstantDecl *self)
 {
-    FREE(String, self->name);
-
     if (is_Some__Option(self->data_type))
         FREE(DataTypeAll, get__Option(self->data_type));
 

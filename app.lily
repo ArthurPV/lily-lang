@@ -1,3 +1,9 @@
+A := 3;
+B := 120;
+C := "hello";
+D := "Hi!!";
+E := A:2;
+
 fun add(x, y) = return x+y;
 
 fun is_zero(x) = if x == 0 do true;;
@@ -35,5 +41,9 @@ fun main =
 		false
 	else
 		true
+	end
+
+	if x == 10 do
+		println("Hello")
 	end
 end
