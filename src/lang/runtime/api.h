@@ -27,7 +27,7 @@
 
 #ifdef _WIN32
 #define LILY_EXPORT __declspec(dllexport)
-#define LILY_EXPORT __declspec(dllimport)
+#define LILY_IMPORT __declspec(dllimport)
 #else
 #define LILY_EXPORT __attribute__((visibility("default")))
 #define LILY_IMPORT __attribute__((visibility("default")))
