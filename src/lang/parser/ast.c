@@ -495,7 +495,7 @@ __free__GenericAll(struct Generic *self)
 
 struct VariableDecl
 __new__VariableDecl(struct String *name,
-                    struct Option *data_type,
+                    struct DataType *data_type,
                     struct Expr *expr,
                     bool is_mut)
 {
@@ -515,10 +515,8 @@ to_string__VariableDecl(struct VariableDecl self)
 void
 __free__VariableDecl(struct VariableDecl self)
 {
-    if (is_Some__Option(self.data_type))
-        FREE(DataTypeAll, get__Option(self.data_type));
-
-    FREE(Option, self.data_type);
+    if (self.data_type)
+        FREE(DataTypeAll, self.data_type);
 
     FREE(ExprAll, self.expr);
 }

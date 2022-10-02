@@ -4547,7 +4547,6 @@ check_expression(struct Typecheck *self,
                                local_data_type,
                                defined_data_type_identifier_access_symb,
                                is_return_type);
-
             struct ExprSymbol *res =
               NEW(ExprSymbolArrayAccess,
                   *expr,
@@ -4566,8 +4565,39 @@ check_expression(struct Typecheck *self,
 
             return res;
         }
-        case ExprKindTupleAccess:
-            TODO("check tuple access");
+        case ExprKindTupleAccess: {
+            struct Expr *identifier_access_expr =
+              NEW(ExprIdentifierAccess,
+                  copy__Vec(expr->value.tuple_access.access),
+                  expr->loc);
+            struct DataTypeSymbol *defined_data_type_identifier_access_symb =
+              NEW(DataTypeSymbolTuple, NULL);
+            struct ExprSymbol *identifier_access_symb =
+              check_expression(self,
+                               fun,
+                               identifier_access_expr,
+                               local_value,
+                               local_data_type,
+                               defined_data_type_identifier_access_symb,
+                               is_return_type);
+            struct ExprSymbol *res =
+              NEW(ExprSymbolArrayAccess,
+                  *expr,
+                  copy__Scope(identifier_access_symb->value.identifier_access),
+                  infer_expression(self,
+                                   fun,
+                                   expr,
+                                   local_value,
+                                   local_data_type,
+                                   defined_data_type,
+                                   is_return_type));
+
+            FREE(ExprAll, identifier_access_expr);
+            FREE(DataTypeSymbolAll, defined_data_type_identifier_access_symb);
+            FREE(ExprSymbolAll, identifier_access_symb);
+
+            return res;
+        }
         case ExprKindLambda:
             TODO("check lambda");
         case ExprKindTuple:
@@ -4596,8 +4626,49 @@ check_expression(struct Typecheck *self,
             TODO("check wildcard");
         case ExprKindLiteral:
             TODO("check literal");
-        case ExprKindVariable:
-            TODO("check variable");
+        case ExprKindVariable: {
+            struct DataTypeSymbol *defined_data_type_expr_variable =
+              expr->value.variable.data_type
+                ? check_data_type(
+                    self,
+                    expr->loc,
+                    expr->value.variable.data_type,
+                    local_data_type,
+                    NULL,
+                    (struct SearchContext){ .search_type = true,
+                                            .search_value = false,
+                                            .search_class = true,
+                                            .search_fun = false,
+                                            .search_object = true,
+                                            .search_trait = false })
+                : NULL;
+            struct ExprSymbol *expr_variable =
+              check_expression(self,
+                               fun,
+                               expr->value.variable.expr,
+                               local_value,
+                               local_data_type,
+                               defined_data_type_expr_variable,
+                               is_return_type);
+            struct ExprSymbol *res =
+              NEW(ExprSymbolVariable,
+                  *expr,
+                  NEW(VariableSymbol, expr->value.variable, expr->loc));
+
+            res->value.variable->data_type =
+              copy__DataTypeSymbol(expr_variable->data_type);
+            res->value.variable->expr = expr_variable;
+            res->value.variable->scope =
+              NEW(Scope,
+                  self->parser.parse_block.scanner.src->file.name,
+                  res->value.variable->name,
+                  len__Vec(*local_value),
+                  ScopeItemKindVariable,
+                  ScopeKindLocal,
+                  NULL);
+
+            return res;
+        }
     }
 }
 

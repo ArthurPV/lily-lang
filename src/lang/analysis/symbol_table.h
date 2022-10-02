@@ -1295,31 +1295,6 @@ __new__RecordCallSymbol(struct Scope id, struct Vec *fields)
 void
 __free__RecordCallSymbol(struct RecordCallSymbol self);
 
-typedef struct TupleAccessSymbol
-{
-    struct Scope id;
-    struct Vec *access; // struct Vec<struct ExprSymbol*>*
-} TupleAccessSymbol;
-
-/**
- *
- * @brief Construct the TupleAccessSymbol type.
- */
-inline struct TupleAccessSymbol
-__new__TupleAccessSymbol(struct Scope id, struct Vec *access)
-{
-    struct TupleAccessSymbol self = { .id = id, .access = access };
-
-    return self;
-}
-
-/**
- *
- * @brief Free the TupleAccessSymbol type.
- */
-void
-__free__TupleAccessSymbol(struct TupleAccessSymbol self);
-
 typedef struct LambdaSymbol
 {
     struct Vec *params; // struct Vec<struct FunParam*>* TODO!!
@@ -1369,7 +1344,7 @@ typedef struct ExprSymbol
         struct Scope *identifier_access;
         struct Scope *global_access;
         struct Scope *array_access;
-        struct TupleAccessSymbol tuple_access;
+        struct Scope *tuple_access;
         struct LambdaSymbol lambda;
         struct Tuple *array; // struct Tuple<struct Vec<struct ExprSymbol*>*,
                              // struct DataTypeSymbol*>*
@@ -1464,7 +1439,7 @@ __new__ExprSymbolArrayAccess(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolTupleAccess(struct Expr expr,
-                             struct TupleAccessSymbol tuple_access,
+                             struct Scope *tuple_access,
 							 struct DataTypeSymbol *data_type);
 
 /**
@@ -1652,7 +1627,7 @@ __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolTupleAccess(struct ExprSymbol *self)
 {
-    FREE(TupleAccessSymbol, self->value.tuple_access);
+	FREE(Scope, self->value.tuple_access);
     free(self);
 }
 
@@ -1773,7 +1748,7 @@ typedef struct VariableSymbol
 
 /**
  *
- * @brief Construct the VariableDecl type.
+ * @brief Construct the VariableSymbol type.
  */
 inline struct VariableSymbol *
 __new__VariableSymbol(struct VariableDecl decl, struct Location decl_loc)

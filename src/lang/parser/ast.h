@@ -322,7 +322,7 @@ __free__GenericAll(struct Generic *self);
 typedef struct VariableDecl
 {
     struct String *name; // struct String&
-    struct Option *data_type;
+    struct DataType *data_type;
     struct Expr *expr;
     bool is_mut;
 } VariableDecl;
@@ -333,7 +333,7 @@ typedef struct VariableDecl
  */
 struct VariableDecl
 __new__VariableDecl(struct String *name,
-                    struct Option *data_type,
+                    struct DataType *data_type,
                     struct Expr *expr,
                     bool is_mut);
 

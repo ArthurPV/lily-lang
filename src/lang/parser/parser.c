@@ -3975,10 +3975,10 @@ parse_variable(struct Parser self,
 
     if (!data_type)
         return NEW(
-          ExprVariable, NEW(VariableDecl, name, None(), expr, is_mut), loc);
+          ExprVariable, NEW(VariableDecl, name, NULL, expr, is_mut), loc);
     else
         return NEW(ExprVariable,
-                   NEW(VariableDecl, name, Some(data_type), expr, is_mut),
+                   NEW(VariableDecl, name, data_type, expr, is_mut),
                    loc);
 }
 
