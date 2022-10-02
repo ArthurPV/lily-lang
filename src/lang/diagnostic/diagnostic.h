@@ -128,7 +128,8 @@ enum LilyErrorKind
     LilyErrorDupliateSelfParam,
     LilyErrorSelfParamMustBeTheFirstParam,
     LilyErrorUnknownDataType,
-    LilyErrorExpectedEnumObjectOrRecordObject
+    LilyErrorExpectedEnumObjectOrRecordObject,
+	LilyErrorDuplicateDeclaration
 };
 
 typedef struct LilyError
