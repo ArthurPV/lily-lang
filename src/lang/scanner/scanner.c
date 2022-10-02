@@ -285,7 +285,7 @@ static struct Result *
 scan_doc_contract(struct Scanner *self);
 static struct Result *
 scan_doc_description(struct Scanner *self);
-static struct Result *
+static struct Doc *
 scan_doc_file(struct Scanner *self);
 static struct Result *
 scan_doc_generics(struct Scanner *self);
@@ -1148,9 +1148,20 @@ scan_doc_description(struct Scanner *self)
 {
 }
 
-static struct Result *
+static struct Doc *
 scan_doc_file(struct Scanner *self)
 {
+    struct String *file = NEW(String);
+
+    skip_space(self);
+
+    while (self->src->c != (char *)')' &&
+           self->src->pos < len__String(*self->src->file.content) - 1) {
+        push__String(file, self->src->c);
+        next_char(self);
+    }
+
+    return NEW(DocWithString, DocKindFile, file);
 }
 
 static struct Result *
@@ -1292,12 +1303,21 @@ get_doc(struct Scanner *self)
                         case DocKindText:
                             TODO("@text");
                             break;
-                        case DocKindFile:
-                            TODO("@file");
+                        case DocKindFile: {
+                            struct Doc *file = scan_doc_file(self);
+
+                            end_token(self);
+                            align_location(self);
+                            push__Vec(
+                              self->tokens,
+                              NEW(TokenDoc, copy__Location(&self->loc), file));
+
                             break;
-                        case DocKindGenerics:
+                        }
+                        case DocKindGenerics: {
                             TODO("@generics");
                             break;
+                        }
                         case DocKindGlobal:
                             TODO("@global");
                             break;

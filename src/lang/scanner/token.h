@@ -206,7 +206,7 @@ enum DocKind
     DocKindAuthor = 1,
     DocKindContract,
     DocKindDescription,
-	DocKindGlobal,
+    DocKindGlobal,
     DocKindText,
     DocKindFile,
     DocKindGenerics,

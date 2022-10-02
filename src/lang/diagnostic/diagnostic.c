@@ -206,11 +206,13 @@ lily_error_to_string(struct LilyError err)
         case LilyErrorInvalidClassItem:
             return from__String("invalid class item");
         case LilyErrorMissImportValue:
-            return from__String("miss `import` value (expected string literal)");
+            return from__String(
+              "miss `import` value (expected string literal)");
         case LilyErrorMissAsValue:
             return from__String("miss `as` value (expected identifier)");
         case LilyErrorUnexpectedTokenForBeginingInGlobal:
-            return format("unexpected token for begining in global: `{S}`", err.s);
+            return format("unexpected token for begining in global: `{S}`",
+                          err.s);
         case LilyErrorUnknownAttribute:
             return from__String("unknown attribute");
         case LilyErrorExpectedAttribute:
@@ -255,20 +257,22 @@ lily_error_to_string(struct LilyError err)
             return format("unknown data type: `{S}`", err.s);
         case LilyErrorExpectedEnumObjectOrRecordObject:
             return from__String("expected enum or record object");
-		case LilyErrorDuplicateDeclaration:
-			return from__String("duplicate declaration");
-		case LilyErrorDuplicateVariant:
-			return from__String("duplicate variant");
-		case LilyErrorDuplicateField:
-			return from__String("duplicate field");
-		case LilyErrorBadImportValue:
-			return from__String("bad import value");
-		case LilyErrorUnexpectedCharInImportValue:
-			return from__String("unexpected char in import value");
-		case LilyErrorExpectedCharacter:
-			return format("there is expected character, found: `{S}`", err.s);
-		case LilyErrorUnknownDocFlag:
-			return from__String("unknown doc flag");
+        case LilyErrorDuplicateDeclaration:
+            return from__String("duplicate declaration");
+        case LilyErrorDuplicateVariant:
+            return from__String("duplicate variant");
+        case LilyErrorDuplicateField:
+            return from__String("duplicate field");
+        case LilyErrorBadImportValue:
+            return from__String("bad import value");
+        case LilyErrorUnexpectedCharInImportValue:
+            return from__String("unexpected char in import value");
+        case LilyErrorExpectedCharacter:
+            return format("there is expected character, found: `{S}`", err.s);
+        case LilyErrorUnknownDocFlag:
+            return from__String("unknown doc flag");
+        case LilyErrorExpectedCharacterInImportValue:
+            return from__String("expected character in import value");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -413,20 +417,22 @@ get_code_of_lily_error(struct LilyError err)
             return "0058";
         case LilyErrorExpectedEnumObjectOrRecordObject:
             return "0059";
-		case LilyErrorDuplicateDeclaration:
-			return "0060";
-		case LilyErrorDuplicateVariant:
-			return "0061";
-		case LilyErrorDuplicateField:
-			return "0062";
-		case LilyErrorBadImportValue:
-			return "0063";
-		case LilyErrorUnexpectedCharInImportValue:
-			return "0064";
-		case LilyErrorExpectedCharacter:
-			return "0065";
-		case LilyErrorUnknownDocFlag:
-			return "0066";
+        case LilyErrorDuplicateDeclaration:
+            return "0060";
+        case LilyErrorDuplicateVariant:
+            return "0061";
+        case LilyErrorDuplicateField:
+            return "0062";
+        case LilyErrorBadImportValue:
+            return "0063";
+        case LilyErrorUnexpectedCharInImportValue:
+            return "0064";
+        case LilyErrorExpectedCharacter:
+            return "0065";
+        case LilyErrorUnknownDocFlag:
+            return "0066";
+        case LilyErrorExpectedCharacterInImportValue:
+            return "0067";
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -722,7 +728,8 @@ emit_warning__Diagnostic(struct Diagnostic *self,
     bool same_code = false;
 
     for (Usize i = 0; i < len__Vec(*warning_disable_codes); i++) {
-        Str disable_code = to_Str__String(*(struct String*)get__Vec(*warning_disable_codes, i));
+        Str disable_code =
+          to_Str__String(*(struct String *)get__Vec(*warning_disable_codes, i));
 
         if (!strcmp(code, disable_code)) {
             same_code = true;

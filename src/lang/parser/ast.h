@@ -1563,6 +1563,8 @@ typedef struct ImportStmtValue
     union
     {
         struct String *access;
+        struct String *url;
+        struct String *file;
         struct Vec *selector; // struct Vec<struct ImportStmtValue*>*
     } value;
 } ImportStmtValue;
@@ -1596,10 +1598,11 @@ __new__ImportStmtValueBuiltin()
  * @brief Construct the ImportStmtValue type (File variant).
  */
 inline struct ImportStmtValue *
-__new__ImportStmtValueFile()
+__new__ImportStmtValueFile(struct String *file)
 {
     struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
     self->kind = ImportStmtValueKindFile;
+    self->value.file = file;
     return self;
 }
 
@@ -1608,10 +1611,11 @@ __new__ImportStmtValueFile()
  * @brief Construct the ImportStmtValue type (Url variant).
  */
 inline struct ImportStmtValue *
-__new__ImportStmtValueUrl()
+__new__ImportStmtValueUrl(struct String *url)
 {
     struct ImportStmtValue *self = malloc(sizeof(struct ImportStmtValue));
     self->kind = ImportStmtValueKindUrl;
+    self->value.url = url;
     return self;
 }
 

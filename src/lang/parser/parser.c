@@ -528,6 +528,8 @@ parse_import_value__parse_import_stmt(struct Parser self,
                                       struct Location buffer_loc,
                                       bool is_pub);
 static struct String *
+get_value__parse_import_stmt(struct String buffer, Usize *pos);
+static struct String *
 get_name__parse_import_stmt(struct String buffer, Usize *pos);
 static struct ImportStmtSelector *
 get_selector__parse_import_stmt(struct String buffer, Usize *pos);
@@ -5296,6 +5298,9 @@ parse_import_value__parse_import_stmt(struct Parser self,
                                       struct Location buffer_loc,
                                       bool is_pub)
 {
+#define UPDATE_CURRENT() \
+    current = i < len__String(*buffer) ? get__String(*buffer, i) : NULL;
+
     struct Vec *import_value = NEW(Vec, sizeof(struct ImportStmtValue));
     char *current;
     Usize i = 0;
@@ -5315,15 +5320,66 @@ parse_import_value__parse_import_stmt(struct Parser self,
                   get_name__parse_import_stmt(*buffer, &i);
                 const Str name_str = to_Str__String(*name);
 
+                UPDATE_CURRENT();
+
+#define IMPORT_VALUE_ERR(c, v)                                     \
+    struct Location loc_err = buffer_loc;                          \
+                                                                   \
+    loc_err.s_col += i + 1;                                        \
+    loc_err.e_col = loc_err.s_col;                                 \
+                                                                   \
+    struct Diagnostic *err =                                       \
+      NEW(DiagnosticWithErrParser,                                 \
+          &self.parse_block,                                       \
+          NEW(LilyError, LilyErrorExpectedCharacterInImportValue), \
+          loc_err,                                                 \
+          from__String(""),                                        \
+          Some(format("expected `{c}`, to close "                  \
+                      "`@{s}` import value",                       \
+                      c,                                           \
+                      v)));                                        \
+                                                                   \
+    emit__Diagnostic(err);
+
                 if (!strcmp(name_str, "std"))
                     push__Vec(import_value, NEW(ImportStmtValueStd));
                 else if (!strcmp(name_str, "builtin"))
                     push__Vec(import_value, NEW(ImportStmtValueBuiltin));
-                else if (!strcmp(name_str, "file"))
-                    push__Vec(import_value, NEW(ImportStmtValueFile));
-                else if (!strcmp(name_str, "url"))
-                    push__Vec(import_value, NEW(ImportStmtValueUrl));
-                else {
+                else if (!strcmp(name_str, "file")) {
+                    if (current == (char *)'(') {
+                        push__Vec(
+                          import_value,
+                          NEW(ImportStmtValueFile,
+                              get_value__parse_import_stmt(*buffer, &i)));
+
+                        UPDATE_CURRENT();
+
+                        if (current != (char *)')') {
+                            IMPORT_VALUE_ERR(')', "file");
+                        }
+
+                        next_char__parse_import_stmt(*buffer, &current, &i);
+                    } else {
+                        IMPORT_VALUE_ERR('(', "file");
+                    }
+                } else if (!strcmp(name_str, "url")) {
+                    if (current == (char *)'(') {
+                        push__Vec(
+                          import_value,
+                          NEW(ImportStmtValueUrl,
+                              get_value__parse_import_stmt(*buffer, &i)));
+
+                        UPDATE_CURRENT();
+
+                        if (current != (char *)')') {
+                            IMPORT_VALUE_ERR(')', "url");
+                        }
+
+                        next_char__parse_import_stmt(*buffer, &current, &i);
+                    } else {
+                        IMPORT_VALUE_ERR('(', "url");
+                    }
+                } else {
                     struct Location loc_err = buffer_loc;
 
                     loc_err.e_line = loc_err.s_line;
@@ -5347,17 +5403,20 @@ parse_import_value__parse_import_stmt(struct Parser self,
                     goto exit;
                 }
 
+                bool is_exit =
+                  (current >= (char *)'a' && current <= (char *)'z') ||
+                  (current >= (char *)'A' && current <= (char *)'Z') ||
+                  current == (char *)'_' || current == NULL;
+
                 if (name_str)
                     free(name_str);
 
                 if (name)
                     FREE(String, (struct String *)name);
 
-                current = get__String(*buffer, i);
+                UPDATE_CURRENT();
 
-                if (((current >= (char *)'a' && current <= (char *)'z') ||
-                     (current >= (char *)'A' && current <= (char *)'Z') ||
-                     current == (char *)'_')) {
+                if (is_exit) {
                     goto exit;
                 } else if (current == (char *)'.') {
                     next_char__parse_import_stmt(*buffer, &current, &i);
@@ -5448,6 +5507,20 @@ parse_import_value__parse_import_stmt(struct Parser self,
     else {
         TODO("as value");
     }
+}
+
+static struct String *
+get_value__parse_import_stmt(struct String buffer, Usize *pos)
+{
+    struct String *s = NEW(String);
+    char *current = get__String(buffer, *pos);
+
+    while (current != (char *)')') {
+        push__String(s, get__String(buffer, *pos));
+        next_char__parse_import_stmt(buffer, &current, pos);
+    }
+
+    return s;
 }
 
 static struct String *
