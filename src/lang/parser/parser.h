@@ -302,7 +302,11 @@ __free__ConstantParseContext(struct ConstantParseContext self);
 typedef struct ErrorParseContext
 {
     bool is_pub;
-    struct String *name; // struct String&
+    bool has_generic_params;
+    bool has_data_type;
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *data_type;      // struct Vec<struct Token&>*
 } ErrorParseContext;
 
 /**
@@ -311,6 +315,13 @@ typedef struct ErrorParseContext
  */
 struct ErrorParseContext
 __new__ErrorParseContext();
+
+/**
+ *
+ * @brief Free the ErrorParseContext type.
+ */
+void
+__free__ErrorParseContext(struct ErrorParseContext self);
 
 typedef struct ModuleParseContext
 {
@@ -535,6 +546,13 @@ __free__ParseContextImport(struct ParseContext *self);
  */
 void
 __free__ParseContextConstant(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Error variant).
+ */
+void
+__free__ParseContextError(struct ParseContext *self);
 
 /**
  *

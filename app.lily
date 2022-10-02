@@ -4,6 +4,8 @@ C := "hello";
 D := "Hi!!";
 E := A:2;
 
+error[T] MyError T;
+
 fun add(x, y) = return x+y;
 
 fun is_zero(x) = if x == 0 do true;;

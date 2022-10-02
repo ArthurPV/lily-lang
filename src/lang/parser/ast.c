@@ -2794,13 +2794,16 @@ __new__ErrorDecl(struct String *name,
 void
 __free__ErrorDecl(struct ErrorDecl *self)
 {
-    FREE(String, self->name);
+    if (self->generic_params != NULL) {
+        for (Usize i = len__Vec(*self->generic_params); i--;)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-    for (Usize i = len__Vec(*self->generic_params); i--;)
-        FREE(GenericAll, get__Vec(*self->generic_params, i));
+        FREE(Vec, self->generic_params);
+    }
 
-    FREE(Vec, self->generic_params);
-    FREE(DataTypeAll, self->data_type);
+    if (self->data_type != NULL)
+        FREE(DataTypeAll, self->data_type);
+
     free(self);
 }
 

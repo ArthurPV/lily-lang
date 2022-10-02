@@ -2485,7 +2485,14 @@ __free__ConstantParseContext(struct ConstantParseContext self)
 struct ErrorParseContext
 __new__ErrorParseContext()
 {
-    struct ErrorParseContext self = { .is_pub = false, .name = NULL };
+    struct ErrorParseContext self = { .is_pub = false,
+                                      .has_generic_params = false,
+                                      .has_data_type = false,
+                                      .name = NULL,
+                                      .generic_params =
+                                        NEW(Vec, sizeof(struct Token)),
+                                      .data_type =
+                                        NEW(Vec, sizeof(struct Token)) };
 
     return self;
 }
@@ -2495,6 +2502,19 @@ get_error_parse_context(struct ErrorParseContext *self,
                         struct ParseBlock *parse_block)
 {
     next_token_pb(parse_block);
+
+    if (parse_block->current->kind == TokenKindLHook) {
+        self->has_generic_params = true;
+
+        next_token_pb(parse_block);
+
+        while (parse_block->current->kind != TokenKindRHook) {
+            push__Vec(self->generic_params, &*parse_block->current);
+            next_token_pb(parse_block);
+        }
+
+        next_token_pb(parse_block);
+    }
 
     if (parse_block->current->kind != TokenKindIdentifier) {
         struct Diagnostic *err = NEW(DiagnosticWithErrParser,
@@ -2510,6 +2530,16 @@ get_error_parse_context(struct ErrorParseContext *self,
 
     next_token_pb(parse_block);
 
+    if (parse_block->current->kind != TokenKindSemicolon) {
+        self->has_data_type = true;
+
+        while (parse_block->current->kind != TokenKindSemicolon &&
+               parse_block->current->kind != TokenKindEof) {
+            push__Vec(self->data_type, &*parse_block->current);
+            next_token_pb(parse_block);
+        }
+    }
+
     EXPECTED_TOKEN_PB(parse_block, TokenKindSemicolon, {
         struct Diagnostic *err = NEW(DiagnosticWithErrParser,
                                      parse_block,
@@ -2522,6 +2552,13 @@ get_error_parse_context(struct ErrorParseContext *self,
 
         emit__Diagnostic(err);
     });
+}
+
+void
+__free__ErrorParseContext(struct ErrorParseContext self)
+{
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.data_type);
 }
 
 struct ModuleParseContext
@@ -2839,6 +2876,13 @@ __free__ParseContextModule(struct ParseContext *self)
 }
 
 void
+__free__ParseContextError(struct ParseContext *self)
+{
+    FREE(ErrorParseContext, self->value.error);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -2885,7 +2929,7 @@ __free__ParseContextAll(struct ParseContext *self)
             break;
 
         case ParseContextKindError:
-            free(self);
+            FREE(ParseContextError, self);
             break;
 
         case ParseContextKindModule:
@@ -5415,6 +5459,31 @@ parse_constant_declaration(struct Parser *self)
 static struct ErrorDecl *
 parse_error_declaration(struct Parser *self)
 {
+    struct ErrorParseContext error_parse_context = self->current->value.error;
+    struct Vec *generic_params = NULL;
+    struct DataType *data_type = NULL;
+
+    if (error_parse_context.has_generic_params) {
+        struct ParseDecl parse =
+          NEW(ParseDecl, error_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (error_parse_context.has_data_type) {
+        struct ParseDecl parse = NEW(ParseDecl, error_parse_context.data_type);
+
+        data_type = parse_data_type(*self, &parse);
+
+        if (parse.pos != len__Vec(*parse.tokens))
+            assert(0 && "error");
+    }
+
+    return NEW(ErrorDecl,
+               error_parse_context.name,
+               generic_params,
+               data_type,
+               error_parse_context.is_pub);
 }
 
 static struct ModuleDecl *
@@ -5479,6 +5548,10 @@ parse_declaration(struct Parser *self)
             break;
 
         case ParseContextKindError:
+            push__Vec(self->decls,
+                      NEW(DeclError,
+                          self->current->loc,
+                          parse_error_declaration(self)));
             break;
 
         case ParseContextKindModule:
