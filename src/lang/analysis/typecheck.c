@@ -8,6 +8,8 @@
 #include <lang/diagnostic/diagnostic.h>
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/ast.h>
+#include <stdarg.h>
+#include <string.h>
 
 #define SUMMARY()                                                             \
     if (count_error > 0) {                                                    \
@@ -109,6 +111,17 @@ check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
            bool is_return_type);
+static const Str
+get_builtin_module_name_from_data_type(struct DataType *dt);
+static struct BuiltinFun *
+search_fun_builtin(struct Typecheck *self,
+                   const Str module_name,
+                   const Str fun_name,
+                   Usize param_count);
+static void
+verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
+                           Usize param_count,
+                           ...);
 static struct DataTypeSymbol *
 infer_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
@@ -1373,6 +1386,103 @@ check_stmt(struct Typecheck *self,
     }
 }
 
+static const Str
+get_builtin_module_name_from_data_type(struct DataType *dt)
+{
+    switch (dt->kind) {
+        case DataTypeKindPtr:
+            return "Ptr";
+        case DataTypeKindStr:
+            return "Str";
+        case DataTypeKindChar:
+            return "Char";
+        case DataTypeKindI8:
+            return "Int8";
+        case DataTypeKindI16:
+            return "Int16";
+        case DataTypeKindI32:
+            return "Int32";
+        case DataTypeKindI64:
+            return "Int64";
+        case DataTypeKindI128:
+            return "Int128";
+        case DataTypeKindU8:
+            return "Uint8";
+        case DataTypeKindU16:
+            return "Uint16";
+        case DataTypeKindU32:
+            return "Uint32";
+        case DataTypeKindU64:
+            return "Uint64";
+        case DataTypeKindU128:
+            return "Uint128";
+        case DataTypeKindF32:
+            return "Float32";
+        case DataTypeKindF64:
+            return "Float64";
+        case DataTypeKindBool:
+            return "Bool";
+        case DataTypeKindIsize:
+            return "Isize";
+        case DataTypeKindUsize:
+            return "Usize";
+        case DataTypeKindOptional:
+            return "Optonal";
+        case DataTypeKindArray:
+            return "Array";
+        case DataTypeKindTuple:
+            return "Tuple";
+        default:
+            return NULL;
+    }
+}
+
+static struct BuiltinFun *
+search_fun_builtin(struct Typecheck *self,
+                   const Str module_name,
+                   const Str fun_name,
+                   Usize param_count)
+{
+    struct BuiltinModule *module = NULL;
+
+    for (Usize i = len__Vec(*self->builtins); i--;)
+        if (!strcmp(
+              ((struct Builtin *)get__Vec(*self->builtins, i))->module->name,
+              module_name)) {
+            module = get__Vec(*self->builtins, i);
+            break;
+        }
+
+    assert(module != NULL && "module is not found");
+
+    for (Usize i = len__Vec(*module->items); i--;)
+        if (!strcmp(((struct BuiltinFun *)get__Vec(*module->items, i))->name,
+                    fun_name) &&
+            param_count ==
+              len__Vec(
+                *((struct Builtin *)get__Vec(*module->items, i))->fun->params))
+            return ((struct BuiltinFun *)get__Vec(*module->items, i));
+
+    assert(0 && "fun is not found");
+}
+
+static void
+verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
+                           Usize param_count,
+                           ...)
+{
+    va_list vl;
+
+    va_start(vl, param_count);
+
+    for (Usize i = param_count; i--;)
+        if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params, i)) !=
+            va_arg(vl, struct DataTypeSymbol *))
+            assert(0 && "error");
+
+    va_end(vl);
+}
+
 static struct DataTypeSymbol *
 infer_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
@@ -1494,8 +1604,9 @@ check_expression(struct Typecheck *self,
             switch (expr->value.unary_op.kind) {
                 case UnaryOpKindReference:
                     TODO("check reference");
-                case UnaryOpKindNegative:
+                case UnaryOpKindNegative: {
                     TODO("check negative");
+                }
                 case UnaryOpKindNot:
                     TODO("check not");
             }

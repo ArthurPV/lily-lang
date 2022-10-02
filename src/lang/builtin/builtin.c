@@ -1,9 +1,9 @@
+#include <base/macros.h>
 #include <base/new.h>
 #include <base/string.h>
-#include <base/macros.h>
 #include <base/vec.h>
+#include <lang/analysis/symbol_table.h>
 #include <lang/builtin/builtin.h>
-#include <lang/parser/ast.h>
 #include <stdlib.h>
 
 struct BuiltinFun *
@@ -19,7 +19,7 @@ void
 __free__BuiltinFun(struct BuiltinFun *self)
 {
     for (Usize i = len__Vec(*self->params); i--;)
-        FREE(DataTypeAll, get__Vec(*self->params, i));
+        FREE(DataTypeSymbolAll, get__Vec(*self->params, i));
 
     FREE(Vec, self->params);
     free(self);

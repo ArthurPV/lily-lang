@@ -12,7 +12,7 @@ enum BuiltinKind
 typedef struct BuiltinFun
 {
     Str name;
-    struct Vec *params; // struct Vec<struct DataType*>*
+    struct Vec *params; // struct Vec<struct DataTypeSymbol*>*
     // Last params is the return type
 } BuiltinFun;
 
