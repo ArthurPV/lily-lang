@@ -55,7 +55,7 @@ typedef struct FunParseContext
  *
  * @brief Construct the FunParseContext type.
  */
-struct FunParseContext *
+struct FunParseContext
 __new__FunParseContext();
 
 /**
@@ -63,7 +63,7 @@ __new__FunParseContext();
  * @brief Free the FunParseContext type.
  */
 void
-__free__FunParseContext(struct FunParseContext *self);
+__free__FunParseContext(struct FunParseContext self);
 
 typedef struct EnumParseContext
 {
@@ -81,7 +81,7 @@ typedef struct EnumParseContext
  *
  * @brief Construct the EnumParseContext type.
  */
-struct EnumParseContext *
+struct EnumParseContext
 __new__EnumParseContext();
 
 /**
@@ -89,7 +89,7 @@ __new__EnumParseContext();
  * @brief Free the EnumParseContext type.
  */
 void
-__free__EnumParseContext(struct EnumParseContext *self);
+__free__EnumParseContext(struct EnumParseContext self);
 
 typedef struct RecordParseContext
 {
@@ -104,7 +104,7 @@ typedef struct RecordParseContext
  *
  * @brief Construct the RecordParseContext type.
  */
-struct RecordParseContext *
+struct RecordParseContext
 __new__RecordParseContext();
 
 /**
@@ -112,7 +112,7 @@ __new__RecordParseContext();
  * @brief Free the RecordParseContext type.
  */
 void
-__free__RecordParseContext(struct RecordParseContext *self);
+__free__RecordParseContext(struct RecordParseContext self);
 
 typedef struct AliasParseContext
 {
@@ -127,7 +127,7 @@ typedef struct AliasParseContext
  *
  * @brief Construct the AliasParseContext type.
  */
-struct AliasParseContext *
+struct AliasParseContext
 __new__AliasParseContext();
 
 /**
@@ -135,7 +135,7 @@ __new__AliasParseContext();
  * @brief Free the AliasParseContext type.
  */
 void
-__free__AliasParseContext(AliasParseContext *self);
+__free__AliasParseContext(AliasParseContext self);
 
 typedef struct TraitParseContext
 {
@@ -152,7 +152,7 @@ typedef struct TraitParseContext
  *
  * @brief Contruct the TraitParseContext type.
  */
-struct TraitParseContext *
+struct TraitParseContext
 __new__TraitParseContext();
 
 /**
@@ -160,7 +160,7 @@ __new__TraitParseContext();
  * @brief Free the TraitParseContext type.
  */
 void
-__free__TraitParseContext(struct TraitParseContext *self);
+__free__TraitParseContext(struct TraitParseContext self);
 
 typedef struct ClassParseContext
 {
@@ -179,7 +179,7 @@ typedef struct ClassParseContext
  *
  * @brief Contruct the ClassParseContext type.
  */
-struct ClassParseContext *
+struct ClassParseContext
 __new__ClassParseContext();
 
 /**
@@ -187,7 +187,7 @@ __new__ClassParseContext();
  * @brief Free the ClassParseContext type.
  */
 void
-__free__ClassParseContext(struct ClassParseContext *self);
+__free__ClassParseContext(struct ClassParseContext self);
 
 typedef struct TagParseContext
 {
@@ -227,7 +227,7 @@ typedef struct MethodParseContext
  *
  * @brief Contruct the MethodParseContext type.
  */
-struct MethodParseContext *
+struct MethodParseContext
 __new__MethodParseContext();
 
 /**
@@ -235,7 +235,7 @@ __new__MethodParseContext();
  * @brief Free the MethodParseContext type.
  */
 void
-__free__MethodParseContext(struct MethodParseContext *self);
+__free__MethodParseContext(struct MethodParseContext self);
 
 typedef struct PropertyParseContext
 {
@@ -248,7 +248,7 @@ typedef struct PropertyParseContext
  *
  * @brief Contruct the PropertyParseContext type.
  */
-struct PropertyParseContext *
+struct PropertyParseContext
 __new__PropertyParseContext();
 
 /**
@@ -256,7 +256,21 @@ __new__PropertyParseContext();
  * @brief Free the PropertyParseContext type.
  */
 void
-__free__PropertyParseContext(struct PropertyParseContext *self);
+__free__PropertyParseContext(struct PropertyParseContext self);
+
+typedef struct ImportParseContext
+{
+    bool is_pub;
+    struct String *value;    // struct String&
+    struct String *as_value; // struct String& (Optional value)
+} ImportParseContext;
+
+/**
+ *
+ * @brief Contruct the ImportParseContext type.
+ */
+struct ImportParseContext
+__new__ImportParseContext();
 
 enum ParseContextKind
 {
@@ -269,7 +283,8 @@ enum ParseContextKind
     ParseContextKindTrait,
     ParseContextKindClass,
     ParseContextKindMethod,
-    ParseContextKindProperty
+    ParseContextKindProperty,
+    ParseContextKindImport
 };
 
 typedef struct ParseContext
@@ -278,14 +293,15 @@ typedef struct ParseContext
 
     union
     {
-        struct FunParseContext *fun;
-        struct EnumParseContext *enum_;
-        struct RecordParseContext *record;
-        struct AliasParseContext *alias;
-        struct TraitParseContext *trait;
-        struct ClassParseContext *class;
-        struct MethodParseContext *method;
-        struct PropertyParseContext *property;
+        struct FunParseContext fun;
+        struct EnumParseContext enum_;
+        struct RecordParseContext record;
+        struct AliasParseContext alias;
+        struct TraitParseContext trait;
+        struct ClassParseContext class;
+        struct MethodParseContext method;
+        struct PropertyParseContext property;
+        struct ImportParseContext import;
     } value;
 } ParseContext;
 
@@ -294,56 +310,63 @@ typedef struct ParseContext
  * @brief Contruct the ParseContext type (Fun variant).
  */
 struct ParseContext *
-__new__ParseContextFun(struct FunParseContext *fun);
+__new__ParseContextFun(struct FunParseContext fun);
 
 /**
  *
  * @brief Contruct the ParseContext type (Enum variant).
  */
 struct ParseContext *
-__new__ParseContextEnum(struct EnumParseContext *enum_, bool is_object);
+__new__ParseContextEnum(struct EnumParseContext enum_, bool is_object);
 
 /**
  *
  * @brief Contruct the ParseContext type (Record variant).
  */
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext *record, bool is_object);
+__new__ParseContextRecord(struct RecordParseContext record, bool is_object);
 
 /**
  *
  * @brief Contruct the ParseContext type (Alias variant).
  */
 struct ParseContext *
-__new__ParseContextAlias(struct AliasParseContext *alias);
+__new__ParseContextAlias(struct AliasParseContext alias);
 
 /**
  *
  * @brief Contruct the ParseContext type (Trait variant).
  */
 struct ParseContext *
-__new__ParseContextTrait(struct TraitParseContext *trait);
+__new__ParseContextTrait(struct TraitParseContext trait);
 
 /**
  *
  * @brief Contruct the ParseContext type (Class variant).
  */
 struct ParseContext *
-__new__ParseContextClass(struct ClassParseContext *class);
+__new__ParseContextClass(struct ClassParseContext class);
 
 /**
  *
  * @brief Contruct the ParseContext type (Method variant).
  */
 struct ParseContext *
-__new__ParseContextMethod(struct MethodParseContext *method);
+__new__ParseContextMethod(struct MethodParseContext method);
 
 /**
  *
  * @brief Contruct the ParseContext type (Property variant).
  */
 struct ParseContext *
-__new__ParseContextProperty(struct PropertyParseContext *property);
+__new__ParseContextProperty(struct PropertyParseContext property);
+
+/**
+ *
+ * @brief Contruct the ParseContext type (Import variant).
+ */
+struct ParseContext *
+__new__ParseContextImport(struct ImportParseContext *import);
 
 /**
  *

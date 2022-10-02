@@ -245,12 +245,12 @@ get_block(struct ParseBlock *self)
 
             switch (self->current->kind) {
                 case TokenKindFunKw: {
-                    struct FunParseContext *fun_parse_context =
+                    struct FunParseContext fun_parse_context =
                       NEW(FunParseContext);
-                    fun_parse_context->is_pub = true;
+                    fun_parse_context.is_pub = true;
 
                     next_token_pb(self);
-                    get_fun_parse_context(fun_parse_context, self);
+                    get_fun_parse_context(&fun_parse_context, self);
 
                     push__Vec(self->blocks,
                               NEW(ParseContextFun, fun_parse_context));
@@ -273,12 +273,13 @@ get_block(struct ParseBlock *self)
                     } else
                         next_token_pb(self);
 
-                    struct FunParseContext *fun_parse_context =
+                    struct FunParseContext fun_parse_context =
                       NEW(FunParseContext);
-                    fun_parse_context->is_pub = true;
-                    fun_parse_context->is_async = true;
 
-                    get_fun_parse_context(fun_parse_context, self);
+                    fun_parse_context.is_pub = true;
+                    fun_parse_context.is_async = true;
+
+                    get_fun_parse_context(&fun_parse_context, self);
 
                     push__Vec(self->blocks,
                               NEW(ParseContextFun, fun_parse_context));
@@ -316,10 +317,10 @@ get_block(struct ParseBlock *self)
 
             break;
         case TokenKindFunKw: {
-            struct FunParseContext *fun_parse_context = NEW(FunParseContext);
+            struct FunParseContext fun_parse_context = NEW(FunParseContext);
 
             next_token_pb(self);
-            get_fun_parse_context(fun_parse_context, self);
+            get_fun_parse_context(&fun_parse_context, self);
 
             push__Vec(self->blocks, NEW(ParseContextFun, fun_parse_context));
 
@@ -421,14 +422,14 @@ get_type_context(struct ParseBlock *self, bool is_pub)
 
     switch (self->current->kind) {
         case TokenKindEnumKw: {
-            struct EnumParseContext *enum_parse_context = NEW(EnumParseContext);
+            struct EnumParseContext enum_parse_context = NEW(EnumParseContext);
 
-            enum_parse_context->name = name;
-            enum_parse_context->generic_params = generic_params;
-            enum_parse_context->is_pub = is_pub;
-            enum_parse_context->has_generic_params = has_generic_params;
+            enum_parse_context.name = name;
+            enum_parse_context.generic_params = generic_params;
+            enum_parse_context.is_pub = is_pub;
+            enum_parse_context.has_generic_params = has_generic_params;
 
-            get_enum_parse_context(enum_parse_context, self);
+            get_enum_parse_context(&enum_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextEnum, enum_parse_context, false));
@@ -436,30 +437,30 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindRecordKw:
-            struct RecordParseContext *record_parse_context =
+            struct RecordParseContext record_parse_context =
               NEW(RecordParseContext);
 
-            record_parse_context->name = name;
-            record_parse_context->generic_params = generic_params;
-            record_parse_context->is_pub = is_pub;
-            record_parse_context->has_generic_params = has_generic_params;
+            record_parse_context.name = name;
+            record_parse_context.generic_params = generic_params;
+            record_parse_context.is_pub = is_pub;
+            record_parse_context.has_generic_params = has_generic_params;
 
-            get_record_parse_context(record_parse_context, self);
+            get_record_parse_context(&record_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextRecord, record_parse_context, false));
 
             break;
         case TokenKindAliasKw: {
-            struct AliasParseContext *alias_parse_context =
+            struct AliasParseContext alias_parse_context =
               NEW(AliasParseContext);
 
-            alias_parse_context->name = name;
-            alias_parse_context->generic_params = generic_params;
-            alias_parse_context->is_pub = is_pub;
-            alias_parse_context->has_generic_params = has_generic_params;
+            alias_parse_context.name = name;
+            alias_parse_context.generic_params = generic_params;
+            alias_parse_context.is_pub = is_pub;
+            alias_parse_context.has_generic_params = has_generic_params;
 
-            get_alias_parse_context(alias_parse_context, self);
+            get_alias_parse_context(&alias_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextAlias, alias_parse_context));
@@ -624,14 +625,14 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
     switch (self->current->kind) {
         case TokenKindEnumKw: {
-            struct EnumParseContext *enum_parse_context = NEW(EnumParseContext);
+            struct EnumParseContext enum_parse_context = NEW(EnumParseContext);
 
-            enum_parse_context->name = name;
-            enum_parse_context->generic_params = generic_params;
-            enum_parse_context->is_pub = is_pub;
-            enum_parse_context->has_generic_params = has_generic_params;
+            enum_parse_context.name = name;
+            enum_parse_context.generic_params = generic_params;
+            enum_parse_context.is_pub = is_pub;
+            enum_parse_context.has_generic_params = has_generic_params;
 
-            get_enum_parse_context(enum_parse_context, self);
+            get_enum_parse_context(&enum_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextEnum, enum_parse_context, true));
@@ -639,15 +640,15 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindRecordKw: {
-            struct RecordParseContext *record_parse_context =
+            struct RecordParseContext record_parse_context =
               NEW(RecordParseContext);
 
-            record_parse_context->name = name;
-            record_parse_context->generic_params = generic_params;
-            record_parse_context->is_pub = is_pub;
-            record_parse_context->has_generic_params = has_generic_params;
+            record_parse_context.name = name;
+            record_parse_context.generic_params = generic_params;
+            record_parse_context.is_pub = is_pub;
+            record_parse_context.has_generic_params = has_generic_params;
 
-            get_record_parse_context(record_parse_context, self);
+            get_record_parse_context(&record_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextRecord, record_parse_context, true));
@@ -655,16 +656,16 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindTraitKw: {
-            struct TraitParseContext *trait_parse_context =
+            struct TraitParseContext trait_parse_context =
               NEW(TraitParseContext);
 
-            trait_parse_context->name = name;
-            trait_parse_context->generic_params = generic_params;
-            trait_parse_context->is_pub = is_pub;
-            trait_parse_context->has_generic_params = has_generic_params;
-            trait_parse_context->inheritance = inh;
+            trait_parse_context.name = name;
+            trait_parse_context.generic_params = generic_params;
+            trait_parse_context.is_pub = is_pub;
+            trait_parse_context.has_generic_params = has_generic_params;
+            trait_parse_context.inheritance = inh;
 
-            get_trait_parse_context(trait_parse_context, self);
+            get_trait_parse_context(&trait_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextTrait, trait_parse_context));
@@ -672,23 +673,23 @@ get_object_context(struct ParseBlock *self, bool is_pub)
             break;
         }
         case TokenKindClassKw: {
-            struct ClassParseContext *class_parse_context =
+            struct ClassParseContext class_parse_context =
               NEW(ClassParseContext);
 
-            class_parse_context->name = name;
-            class_parse_context->generic_params = generic_params;
-            class_parse_context->is_pub = is_pub;
-            class_parse_context->has_generic_params = has_generic_params;
-            class_parse_context->inheritance = inh;
-            class_parse_context->impl = impl;
+            class_parse_context.name = name;
+            class_parse_context.generic_params = generic_params;
+            class_parse_context.is_pub = is_pub;
+            class_parse_context.has_generic_params = has_generic_params;
+            class_parse_context.inheritance = inh;
+            class_parse_context.impl = impl;
 
             if (len__Vec(*impl) > 0)
-                class_parse_context->has_impl = true;
+                class_parse_context.has_impl = true;
 
             if (len__Vec(*inh) > 0)
-                class_parse_context->has_inheritance = true;
+                class_parse_context.has_inheritance = true;
 
-            get_class_parse_context(class_parse_context, self);
+            get_class_parse_context(&class_parse_context, self);
 
             push__Vec(self->blocks,
                       NEW(ParseContextClass, class_parse_context));
@@ -733,21 +734,22 @@ __free__ParseBlock(struct ParseBlock self)
     FREE(Scanner, *self.scanner);
 }
 
-struct FunParseContext *
+struct FunParseContext
 __new__FunParseContext()
 {
-    struct FunParseContext *self = malloc(sizeof(struct FunParseContext));
-    self->is_pub = false;
-    self->is_async = false;
-    self->has_generic_params = false;
-    self->has_tag = false;
-    self->has_tags = false;
-    self->has_params = false;
-    self->name = NULL;
-    self->tags = NEW(Vec, sizeof(struct Token));
-    self->generic_params = NEW(Vec, sizeof(struct Token));
-    self->params = NEW(Vec, sizeof(struct Token));
-    self->body = NEW(Vec, sizeof(struct Token));
+    struct FunParseContext self = { .is_pub = false,
+                                    .is_async = false,
+                                    .has_generic_params = false,
+                                    .has_tag = false,
+                                    .has_tags = false,
+                                    .has_params = false,
+                                    .name = NULL,
+                                    .tags = NEW(Vec, sizeof(struct Token)),
+                                    .generic_params =
+                                      NEW(Vec, sizeof(struct Token)),
+                                    .params = NEW(Vec, sizeof(struct Token)),
+                                    .body = NEW(Vec, sizeof(struct Token)) };
+
     return self;
 }
 
@@ -981,27 +983,28 @@ get_fun_parse_context(struct FunParseContext *self,
 }
 
 void
-__free__FunParseContext(struct FunParseContext *self)
+__free__FunParseContext(struct FunParseContext self)
 {
-    FREE(Vec, self->tags);
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->params);
-    FREE(Vec, self->body);
-    free(self);
+    FREE(Vec, self.tags);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.params);
+    FREE(Vec, self.body);
 }
 
-struct EnumParseContext *
+struct EnumParseContext
 __new__EnumParseContext()
 {
-    struct EnumParseContext *self = malloc(sizeof(struct EnumParseContext));
-    self->is_pub = false;
-    self->has_generic_params = false;
-    self->has_data_type = false;
-    self->is_error = false;
-    self->name = NULL;
-    self->data_type = NEW(Vec, sizeof(struct Token));
-    self->generic_params = NULL;
-    self->variants = NEW(Vec, sizeof(struct Token));
+    struct EnumParseContext self = { .is_pub = false,
+                                     .has_generic_params = false,
+                                     .has_data_type = false,
+                                     .is_error = false,
+                                     .name = NULL,
+                                     .data_type =
+                                       NEW(Vec, sizeof(struct Token)),
+                                     .generic_params = NULL,
+                                     .variants =
+                                       NEW(Vec, sizeof(struct Token)) };
+
     return self;
 }
 
@@ -1105,23 +1108,23 @@ valid_token_in_enum_variants(struct ParseBlock *parse_block,
 }
 
 void
-__free__EnumParseContext(struct EnumParseContext *self)
+__free__EnumParseContext(struct EnumParseContext self)
 {
-    FREE(Vec, self->data_type);
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->variants);
-    free(self);
+    FREE(Vec, self.data_type);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.variants);
 }
 
-struct RecordParseContext *
+struct RecordParseContext
 __new__RecordParseContext()
 {
-    struct RecordParseContext *self = malloc(sizeof(struct RecordParseContext));
-    self->is_pub = false;
-    self->has_generic_params = false;
-    self->name = NULL;
-    self->generic_params = NULL;
-    self->fields = NEW(Vec, sizeof(struct Token));
+    struct RecordParseContext self = { .is_pub = false,
+                                       .has_generic_params = false,
+                                       .name = NULL,
+                                       .generic_params = NULL,
+                                       .fields =
+                                         NEW(Vec, sizeof(struct Token)) };
+
     return self;
 }
 
@@ -1194,22 +1197,22 @@ get_record_parse_context(struct RecordParseContext *self,
 }
 
 void
-__free__RecordParseContext(struct RecordParseContext *self)
+__free__RecordParseContext(struct RecordParseContext self)
 {
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->fields);
-    free(self);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.fields);
 }
 
-struct AliasParseContext *
+struct AliasParseContext
 __new__AliasParseContext()
 {
-    struct AliasParseContext *self = malloc(sizeof(struct AliasParseContext));
-    self->is_pub = false;
-    self->has_generic_params = false;
-    self->name = NULL;
-    self->generic_params = NULL;
-    self->data_type = NEW(Vec, sizeof(struct Token));
+    struct AliasParseContext self = { .is_pub = false,
+                                      .has_generic_params = false,
+                                      .name = NULL,
+                                      .generic_params = NULL,
+                                      .data_type =
+                                        NEW(Vec, sizeof(struct Token)) };
+
     return self;
 }
 
@@ -1282,24 +1285,25 @@ get_alias_parse_context(struct AliasParseContext *self,
 }
 
 void
-__free__AliasParseContext(AliasParseContext *self)
+__free__AliasParseContext(AliasParseContext self)
 {
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->data_type);
-    free(self);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.data_type);
 }
 
-struct TraitParseContext *
+struct TraitParseContext
 __new__TraitParseContext()
 {
-    struct TraitParseContext *self = malloc(sizeof(struct TraitParseContext));
-    self->is_pub = false;
-    self->has_generic_params = false;
-    self->has_inheritance = false;
-    self->name = NULL;
-    self->inheritance = NULL;
-    self->generic_params = NULL;
-    self->body = NEW(Vec, sizeof(struct Token));
+    struct TraitParseContext self = {
+        .is_pub = false,
+        .has_generic_params = false,
+        .has_inheritance = false,
+        .name = NULL,
+        .inheritance = NULL,
+        .generic_params = NULL,
+        .body = NEW(Vec, sizeof(struct Token))
+    };
+
     return self;
 }
 
@@ -1371,27 +1375,27 @@ get_trait_parse_context(struct TraitParseContext *self,
 }
 
 void
-__free__TraitParseContext(struct TraitParseContext *self)
+__free__TraitParseContext(struct TraitParseContext self)
 {
-    FREE(Vec, self->inheritance);
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->body);
-    free(self);
+    FREE(Vec, self.inheritance);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.body);
 }
 
-struct ClassParseContext *
+struct ClassParseContext
 __new__ClassParseContext()
 {
-    struct ClassParseContext *self = malloc(sizeof(struct ClassParseContext));
-    self->is_pub = false;
-    self->has_generic_params = false;
-    self->has_inheritance = false;
-    self->has_impl = false;
-    self->name = NULL;
-    self->generic_params = NULL;
-    self->inheritance = NULL;
-    self->impl = NULL;
-    self->body = NEW(Vec, sizeof(struct Token));
+    struct ClassParseContext self = {
+        .is_pub = false,
+        .has_generic_params = false,
+        .has_inheritance = false,
+        .name = NULL,
+        .generic_params = NULL,
+        .inheritance = NULL,
+        .impl = NULL,
+        .body = NEW(Vec, sizeof(struct Token))
+    };
+
     return self;
 }
 
@@ -1423,8 +1427,8 @@ get_class_parse_context(struct ClassParseContext *self,
 
     bool bad_token = false;
 
-    struct MethodParseContext *method_parse_context = NULL;
-    struct PropertyParseContext *property_parse_context = NULL;
+    struct MethodParseContext method_parse_context;
+    struct PropertyParseContext property_parse_context;
 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
@@ -1515,22 +1519,22 @@ get_class_parse_context(struct ClassParseContext *self,
             }
 
             property_parse_context = NEW(PropertyParseContext);
-            property_parse_context->name = name;
-            property_parse_context->is_pub = is_pub;
+            property_parse_context.name = name;
+            property_parse_context.is_pub = is_pub;
 
             goto property;
         } else {
             method_parse_context = NEW(MethodParseContext);
-            method_parse_context->name = name;
-            method_parse_context->is_pub = is_pub;
-            method_parse_context->is_async = is_async;
+            method_parse_context.name = name;
+            method_parse_context.is_pub = is_pub;
+            method_parse_context.is_async = is_async;
 
             goto method;
         }
     }
 
     method : {
-        get_method_parse_context(method_parse_context, parse_block);
+        get_method_parse_context(&method_parse_context, parse_block);
         push__Vec(self->body, NEW(ParseContextMethod, method_parse_context));
 
         goto exit;
@@ -1540,7 +1544,7 @@ get_class_parse_context(struct ClassParseContext *self,
     }
 
 property : {
-    get_property_parse_context(property_parse_context, parse_block);
+    get_property_parse_context(&property_parse_context, parse_block);
     push__Vec(self->body, NEW(ParseContextProperty, property_parse_context));
 
     goto exit;
@@ -1569,17 +1573,16 @@ if (parse_block->current->kind == TokenKindEof && !bad_token) {
 }
 
 void
-__free__ClassParseContext(struct ClassParseContext *self)
+__free__ClassParseContext(struct ClassParseContext self)
 {
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->inheritance);
-    FREE(Vec, self->impl);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.inheritance);
+    FREE(Vec, self.impl);
 
-    for (Usize i = len__Vec(*self->body); i--;)
-        FREE(ParseContextAll, get__Vec(*self->body, i));
+    for (Usize i = len__Vec(*self.body); i--;)
+        FREE(ParseContextAll, get__Vec(*self.body, i));
 
-    FREE(Vec, self->body);
-    free(self);
+    FREE(Vec, self.body);
 }
 
 struct TagParseContext *
@@ -1652,18 +1655,20 @@ __free__TagParseContext(struct TagParseContext *self)
     free(self);
 }
 
-struct MethodParseContext *
+struct MethodParseContext
 __new__MethodParseContext()
 {
-    struct MethodParseContext *self = malloc(sizeof(struct MethodParseContext));
-    self->is_pub = false;
-    self->is_async = false;
-    self->has_generic_params = false;
-    self->has_params = false;
-    self->name = NULL;
-    self->generic_params = NEW(Vec, sizeof(struct Token));
-    self->params = NEW(Vec, sizeof(struct Token));
-    self->body = NEW(Vec, sizeof(struct Token));
+    struct MethodParseContext self = {
+        .is_pub = false,
+        .is_async = false,
+        .has_generic_params = false,
+        .has_params = false,
+        .name = NULL,
+        .generic_params = NEW(Vec, sizeof(struct Token)),
+        .params = NEW(Vec, sizeof(struct Token)),
+        .body = NEW(Vec, sizeof(struct Token))
+    };
+
     return self;
 }
 
@@ -1686,22 +1691,22 @@ get_method_parse_context(struct MethodParseContext *self,
 }
 
 void
-__free__MethodParseContext(struct MethodParseContext *self)
+__free__MethodParseContext(struct MethodParseContext self)
 {
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->params);
-    FREE(Vec, self->body);
-    free(self);
+    FREE(Vec, self.generic_params);
+    FREE(Vec, self.params);
+    FREE(Vec, self.body);
 }
 
-struct PropertyParseContext *
+struct PropertyParseContext
 __new__PropertyParseContext()
 {
-    struct PropertyParseContext *self =
-      malloc(sizeof(struct PropertyParseContext));
-    self->is_pub = false;
-    self->name = NULL;
-    self->data_type = NEW(Vec, sizeof(struct Token));
+    struct PropertyParseContext self = {
+        .is_pub = false,
+        .name = NULL,
+        .data_type = NEW(Vec, sizeof(struct Token))
+    };
+
     return self;
 }
 
@@ -1722,10 +1727,21 @@ get_property_parse_context(struct PropertyParseContext *self,
 }
 
 void
-__free__PropertyParseContext(struct PropertyParseContext *self)
+__free__PropertyParseContext(struct PropertyParseContext self)
 {
-    FREE(Vec, self->data_type);
-    free(self);
+    FREE(Vec, self.data_type);
+}
+
+struct ImportParseContext
+__new__ImportParseContext()
+{
+    struct ImportParseContext self = {
+        .is_pub = false,
+        .value = NULL,
+        .as_value = NULL
+    };
+
+    return self;
 }
 
 static inline struct Diagnostic *
@@ -1772,7 +1788,7 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
 }
 
 struct ParseContext *
-__new__ParseContextFun(struct FunParseContext *fun)
+__new__ParseContextFun(struct FunParseContext fun)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindFun;
@@ -1781,7 +1797,7 @@ __new__ParseContextFun(struct FunParseContext *fun)
 }
 
 struct ParseContext *
-__new__ParseContextEnum(struct EnumParseContext *enum_, bool is_object)
+__new__ParseContextEnum(struct EnumParseContext enum_, bool is_object)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
 
@@ -1795,7 +1811,7 @@ __new__ParseContextEnum(struct EnumParseContext *enum_, bool is_object)
 }
 
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext *record, bool is_object)
+__new__ParseContextRecord(struct RecordParseContext record, bool is_object)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
 
@@ -1809,7 +1825,7 @@ __new__ParseContextRecord(struct RecordParseContext *record, bool is_object)
 }
 
 struct ParseContext *
-__new__ParseContextAlias(struct AliasParseContext *alias)
+__new__ParseContextAlias(struct AliasParseContext alias)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindAlias;
@@ -1818,7 +1834,7 @@ __new__ParseContextAlias(struct AliasParseContext *alias)
 }
 
 struct ParseContext *
-__new__ParseContextTrait(struct TraitParseContext *trait)
+__new__ParseContextTrait(struct TraitParseContext trait)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindTrait;
@@ -1827,7 +1843,7 @@ __new__ParseContextTrait(struct TraitParseContext *trait)
 }
 
 struct ParseContext *
-__new__ParseContextClass(struct ClassParseContext *class)
+__new__ParseContextClass(struct ClassParseContext class)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindClass;
@@ -1836,7 +1852,7 @@ __new__ParseContextClass(struct ClassParseContext *class)
 }
 
 struct ParseContext *
-__new__ParseContextMethod(struct MethodParseContext *method)
+__new__ParseContextMethod(struct MethodParseContext method)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindMethod;
@@ -1845,7 +1861,7 @@ __new__ParseContextMethod(struct MethodParseContext *method)
 }
 
 struct ParseContext *
-__new__ParseContextProperty(struct PropertyParseContext *property)
+__new__ParseContextProperty(struct PropertyParseContext property)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindProperty;
