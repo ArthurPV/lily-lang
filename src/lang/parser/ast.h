@@ -585,6 +585,13 @@ enum BinaryOpKind
     BinaryOpKindCustom
 };
 
+/**
+ *
+ * @brief Convert the BinaryOpKind to Str.
+ */
+const Str
+to_str__BinaryOpKind(enum BinaryOpKind kind);
+
 typedef struct BinaryOp
 {
     enum BinaryOpKind kind;

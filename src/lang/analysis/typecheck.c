@@ -1508,6 +1508,8 @@ get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt)
             return "Array";
         case DataTypeKindTuple:
             return "Tuple";
+        case DataTypeKindCustom:
+            return "Custom";
         default:
             return NULL;
     }
@@ -1555,11 +1557,61 @@ verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
         if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params, i)) !=
             NULL) {
             if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params, i))
-                  ->kind != DataTypeKindCompilerDefined)
+                  ->kind != DataTypeKindCompilerDefined) {
+                struct DataTypeSymbol *params =
+                  va_arg(vl, struct DataTypeSymbol *);
+
+                switch (params->kind) {
+                    case DataTypeKindMut:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *fun_builtin->params, i))
+                              ->value.mut->kind == DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindException:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *fun_builtin->params, i))
+                              ->value.exception->kind ==
+                            DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindOptional:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *fun_builtin->params, i))
+                              ->value.optional->kind ==
+                            DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindPtr:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *fun_builtin->params, i))
+                              ->value.ptr->kind == DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindRef:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *fun_builtin->params, i))
+                              ->value.ref->kind == DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindTuple:
+                        if (((struct DataTypeSymbol *)get__Vec(
+                               *((struct DataTypeSymbol *)get__Vec(
+                                   *fun_builtin->params, i))
+                                  ->value.tuple,
+                               0))
+                              ->kind == DataTypeKindCompilerDefined)
+                            return;
+                    case DataTypeKindArray:
+                        if (((struct DataTypeSymbol
+                                *)((struct DataTypeSymbol *)get__Vec(
+                                     *fun_builtin->params, i))
+                               ->value.array->items[0])
+                              ->kind == DataTypeKindCompilerDefined)
+                            return;
+                    default:
+                        break;
+                }
                 if (((struct DataTypeSymbol *)get__Vec(*fun_builtin->params,
                                                        i)) !=
                     va_arg(vl, struct DataTypeSymbol *))
                     assert(0 && "error");
+            }
         }
     }
 
@@ -1714,18 +1766,18 @@ check_expression(struct Typecheck *self,
                  bool is_return_type)
 {
     switch (expr->kind) {
-        case ExprKindUnaryOp:
+        case ExprKindUnaryOp: {
+            struct ExprSymbol *right =
+              check_expression(self,
+                               fun,
+                               expr->value.unary_op.right,
+                               local_value,
+                               local_data_type,
+                               NULL,
+                               is_return_type);
+
             switch (expr->value.unary_op.kind) {
                 case UnaryOpKindReference: {
-                    struct ExprSymbol *right =
-                      check_expression(self,
-                                       fun,
-                                       expr->value.unary_op.right,
-                                       local_value,
-                                       local_data_type,
-                                       NULL,
-                                       is_return_type);
-
                     verify_type_of_fun_builtin(
                       search_fun_builtin(self, "Ref", "&", 2),
                       2,
@@ -1750,15 +1802,6 @@ check_expression(struct Typecheck *self,
                         right));
                 }
                 case UnaryOpKindNegative: {
-                    struct ExprSymbol *right =
-                      check_expression(self,
-                                       fun,
-                                       expr->value.unary_op.right,
-                                       local_value,
-                                       local_data_type,
-                                       NULL,
-                                       is_return_type);
-
                     const Str module_name =
                       get_builtin_module_name_from_data_type(
                         get_data_type_of_expression(self, right, local_value));
@@ -1783,15 +1826,6 @@ check_expression(struct Typecheck *self,
                         right));
                 }
                 case UnaryOpKindNot: {
-                    struct ExprSymbol *right =
-                      check_expression(self,
-                                       fun,
-                                       expr->value.unary_op.right,
-                                       local_value,
-                                       local_data_type,
-                                       NULL,
-                                       is_return_type);
-
                     verify_type_of_fun_builtin(
                       search_fun_builtin(self, "Bool", "not", 2),
                       2,
@@ -1814,11 +1848,167 @@ check_expression(struct Typecheck *self,
                 case UnaryOpKindCustom:
                     TODO("check unary operator kind custom");
             }
-        case ExprKindBinaryOp:
+        }
+        case ExprKindBinaryOp: {
+            struct ExprSymbol *left =
+              check_expression(self,
+                               fun,
+                               expr->value.binary_op.left,
+                               local_value,
+                               local_data_type,
+                               NULL,
+                               is_return_type);
+            struct ExprSymbol *right =
+              check_expression(self,
+                               fun,
+                               expr->value.binary_op.right,
+                               local_value,
+                               local_data_type,
+                               NULL,
+                               is_return_type);
+            const Str op_str = to_str__BinaryOpKind(expr->value.binary_op.kind);
+
             switch (expr->value.binary_op.kind) {
-                default:
+                case BinaryOpKindAdd:
+                case BinaryOpKindSub:
+                case BinaryOpKindMul:
+                case BinaryOpKindDiv:
+                case BinaryOpKindMod:
+                case BinaryOpKindRange:
+                case BinaryOpKindLt:
+                case BinaryOpKindGt:
+                case BinaryOpKindLe:
+                case BinaryOpKindGe:
+                case BinaryOpKindEq:
+                case BinaryOpKindNe:
+                case BinaryOpKindAssign:
+                case BinaryOpKindAddAssign:
+                case BinaryOpKindSubAssign:
+                case BinaryOpKindMulAssign:
+                case BinaryOpKindDivAssign:
+                case BinaryOpKindModAssign:
+                case BinaryOpKindBitLShiftAssign:
+                case BinaryOpKindBitRShiftAssign:
+                case BinaryOpKindBitOrAssign:
+                case BinaryOpKindXorAssign:
+                case BinaryOpKindBitAndAssign:
+                case BinaryOpKindBitNotAssign:
+                case BinaryOpKindExponentAssign:
+                case BinaryOpKindBitLShift:
+                case BinaryOpKindBitRShift:
+                case BinaryOpKindBitOr:
+                case BinaryOpKindBitAnd:
+                case BinaryOpKindBitNot:
+                case BinaryOpKindExponent: {
+                    const Str module_name =
+                      get_builtin_module_name_from_data_type(
+                        get_data_type_of_expression(self, left, local_value));
+                    struct BuiltinFun *fun_builtin =
+                      search_fun_builtin(self, module_name, op_str, 3);
+
+                    if (fun_builtin == NULL)
+                        assert(0 && "error");
+
+                    verify_type_of_fun_builtin(
+                      fun_builtin,
+                      3,
+                      get_data_type_of_expression(self, left, local_value),
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolBinaryOp,
+                      *expr,
+                      NEW(
+                        BinaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, module_name, op_str, 3)),
+                        left,
+                        right));
+                }
+                case BinaryOpKindAnd:
+                case BinaryOpKindOr:
+                case BinaryOpKindXor: {
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, "Bool", op_str, 3),
+                      3,
+                      get_data_type_of_expression(self, left, local_value),
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolBinaryOp,
+                      *expr,
+                      NEW(
+                        BinaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, "Bool", op_str, 3)),
+                        left,
+                        right));
+                }
+                case BinaryOpKindMergeAssign:
+                case BinaryOpKindUnmergeAssign:
+                case BinaryOpKindMerge:
+                case BinaryOpKindUnmerge: {
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, "Array", op_str, 3),
+                      3,
+                      get_data_type_of_expression(self, left, local_value),
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolBinaryOp,
+                      *expr,
+                      NEW(
+                        BinaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, "Array", op_str, 3)),
+                        left,
+                        right));
+                }
+                case BinaryOpKindChain:
+                    TODO("check chain binary op");
+                case BinaryOpKindRepeat:
+                case BinaryOpKindConcat:
+                case BinaryOpKindConcatAssign: {
+                    verify_type_of_fun_builtin(
+                      search_fun_builtin(self, "Str", op_str, 3),
+                      3,
+                      get_data_type_of_expression(self, left, local_value),
+                      get_data_type_of_expression(self, right, local_value),
+                      defined_data_type);
+
+                    return NEW(
+                      ExprSymbolBinaryOp,
+                      *expr,
+                      NEW(
+                        BinaryOpSymbol,
+                        *expr,
+                        check_if_defined_data_type_is_equal_to_infered_data_type(
+                          self,
+                          defined_data_type,
+                          get_return_type_of_fun_builtin(
+                            self, "Str", op_str, 3)),
+                        left,
+                        right));
+                }
+                case BinaryOpKindCustom:
                     TODO("check binary op");
             }
+        }
         case ExprKindFunCall:
             TODO("check fun call");
         case ExprKindRecordCall:

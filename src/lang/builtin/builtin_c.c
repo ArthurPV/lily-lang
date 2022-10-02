@@ -51,6 +51,8 @@ static struct Builtin *
 Load_Fun_module();
 static struct Builtin *
 Load_Ref_module();
+static struct Builtin *
+Load_Custom_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
 
@@ -6066,11 +6068,33 @@ Load_Ref_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ref", items));
 }
 
+static struct Builtin *
+Load_Custom_module()
+{
+    struct Vec *items = NEW(Vec, sizeof(struct Builtin));
+
+    {
+        struct Vec *params = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+        PARAMS(2,
+               NEW(DataTypeSymbolMut,
+                   NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "A", false))),
+               NEW(DataTypeSymbolCompilerDefined,
+                   NEW(CompilerDefinedDataType, "A", false)),
+               NEW(DataTypeSymbol, DataTypeKindUnit));
+
+        push__Vec(items, NEW(BuiltinFunVar, NEW(BuiltinFun, "=", params)));
+    }
+
+    return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Custom", items));
+}
+
 struct Vec *
 Load_C_builtins()
 {
     return init__Vec(sizeof(struct Builtin),
-                     23,
+                     24,
                      Load_Int8_module(),
                      Load_Int16_module(),
                      Load_Int32_module(),
@@ -6093,5 +6117,6 @@ Load_C_builtins()
                      Load_Tuple_module(),
                      Load_Array_module(),
                      Load_Fun_module(),
-                     Load_Ref_module());
+                     Load_Ref_module(),
+                     Load_Custom_module());
 }

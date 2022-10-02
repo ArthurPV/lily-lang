@@ -541,6 +541,56 @@ __free__UnaryOp(struct UnaryOp self)
     FREE(ExprAll, self.right);
 }
 
+const Str
+to_str__BinaryOpKind(enum BinaryOpKind kind)
+{
+    switch (kind) {
+        case BinaryOpKindAdd: return "+";
+        case BinaryOpKindSub: return "-";
+        case BinaryOpKindMul: return "*";
+        case BinaryOpKindDiv: return "/";
+        case BinaryOpKindMod: return "%";
+        case BinaryOpKindRange: return "..";
+        case BinaryOpKindLt: return "<";
+        case BinaryOpKindGt: return ">";
+        case BinaryOpKindLe: return "<=";
+        case BinaryOpKindGe: return ">=";
+        case BinaryOpKindEq: return "==";
+        case BinaryOpKindNe: return "not=";
+        case BinaryOpKindAnd: return "and";
+        case BinaryOpKindOr: return "or";
+        case BinaryOpKindXor: return "xor";
+        case BinaryOpKindAssign: return "=";
+        case BinaryOpKindAddAssign: return "+=";
+        case BinaryOpKindSubAssign: return "-=";
+        case BinaryOpKindMulAssign: return "*=";
+        case BinaryOpKindDivAssign: return "/=";
+        case BinaryOpKindModAssign: return "%=";
+        case BinaryOpKindConcatAssign: return "^=";
+        case BinaryOpKindBitLShiftAssign: return "<<=";
+        case BinaryOpKindBitRShiftAssign: return ">>=";
+        case BinaryOpKindBitOrAssign: return "|=";
+        case BinaryOpKindXorAssign: return "xor=";
+        case BinaryOpKindBitAndAssign: return "&=";
+        case BinaryOpKindBitNotAssign: return "~=";
+        case BinaryOpKindMergeAssign: return "++=";
+        case BinaryOpKindUnmergeAssign: return "--=";
+        case BinaryOpKindExponentAssign: return "**=";
+        case BinaryOpKindChain: return "|>";
+        case BinaryOpKindMerge: return "++";
+        case BinaryOpKindUnmerge: return "--";
+        case BinaryOpKindRepeat: return "$";
+        case BinaryOpKindConcat: return "^";
+        case BinaryOpKindBitLShift: return "<<";
+        case BinaryOpKindBitRShift: return ">>";
+        case BinaryOpKindBitOr: return "|";
+        case BinaryOpKindBitAnd: return "&";
+        case BinaryOpKindBitNot: return "~";
+        case BinaryOpKindExponent: return "**";
+        case BinaryOpKindCustom: return "Custom";
+    }
+}
+
 struct BinaryOp
 __new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right, struct String *op)
 {
