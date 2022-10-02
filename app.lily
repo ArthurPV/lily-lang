@@ -14,6 +14,8 @@ end
 
 fun div(x, y) = x/y;
 
+type TT: alias = int;
+
 object PersonObj: enum =
 	F
 	G

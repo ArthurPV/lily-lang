@@ -87,6 +87,12 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
 static void
 get_record_parse_context(struct RecordParseContext *self,
                          struct ParseBlock *parse_block);
+static inline bool
+valid_token_in_alias_data_type(struct ParseBlock *parse_block,
+                               bool already_invalid);
+static void
+get_alias_parse_context(struct AliasParseContext *self,
+                        struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -330,8 +336,22 @@ get_type_context(struct ParseBlock *self, bool is_pub)
                       NEW(ParseContextRecord, record_parse_context, false));
 
             break;
-        case TokenKindAliasKw:
+        case TokenKindAliasKw: {
+            struct AliasParseContext *alias_parse_context =
+              NEW(AliasParseContext);
+
+            alias_parse_context->name = name;
+            alias_parse_context->generic_params = generic_params;
+            alias_parse_context->is_pub = is_pub;
+            alias_parse_context->has_generic_params = has_generic_params;
+
+            get_alias_parse_context(alias_parse_context, self);
+
+            push__Vec(self->blocks,
+                      NEW(ParseContextAlias, alias_parse_context));
+
             break;
+        }
         default: {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
@@ -402,8 +422,22 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
             break;
         }
-        case TokenKindRecordKw:
+        case TokenKindRecordKw: {
+            struct RecordParseContext *record_parse_context =
+              NEW(RecordParseContext);
+
+            record_parse_context->name = name;
+            record_parse_context->generic_params = generic_params;
+            record_parse_context->is_pub = is_pub;
+            record_parse_context->has_generic_params = has_generic_params;
+
+            get_record_parse_context(record_parse_context, self);
+
+            push__Vec(self->blocks,
+                      NEW(ParseContextRecord, record_parse_context, true));
+
             break;
+        }
         case TokenKindTraitKw:
             break;
         case TokenKindClassKw:
@@ -866,7 +900,6 @@ __new__RecordParseContext()
     struct RecordParseContext *self = malloc(sizeof(struct RecordParseContext));
     self->is_pub = false;
     self->has_generic_params = false;
-    self->has_data_type = false;
     self->name = NULL;
     self->generic_params = NULL;
     self->fields = NEW(Vec, sizeof(struct Token));
@@ -964,6 +997,109 @@ __free__RecordParseContext(struct RecordParseContext *self)
     free(self);
 }
 
+struct AliasParseContext *
+__new__AliasParseContext()
+{
+    struct AliasParseContext *self = malloc(sizeof(struct AliasParseContext));
+    self->is_pub = false;
+    self->has_generic_params = false;
+    self->name = NULL;
+    self->generic_params = NULL;
+    self->data_type = NEW(Vec, sizeof(struct Token));
+    return self;
+}
+
+static inline bool
+valid_token_in_alias_data_type(struct ParseBlock *parse_block,
+                               bool already_invalid)
+{
+    switch (parse_block->current->kind) {
+        case TokenKindLHook:
+        case TokenKindRHook:
+        case TokenKindLParen:
+        case TokenKindRParen:
+        case TokenKindInterrogation:
+        case TokenKindBang:
+        case TokenKindComma:
+        case TokenKindIdentifier:
+            return true;
+        default: {
+            if (!already_invalid) {
+                struct Diagnostic *err = NEW(
+                  DiagnosticWithErrParser,
+                  parse_block,
+                  NEW(LilyError, LilyErrorInvalidTokenInAliasDataType),
+                  *parse_block->current->loc,
+                  format("this token is invalid inside the record, expected: "
+                         "`(`, `)`, `[`, `]`, `ID`, `?`, `!`, or `,`"),
+                  None());
+
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE();
+
+                emit__Diagnostic(err);
+                emit__Diagnostic(note);
+            }
+
+            return false;
+        }
+    }
+}
+
+static void
+get_alias_parse_context(struct AliasParseContext *self,
+                        struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    // 1. DataType
+    if (parse_block->current->kind != TokenKindEq) {
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, '=');
+
+        err->err->s = from__String("=");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+
+    bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindSemicolon &&
+           parse_block->current->kind != TokenKindEof) {
+        if (valid_token_in_alias_data_type(parse_block, bad_token)) {
+            push__Vec(self->data_type, &*parse_block->current);
+            next_token_pb(parse_block);
+        } else {
+            bad_token = true;
+            next_token_pb(parse_block);
+        }
+    }
+
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissClosingBlock),
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
+                                         parse_block->pos - 1))
+                 ->loc,
+              format("expected closing block here"),
+              None());
+
+        err->err->s = from__String("`;`");
+
+        emit__Diagnostic(err);
+    } else
+        next_token_pb(parse_block);
+}
+
+void
+__free__AliasParseContext(AliasParseContext *self)
+{
+    FREE(Vec, self->generic_params);
+    FREE(Vec, self->data_type);
+    free(self);
+}
+
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -1044,6 +1180,15 @@ __new__ParseContextRecord(struct RecordParseContext *record, bool is_object)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextAlias(struct AliasParseContext *alias)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindAlias;
+    self->value.alias = alias;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -1066,6 +1211,13 @@ __free__ParseContextRecord(struct ParseContext *self)
 }
 
 void
+__free__ParseContextAlias(struct ParseContext *self)
+{
+    FREE(AliasParseContext, self->value.alias);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -1079,6 +1231,9 @@ __free__ParseContextAll(struct ParseContext *self)
         case ParseContextKindRecord:
         case ParseContextKindRecordObject:
             FREE(ParseContextRecord, self);
+            break;
+        case ParseContextKindAlias:
+            FREE(ParseContextAlias, self);
             break;
         default:
             UNREACHABLE("unknown parse context kind");

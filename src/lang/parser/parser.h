@@ -95,7 +95,6 @@ typedef struct RecordParseContext
 {
     bool is_pub;
     bool has_generic_params;
-    bool has_data_type;
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Token&>*
     struct Vec *fields;         // struct Vec<struct Token&>*
@@ -115,11 +114,35 @@ __new__RecordParseContext();
 void
 __free__RecordParseContext(struct RecordParseContext *self);
 
+typedef struct AliasParseContext
+{
+    bool is_pub;
+    bool has_generic_params;
+    struct String *name;        // struct String&
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *data_type;      // struct Vec<struct Token&>*
+} AliasParseContext;
+
+/**
+ *
+ * @brief Construct the AliasParseContext type.
+ */
+struct AliasParseContext *
+__new__AliasParseContext();
+
+/**
+ *
+ * @brief Free the AliasParseContext type.
+ */
+void
+__free__AliasParseContext(AliasParseContext *self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,
     ParseContextKindEnum,
     ParseContextKindRecord,
+    ParseContextKindAlias,
     ParseContextKindEnumObject,
     ParseContextKindRecordObject
 };
@@ -133,6 +156,7 @@ typedef struct ParseContext
         struct FunParseContext *fun;
         struct EnumParseContext *enum_;
         struct RecordParseContext *record;
+        struct AliasParseContext *alias;
     } value;
 } ParseContext;
 
@@ -159,6 +183,13 @@ __new__ParseContextRecord(struct RecordParseContext *record, bool is_object);
 
 /**
  *
+ * @brief Contruct the ParseContext type (Alias variant).
+ */
+struct ParseContext *
+__new__ParseContextAlias(struct AliasParseContext *alias);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -177,6 +208,13 @@ __free__ParseContextEnum(struct ParseContext *self);
  */
 void
 __free__ParseContextRecord(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Alias variant).
+ */
+void
+__free__ParseContextAlias(struct ParseContext *self);
 
 /**
  *

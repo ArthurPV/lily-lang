@@ -210,6 +210,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("invalid token in record field");
         case LilyErrorMissObjectName:
             return from__String("miss object name");
+        case LilyErrorInvalidTokenInAliasDataType:
+            return from__String("invalid token in alias data type");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -282,6 +284,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0023";
         case LilyErrorMissObjectName:
             return "0024";
+        case LilyErrorInvalidTokenInAliasDataType:
+            return "0025";
         default:
             UNREACHABLE("unknown lily error kind");
     }
