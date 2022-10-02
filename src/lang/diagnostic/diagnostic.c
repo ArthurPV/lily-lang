@@ -265,14 +265,16 @@ lily_error_to_string(struct LilyError err)
             return from__String("duplicate field");
         case LilyErrorBadImportValue:
             return from__String("bad import value");
-        case LilyErrorUnexpectedCharInImportValue:
-            return from__String("unexpected char in import value");
+        case LilyErrorUnexpectedCharacterInImportValue:
+            return from__String("unexpected character in import value");
         case LilyErrorExpectedCharacter:
             return format("there is expected character, found: `{S}`", err.s);
         case LilyErrorUnknownDocFlag:
             return from__String("unknown doc flag");
         case LilyErrorExpectedCharacterInImportValue:
             return from__String("expected character in import value");
+		case LilyErrorEmptyImportValue:
+			return from__String("empty import value");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -425,7 +427,7 @@ get_code_of_lily_error(struct LilyError err)
             return "0062";
         case LilyErrorBadImportValue:
             return "0063";
-        case LilyErrorUnexpectedCharInImportValue:
+        case LilyErrorUnexpectedCharacterInImportValue:
             return "0064";
         case LilyErrorExpectedCharacter:
             return "0065";
@@ -433,6 +435,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0066";
         case LilyErrorExpectedCharacterInImportValue:
             return "0067";
+		case LilyErrorEmptyImportValue:
+			return "0068";
         default:
             UNREACHABLE("unknown lily error kind");
     }

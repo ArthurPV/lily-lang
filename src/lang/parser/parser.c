@@ -297,6 +297,10 @@ This last step will just add the analyzer declarations into a vector (decls).
             push__Vec(body, NEW(FunBodyItemStmt, NEW(StmtMatch, loc, match))); \
             break;                                                             \
         }                                                                      \
+        case TokenKindImportKw: {                                              \
+            push__Vec(body, parse_import_stmt(self, parse_decl, loc));         \
+            break;                                                             \
+        }                                                                      \
         default:                                                               \
             UNREACHABLE("");                                                   \
     }
@@ -4412,99 +4416,6 @@ exit_unary : {
         }
     }
 
-    /* int *binary_op = parse_binary_op(parse_decl->current->kind);
-    struct String *binop_string = NULL;
-
-    if (binary_op ) {
-        if (binary_op == (int *)BinaryOpKindCustom)
-            binop_string = parse_decl->current->lit;
-
-        // next_token(parse_decl);
-
-        struct Expr *left = expr;
-        Usize prec = get_precedence__Expr(expr);
-
-        // struct Expr *expr2 =
-          // parse_primary_expr(self, parse_decl); // right value
-
-        // struct Expr *left;
-        // struct Expr *right;
-
-        while (1) {
-            Usize next_prec = get_precedence__BinaryOpKind((enum
-    BinaryOpKind)(UPtr)binary_op);
-
-            if (next_prec > prec)
-                break;
-            if (next_prec < prec) {
-                next_token(parse_decl);
-                // left =
-            }
-        }
-
-        end__Location(&loc,
-                      parse_decl->current->loc->s_line,
-                      parse_decl->current->loc->s_col);
-
-    if (expr2->kind == ExprKindBinaryOp) {
-            if (get_precedence__BinaryOpKind(
-                  (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind) >
-                get_precedence__BinaryOpKind(
-                  (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind)) {
-                expr = NEW(ExprBinaryOp,
-                           NEW(BinaryOp,
-                               (enum BinaryOpKind)(UPtr)(binary_op),
-                               expr,
-                               expr2,
-                               binop_string),
-                           loc);
-            } else {
-                left = expr2;
-                right = expr;
-                expr = NEW(ExprBinaryOp,
-                           NEW(BinaryOp,
-                               (enum BinaryOpKind)(UPtr)(binary_op),
-                               left,
-                               right,
-                               binop_string),
-                           loc);
-            }
-        } else {
-            return expr;
-        } */
-
-    /* if (expr2->kind == ExprKindBinaryOp) {
-        if (get_precedence__BinaryOpKind(
-              (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind) <
-            get_precedence__BinaryOpKind(
-              (enum BinaryOpKind)(UPtr)binary_op)) {
-            switch ((enum BinaryOpKind)(UPtr)binary_op) {
-                case BinaryOpKindAdd:
-                case BinaryOpKindMul:
-                    left = expr2;
-                    right = expr;
-                    break;
-                default:
-                    left = expr;
-                    right = expr2;
-                    break;
-                left = expr2;
-                right = expr;
-        } else {
-            left = expr;
-            right = expr2;
-        }
-    } else {
-        left = expr;
-        right = expr2;
-    }
-
-    Println("{S}",
-            to_string__Expr(*expr));
-
-    return expr;
-} */
-
     return expr;
 }
 
@@ -5289,6 +5200,54 @@ parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc)
 {
+    struct String *import_value = NULL;
+    struct Location import_value_loc;
+    struct String *as_value = NULL;
+
+    if (parse_decl->current->kind == TokenKindStringLit) {
+        import_value = parse_decl->current->lit;
+        import_value_loc = *parse_decl->current->loc;
+
+        next_token(parse_decl);
+    } else {
+        import_value_loc = *parse_decl->current->loc;
+
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorMissImportValue),
+                                     *parse_decl->previous->loc,
+                                     from__String("miss import value"),
+                                     None());
+
+        emit__Diagnostic(err);
+    }
+
+    if (parse_decl->current->kind == TokenKindAsKw) {
+        next_token(parse_decl);
+
+        if (parse_decl->current->kind == TokenKindIdentifier) {
+            as_value = parse_decl->current->lit;
+
+            next_token(parse_decl);
+        } else {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorMissAsValue),
+                                         *parse_decl->previous->loc,
+                                         from__String("miss as value"),
+                                         None());
+
+            emit__Diagnostic(err);
+        }
+    }
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(StmtImport,
+               loc,
+               parse_import_value__parse_import_stmt(
+                 self, import_value, as_value, import_value_loc, false));
 }
 
 static struct ImportStmt *
@@ -5308,7 +5267,23 @@ parse_import_value__parse_import_stmt(struct Parser self,
     if (buffer) {
         if (len__String(*buffer) == 0) {
             current = NULL;
-            assert(0 && "error");
+
+            {
+                struct Location loc_err = buffer_loc;
+
+                loc_err.s_col += i + 1;
+                loc_err.e_col = loc_err.e_col;
+
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorEmptyImportValue),
+                      loc_err,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+            }
 
             goto exit;
         } else
@@ -5427,14 +5402,14 @@ parse_import_value__parse_import_stmt(struct Parser self,
                     loc_err.s_col += i + 1;
                     loc_err.e_col = loc_err.s_col;
 
-                    struct Diagnostic *err =
-                      NEW(DiagnosticWithErrParser,
-                          &self.parse_block,
-                          NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
-                          loc_err,
-                          from__String(""),
-                          Some(format("found `{c}`, expected `.`",
-                                      (char)(UPtr)current)));
+                    struct Diagnostic *err = NEW(
+                      DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+                      loc_err,
+                      from__String(""),
+                      Some(format("found `{c}`, expected `.`",
+                                  (char)(UPtr)current)));
 
                     emit__Diagnostic(err);
 
@@ -5468,14 +5443,14 @@ parse_import_value__parse_import_stmt(struct Parser self,
                     loc_err.s_col += i + 1;
                     loc_err.e_col = loc_err.s_col;
 
-                    struct Diagnostic *err =
-                      NEW(DiagnosticWithErrParser,
-                          &self.parse_block,
-                          NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
-                          loc_err,
-                          from__String(""),
-                          Some(format("found `{c}`, expected `.`",
-                                      (char)(UPtr)current)));
+                    struct Diagnostic *err = NEW(
+                      DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+                      loc_err,
+                      from__String(""),
+                      Some(format("found `{c}`, expected `.`",
+                                  (char)(UPtr)current)));
 
                     emit__Diagnostic(err);
 
@@ -5488,7 +5463,22 @@ parse_import_value__parse_import_stmt(struct Parser self,
                 push__Vec(import_value, NEW(ImportStmtValueWildcard));
                 break;
             } else {
-                assert(0 && "error");
+                struct Location loc_err = buffer_loc;
+
+                loc_err.e_line = loc_err.s_line;
+                loc_err.s_col += i + 1;
+                loc_err.e_col = loc_err.s_col;
+
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorUnexpectedCharacterInImportValue),
+                      loc_err,
+                      from__String(""),
+                      Some(format("found `{c}`, expected `ID`, `{` or `*`",
+                                  (char)(UPtr)current)));
+
+                emit__Diagnostic(err);
 
                 break;
             }
@@ -5499,14 +5489,25 @@ parse_import_value__parse_import_stmt(struct Parser self,
     exit : {
     }
     } else {
-        assert(0 && "error");
+        struct Location loc_err = buffer_loc;
+
+        loc_err.s_col += i + 1;
+        loc_err.e_col = loc_err.s_col;
+
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorMissImportValue),
+                                     loc_err,
+                                     from__String("miss import value"),
+                                     None());
+
+        emit__Diagnostic(err);
     }
 
     if (!as_value)
         return NEW(ImportStmt, import_value, is_pub, None());
-    else {
-        TODO("as value");
-    }
+    else
+        return NEW(ImportStmt, import_value, is_pub, Some(as_value));
 }
 
 static struct String *

@@ -1722,6 +1722,7 @@ typedef struct Stmt
         struct MatchStmt *match;
         struct WhileStmt *while_;
         struct ForStmt *for_;
+		struct ImportStmt *import;
     } value;
 } Stmt;
 
@@ -1780,6 +1781,13 @@ __new__StmtWhile(struct Location loc, struct WhileStmt *while_);
  */
 struct Stmt *
 __new__StmtFor(struct Location loc, struct ForStmt *for_);
+
+/**
+ *
+ * @brief Construct the Stmt type (Import variant).
+ */
+struct Stmt *
+__new__StmtImport(struct Location loc, struct ImportStmt *import);
 
 /**
  *
@@ -1873,6 +1881,13 @@ __free__StmtFor(struct Stmt *self)
 {
     FREE(ForStmt, self->value.for_);
     free(self);
+}
+
+inline void
+__free__StmtImport(struct Stmt *self)
+{
+	FREE(ImportStmt, self->value.import);
+	free(self);
 }
 
 /**

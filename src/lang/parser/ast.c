@@ -2195,6 +2195,16 @@ __new__StmtFor(struct Location loc, struct ForStmt *for_)
     return self;
 }
 
+struct Stmt *
+__new__StmtImport(struct Location loc, struct ImportStmt *import)
+{
+    struct Stmt *self = malloc(sizeof(struct Stmt));
+    self->kind = StmtKindImport;
+    self->loc = loc;
+    self->value.import = import;
+    return self;
+}
+
 struct String *
 to_string__Stmt(struct Stmt self)
 {
@@ -2249,6 +2259,9 @@ __free__StmtAll(struct Stmt *self)
             break;
         case StmtKindFor:
             FREE(StmtFor, self);
+            break;
+        case StmtKindImport:
+            FREE(StmtImport, self);
             break;
         default:
             FREE(Stmt, self);
