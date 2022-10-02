@@ -497,12 +497,18 @@ enum UnaryOpKind
     UnaryOpKindNegative = 1,
     UnaryOpKindNot,
     UnaryOpKindReference,
+    UnaryOpKindCustom
 };
 
 typedef struct UnaryOp
 {
     enum UnaryOpKind kind;
     struct Expr *right;
+
+    union
+    {
+        struct String *op; // struct String&
+    };
 } UnaryOp;
 
 /**
@@ -510,9 +516,9 @@ typedef struct UnaryOp
  * @brief Construct the UnaryOp type.
  */
 inline struct UnaryOp
-__new__UnaryOp(enum UnaryOpKind kind, struct Expr *right)
+__new__UnaryOp(enum UnaryOpKind kind, struct Expr *right, struct String *op)
 {
-    struct UnaryOp self = { .kind = kind, .right = right };
+    struct UnaryOp self = { .kind = kind, .right = right, .op = op };
 
     return self;
 }
@@ -574,7 +580,8 @@ enum BinaryOpKind
     BinaryOpKindBitOr,
     BinaryOpKindBitAnd,
     BinaryOpKindBitNot,
-    BinaryOpKindExponent
+    BinaryOpKindExponent,
+    BinaryOpKindCustom
 };
 
 typedef struct BinaryOp
@@ -582,6 +589,11 @@ typedef struct BinaryOp
     enum BinaryOpKind kind;
     struct Expr *left;
     struct Expr *right;
+
+    union
+    {
+        struct String *op;
+    };
 } BinaryOp;
 
 /**
@@ -589,7 +601,7 @@ typedef struct BinaryOp
  * @brief Construct the BinaryOp type.
  */
 struct BinaryOp
-__new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right);
+__new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right, struct String *op);
 
 /**
  *
@@ -798,7 +810,8 @@ enum ExprKind
     ExprKindNil,
     ExprKindWildcard,
     ExprKindLiteral,
-    ExprKindVariable
+    ExprKindVariable,
+    ExprKindGrouping
 };
 
 typedef struct Expr
@@ -828,6 +841,7 @@ typedef struct Expr
         struct Expr *ref;
         struct Literal literal;
         struct VariableDecl variable;
+        struct Expr *grouping;
     } value;
 } Expr;
 
@@ -979,6 +993,13 @@ __new__ExprLiteral(struct Literal literal, struct Location loc);
  */
 struct Expr *
 __new__ExprVariable(struct VariableDecl variable, struct Location loc);
+
+/**
+ *
+ * @brief Construct the Expr type (Grouping variant).
+ */
+struct Expr *
+__new__ExprGrouping(struct Expr *grouping, struct Location loc);
 
 /**
  *
@@ -1176,6 +1197,13 @@ __free__ExprVariable(struct Expr *self)
     FREE(VariableDecl, self->value.variable);
     free(self);
 }
+
+/**
+ *
+ * @brief Free the Expr type (Grouping variant).
+ */
+void
+__free__ExprGrouping(struct Expr *self);
 
 /**
  *

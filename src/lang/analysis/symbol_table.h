@@ -118,6 +118,10 @@ typedef struct DataTypeSymbol
         struct Vec *custom; // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*
     } value;
+
+    union {
+        struct String *custom_name;
+    };
 } DataTypeSymbol;
 
 /**
@@ -184,6 +188,7 @@ __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
  */
 struct DataTypeSymbol *
 __new__DataTypeSymbolCustom(struct Vec *generic_params,
+                            struct String *custom_name,
                             struct Scope *scope);
 
 /**

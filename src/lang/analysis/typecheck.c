@@ -979,6 +979,7 @@ check_data_type(struct Typecheck *self,
                                         return NEW(
                                           DataTypeSymbolCustom,
                                           generic_params,
+                                          NULL,
                                           NEW(Scope,
                                               self->parser.parse_block.scanner
                                                 .src->file.name,
@@ -1019,6 +1020,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1037,6 +1039,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1085,6 +1088,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1104,6 +1108,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1122,6 +1127,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1140,6 +1146,7 @@ check_data_type(struct Typecheck *self,
                             return NEW(
                               DataTypeSymbolCustom,
                               generic_params,
+                              NULL,
                               NEW(
                                 Scope,
                                 self->parser.parse_block.scanner.src->file.name,
@@ -1183,6 +1190,7 @@ check_data_type(struct Typecheck *self,
                     };
                     return NEW(DataTypeSymbolCustom,
                                data_type->value.custom->items[1],
+                               NULL,
                                search_in_modules_from_name(
                                  self,
                                  data_type->value.custom->items[0],
@@ -1374,15 +1382,18 @@ infer_expression(struct Typecheck *self,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type)
 {
-#define INFER(dt)                                          \
-    if (defined_data_type != NULL)                         \
-        return copy__DataTypeSymbol(defined_data_type);    \
-    else if (is_return_type && fun != NULL)                \
-        if (fun->return_type != NULL)                      \
-            return copy__DataTypeSymbol(fun->return_type); \
-        else                                               \
-            return dt;                                     \
-    else                                                   \
+#define INFER(dt)                                                              \
+    if (defined_data_type != NULL)                                             \
+        return copy__DataTypeSymbol(defined_data_type);                        \
+    else if (is_return_type && fun != NULL && dt != NULL)                      \
+        if (fun->return_type != NULL)                                          \
+            return copy__DataTypeSymbol(fun->return_type);                     \
+        else                                                                   \
+            return dt;                                                         \
+    else if (dt == NULL)                                                       \
+        assert(0 && "error: cannot infer on nil or undef or other value with " \
+                    "no specified data type");                                 \
+    else                                                                       \
         return dt
 
     switch (expr->kind) {
@@ -1421,13 +1432,22 @@ infer_expression(struct Typecheck *self,
         case ExprKindDereference:
             TODO("infer dereference");
         case ExprKindRef:
-            TODO("infer ref");
+            INFER(NEW(DataTypeSymbolRef,
+                      infer_expression(self,
+                                       fun,
+                                       expr->value.ref,
+                                       local_value,
+                                       local_data_type,
+                                       defined_data_type,
+                                       is_return_type)));
         case ExprKindSelf:
             TODO("infer self");
         case ExprKindUndef:
-            TODO("infer undef");
+            INFER(NULL);
         case ExprKindNil:
-            TODO("infer nil");
+            INFER(
+              NEW(DataTypeSymbolException,
+                  NEW(DataTypeSymbolCustom, NULL, from__String("T"), NULL)));
         case ExprKindWildcard:
             break;
         case ExprKindLiteral:
@@ -1446,16 +1466,17 @@ infer_expression(struct Typecheck *self,
                     INFER(NEW(DataTypeSymbol, DataTypeKindI128));
                 case LiteralKindFloat:
                     INFER(NEW(DataTypeSymbol, DataTypeKindF64));
-                case LiteralKindBitStr: {
-                }
+                case LiteralKindBitStr:
+                    INFER(NEW(DataTypeSymbolArray,
+                              NEW(DataTypeSymbol, DataTypeKindU8),
+                              NULL));
                 case LiteralKindStr:
-                    return NEW(DataTypeSymbol, DataTypeKindStr);
+                    INFER(NEW(DataTypeSymbol, DataTypeKindStr));
                 case LiteralKindUnit:
-                    return NEW(DataTypeSymbol, DataTypeKindUnit);
+                    INFER(NEW(DataTypeSymbol, DataTypeKindUnit));
             }
-            TODO("infer literal");
         case ExprKindVariable:
-            TODO("infer variable");
+            UNREACHABLE("cannot infer on variable");
     }
 }
 
@@ -1468,6 +1489,61 @@ check_expression(struct Typecheck *self,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type)
 {
+    switch (expr->kind) {
+        case ExprKindUnaryOp:
+            switch (expr->value.unary_op.kind) {
+                case UnaryOpKindReference:
+                    TODO("check reference");
+                case UnaryOpKindNegative:
+                    TODO("check negative");
+                case UnaryOpKindNot:
+                    TODO("check not");
+            }
+        case ExprKindBinaryOp:
+            TODO("check binary op");
+        case ExprKindFunCall:
+            TODO("check fun call");
+        case ExprKindRecordCall:
+            TODO("check record call");
+        case ExprKindIdentifier:
+            TODO("check identifier");
+        case ExprKindIdentifierAccess:
+            TODO("check identifier access");
+        case ExprKindArrayAccess:
+            TODO("check array access");
+        case ExprKindTupleAccess:
+            TODO("check tuple access");
+        case ExprKindLambda:
+            TODO("check lambda");
+        case ExprKindTuple:
+            TODO("check tuple");
+        case ExprKindArray:
+            TODO("check array");
+        case ExprKindVariant:
+            TODO("check variant");
+        case ExprKindTry:
+            TODO("check try");
+        case ExprKindBlock:
+            TODO("check block");
+        case ExprKindQuestionMark:
+            TODO("check question mark");
+        case ExprKindDereference:
+            TODO("check dereference");
+        case ExprKindRef:
+            TODO("check ref");
+        case ExprKindSelf:
+            TODO("check self");
+        case ExprKindUndef:
+            TODO("check undef");
+        case ExprKindNil:
+            TODO("check nil");
+        case ExprKindWildcard:
+            TODO("check wildcard");
+        case ExprKindLiteral:
+            TODO("check literal");
+        case ExprKindVariable:
+            TODO("check variable");
+    }
 }
 
 static void

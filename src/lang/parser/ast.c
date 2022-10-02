@@ -540,9 +540,9 @@ __free__UnaryOp(struct UnaryOp self)
 }
 
 struct BinaryOp
-__new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right)
+__new__BinaryOp(enum BinaryOpKind kind, struct Expr *left, struct Expr *right, struct String *op)
 {
-    struct BinaryOp self = { .kind = kind, .left = left, .right = right };
+    struct BinaryOp self = { .kind = kind, .left = left, .right = right, .op = op };
 
     return self;
 }
@@ -1089,6 +1089,16 @@ __new__ExprVariable(struct VariableDecl variable, struct Location loc)
     return self;
 }
 
+struct Expr *
+__new__ExprGrouping(struct Expr *grouping, struct Location loc)
+{
+    struct Expr *self = malloc(sizeof(struct Expr));
+    self->kind = ExprKindGrouping;
+    self->loc = loc;
+    self->value.grouping = grouping;
+    return self;
+}
+
 struct String *
 to_string__Expr(struct Expr self)
 {
@@ -1179,6 +1189,13 @@ __free__ExprRef(struct Expr *self)
 }
 
 void
+__free__ExprGrouping(struct Expr *self)
+{
+    FREE(ExprAll, self->value.grouping);
+    free(self);
+}
+
+void
 __free__ExprAll(struct Expr *self)
 {
     switch (self->kind) {
@@ -1241,6 +1258,9 @@ __free__ExprAll(struct Expr *self)
             break;
         case ExprKindVariable:
             FREE(ExprVariable, self);
+            break;
+        case ExprKindGrouping:
+            FREE(ExprGrouping, self);
             break;
         default:
             FREE(Expr, self);

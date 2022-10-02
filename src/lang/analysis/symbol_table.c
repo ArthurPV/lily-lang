@@ -94,10 +94,11 @@ __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
 }
 
 struct DataTypeSymbol *
-__new__DataTypeSymbolCustom(struct Vec *generic_params, struct Scope *scope)
+__new__DataTypeSymbolCustom(struct Vec *generic_params, struct String *name, struct Scope *scope)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindCustom;
+    self->custom_name = name;
     self->scope = scope;
     self->value.custom = generic_params;
     return self;
@@ -184,6 +185,9 @@ __free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
 {
     if (self->scope != NULL)
         FREE(Scope, self->scope);
+
+    if (self->custom_name != NULL)
+        FREE(String, self->custom_name);
 
     if (self->value.custom != NULL) {
         for (Usize i = len__Vec(*self->value.custom); i--;)
