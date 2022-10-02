@@ -170,7 +170,7 @@ This last step will just add the analyzer declarations into a vector (decls).
         next_token_pb(parse_block);                                            \
                                                                                \
         while (parse_block->current->kind != TokenKindRHook) {                 \
-            push__Vec(self->generic_params, &*parse_block->current);           \
+            push__Vec(self->generic_params, parse_block->current);             \
             next_token_pb(parse_block);                                        \
         }                                                                      \
                                                                                \
@@ -197,7 +197,7 @@ This last step will just add the analyzer declarations into a vector (decls).
         next_token_pb(parse_block);                             \
                                                                 \
         while (parse_block->current->kind != TokenKindRParen) { \
-            push__Vec(self->params, &*parse_block->current);    \
+            push__Vec(self->params, parse_block->current);      \
             next_token_pb(parse_block);                         \
         }                                                       \
                                                                 \
@@ -332,6 +332,10 @@ static Usize count_warning = 0;
 
 static struct ParseContext *
 get_block(struct ParseBlock *self, bool in_module);
+static void
+valid_name(struct ParseBlock *self,
+           struct String *name,
+           bool start_by_uppercase);
 static inline void
 next_token_pb(struct ParseBlock *self);
 static inline void
@@ -613,7 +617,7 @@ __new__ParseBlock(struct Scanner scanner)
                                .blocks =
                                  NEW(Vec, sizeof(struct ParseContext *)),
                                .current =
-                                 &*(struct Token *)get__Vec(*scanner.tokens, 0),
+                                 (struct Token *)get__Vec(*scanner.tokens, 0),
                                .disable_warning = NEW(Vec, sizeof(Str)),
                                .pos = 0 };
 
@@ -753,7 +757,9 @@ get_block(struct ParseBlock *self, bool in_module)
                     struct ConstantParseContext constant_parse_context =
                       NEW(ConstantParseContext);
 
-                    constant_parse_context.name = &*self->current->lit;
+                    valid_name(self, self->current->lit, true);
+
+                    constant_parse_context.name = self->current->lit;
 
                     get_constant_parse_context(&constant_parse_context, self);
                     end__Location(&loc,
@@ -884,7 +890,7 @@ get_block(struct ParseBlock *self, bool in_module)
 
             if (eq__String(attribute, from__String("warning"), true)) {
                 if (self->current->kind == TokenKindStringLit && !in_module) {
-                    push__Vec(self->disable_warning, &*self->current->lit);
+                    push__Vec(self->disable_warning, self->current->lit);
                     next_token_pb(self);
                 } else if (self->current->kind != TokenKindStringLit) {
                     EXPECTED_TOKEN_PB(self, TokenKindStringLit, {
@@ -924,7 +930,9 @@ get_block(struct ParseBlock *self, bool in_module)
             struct ConstantParseContext constant_parse_context =
               NEW(ConstantParseContext);
 
-            constant_parse_context.name = &*self->current->lit;
+            valid_name(self, self->current->lit, true);
+
+            constant_parse_context.name = self->current->lit;
 
             get_constant_parse_context(&constant_parse_context, self);
             end__Location(
@@ -974,6 +982,37 @@ get_block(struct ParseBlock *self, bool in_module)
     return NULL;
 }
 
+static void
+valid_name(struct ParseBlock *self,
+           struct String *name,
+           bool start_by_uppercase)
+{
+    char *c = get__String(*name, 0);
+    bool is_uppercase = c >= (char *)'A' && c <= (char *)'Z';
+
+    if (is_uppercase && !start_by_uppercase) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorNameMustStartByLowercaseCharacter),
+              *self->current->loc,
+              from__String(""),
+              None());
+
+        emit__Diagnostic(err);
+    } else if (!is_uppercase && start_by_uppercase) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorNameMustStartByUppercaseCharacter),
+              *self->current->loc,
+              from__String(""),
+              None());
+
+        emit__Diagnostic(err);
+    }
+}
+
 void
 run__ParseBlock(struct ParseBlock *self)
 {
@@ -1003,7 +1042,7 @@ next_token_pb(struct ParseBlock *self)
     if (self->current->kind != TokenKindEof) {
         self->pos += 1;
         self->current =
-          &*(struct Token *)get__Vec(*self->scanner.tokens, self->pos);
+          (struct Token *)get__Vec(*self->scanner.tokens, self->pos);
     }
 }
 
@@ -1049,7 +1088,9 @@ get_type_name(struct ParseBlock *self)
         return NULL;
     }
 
-    return &*self->current->lit;
+    valid_name(self, self->current->lit, true);
+
+    return self->current->lit;
 }
 
 static struct ParseContext *
@@ -1154,7 +1195,9 @@ get_object_name(struct ParseBlock *self)
         return NULL;
     }
 
-    return &*self->current->lit;
+    valid_name(self, self->current->lit, true);
+
+    return self->current->lit;
 }
 
 static struct ParseContext *
@@ -1184,7 +1227,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
         while (self->current->kind != TokenKindFatArrow &&
                self->current->kind != TokenKindColon &&
                self->current->kind != TokenKindEof) {
-            push__Vec(impl, &*self->current);
+            push__Vec(impl, self->current);
             next_token_pb(self);
         }
     }
@@ -1214,7 +1257,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
 
         while (self->current->kind != TokenKindRHook &&
                self->current->kind != TokenKindEof) {
-            push__Vec(inh, &*self->current);
+            push__Vec(inh, self->current);
             next_token_pb(self);
         }
 
@@ -1377,7 +1420,7 @@ get_generic_params(struct ParseBlock *self)
         next_token_pb(self);
 
         while (self->current->kind != TokenKindRHook) {
-            push__Vec(generic_params, &*self->current);
+            push__Vec(generic_params, self->current);
             next_token_pb(self);
         }
 
@@ -1475,10 +1518,10 @@ valid_body_item(struct ParseBlock *parse_block,
 #define PUSH_BODY()                                          \
     if (is_fun)                                              \
         push__Vec(((struct FunParseContext *)self)->body,    \
-                  &*parse_block->current);                   \
+                  parse_block->current);                     \
     else                                                     \
         push__Vec(((struct MethodParseContext *)self)->body, \
-                  &*parse_block->current);
+                  parse_block->current);
 
 static void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
@@ -1555,10 +1598,10 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
                 default:
                     if (is_fun)
                         push__Vec(((struct FunParseContext *)self)->body,
-                                  &*parse_block->current);
+                                  parse_block->current);
                     else
                         push__Vec(((struct MethodParseContext *)self)->body,
-                                  &*parse_block->current);
+                                  parse_block->current);
 
                     next_token_pb(parse_block);
                     break;
@@ -1612,7 +1655,7 @@ get_fun_parse_context(struct FunParseContext *self,
 
             // #(Example[T], ...)
             while (parse_block->current->kind != TokenKindRParen) {
-                push__Vec(self->tags, &*parse_block->current);
+                push__Vec(self->tags, parse_block->current);
                 next_token_pb(parse_block);
             }
 
@@ -1638,16 +1681,20 @@ get_fun_parse_context(struct FunParseContext *self,
 
             next_token_pb(parse_block);
         } else {
-            push__Vec(self->tags, &*parse_block->current);
+            push__Vec(self->tags, parse_block->current);
             next_token_pb(parse_block);
         }
     }
 
     // 2. Get name of function.
-    if (parse_block->current->kind == TokenKindIdentifier)
-        self->name = &*parse_block->current->lit;
-    else if (parse_block->current->kind == TokenKindIdentifierOp) {
-        self->name = &*parse_block->current->lit;
+    if (parse_block->current->kind == TokenKindIdentifier) {
+        valid_name(parse_block, parse_block->current->lit, false);
+
+        self->name = parse_block->current->lit;
+    } else if (parse_block->current->kind == TokenKindIdentifierOp) {
+        valid_name(parse_block, parse_block->current->lit, false);
+
+        self->name = parse_block->current->lit;
         self->is_operator = true;
     } else {
         struct Diagnostic *err =
@@ -1675,7 +1722,7 @@ get_fun_parse_context(struct FunParseContext *self,
            parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        push__Vec(self->return_type, &*parse_block->current);
+        push__Vec(self->return_type, parse_block->current);
         next_token_pb(parse_block);
     }
 
@@ -1778,7 +1825,7 @@ get_enum_parse_context(struct EnumParseContext *self,
             self->is_error = true;
         } else {
             while (parse_block->current->kind != TokenKindRParen) {
-                push__Vec(self->data_type, &*parse_block->current);
+                push__Vec(self->data_type, parse_block->current);
                 next_token_pb(parse_block);
             }
 
@@ -1802,7 +1849,7 @@ get_enum_parse_context(struct EnumParseContext *self,
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
         if (valid_token_in_enum_variants(parse_block, bad_token)) {
-            push__Vec(self->variants, &*parse_block->current);
+            push__Vec(self->variants, parse_block->current);
             next_token_pb(parse_block);
         } else {
             bad_token = true;
@@ -1933,7 +1980,7 @@ get_record_parse_context(struct RecordParseContext *self,
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
         if (valid_token_in_record_fields(parse_block, bad_token)) {
-            push__Vec(self->fields, &*parse_block->current);
+            push__Vec(self->fields, parse_block->current);
             next_token_pb(parse_block);
         } else {
             bad_token = true;
@@ -2022,7 +2069,7 @@ get_alias_parse_context(struct AliasParseContext *self,
     while (parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
         if (valid_token_in_alias_data_type(parse_block, bad_token)) {
-            push__Vec(self->data_type, &*parse_block->current);
+            push__Vec(self->data_type, parse_block->current);
             next_token_pb(parse_block);
         } else {
             bad_token = true;
@@ -2127,7 +2174,7 @@ get_trait_parse_context(struct TraitParseContext *self,
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
         if (valid_token_in_trait_body(parse_block, bad_token)) {
-            push__Vec(self->body, &*parse_block->current);
+            push__Vec(self->body, parse_block->current);
             next_token_pb(parse_block);
         } else {
             bad_token = true;
@@ -2204,7 +2251,7 @@ get_class_parse_context(struct ClassParseContext *self,
                         parse_block->current->loc->s_col);
 
         if (valid_class_token_in_body(parse_block, bad_token)) {
-            // push__Vec(self->body, &*parse_block->current);
+            // push__Vec(self->body, parse_block->current);
             // next_token_pb(parse_block);
 
             if (parse_block->current->kind == TokenKindAt)
@@ -2258,8 +2305,9 @@ get_class_parse_context(struct ClassParseContext *self,
             emit__Diagnostic(err);
         }
 
-        struct String *name = &*parse_block->current->lit;
+        struct String *name = parse_block->current->lit;
 
+        valid_name(parse_block, name, false);
         next_token_pb(parse_block);
 
         if (parse_block->current->kind != TokenKindLParen &&
@@ -2484,7 +2532,7 @@ get_method_parse_context(struct MethodParseContext *self,
 
         while (parse_block->current->kind != TokenKindEq &&
                parse_block->current->kind != TokenKindEof) {
-            push__Vec(self->return_type, &*parse_block->current);
+            push__Vec(self->return_type, parse_block->current);
             next_token_pb(parse_block);
         }
     }
@@ -2528,7 +2576,7 @@ get_property_parse_context(struct PropertyParseContext *self,
 
     while (parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        push__Vec(self->data_type, &*parse_block->current);
+        push__Vec(self->data_type, parse_block->current);
         next_token_pb(parse_block);
     }
 
@@ -2559,7 +2607,7 @@ get_import_parse_context(struct ImportParseContext *self,
     next_token_pb(parse_block);
 
     if (parse_block->current->kind == TokenKindStringLit) {
-        self->value = &*parse_block->current->lit;
+        self->value = parse_block->current->lit;
         self->value_loc = *parse_block->current->loc;
         next_token_pb(parse_block);
     } else {
@@ -2577,7 +2625,7 @@ get_import_parse_context(struct ImportParseContext *self,
         next_token_pb(parse_block);
 
         if (parse_block->current->kind == TokenKindIdentifier) {
-            self->as_value = &*parse_block->current->lit;
+            self->as_value = parse_block->current->lit;
             next_token_pb(parse_block);
         } else {
             struct Diagnostic *err = NEW(DiagnosticWithErrParser,
@@ -2692,7 +2740,7 @@ get_constant_parse_context(struct ConstantParseContext *self,
         while (parse_block->current->kind != TokenKindColonEq &&
                parse_block->current->kind != TokenKindEof) {
             if (valid_constant_data_type(parse_block, bad_token)) {
-                push__Vec(self->data_type, &*parse_block->current);
+                push__Vec(self->data_type, parse_block->current);
                 next_token_pb(parse_block);
             } else {
                 bad_token = true;
@@ -2724,7 +2772,7 @@ get_constant_parse_context(struct ConstantParseContext *self,
     while (parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
         if (valid_constant_expr(parse_block, bad_token)) {
-            push__Vec(self->expr, &*parse_block->current);
+            push__Vec(self->expr, parse_block->current);
             next_token_pb(parse_block);
         } else {
             bad_token = true;
@@ -2770,7 +2818,7 @@ get_error_parse_context(struct ErrorParseContext *self,
         next_token_pb(parse_block);
 
         while (parse_block->current->kind != TokenKindRHook) {
-            push__Vec(self->generic_params, &*parse_block->current);
+            push__Vec(self->generic_params, parse_block->current);
             next_token_pb(parse_block);
         }
 
@@ -2786,8 +2834,11 @@ get_error_parse_context(struct ErrorParseContext *self,
                                      None());
 
         emit__Diagnostic(err);
-    } else
-        self->name = &*parse_block->current->lit;
+    } else {
+        valid_name(parse_block, parse_block->current->lit, true);
+
+        self->name = parse_block->current->lit;
+    }
 
     next_token_pb(parse_block);
 
@@ -2800,7 +2851,7 @@ get_error_parse_context(struct ErrorParseContext *self,
                parse_block->current->kind != TokenKindEof) {
             if (valid_token_in_enum_variants(
                   parse_block, bad_token)) { // change this function call
-                push__Vec(self->data_type, &*parse_block->current);
+                push__Vec(self->data_type, parse_block->current);
                 next_token_pb(parse_block);
             } else {
                 bad_token = true;
@@ -2857,7 +2908,9 @@ get_module_parse_context(struct ModuleParseContext *self,
 
         emit__Diagnostic(err);
     } else {
-        self->name = &*parse_block->current->lit;
+        valid_name(parse_block, parse_block->current->lit, true);
+
+        self->name = parse_block->current->lit;
 
         next_token_pb(parse_block);
     }
@@ -3219,7 +3272,7 @@ __new__Parser(struct ParseBlock parse_block)
 
     if (len__Vec(*parse_block.blocks) > 0)
         self.current =
-          &*((struct ParseContext *)get__Vec(*parse_block.blocks, 0));
+          ((struct ParseContext *)get__Vec(*parse_block.blocks, 0));
     else
         self.current = NULL;
 
@@ -3357,13 +3410,13 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             else {
                 struct Vec *names = NEW(Vec, sizeof(struct String));
 
-                push__Vec(names, &*parse_decl->previous->lit);
+                push__Vec(names, parse_decl->previous->lit);
 
                 while (parse_decl->current->kind == TokenKindDot) {
                     next_token(parse_decl);
 
                     if (parse_decl->current->kind == TokenKindIdentifier)
-                        push__Vec(names, &*parse_decl->current->lit);
+                        push__Vec(names, parse_decl->current->lit);
                     else
                         assert(0 && "error");
 
@@ -3683,7 +3736,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 
         switch (parse_decl->current->kind) {
             case TokenKindIdentifier: {
-                data_type = &*parse_decl->current->lit;
+                data_type = parse_decl->current->lit;
 
                 next_token(parse_decl);
 
@@ -3889,7 +3942,7 @@ parse_variable(struct Parser self,
                struct Location loc,
                bool is_mut)
 {
-    struct String *name = &*parse_decl->previous->lit;
+    struct String *name = parse_decl->previous->lit;
     struct DataType *data_type = NULL;
 
     if (parse_decl->current->kind == TokenKindColonColon) {
@@ -3997,7 +4050,7 @@ parse_expr_binary_op(struct Parser self,
     while (1) {
         int *binary_op_kind = parse_binary_op(parse_decl->current->kind);
         struct String *binary_op_string = NULL;
-        binary_op_string = &*parse_decl->current->lit;
+        binary_op_string = parse_decl->current->lit;
 
         if (!binary_op_kind)
             break;
@@ -4114,7 +4167,7 @@ exit_unary : {
 
                         push__Vec(ids,
                                   NEW(ExprIdentifier,
-                                      &*parse_decl->previous->lit,
+                                      parse_decl->previous->lit,
                                       *parse_decl->previous->loc));
 
                         expr =
@@ -4128,7 +4181,7 @@ exit_unary : {
                           parse_variant_expr(self,
                                              parse_decl,
                                              NEW(ExprIdentifier,
-                                                 &*parse_decl->previous->lit,
+                                                 parse_decl->previous->lit,
                                                  *parse_decl->previous->loc),
                                              loc);
                         break;
@@ -4137,7 +4190,7 @@ exit_unary : {
                           parse_fun_call_expr(self,
                                               parse_decl,
                                               NEW(ExprIdentifier,
-                                                  &*parse_decl->previous->lit,
+                                                  parse_decl->previous->lit,
                                                   *parse_decl->previous->loc),
                                               loc);
                         break;
@@ -4146,7 +4199,7 @@ exit_unary : {
                           self,
                           parse_decl,
                           NEW(ExprIdentifier,
-                              &*parse_decl->previous->lit,
+                              parse_decl->previous->lit,
                               *parse_decl->previous->loc),
                           loc);
                         break;
@@ -4155,7 +4208,7 @@ exit_unary : {
                           self,
                           parse_decl,
                           NEW(ExprIdentifier,
-                              &*parse_decl->previous->lit,
+                              parse_decl->previous->lit,
                               *parse_decl->previous->loc),
                           loc);
                         break;
@@ -4164,7 +4217,7 @@ exit_unary : {
                           self,
                           parse_decl,
                           NEW(ExprIdentifier,
-                              &*parse_decl->previous->lit,
+                              parse_decl->previous->lit,
                               *parse_decl->previous->loc),
                           loc);
                         break;
@@ -4179,7 +4232,7 @@ exit_unary : {
                                       parse_decl->previous->loc->e_col);
 
                         expr =
-                          NEW(ExprIdentifier, &*parse_decl->previous->lit, loc);
+                          NEW(ExprIdentifier, parse_decl->previous->lit, loc);
 
                         break;
                 }
@@ -4651,7 +4704,7 @@ parse_fun_call_expr(struct Parser self,
                 if (((struct Token *)get__Vec(*parse_decl->tokens,
                                               parse_decl->pos + 1))
                       ->kind == TokenKindColonEq) {
-                    struct String *name = &*parse_decl->current->lit;
+                    struct String *name = parse_decl->current->lit;
 
                     next_token(parse_decl);
                     next_token(parse_decl);
@@ -4733,7 +4786,7 @@ parse_record_call_expr(struct Parser self,
                         parse_decl->current->loc->s_col);
 
         if (parse_decl->current->kind == TokenKindIdentifier) {
-            name = &*parse_decl->current->lit;
+            name = parse_decl->current->lit;
 
             next_token(parse_decl);
         } else {
@@ -4862,7 +4915,7 @@ parse_identifier_access(struct Parser self,
             case TokenKindIdentifier:
                 push__Vec(ids,
                           NEW(ExprIdentifier,
-                              &*parse_decl->current->lit,
+                              parse_decl->current->lit,
                               *parse_decl->current->loc));
                 next_token(parse_decl);
 
@@ -5620,26 +5673,26 @@ get_value_in_selector__parse_import_stmt(struct Parser self,
         if ((current >= (char *)'a' && current <= (char *)'z') ||
             (current >= (char *)'A' && current <= (char *)'Z') ||
             current == (char *)'_') {
-            push__Vec(value,
-                      NEW(ImportStmtValueAccess,
-                          get_name__parse_import_stmt(
-                            self, buffer, buffer_loc, &*pos)));
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            push__Vec(
+              value,
+              NEW(ImportStmtValueAccess,
+                  get_name__parse_import_stmt(self, buffer, buffer_loc, pos)));
+            next_char__parse_import_stmt(buffer, &current, pos);
         } else if (current == (char *)'*') {
             push__Vec(value, NEW(ImportStmtValueWildcard));
-            next_char__parse_import_stmt(buffer, &current, &*pos);
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
 
             break;
         } else if (current == (char *)'{') {
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
 
             push__Vec(value,
                       NEW(ImportStmtValueSelector,
                           get_selector__parse_import_stmt(
-                            self, buffer, buffer_loc, &*pos)));
+                            self, buffer, buffer_loc, pos)));
         } else if (current == (char *)'}') {
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
 
             break;
         } else {
@@ -5682,24 +5735,24 @@ get_selector__parse_import_stmt(struct Parser self,
     while (current != (char *)'}') {
         push__Vec(selector,
                   get_value_in_selector__parse_import_stmt(
-                    self, buffer, buffer_loc, &*pos));
+                    self, buffer, buffer_loc, pos));
 
         current = get__String(buffer, *pos);
 
         if (get__String(buffer, (*(pos)-1)) == (char *)',')
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
 
         while (current == (char *)' ' || current == (char *)'\t')
-            next_char__parse_import_stmt(buffer, &current, &*pos);
+            next_char__parse_import_stmt(buffer, &current, pos);
     }
 
     if (current == NULL)
         assert(0 && "error");
     else
-        next_char__parse_import_stmt(buffer, &current, &*pos);
+        next_char__parse_import_stmt(buffer, &current, pos);
 
     if (current == (char *)'.')
-        next_char__parse_import_stmt(buffer, &current, &*pos);
+        next_char__parse_import_stmt(buffer, &current, pos);
 
     return selector;
 }
@@ -5806,7 +5859,7 @@ parse_fun_params(struct Parser self,
                 if (parse_decl->pos + 1 == len__Vec(*parse_decl->tokens))
                     next_token(parse_decl);
             } else {
-                name = &*parse_decl->current->lit;
+                name = parse_decl->current->lit;
 
                 next_token(parse_decl);
             }
@@ -6026,7 +6079,7 @@ parse_enum_declaration(struct Parser *self,
               &loc, parse.current->loc->s_line, parse.current->loc->s_col);
 
             if (parse.current->kind == TokenKindIdentifier) {
-                variant_name = &*parse.current->lit;
+                variant_name = parse.current->lit;
                 next_token(&parse);
             } else {
                 struct Diagnostic *err =
@@ -6114,7 +6167,7 @@ parse_record_declaration(struct Parser *self,
             }
 
             if (parse.current->kind == TokenKindIdentifier) {
-                field_name = &*parse.current->lit;
+                field_name = parse.current->lit;
                 next_token(&parse);
             } else {
                 struct Diagnostic *err =
@@ -6332,7 +6385,7 @@ parse_trait_declaration(struct Parser *self,
                 }
 
                 if (parse.current->kind == TokenKindIdentifier) {
-                    name = &*parse.current->lit;
+                    name = parse.current->lit;
                     next_token(&parse);
                 } else {
                     struct Diagnostic *err =

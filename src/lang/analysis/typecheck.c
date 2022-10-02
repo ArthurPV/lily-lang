@@ -76,11 +76,10 @@ static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 #define MaxInt128 (1 << 127) - 1
 
 static const Str BuiltinFirstLayer[] = {
-    "Int8",    "Int16",  "Int32",  "Int64",   "Int128", "Uint8",
-    "Uint16",  "Uint32", "Uint64", "Uint128", "Bool",   "Float32",
-    "Float64", "Char",   "Str",    "Isize",   "Usize",  "Optional",
-    "Ptr",     "Tuple",  "Array",  "Fun",     "Ref",    "Custom",
-    "Mem",     "Io",     "Never",  "sizeof",  "typeof"
+    "Int8",   "Int16",  "Int32",   "Int64",    "Int128",  "Uint8",   "Uint16",
+    "Uint32", "Uint64", "Uint128", "Bool",     "Float32", "Float64", "Char",
+    "Str",    "Isize",  "Usize",   "Optional", "Ptr",     "Tuple",   "Array",
+    "Fun",    "Ref",    "Custom",  "Mem",      "Io",      "Never"
 };
 
 static struct SearchContext
@@ -310,6 +309,12 @@ get_return_type_of_fun_builtin(struct Typecheck *self,
                                const Str module_name,
                                const Str fun_name,
                                Usize param_count);
+static struct Scope *
+search_in_fun_local_value(struct Vec *local_value, struct String *id);
+static struct Scope *
+search_value_in_function(struct Typecheck *self,
+                         struct Vec *local_value,
+                         struct String *id);
 static struct DataTypeSymbol *
 check_if_defined_data_type_is_equal_to_infered_data_type(
   struct Typecheck *self,
@@ -930,7 +935,7 @@ resolve_import_value(struct Typecheck *self,
                     current_symb->value.module->body = body;
                     current_symb->value.module->visibility =
                       is_pub ? VisibilityPublic : VisibilityPrivate;
-                    current_symb->value.module->loc_import = &import_loc;
+                    current_symb->value.module->import_loc = &import_loc;
                 } else
                     concat__Vec(import_symbs, import_symbs_selector);
 
@@ -1949,8 +1954,20 @@ check_alias(struct Typecheck *self,
                           get_name__Generic(get__Vec(
                             *alias->alias_decl->value.alias->generic_params,
                             j)),
-                          false))
-                        assert(0 && "error: duplicate generic param name");
+                          false)) {
+                        struct Diagnostic *err = NEW(
+                          DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorDuplicateGenericParam),
+                          ((struct Generic *)get__Vec(
+                             *alias->alias_decl->value.alias->generic_params,
+                             j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("rename this generic argument")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push generic params of enum_decl in enum_->generic_params
                 switch (((struct Generic *)get__Vec(
@@ -2015,8 +2032,19 @@ check_enum(struct Typecheck *self,
                             *enum_->enum_decl->value.enum_->generic_params, i)),
                           get_name__Generic(get__Vec(
                             *enum_->enum_decl->value.enum_->generic_params, j)),
-                          false))
-                        assert(0 && "error: duplicate generic param name");
+                          false)) {
+                        struct Diagnostic *err = NEW(
+                          DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorDuplicateGenericParam),
+                          ((struct Generic *)get__Vec(
+                             *enum_->enum_decl->value.enum_->generic_params, j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("rename this generic argument")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push generic params of enum_decl in enum_->generic_params
                 switch (((struct Generic *)get__Vec(
@@ -2058,8 +2086,19 @@ check_enum(struct Typecheck *self,
                           ((struct VariantEnum *)get__Vec(
                              *enum_->enum_decl->value.enum_->variants, j))
                             ->name,
-                          false))
-                        assert(0 && "error: duplicate variant name");
+                          false)) {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrTypecheck,
+                              self,
+                              NEW(LilyError, LilyErrorDuplicateVariant),
+                              ((struct Generic *)get__Vec(
+                                 *enum_->enum_decl->value.enum_->variants, j))
+                                ->loc,
+                              from__String(""),
+                              Some(from__String("rename this variant")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push variant enum in enum_->variants
                 if (((struct VariantEnum *)get__Vec(
@@ -2116,8 +2155,20 @@ check_record(struct Typecheck *self,
                           get_name__Generic(get__Vec(
                             *record->record_decl->value.record->generic_params,
                             j)),
-                          false))
-                        assert(0 && "error: duplicate generic param name");
+                          false)) {
+                        struct Diagnostic *err = NEW(
+                          DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorDuplicateGenericParam),
+                          ((struct Generic *)get__Vec(
+                             *record->record_decl->value.record->generic_params,
+                             j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("rename this generic argument")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push generic params of record_decl in record->generic_params
                 switch (
@@ -2161,8 +2212,19 @@ check_record(struct Typecheck *self,
                           ((struct FieldRecord *)get__Vec(
                              *record->record_decl->value.record->fields, j))
                             ->name,
-                          false))
-                        assert(0 && "error: duplicate variant name");
+                          false)) {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrTypecheck,
+                              self,
+                              NEW(LilyError, LilyErrorDuplicateField),
+                              ((struct Generic *)get__Vec(
+                                 *record->record_decl->value.record->fields, j))
+                                ->loc,
+                              from__String(""),
+                              Some(from__String("rename this field")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push field record in record->fields
                 if (((struct FieldRecord *)get__Vec(
@@ -2217,8 +2279,20 @@ check_error(struct Typecheck *self,
                           get_name__Generic(get__Vec(
                             *error->error_decl->value.error->generic_params,
                             j)),
-                          false))
-                        assert(0 && "error: duplicate generic param name");
+                          false)) {
+                        struct Diagnostic *err = NEW(
+                          DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorDuplicateGenericParam),
+                          ((struct Generic *)get__Vec(
+                             *error->error_decl->value.error->generic_params,
+                             j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("rename this generic argument")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push generic params of error in error->generic_params
                 switch (((struct Generic *)get__Vec(
@@ -2288,8 +2362,20 @@ check_enum_obj(struct Typecheck *self,
                           get_name__Generic(get__Vec(
                             *enum_obj->enum_decl->value.enum_->generic_params,
                             j)),
-                          false))
-                        assert(0 && "error: duplicate generic param name");
+                          false)) {
+                        struct Diagnostic *err = NEW(
+                          DiagnosticWithErrTypecheck,
+                          self,
+                          NEW(LilyError, LilyErrorDuplicateGenericParam),
+                          ((struct Generic *)get__Vec(
+                             *enum_obj->enum_decl->value.enum_->generic_params,
+                             j))
+                            ->loc,
+                          from__String(""),
+                          Some(from__String("rename this generic argument")));
+
+                        emit__Diagnostic(err);
+                    }
 
                 // Push generic params of enum_obj in enum_obj->generic_params
                 switch (
@@ -4028,6 +4114,35 @@ get_return_type_of_fun_builtin(struct Typecheck *self,
     return dt;
 }
 
+static struct Scope *
+search_in_fun_local_value(struct Vec *local_value, struct String *id)
+{
+    struct Scope *value = NULL;
+
+    for (Usize i = len__Vec(*local_value); i--;) {
+        if (eq__String(
+              ((struct Scope *)get__Vec(*local_value, i))->name, id, false))
+            return get__Vec(*local_value, i);
+    }
+
+    return value;
+}
+
+static struct Scope *
+search_value_in_function(struct Typecheck *self,
+                         struct Vec *local_value,
+                         struct String *id)
+{
+	struct Scope *found_local_value = search_in_fun_local_value(local_value, id);
+
+	if (!found_local_value) {
+		assert(0 && "error");
+	} else if (found_local_value)
+		return found_local_value;
+
+	return NULL;
+}
+
 static struct DataTypeSymbol *
 check_if_defined_data_type_is_equal_to_infered_data_type(
   struct Typecheck *self,
@@ -4222,7 +4337,7 @@ check_expression(struct Typecheck *self,
                             self, module_name, op_str, 2)),
                         right));
                 }
-                case UnaryOpKindNot: {
+                case UnaryOpKindNot:
                     verify_type_of_fun_builtin(
                       search_fun_builtin(self, "Bool", "not", 2),
                       2,
@@ -4241,8 +4356,6 @@ check_expression(struct Typecheck *self,
                           get_return_type_of_fun_builtin(
                             self, "Bool", "not", 2)),
                         right));
-                }
-                    TODO("");
                 case UnaryOpKindCustom:
                     TODO("check unary operator kind custom");
             }
@@ -4410,8 +4523,15 @@ check_expression(struct Typecheck *self,
         }
         case ExprKindRecordCall:
             TODO("check record call");
-        case ExprKindIdentifier:
+        case ExprKindIdentifier: {
+			struct Scope *value = search_value_in_function(self, local_value, expr->value.identifier);
+
+			if (!value) {
+				TODO("");
+			}
+
             TODO("check identifier");
+        }
         case ExprKindIdentifierAccess:
             TODO("check identifier access");
         case ExprKindArrayAccess:

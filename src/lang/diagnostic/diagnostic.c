@@ -284,6 +284,12 @@ lily_error_to_string(struct LilyError err)
         case LilyErrorImportValueAccessIsNotFound:
             return from__String(
               "import value access is not found in the specified path");
+		case LilyErrorDuplicateGenericParam:
+			return from__String("duplicate generic param");
+		case LilyErrorNameMustStartByLowercaseCharacter:
+			return from__String("name must start by lowercase character");
+		case LilyErrorNameMustStartByUppercaseCharacter:
+			return from__String("name must start by uppercase character");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -454,6 +460,12 @@ get_code_of_lily_error(struct LilyError err)
             return "0071";
         case LilyErrorImportValueAccessIsNotFound:
             return "0072";
+		case LilyErrorDuplicateGenericParam:
+			return "0073";
+		case LilyErrorNameMustStartByLowercaseCharacter:
+			return "0074";
+		case LilyErrorNameMustStartByUppercaseCharacter:
+			return "0075";
         default:
             UNREACHABLE("unknown lily error kind");
     }

@@ -486,7 +486,7 @@ typedef struct ModuleSymbol
     struct Vec *body;         // struct Vec<SymbolTable*>*
     struct Scope *scope;      // struct Scope&
     struct Decl *module_decl; // struct Decl&
-	struct Location *loc_import; // for `as` module
+	struct Location *import_loc; // for `as` module
     enum Visibility visibility;
 } ModuleSymbol;
 
@@ -1640,7 +1640,6 @@ __free__ExprSymbolRecordCall(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolIdentifier(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.identifier);
     free(self);
 }
 
@@ -1651,7 +1650,6 @@ __free__ExprSymbolIdentifier(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolIdentifierAccess(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.identifier_access);
     free(self);
 }
 
@@ -1662,7 +1660,6 @@ __free__ExprSymbolIdentifierAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolGlobalAccess(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.global_access);
     free(self);
 }
 
@@ -1745,7 +1742,6 @@ __free__ExprSymbolBlock(struct ExprSymbol *self);
 inline void
 __free__ExprSymbolQuestionMark(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.question_mark);
     free(self);
 }
 
@@ -1756,7 +1752,6 @@ __free__ExprSymbolQuestionMark(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolDereference(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.dereference);
     free(self);
 }
 
@@ -1767,7 +1762,6 @@ __free__ExprSymbolDereference(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolRef(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.ref);
     free(self);
 }
 

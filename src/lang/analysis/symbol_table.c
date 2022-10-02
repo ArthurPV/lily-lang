@@ -921,7 +921,7 @@ __new__ModuleSymbol(struct Decl *module_decl)
     self->body = NEW(Vec, sizeof(struct SymbolTable));
     self->scope = NULL;
     self->module_decl = module_decl;
-    self->loc_import = NULL;
+    self->import_loc = NULL;
     self->visibility = VISIBILITY(module_decl->value.module);
     return self;
 }

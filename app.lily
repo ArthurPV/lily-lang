@@ -1,16 +1,18 @@
-import "std.*" as std
-import "@builtin.*"
+import "test.add" as mod
 
-A := 3;
-B := 120;
-C := "hello";
-D := "Hi!!";
-E := A:$;
+A :: Int32 := 3;
+B :: Int64 := 120;
+C :: Str := "hello";
+D :: Str := "Hi!!";
+E :: Letter := A:$;
 F :: MyError.F[T] := MyError:1;
+G :: Int128 := 333333333;
+H :: Float32 := 3.333;
+I :: Float64 := 3.12230333;
 
 error[T] MyError T;
 
-fun add(x, y) = return x+y;
+pub fun add(x, y) = return x+y;
 
 fun is_zero(x) = if x == 0 do true;;
 
@@ -72,11 +74,11 @@ fun main =
 	end
 end
 
-module hello =
+module Hello =
 	pub fun hello = "hello";
 end
 
-module calc =
+module Calc =
 	pub fun add(x, y) = x+y;
 	pub fun sub(x, y) = x-y;
 	pub fun mul(x, y) = x*y;

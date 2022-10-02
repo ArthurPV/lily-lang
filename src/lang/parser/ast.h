@@ -2129,7 +2129,7 @@ __free__FunParamAll(struct FunParam *self);
 
 typedef struct FunDecl
 {
-	struct Vec *doc;
+    struct Vec *doc;
     struct String *name; // struct String&
     struct Vec
       *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
@@ -2989,21 +2989,23 @@ __free__DeclImport(struct Decl *self)
 void
 __free__DeclAll(struct Decl *self);
 
-enum ContractKind {
-	ContractKindByValue,
-	ContractKindByDataType,
-	ContractKindByGeneric,
+enum ContractKind
+{
+    ContractKindByValue,
+    ContractKindByDataType,
+    ContractKindByGeneric,
 };
 
-typedef struct Contract {
-	enum ContractKind kind;
+typedef struct Contract
+{
+    enum ContractKind kind;
 
-	union
-	{
-		struct Expr *value;
-		struct Expr *data_type;
-		struct Expr *generic;
-	} contract;
+    union
+    {
+        struct Expr *value;
+        struct Expr *data_type;
+        struct Expr *generic;
+    } contract;
 } Contract;
 
 /**
@@ -3034,8 +3036,8 @@ __new__ContractGeneric(struct Expr *generic);
 inline void
 __free__ContractValue(struct Contract *self)
 {
-	FREE(ExprAll, self->contract.value);
-	free(self);
+    FREE(ExprAll, self->contract.value);
+    free(self);
 }
 
 /**
@@ -3045,8 +3047,8 @@ __free__ContractValue(struct Contract *self)
 inline void
 __free__ContractDataType(struct Contract *self)
 {
-	FREE(ExprAll, self->contract.data_type);
-	free(self);
+    FREE(ExprAll, self->contract.data_type);
+    free(self);
 }
 
 /**
@@ -3056,8 +3058,8 @@ __free__ContractDataType(struct Contract *self)
 inline void
 __free__ContractGeneric(struct Contract *self)
 {
-	FREE(ExprAll, self->contract.data_type);
-	free(self);
+    FREE(ExprAll, self->contract.data_type);
+    free(self);
 }
 
 /**
@@ -3074,10 +3076,11 @@ __free__ContractAll(struct Contract *self);
 struct Contract *
 __new__ContractGeneric(struct Expr *value);
 
-enum CommentDocKind {
-	CommentDocKindAuthor,
-	CommentDocKindDesc,
-	CommentDocKindVersion
+enum CommentDocKind
+{
+    CommentDocKindAuthor,
+    CommentDocKindDesc,
+    CommentDocKindVersion
 };
 
 typedef struct CommentDoc
@@ -3100,8 +3103,8 @@ __new__CommentDoc(enum DocKind kind, struct String *s);
 inline void
 __free__CommentDoc(struct CommentDoc *self)
 {
-	FREE(String, self->s);
-	free(self);
+    FREE(String, self->s);
+    free(self);
 }
 
 #endif // LILY_AST_H

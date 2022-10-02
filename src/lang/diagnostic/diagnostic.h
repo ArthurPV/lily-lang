@@ -142,7 +142,10 @@ enum LilyErrorKind
     LilyErrorDependencyCycleOnImportValue,
     LilyErrorExpectedFinalAccessInImportValue,
     LilyErrorImportValueAccessIsNotFound,
-	LilyErrorExpectedFinalImportValue
+	LilyErrorExpectedFinalImportValue,
+	LilyErrorDuplicateGenericParam,
+	LilyErrorNameMustStartByLowercaseCharacter,
+	LilyErrorNameMustStartByUppercaseCharacter
 };
 
 typedef struct LilyError

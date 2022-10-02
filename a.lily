@@ -1,0 +1,8 @@
+/// this is a comment doc
+/// this is a comment doc 2
+
+import "@std.{d, d, a}" as std
+import "@builtin.*" as builtin
+import "@file(../a).App.*"
+import "@url(https://www.example.com/apis)"
+import "s.App.*"

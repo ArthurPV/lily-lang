@@ -36,7 +36,7 @@
 #undef INSTALL
 
 #define LOCAL
-// #undef LOCAL
+#undef LOCAL
 
 #define UNREACHABLE(msg)                                             \
     {                                                                \

@@ -53,7 +53,7 @@ typedef __int128_t UInt128;
 #else
 typedef struct UInt128
 {
-    UInt64 x, y;
+    UInt64 *x, *y;
 } UInt128;
 #endif
 
@@ -67,7 +67,7 @@ typedef __int128_t Int128;
 #else
 typedef struct Int128
 {
-    Int64 x, y;
+    Int64 *x, *y;
 } Int128;
 #endif
 #endif
@@ -76,6 +76,7 @@ typedef float Float32;
 typedef double Float64;
 
 typedef size_t Usize;
+typedef ssize_t Isize;
 typedef char *Str;
 
 typedef uintptr_t UPtr;
