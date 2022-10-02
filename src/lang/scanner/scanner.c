@@ -429,6 +429,7 @@ next_char_by_token(struct Scanner *self, struct Token tok)
         case TokenKindIntLit:
         case TokenKindFloatLit:
         case TokenKindIdentifier:
+        case TokenKindIdentifierOp:
             next_char(self);
             return;
 
@@ -1162,9 +1163,48 @@ get_token(struct Scanner *self)
             kind = TokenKindDollar;
             break;
 
-        case '`':
-            kind = TokenKindBacktrick;
+        case '`': {
+            struct String *id = NEW(String);
+
+            next_char(self);
+
+            while (self->src->c != (char *)'`' &&
+                   self->src->pos != len__String(*self->src->file.content)) {
+                push__String(id, self->src->c);
+                next_char(self);
+            }
+
+            Str id_str = to_Str__String(*id);
+            enum TokenKind tok_kw = get_keyword(id_str);
+
+            end_token(self);
+
+            free(id_str);
+
+            switch (tok_kw) {
+                case TokenKindIdentifier: {
+                    struct Location *copy = copy__Location(&self->loc);
+
+                    return Ok(NEW(TokenLit, TokenKindIdentifierOp, copy, id));
+                }
+                default: {
+                    end_token(self);
+
+                    struct Diagnostic *dgn = NEW(
+                      DiagnosticWithErrScanner,
+                      self,
+                      NEW(LilyError,
+                          LilyErrorIdentifierOperatorSymbolCannotBeAKeyword),
+                      self->loc,
+                      format(""),
+                      None());
+
+                    return Err(dgn);
+                }
+            }
+
             break;
+        }
 
         case '+':
             if (c2 == (char *)'+' && c3 == (char *)'=')
@@ -1322,7 +1362,7 @@ get_token(struct Scanner *self)
             break;
 
         case '&':
-            if (c2 == (char*)'=')
+            if (c2 == (char *)'=')
                 kind = TokenKindAmpersandEq;
             else
                 kind = TokenKindAmpersand;
@@ -1475,7 +1515,6 @@ run__Scanner(struct Scanner *self)
                     case TokenKindHashtag:
                     case TokenKindSemicolon:
                     case TokenKindDollar:
-                    case TokenKindBacktrick:
                     case TokenKindPlus:
                     case TokenKindMinus:
                     case TokenKindStar:
@@ -1504,7 +1543,8 @@ run__Scanner(struct Scanner *self)
                     break;
                     }
                     case TokenKindIntLit:
-                    case TokenKindIdentifier: {
+                    case TokenKindIdentifier:
+                    case TokenKindIdentifierOp: {
                         struct String *token_string =
                           token_kind_to_string__Token(*token_ok);
 

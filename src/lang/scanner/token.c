@@ -159,8 +159,6 @@ token_kind_to_string__Token(struct Token self)
             return from__String(";");
         case TokenKindDollar:
             return from__String("$");
-        case TokenKindBacktrick:
-            return from__String("`");
         case TokenKindEof:
             return from__String("Eof");
         case TokenKindPlus:
@@ -353,6 +351,7 @@ token_kind_to_string__Token(struct Token self)
         case TokenKindDocComment:
             return format("Comment Doc");
         case TokenKindIdentifier:
+        case TokenKindIdentifierOp:
             return format("{S}", self.lit);
         default:
             UNREACHABLE("token doesn't exists");

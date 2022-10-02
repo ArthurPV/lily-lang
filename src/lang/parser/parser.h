@@ -45,6 +45,7 @@ typedef struct FunParseContext
     bool has_tags;
     bool has_params;
     bool has_return_type;
+    bool is_operator;
     struct String *name;        // struct String&
     struct Vec *tags;           // struct Vec<struct Token&>*
     struct Vec *generic_params; // struct Vec<struct Token&>*

@@ -1017,6 +1017,7 @@ __new__FunParseContext()
                                     .has_tags = false,
                                     .has_params = false,
                                     .has_return_type = false,
+                                    .is_operator = false,
                                     .name = NULL,
                                     .tags = NEW(Vec, sizeof(struct Token)),
                                     .generic_params =
@@ -1229,7 +1230,10 @@ get_fun_parse_context(struct FunParseContext *self,
     // 2. Get name of function.
     if (parse_block->current->kind == TokenKindIdentifier)
         self->name = &*parse_block->current->lit;
-    else {
+    else if (parse_block->current->kind == TokenKindIdentifierOp) {
+        self->name = &*parse_block->current->lit;
+        self->is_operator = true;
+    } else {
         struct Diagnostic *err =
           NEW(DiagnosticWithErrParser,
               parse_block,
@@ -3185,8 +3189,22 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
     }
 
     switch (parse_decl->previous->kind) {
-        case TokenKindIdentifier:
+        case TokenKindIdentifier: {
+            const Str id_str = to_Str__String(*parse_decl->previous->lit);
+
+            if (!strcmp(id_str, "_")) {
+                end__Location(&loc,
+                              parse_decl->previous->loc->s_line,
+                              parse_decl->previous->loc->s_col);
+
+                expr = NEW(Expr, ExprKindWildcard, loc);
+            } else {
+            }
+
+            free(id_str);
+
             break;
+        }
 
         case TokenKindSelfKw:
             break;
@@ -3270,13 +3288,16 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 static inline int *
 parse_unary_op(struct ParseDecl parse_decl)
 {
-    switch (parse_decl.current->kind) {
+    switch (parse_decl.previous->kind) {
         case TokenKindMinus:
             return (int *)UnaryOpKindNegative;
+
         case TokenKindNotKw:
             return (int *)UnaryOpKindNot;
+
         case TokenKindAmpersand:
             return (int *)UnaryOpKindReference;
+
         default:
             return NULL;
     }
@@ -3285,91 +3306,133 @@ parse_unary_op(struct ParseDecl parse_decl)
 static inline int *
 parse_binary_op(struct ParseDecl parse_decl)
 {
-    switch (parse_decl.current->kind) {
+    switch (parse_decl.previous->kind) {
         case TokenKindPlus:
             return (int *)BinaryOpKindAdd;
+
         case TokenKindMinus:
             return (int *)BinaryOpKindSub;
+
         case TokenKindStar:
             return (int *)BinaryOpKindMul;
+
         case TokenKindSlash:
             return (int *)BinaryOpKindDiv;
+
         case TokenKindPercentage:
             return (int *)BinaryOpKindMod;
+
         case TokenKindDotDot:
             return (int *)BinaryOpKindRange;
+
         case TokenKindLShift:
             return (int *)BinaryOpKindLt;
+
         case TokenKindRShift:
             return (int *)BinaryOpKindGt;
+
         case TokenKindLShiftEq:
             return (int *)BinaryOpKindLe;
+
         case TokenKindRShiftEq:
             return (int *)BinaryOpKindGe;
+
         case TokenKindEqEq:
             return (int *)BinaryOpKindEq;
+
         case TokenKindNotEq:
             return (int *)BinaryOpKindNe;
+
         case TokenKindAndKw:
             return (int *)BinaryOpKindAnd;
+
         case TokenKindOrKw:
             return (int *)BinaryOpKindOr;
+
         case TokenKindXorKw:
             return (int *)BinaryOpKindXor;
+
         case TokenKindEq:
             return (int *)BinaryOpKindAssign;
+
         case TokenKindPlusEq:
             return (int *)BinaryOpKindAddAssign;
+
         case TokenKindMinusEq:
             return (int *)BinaryOpKindSubAssign;
+
         case TokenKindStarEq:
             return (int *)BinaryOpKindMulAssign;
+
         case TokenKindSlashEq:
             return (int *)BinaryOpKindDivAssign;
+
         case TokenKindPercentageEq:
             return (int *)BinaryOpKindModAssign;
+
         case TokenKindHatEq:
             return (int *)BinaryOpKindConcatAssign;
+
         case TokenKindLShiftLShiftEq:
             return (int *)BinaryOpKindBitLShiftAssign;
+
         case TokenKindRShiftRShiftEq:
             return (int *)BinaryOpKindBitRShiftAssign;
+
         case TokenKindBarEq:
             return (int *)BinaryOpKindBitOrAssign;
+
         case TokenKindXorEq:
             return (int *)BinaryOpKindXorAssign;
+
         case TokenKindAmpersandEq:
             return (int *)BinaryOpKindBitAndAssign;
+
         case TokenKindWaveEq:
             return (int *)BinaryOpKindBitNotAssign;
+
         case TokenKindPlusPlusEq:
             return (int *)BinaryOpKindMergeAssign;
+
         case TokenKindMinusMinusEq:
             return (int *)BinaryOpKindUnmergeAssign;
+
         case TokenKindStarStarEq:
             return (int *)BinaryOpKindExponentAssign;
+
         case TokenKindBarRShift:
             return (int *)BinaryOpKindChain;
+
         case TokenKindPlusPlus:
             return (int *)BinaryOpKindMerge;
+
         case TokenKindMinusMinus:
             return (int *)BinaryOpKindUnmerge;
+
         case TokenKindDollar:
             return (int *)BinaryOpKindRepeat;
+
         case TokenKindHat:
             return (int *)BinaryOpKindConcat;
+
         case TokenKindLShiftLShift:
             return (int *)BinaryOpKindBitLShift;
+
         case TokenKindRShiftRShift:
             return (int *)BinaryOpKindBitRShift;
+
         case TokenKindBar:
             return (int *)BinaryOpKindBitOr;
+
         case TokenKindAmpersand:
             return (int *)BinaryOpKindBitAnd;
+
         case TokenKindWave:
             return (int *)BinaryOpKindBitNot;
+
         case TokenKindStarStar:
             return (int *)BinaryOpKindExponent;
+
         default:
             return NULL;
     }

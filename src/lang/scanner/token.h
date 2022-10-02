@@ -24,7 +24,6 @@ enum TokenKind {
     TokenKindHashtag,
     TokenKindSemicolon,
     TokenKindDollar,
-    TokenKindBacktrick,
     TokenKindEof,
     TokenKindPlus,
     TokenKindMinus,
@@ -121,7 +120,8 @@ enum TokenKind {
     TokenKindOneComment,
     TokenKindMultiComment,
     TokenKindDocComment,
-    TokenKindIdentifier
+    TokenKindIdentifier,
+    TokenKindIdentifierOp
 };
 
 typedef struct Location
