@@ -1,29 +1,6 @@
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 
-struct Scope
-__new__Scope(const Str filename,
-             struct String *name,
-             struct Vec *id,
-             enum ScopeItemKind item_kind,
-             enum ScopeKind kind)
-{
-    struct Scope self = { .filename = filename,
-                          .name = name,
-                          .id = id,
-                          .item_kind = item_kind,
-                          .kind = kind,
-                          .is_checked = false };
-
-    return self;
-}
-
-void
-__free__Scope(struct Scope scope)
-{
-    FREE(Vec, scope.id);
-}
-
 struct DataTypeSymbol *
 __new__DataTypeSymbol(enum DataTypeKind kind)
 {
@@ -207,7 +184,7 @@ __free__GenericSymbolAll(struct Generic *self)
     }
 }
 
-void
+inline void
 __free__FieldCallSymbol(struct FieldCallSymbol *self)
 {
     FREE(ExprSymbolAll, self->value);

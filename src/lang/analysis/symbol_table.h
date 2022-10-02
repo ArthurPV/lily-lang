@@ -41,19 +41,32 @@ typedef struct Scope
  *
  * @brief Construct the Scope type.
  */
-struct Scope
+inline struct Scope
 __new__Scope(const Str filename,
              struct String *name,
              struct Vec *id,
              enum ScopeItemKind item_kind,
-             enum ScopeKind kind);
+             enum ScopeKind kind)
+{
+    struct Scope self = { .filename = filename,
+                          .name = name,
+                          .id = id,
+                          .item_kind = item_kind,
+                          .kind = kind,
+                          .is_checked = false };
+
+    return self;
+}
 
 /**
  *
  * @brief Free the Scope type.
  */
-void
-__free__Scope(struct Scope scope);
+inline void
+__free__Scope(struct Scope scope)
+{
+    FREE(Vec, scope.id);
+}
 
 enum Visibility
 {
