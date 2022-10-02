@@ -71,7 +71,7 @@ static void
 push_all_symbols(struct Typecheck *self);
 static void
 check_symbols(struct Typecheck *self);
-static struct Vec *
+static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
                             struct Vec *name,
                             struct SearchModuleContext search_module_context);
@@ -83,12 +83,17 @@ static Usize *
 search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
+static Usize *
+search_in_classes_from_name(struct Typecheck *self, struct String *name);
+static Usize *
+search_in_traits_from_name(struct Typecheck *self, struct String *name);
 static struct DataTypeSymbol *
 check_data_type(struct Typecheck *self,
                 struct Location data_type_loc,
                 struct DataType *data_type,
                 struct Vec *local_data_type,
-                bool must_object);
+                bool must_object,
+                bool must_trait);
 
 struct Typecheck
 __new__Typecheck(struct Parser parser)
@@ -383,17 +388,11 @@ check_symbols(struct Typecheck *self)
 
                 push__Vec(scope_id, (Usize *)current_fun_id);
 
-                struct Scope *scope =
-                  NEW(Scope,
-                      self->parser.parse_block.scanner.src->file.name,
-                      get__Vec(*self->funs, current_fun_id),
-                      scope_id,
-                      ScopeItemKindFun,
-                      ScopeKindGlobal);
-                struct FunSymbol *fun_symbol =
-                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id));
-                struct FunDecl *fun_decl = fun_symbol->fun_decl->value.fun;
+                struct FunDecl *fun_decl =
+                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
+                    ->fun_decl->value.fun;
                 struct Vec *local_data_type = NULL;
+                struct Vec *local_value = NULL;
                 struct Vec *tagged_type = NULL;
                 struct Vec *generic_params = NULL;
                 struct Vec *params = NULL;
@@ -410,7 +409,8 @@ check_symbols(struct Typecheck *self)
                                           *(struct Location *)current->items[1],
                                           current->items[0],
                                           NULL,
-                                          true);
+                                          true,
+                                          false);
 
                         if (dts != NULL)
                             push__Vec(tagged_type, dts);
@@ -448,6 +448,7 @@ check_symbols(struct Typecheck *self)
                                      ->value.restricted_data_type->items[1])
                                     ->items[0],
                                   NULL,
+                                  false,
                                   false);
 
                                 if (dts != NULL)
@@ -495,7 +496,14 @@ check_symbols(struct Typecheck *self)
                 }
 
                 ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
-                  ->scope = scope;
+                  ->scope = NEW(
+                  Scope,
+                  self->parser.parse_block.scanner.src->file.name,
+                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
+                    ->name,
+                  scope_id,
+                  ScopeItemKindFun,
+                  ScopeKindGlobal);
                 ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
                   ->tagged_type = tagged_type;
                 ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
@@ -522,7 +530,7 @@ check_symbols(struct Typecheck *self)
     }
 }
 
-static struct Vec *
+static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
                             struct Vec *name,
                             struct SearchModuleContext search_module_context)
@@ -581,6 +589,7 @@ search_in_modules_from_name(struct Typecheck *self,
 
     struct Decl *current_module =
       get__Vec(*self->parser.decls, *(Usize *)get__Vec(*ids, 0));
+    struct Decl *current_decl = NULL;
     struct String *current_name = NULL;
 
     for (Usize i = 1; i < len__Vec(*name); i++) {
@@ -589,7 +598,7 @@ search_in_modules_from_name(struct Typecheck *self,
         if (((struct ModuleBodyItem *)get__Vec(
                *current_module->value.module->body, 0))
               ->kind == ModuleBodyItemKindDecl) {
-            struct Decl *current_decl =
+            current_decl =
               ((struct ModuleBodyItem *)get__Vec(
                  *current_module->value.module->body,
                  len__Vec(*current_module->value.module->body) - 1))
@@ -650,12 +659,50 @@ search_in_modules_from_name(struct Typecheck *self,
         }
     }
 
+    if (current_decl == NULL)
+        assert(0 && "error");
+
     if (len__Vec(*ids) != len__Vec(*name)) {
         assert(0 && "error");
         return NULL;
     }
 
-    return ids;
+#define SCOPE(kind)                                      \
+    NEW(Scope,                                           \
+        self->parser.parse_block.scanner.src->file.name, \
+        current_name,                                    \
+        ids,                                             \
+        kind,                                            \
+        ScopeKindGlobal)
+
+    switch (current_decl->kind) {
+        case DeclKindRecord:
+            if (current_decl->value.record->is_object)
+                return SCOPE(ScopeItemKindRecordObj);
+            else
+                return SCOPE(ScopeItemKindRecord);
+        case DeclKindEnum:
+            if (current_decl->value.record->is_object)
+                return SCOPE(ScopeItemKindEnumObj);
+            else
+                return SCOPE(ScopeItemKindEnum);
+        case DeclKindClass:
+            return SCOPE(ScopeItemKindClass);
+        case DeclKindTrait:
+            return SCOPE(ScopeItemKindTrait);
+        case DeclKindFun:
+            return SCOPE(ScopeItemKindFun);
+        case DeclKindError:
+            return SCOPE(ScopeItemKindError);
+        case DeclKindAlias:
+            return SCOPE(ScopeItemKindAlias);
+        case DeclKindConstant:
+            return SCOPE(ScopeItemKindConstant);
+        case DeclKindModule:
+            return SCOPE(ScopeItemKindModule);
+        default:
+            UNREACHABLE("");
+    }
 }
 
 static Usize *
@@ -721,12 +768,44 @@ search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
+static Usize *
+search_in_classes_from_name(struct Typecheck *self, struct String *name)
+{
+    if (self->classes == NULL)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->classes); i--;)
+        if (eq__String(
+              name,
+              ((struct ClassSymbol *)get__Vec(*self->classes, i))->name,
+              false))
+            return (Usize *)i;
+
+    return NULL;
+}
+
+static Usize *
+search_in_traits_from_name(struct Typecheck *self, struct String *name)
+{
+    if (self->traits == NULL)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->traits); i--;)
+        if (eq__String(name,
+                       ((struct TraitSymbol *)get__Vec(*self->traits, i))->name,
+                       false))
+            return (Usize *)i;
+
+    return NULL;
+}
+
 static struct DataTypeSymbol *
 check_data_type(struct Typecheck *self,
                 struct Location data_type_loc,
                 struct DataType *data_type,
                 struct Vec *local_data_type,
-                bool must_object)
+                bool must_object,
+                bool must_trait)
 {
     struct Vec *id = NULL;
 
@@ -765,12 +844,32 @@ check_data_type(struct Typecheck *self,
                                          data_type->value.custom->items[0]),
                                      0))
                         : NULL;
+                    Usize *id_classes =
+                      id_enums == NULL && id_records == NULL &&
+                          id_enums_obj == NULL && id_records_obj == NULL
+                        ? search_in_classes_from_name(
+                            self,
+                            get__Vec((*(struct Vec *)
+                                         data_type->value.custom->items[0]),
+                                     0))
+                        : NULL;
+                    Usize *id_traits =
+                      id_enums == NULL && id_records == NULL &&
+                          id_enums_obj == NULL && id_records_obj == NULL &&
+                          id_classes
+                        ? search_in_traits_from_name(
+                            self,
+                            get__Vec((*(struct Vec *)
+                                         data_type->value.custom->items[0]),
+                                     0))
+                        : NULL;
                     struct Vec *generic_params = NULL;
 
                     if (data_type->value.custom->items[1] == NULL) {
                     return_data_type : {
                         if (id_enums == NULL && id_records == NULL &&
-                            id_enums_obj == NULL && id_records_obj == NULL) {
+                            id_enums_obj == NULL && id_records_obj == NULL &&
+                            id_classes == NULL && id_traits == NULL) {
                             struct Diagnostic *err =
                               NEW(DiagnosticWithErrTypecheck,
                                   self,
@@ -825,7 +924,7 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindRecordObj,
                                 ScopeKindGlobal));
-                        } else if ((id_enums != NULL || id_records != NULL) &&
+                        } else if (id_enums == NULL && id_records == NULL &&
                                    must_object) {
                             struct Diagnostic *err = NEW(
                               DiagnosticWithErrTypecheck,
@@ -892,7 +991,44 @@ check_data_type(struct Typecheck *self,
                                 id,
                                 ScopeItemKindRecord,
                                 ScopeKindGlobal));
-                        }
+                        } else if (id_classes != NULL) {
+                            id = NEW(Vec, sizeof(Usize));
+
+                            push__Vec(id, id_classes);
+
+                            return NEW(
+                              DataTypeSymbolCustom,
+                              generic_params,
+                              NEW(
+                                Scope,
+                                self->parser.parse_block.scanner.src->file.name,
+                                (struct String *)get__Vec(
+                                  (*(struct Vec *)
+                                      data_type->value.custom->items[0]),
+                                  0),
+                                id,
+                                ScopeItemKindClass,
+                                ScopeKindGlobal));
+                        } else if (id_traits != NULL && must_trait) {
+                            id = NEW(Vec, sizeof(Usize));
+
+                            push__Vec(id, id_traits);
+
+                            return NEW(
+                              DataTypeSymbolCustom,
+                              generic_params,
+                              NEW(
+                                Scope,
+                                self->parser.parse_block.scanner.src->file.name,
+                                (struct String *)get__Vec(
+                                  (*(struct Vec *)
+                                      data_type->value.custom->items[0]),
+                                  0),
+                                id,
+                                ScopeItemKindTrait,
+                                ScopeKindGlobal));
+                        } else if (id_traits != NULL && !must_trait)
+                            assert(0 && "error");
                     }
                     } else {
                         generic_params =
@@ -909,6 +1045,7 @@ check_data_type(struct Typecheck *self,
                                                       data_type_loc,
                                                       current,
                                                       local_data_type,
+                                                      false,
                                                       false));
                         }
 
@@ -921,10 +1058,12 @@ check_data_type(struct Typecheck *self,
                         .search_value = false,
                         .search_variant = false
                     };
-                    struct Vec *ids = search_in_modules_from_name(
-                      self,
-                      data_type->value.custom->items[0],
-                      search_module_context);
+                    return NEW(DataTypeSymbolCustom,
+                               data_type->value.custom->items[1],
+                               search_in_modules_from_name(
+                                 self,
+                                 data_type->value.custom->items[0],
+                                 search_module_context));
                     return NULL;
                 }
             } break;
@@ -953,6 +1092,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.ptr,
                                            local_data_type,
+                                           false,
                                            false));
             case DataTypeKindRef:
                 return NEW(DataTypeSymbolRef,
@@ -960,6 +1100,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.ref,
                                            local_data_type,
+                                           false,
                                            false));
             case DataTypeKindStr:
                 return NEW(DataTypeSymbol, DataTypeKindStr);
@@ -1003,6 +1144,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.optional,
                                            local_data_type,
+                                           false,
                                            false));
             case DataTypeKindUnit:
                 return NEW(DataTypeSymbol, DataTypeKindUnit);
@@ -1012,6 +1154,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.optional,
                                            local_data_type,
+                                           false,
                                            false));
             case DataTypeKindMut:
                 return NEW(DataTypeSymbolMut,
@@ -1019,6 +1162,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.mut,
                                            local_data_type,
+                                           false,
                                            false));
             case DataTypeKindLambda:
                 TODO("check lambda type");
@@ -1029,6 +1173,7 @@ check_data_type(struct Typecheck *self,
                                            data_type_loc,
                                            data_type->value.array->items[0],
                                            local_data_type,
+                                           false,
                                            false),
                            data_type->value.array->items[1]);
             case DataTypeKindTuple: {
@@ -1041,6 +1186,7 @@ check_data_type(struct Typecheck *self,
                                       data_type_loc,
                                       get__Vec(*data_type->value.tuple, i),
                                       local_data_type,
+                                      false,
                                       false));
 
                 return NEW(DataTypeSymbolTuple, tuple);
