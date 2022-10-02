@@ -1011,7 +1011,7 @@ check_record(struct Typecheck *self,
         if (record->record_decl->value.record->fields) {
             record->fields = NEW(Vec, sizeof(struct VariantEnumSymbol));
 
-            // Check if record's variant name is duplicate
+            // Check if record's field name is duplicate
             for (Usize i = 0;
                  i < len__Vec(*record->record_decl->value.record->fields);
                  i++) {
@@ -1028,7 +1028,7 @@ check_record(struct Typecheck *self,
                           false))
                         assert(0 && "error: duplicate variant name");
 
-                // Push variant enum in record->variants
+                // Push field record in record->fields
                 if (((struct FieldRecord *)get__Vec(
                        *record->record_decl->value.record->fields, i))
                       ->data_type) {
@@ -1154,7 +1154,7 @@ check_enum_obj(struct Typecheck *self,
                           false))
                         assert(0 && "error: duplicate generic param name");
 
-                // Push generic params of error in enum_obj->generic_params
+                // Push generic params of enum_obj in enum_obj->generic_params
                 switch (
                   ((struct Generic *)get__Vec(
                      *enum_obj->enum_decl->value.enum_->generic_params, i))
@@ -1191,7 +1191,7 @@ check_enum_obj(struct Typecheck *self,
     }
 }
 
-static void
+static void 
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
                  struct Vec *scope_id,
@@ -1230,7 +1230,8 @@ check_record_obj(struct Typecheck *self,
                                    false))
                         assert(0 && "error: duplicate generic param name");
 
-                // Push generic params of record_obj in enum_obj->generic_params
+                // Push generic params of record_obj in
+                // record_obj->generic_params
                 switch (
                   ((struct Generic *)get__Vec(
                      *record_obj->record_decl->value.record->generic_params, i))
@@ -1283,6 +1284,48 @@ check_class(struct Typecheck *self,
               class->visibility ? ScopeKindGlobal : ScopeKindLocal);
 
         if (class->class_decl->value.class->generic_params) {
+            class->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*class->class_decl->value.class->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j <
+                     len__Vec(*class->class_decl->value.class->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *class->class_decl->value.class->generic_params,
+                            i)),
+                          get_name__Generic(get__Vec(
+                            *class->class_decl->value.class->generic_params,
+                            j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of class in class->generic_params
+                switch (((struct Generic *)get__Vec(
+                           *class->class_decl->value.class->generic_params, i))
+                          ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(
+                          class->generic_params,
+                          NEW(
+                            GenericDataType,
+                            get_name__Generic(get__Vec(
+                              *class->class_decl->value.class->generic_params,
+                              i)),
+                            ((struct Generic *)get__Vec(
+                               *class->class_decl->value.class->generic_params,
+                               i))
+                              ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
         }
 
         if (class->class_decl->value.class->body) {

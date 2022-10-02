@@ -11,6 +11,26 @@
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
+#if __STDC__ != 1
+#error "Not a standard compilant compiler"
+#endif
+
+#if __STDC_VERSION__ >= 202302L
+#error "Using C2x or later standard"
+#endif
+
+#if defined(__clang__)
+#if __clang__ < 14
+#error "Use Clang v14.0 or later"
+#endif
+#endif
+
+#if defined(__GNUC__)
+#if __GNUC__ < 12
+#error "Use GCC v12.0 or later"
+#endif
+#endif
+
 int
 main(int argc, char **argv)
 {
