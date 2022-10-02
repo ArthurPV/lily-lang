@@ -692,6 +692,8 @@ check_module(struct Typecheck *self,
                 }
             }
         }
+
+        ++count_module_id;
     }
 }
 
@@ -753,6 +755,8 @@ check_alias(struct Typecheck *self,
                 }
             }
         }
+
+        ++count_alias_id;
 
         TODO("Search data type");
     }
@@ -857,6 +861,98 @@ check_record(struct Typecheck *self,
              struct RecordSymbol *record,
              struct Vec *scope_id)
 {
+    if (!record->scope) {
+        record->scope = NEW(Scope,
+                            self->parser.parse_block.scanner.src->file.name,
+                            record->name,
+                            scope_id,
+                            ScopeItemKindRecord,
+                            ScopeKindGlobal);
+
+        if (record->record_decl->value.record->generic_params) {
+
+            record->generic_params = NEW(Vec, sizeof(struct Generic));
+
+            // Check if generic param name is duplicate
+            for (Usize i = 0;
+                 i <
+                 len__Vec(*record->record_decl->value.record->generic_params);
+                 i++) {
+                for (Usize j = i + 1;
+                     j < len__Vec(
+                           *record->record_decl->value.record->generic_params);
+                     j++)
+                    if (eq__String(
+                          get_name__Generic(get__Vec(
+                            *record->record_decl->value.record->generic_params,
+                            i)),
+                          get_name__Generic(get__Vec(
+                            *record->record_decl->value.record->generic_params,
+                            j)),
+                          false))
+                        assert(0 && "error: duplicate generic param name");
+
+                // Push generic params of enum_decl in enum_->generic_params
+                switch (
+                  ((struct Generic *)get__Vec(
+                     *record->record_decl->value.record->generic_params, i))
+                    ->kind) {
+                    case GenericKindDataType:
+                        push__Vec(record->generic_params,
+                                  NEW(GenericDataType,
+                                      get_name__Generic(
+                                        get__Vec(*record->record_decl->value
+                                                    .record->generic_params,
+                                                 i)),
+                                      ((struct Generic *)get__Vec(
+                                         *record->record_decl->value.record
+                                            ->generic_params,
+                                         i))
+                                        ->loc));
+                        break;
+                    case GenericKindRestrictedDataType:
+                        TODO("check data type");
+                        break;
+                }
+            }
+        }
+
+        if (record->record_decl->value.record->fields) {
+            record->fields = NEW(Vec, sizeof(struct VariantEnumSymbol));
+
+            // Check if enum's variant name is duplicate
+            for (Usize i = 0;
+                 i < len__Vec(*record->record_decl->value.record->fields);
+                 i++) {
+                for (Usize j = i + 1;
+                     j < len__Vec(*record->record_decl->value.record->fields);
+                     j++)
+                    if (eq__String(
+                          ((struct FieldRecord *)get__Vec(
+                             *record->record_decl->value.record->fields, i))
+                            ->name,
+                          ((struct FieldRecord *)get__Vec(
+                             *record->record_decl->value.record->fields, j))
+                            ->name,
+                          false))
+                        assert(0 && "error: duplicate variant name");
+
+                // Push variant enum in enum_->variants
+                if (((struct FieldRecord *)get__Vec(
+                       *record->record_decl->value.record->fields, i))
+                      ->data_type) {
+                    TODO("Check data type");
+                } else
+                    push__Vec(
+                      record->fields,
+                      NEW(FieldRecordSymbol,
+                          get__Vec(*record->record_decl->value.record->fields,
+                                   i)));
+            }
+        }
+
+        ++count_record_id;
+    }
 }
 
 static void
