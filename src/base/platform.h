@@ -30,7 +30,7 @@
 #define LILY_LINUX_OS
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
   defined(__bsdi__) || defined(__DragonFly__)
-#defined OS_NAME "BSD"
+#define OS_NAME "BSD"
 #define LILY_BSD_OS
 #elif defined(__APPLE__) && defined(__MACH__)
 #define OS_NAME "macos"

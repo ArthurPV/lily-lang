@@ -32,6 +32,12 @@
 #define DEBUG
 #undef DEBUG
 
+#define INSTALL
+#undef INSTALL
+
+#define LOCAL
+// #undef LOCAL
+
 #define UNREACHABLE(msg)                                             \
     {                                                                \
         println("UNREACHABLE: %s (%s:%d)", msg, __FILE__, __LINE__); \
