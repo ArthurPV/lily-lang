@@ -28,10 +28,15 @@
 #include <base/file.h>
 #include <base/new.h>
 #include <base/platform.h>
-#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <dirent.h>
+#endif
 
 struct Path *
 __new__Path(Str path)
