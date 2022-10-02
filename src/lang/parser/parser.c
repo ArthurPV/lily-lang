@@ -3269,9 +3269,13 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                           loc);
                         break;
                     case TokenKindHashtag: {
-                        next_token(parse_decl);
-
-                        TODO("");
+                        expr = parse_tuple_access_expr(
+                          self,
+                          parse_decl,
+                          NEW(ExprIdentifier,
+                              &*parse_decl->previous->lit,
+                              *parse_decl->previous->loc),
+                          loc);
                         break;
                     }
                     default:
@@ -3782,7 +3786,6 @@ parse_array_access_expr(struct Parser self,
 
     while (parse_decl->current->kind == TokenKindLHook) {
         next_token(parse_decl);
-
         push__Vec(access, parse_expr(self, parse_decl));
 
         EXPECTED_TOKEN(parse_decl, TokenKindRHook, {
@@ -3811,6 +3814,17 @@ parse_tuple_access_expr(struct Parser self,
                         struct Expr *id,
                         struct Location loc)
 {
+    struct Vec *access = NEW(Vec, sizeof(struct Expr));
+
+    while (parse_decl->current->kind == TokenKindHashtag) {
+        next_token(parse_decl);
+        push__Vec(access, parse_expr(self, parse_decl));
+    }
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(ExprTupleAccess, NEW(TupleAccess, id, access), loc);
 }
 
 static struct Expr *
