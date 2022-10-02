@@ -343,10 +343,10 @@ int main() {
 
     run__ParseBlock(&parse_block);
 
-    struct Parser *parser = NEW(Parser, &parse_block);
+    struct Parser parser = NEW(Parser, parse_block);
 
-    // run__Parser(parser);
-    run_without_multi_thread__Parser(parser);
+    run__Parser(&parser);
+    // run_without_multi_thread__Parser(&parser);
 
 //    int *v11_temp[9] = {(int*)1, (int*)2, (int*)3, (int*)4, (int*)5, (int*)6, (int*)7, (int*)8};
 //    struct Vec *v11 = from__Vec((void**)v11_temp, sizeof(int*), 8);

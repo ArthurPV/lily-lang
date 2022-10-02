@@ -439,15 +439,18 @@ __free__ParseContextAll(struct ParseContext *self);
 
 typedef struct Parser
 {
-    struct ParseBlock *parse_block;
+    struct ParseBlock parse_block;
+    Usize pos;
+    struct ParseContext *current;
+    struct Vec *decls;
 } Parser;
 
 /**
  *
  * @brief Construct the Parser type.
  */
-struct Parser *
-__new__Parser(struct ParseBlock *parse_block);
+struct Parser
+__new__Parser(struct ParseBlock parse_block);
 
 /**
  *
@@ -456,14 +459,11 @@ __new__Parser(struct ParseBlock *parse_block);
 void
 run__Parser(struct Parser *self);
 
-void
-run_without_multi_thread__Parser(struct Parser *self);
-
 /**
  *
  * @brief Free the Parser type.
  */
 void
-__free__Parser(struct Parser *self);
+__free__Parser(struct Parser self);
 
 #endif // LILY_PARSER_H

@@ -4,7 +4,6 @@
 #include <lang/diagnostic/diagnostic.h>
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/parser.h>
-#include <pthread.h>
 
 #define EXPECTED_TOKEN_ERR(parse_block, expected) \
     NEW(DiagnosticWithErrParser,                  \
@@ -221,6 +220,12 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
+static struct Vec *
+parse_generic_params(struct Parser *self, struct Vec *generic_params);
+static void
+parse_fun_declaration(struct Parser *self);
+static void
+parse_declaration(struct Parser *self);
 
 #include <base/print.h>
 struct ParseBlock
@@ -2087,11 +2092,19 @@ __free__ParseContextAll(struct ParseContext *self)
     }
 }
 
-struct Parser *
-__new__Parser(struct ParseBlock *parse_block)
+struct Parser
+__new__Parser(struct ParseBlock parse_block)
 {
-    struct Parser *self = malloc(sizeof(struct Parser));
-    self->parse_block = parse_block;
+    struct Parser self = { .parse_block = parse_block,
+                           .pos = 0,
+                           .decls = NEW(Vec, sizeof(struct Decl)) };
+
+    if (len__Vec(*parse_block.blocks) > 0)
+        self.current =
+          &*((struct ParseContext *)get__Vec(*parse_block.blocks, 0));
+    else
+        self.current = NULL;
+
     return self;
 }
 
@@ -2104,38 +2117,44 @@ printHello(void *count)
     pthread_exit(NULL);
 }
 
+// struct Vec<struct Generic*>*
+static struct Vec *
+parse_generic_params(struct Parser *self, struct Vec *generic_params)
+{
+}
+
+static void
+parse_fun_declaration(struct Parser *self)
+{
+}
+
+static void
+parse_declaration(struct Parser* self)
+{
+    struct Parser *parser = (struct Parser*)self;
+
+    switch (parser->current->kind) {
+        case ParseContextKindFun:
+            parse_fun_declaration(parser);
+            break;
+        default:
+            UNREACHABLE("unknown parse context kind");
+    }
+}
+
 void
 run__Parser(struct Parser *self)
 {
-    pthread_t threads[len__Vec(*self->parse_block->blocks)];
-    int res;
+    while (self->pos < len__Vec(*self->parse_block.blocks)) {
+        parse_declaration(self);
 
-    for (Usize i = len__Vec(*self->parse_block->blocks); i--;) {
-        res = pthread_create(&threads[i], NULL, printHello, (void *)i);
-
-        assert(res == 0 && "internal error in thread");
-        pthread_join(threads[i], NULL);
-        pthread_detach(threads[i]);
+        self->pos += 1;
     }
 }
 
 void
-printHelloWT(void *count)
+__free__Parser(struct Parser self)
 {
-    Println("Hello {d}", (UPtr)count);
-}
-
-void
-run_without_multi_thread__Parser(struct Parser *self)
-{
-    for (Usize i = len__Vec(*self->parse_block->blocks); i--;) {
-        printHelloWT((Usize *)i);
-    }
-}
-
-void
-__free__Parser(struct Parser *self)
-{
-    FREE(ParseBlock, *self->parse_block);
-    free(self);
+    FREE(ParseBlock, self.parse_block);
+    FREE(Vec, self.decls);
 }
