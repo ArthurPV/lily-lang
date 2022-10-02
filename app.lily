@@ -49,3 +49,7 @@ fun main =
 		println("Hello")
 	end
 end
+
+module hello =
+	pub fun hello = "hello";
+end

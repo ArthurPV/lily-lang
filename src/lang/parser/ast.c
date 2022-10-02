@@ -2570,7 +2570,7 @@ __new__ModuleBodyItemImport(struct Tuple *import)
 void
 __free__ModuleBodyItemDecl(struct ModuleBodyItem *self)
 {
-    TODO("FREE Decl type");
+    FREE(DeclAll, self->value.decl);
     free(self);
 }
 
@@ -2610,12 +2610,13 @@ __new__ModuleDecl(struct String *name, struct Vec *body, bool is_pub)
 void
 __free__ModuleDecl(struct ModuleDecl *self)
 {
-    FREE(String, self->name);
+    if (self->body != NULL) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
 
-    for (Usize i = len__Vec(*self->body); i--;)
-        FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
+        FREE(Vec, self->body);
+    }
 
-    FREE(Vec, self->body);
     free(self);
 }
 

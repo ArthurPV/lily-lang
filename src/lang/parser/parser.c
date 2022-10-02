@@ -420,21 +420,29 @@ parse_fun_params(struct Parser self,
                  struct ParseDecl *parse_decl,
                  bool is_method);
 static struct FunDecl *
-parse_fun_declaration(struct Parser *self);
+parse_fun_declaration(struct Parser *self,
+                      struct FunParseContext fun_parse_context);
 static struct EnumDecl *
-parse_enum_declaration(struct Parser *self);
+parse_enum_declaration(struct Parser *self,
+                       struct EnumParseContext enum_parse_context,
+                       bool is_object);
 static struct RecordDecl *
-parse_record_declaration(struct Parser *self);
+parse_record_declaration(struct Parser *self,
+                         struct RecordParseContext record_parse_context,
+                         bool is_object);
 static struct AliasDecl *
-parse_alias_declaration(struct Parser *self);
+parse_alias_declaration(struct Parser *self,
+                        struct AliasParseContext alias_parse_context);
 static struct Vec *
 parse_inheritance(struct Parser self, struct ParseDecl *parse_decl);
 static struct TraitDecl *
-parse_trait_declaration(struct Parser *self);
+parse_trait_declaration(struct Parser *self,
+                        struct TraitParseContext trait_parse_context);
 static struct Vec *
 parse_impl(struct Parser self, struct ParseDecl *parse_decl);
 static struct ClassDecl *
-parse_class_declaration(struct Parser *self);
+parse_class_declaration(struct Parser *self,
+                        struct ClassParseContext class_parse_context);
 static struct PropertyDecl *
 parse_property_declaration(struct Parser *self,
                            struct ParseClassBody *parse_class);
@@ -444,11 +452,14 @@ parse_method_declaration(struct Parser *self,
 static struct ImportStmt *
 parse_import_declaration(struct Parser *self);
 static struct ConstantDecl *
-parse_constant_declaration(struct Parser *self);
+parse_constant_declaration(struct Parser *self,
+                           struct ConstantParseContext constant_parse_context);
 static struct ErrorDecl *
-parse_error_declaration(struct Parser *self);
+parse_error_declaration(struct Parser *self,
+                        struct ErrorParseContext error_parse_context);
 static struct ModuleDecl *
-parse_module_declaration(struct Parser *self);
+parse_module_declaration(struct Parser *self,
+                         struct ModuleParseContext module_parse_context);
 static void
 parse_declaration(struct Parser *self);
 
@@ -4841,9 +4852,9 @@ parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 static struct FunDecl *
-parse_fun_declaration(struct Parser *self)
+parse_fun_declaration(struct Parser *self,
+                      struct FunParseContext fun_parse_context)
 {
-    struct FunParseContext fun_parse_context = self->current->value.fun;
     struct Vec *tags = NULL;
     struct Vec *generic_params = NULL;
     struct Vec *params = NULL;
@@ -4908,14 +4919,13 @@ parse_fun_declaration(struct Parser *self)
 }
 
 static struct EnumDecl *
-parse_enum_declaration(struct Parser *self)
+parse_enum_declaration(struct Parser *self,
+                       struct EnumParseContext enum_parse_context,
+                       bool is_object)
 {
-    struct EnumParseContext enum_parse_context = self->current->value.enum_;
     struct Vec *generic_params = NULL;
     struct Option *type_value = NULL;
     struct Vec *variants = NULL;
-    bool is_object =
-      self->current->kind == ParseContextKindEnumObject ? true : false;
 
     if (enum_parse_context.has_generic_params) {
         struct ParseDecl parse =
@@ -4995,14 +5005,12 @@ parse_enum_declaration(struct Parser *self)
 }
 
 static struct RecordDecl *
-parse_record_declaration(struct Parser *self)
+parse_record_declaration(struct Parser *self,
+                         struct RecordParseContext record_parse_context,
+                         bool is_object)
 {
-    struct RecordParseContext record_parse_context =
-      self->current->value.record;
     struct Vec *generic_params = NULL;
     struct Vec *fields = NULL;
-    bool is_object =
-      self->current->kind == ParseContextKindRecordObject ? true : false;
 
     if (record_parse_context.has_generic_params) {
         struct ParseDecl parse =
@@ -5070,9 +5078,9 @@ parse_record_declaration(struct Parser *self)
 }
 
 static struct AliasDecl *
-parse_alias_declaration(struct Parser *self)
+parse_alias_declaration(struct Parser *self,
+                        struct AliasParseContext alias_parse_context)
 {
-    struct AliasParseContext alias_parse_context = self->current->value.alias;
     struct Vec *generic_params = NULL;
     struct DataType *data_type = NULL;
 
@@ -5139,9 +5147,9 @@ parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 static struct TraitDecl *
-parse_trait_declaration(struct Parser *self)
+parse_trait_declaration(struct Parser *self,
+                        struct TraitParseContext trait_parse_context)
 {
-    struct TraitParseContext trait_parse_context = self->current->value.trait;
     struct Vec *generic_params = NULL;
     struct Vec *inh = NULL;
     struct Vec *body = NULL;
@@ -5255,9 +5263,9 @@ parse_impl(struct Parser self, struct ParseDecl *parse_decl)
         : NULL
 
 static struct ClassDecl *
-parse_class_declaration(struct Parser *self)
+parse_class_declaration(struct Parser *self,
+                        struct ClassParseContext class_parse_context)
 {
-    ClassParseContext class_parse_context = self->current->value.class;
     struct Vec *generic_params = NULL;
     struct Vec *inheritance = NULL;
     struct Vec *impl = NULL;
@@ -5421,10 +5429,9 @@ parse_import_declaration(struct Parser *self)
 }
 
 static struct ConstantDecl *
-parse_constant_declaration(struct Parser *self)
+parse_constant_declaration(struct Parser *self,
+                           struct ConstantParseContext constant_parse_context)
 {
-    struct ConstantParseContext constant_parse_context =
-      self->current->value.constant;
     struct Option *data_type = NULL;
     struct Expr *expr = NULL;
 
@@ -5457,9 +5464,9 @@ parse_constant_declaration(struct Parser *self)
 }
 
 static struct ErrorDecl *
-parse_error_declaration(struct Parser *self)
+parse_error_declaration(struct Parser *self,
+                        struct ErrorParseContext error_parse_context)
 {
-    struct ErrorParseContext error_parse_context = self->current->value.error;
     struct Vec *generic_params = NULL;
     struct DataType *data_type = NULL;
 
@@ -5487,8 +5494,131 @@ parse_error_declaration(struct Parser *self)
 }
 
 static struct ModuleDecl *
-parse_module_declaration(struct Parser *self)
+parse_module_declaration(struct Parser *self,
+                         struct ModuleParseContext module_parse_context)
 {
+    struct Vec *body = NULL;
+
+    if (len__Vec(*module_parse_context.body) > 0) {
+        body = NEW(Vec, sizeof(struct ModuleBodyItem));
+        Usize pos = 0;
+        struct ParseContext *current = get__Vec(*module_parse_context.body, 0);
+
+        while (pos < len__Vec(*module_parse_context.body)) {
+            switch (current->kind) {
+                case ParseContextKindFun:
+                    push__Vec(body,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclFun,
+                                      current->loc,
+                                      parse_fun_declaration(
+                                        self, current->value.fun))));
+                    break;
+
+                case ParseContextKindEnumObject:
+                    push__Vec(body,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclEnum,
+                                      current->loc,
+                                      parse_enum_declaration(
+                                        self, current->value.enum_, true))));
+                    break;
+                case ParseContextKindEnum:
+                    push__Vec(body,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclEnum,
+                                      current->loc,
+                                      parse_enum_declaration(
+                                        self, current->value.enum_, false))));
+                    break;
+
+                case ParseContextKindRecordObject:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclRecord,
+                                      current->loc,
+                                      parse_record_declaration(
+                                        self, current->value.record, true))));
+                    break;
+                case ParseContextKindRecord:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclRecord,
+                                      current->loc,
+                                      parse_record_declaration(
+                                        self, current->value.record, false))));
+                    break;
+
+                case ParseContextKindAlias:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclAlias,
+                                      current->loc,
+                                      parse_alias_declaration(
+                                        self, current->value.alias))));
+                    break;
+
+                case ParseContextKindTrait:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclTrait,
+                                      current->loc,
+                                      parse_trait_declaration(
+                                        self, current->value.trait))));
+                    break;
+
+                case ParseContextKindClass:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclClass,
+                                      current->loc,
+                                      parse_class_declaration(
+                                        self, current->value.class))));
+                    break;
+
+                case ParseContextKindImport:
+                    break;
+
+                case ParseContextKindConstant:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclConstant,
+                                      current->loc,
+                                      parse_constant_declaration(
+                                        self, current->value.constant))));
+                    break;
+
+                case ParseContextKindError:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclError,
+                                      current->loc,
+                                      parse_error_declaration(
+                                        self, current->value.error))));
+                    break;
+
+                case ParseContextKindModule:
+                    push__Vec(self->decls,
+                              NEW(ModuleBodyItemDecl,
+                                  NEW(DeclModule,
+                                      current->loc,
+                                      parse_module_declaration(
+                                        self, current->value.module))));
+                    break;
+
+                default:
+                    break;
+            }
+
+            pos += 1;
+            current = pos < len__Vec(*module_parse_context.body)
+                        ? get__Vec(*module_parse_context.body, 1)
+                        : NULL;
+        }
+    }
+
+    return NEW(
+      ModuleDecl, module_parse_context.name, body, module_parse_context.is_pub);
 }
 
 static void
@@ -5498,43 +5628,63 @@ parse_declaration(struct Parser *self)
         case ParseContextKindFun:
             push__Vec(
               self->decls,
-              NEW(DeclFun, self->current->loc, parse_fun_declaration(self)));
+              NEW(DeclFun,
+                  self->current->loc,
+                  parse_fun_declaration(self, self->current->value.fun)));
             break;
 
         case ParseContextKindEnumObject:
+            push__Vec(self->decls,
+                      NEW(DeclEnum,
+                          self->current->loc,
+                          parse_enum_declaration(
+                            self, self->current->value.enum_, true)));
+            break;
         case ParseContextKindEnum:
-            push__Vec(
-              self->decls,
-              NEW(DeclEnum, self->current->loc, parse_enum_declaration(self)));
+            push__Vec(self->decls,
+                      NEW(DeclEnum,
+                          self->current->loc,
+                          parse_enum_declaration(
+                            self, self->current->value.enum_, false)));
             break;
 
         case ParseContextKindRecordObject:
+            push__Vec(self->decls,
+                      NEW(DeclRecord,
+                          self->current->loc,
+                          parse_record_declaration(
+                            self, self->current->value.record, true)));
+            break;
         case ParseContextKindRecord:
             push__Vec(self->decls,
                       NEW(DeclRecord,
                           self->current->loc,
-                          parse_record_declaration(self)));
+                          parse_record_declaration(
+                            self, self->current->value.record, false)));
             break;
 
         case ParseContextKindAlias:
-            push__Vec(self->decls,
-                      NEW(DeclAlias,
-                          self->current->loc,
-                          parse_alias_declaration(self)));
+            push__Vec(
+              self->decls,
+              NEW(DeclAlias,
+                  self->current->loc,
+                  parse_alias_declaration(self, self->current->value.alias)));
             break;
 
         case ParseContextKindTrait:
-            push__Vec(self->decls,
-                      NEW(DeclTrait,
-                          self->current->loc,
-                          parse_trait_declaration(self)));
+            push__Vec(
+              self->decls,
+              NEW(DeclTrait,
+                  self->current->loc,
+                  parse_trait_declaration(self, self->current->value.trait)));
             break;
 
         case ParseContextKindClass:
-            push__Vec(self->decls,
-                      NEW(DeclClass,
-                          self->current->loc,
-                          parse_class_declaration(self)));
+            push__Vec(
+              self->decls,
+              NEW(DeclClass,
+                  self->current->loc,
+                  parse_class_declaration(self, self->current->value.class)));
             break;
 
         case ParseContextKindImport:
@@ -5544,17 +5694,24 @@ parse_declaration(struct Parser *self)
             push__Vec(self->decls,
                       NEW(DeclConstant,
                           self->current->loc,
-                          parse_constant_declaration(self)));
+                          parse_constant_declaration(
+                            self, self->current->value.constant)));
             break;
 
         case ParseContextKindError:
-            push__Vec(self->decls,
-                      NEW(DeclError,
-                          self->current->loc,
-                          parse_error_declaration(self)));
+            push__Vec(
+              self->decls,
+              NEW(DeclError,
+                  self->current->loc,
+                  parse_error_declaration(self, self->current->value.error)));
             break;
 
         case ParseContextKindModule:
+            push__Vec(
+              self->decls,
+              NEW(DeclModule,
+                  self->current->loc,
+                  parse_module_declaration(self, self->current->value.module)));
             break;
 
         default:
