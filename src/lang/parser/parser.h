@@ -120,7 +120,8 @@ enum ParseContextKind
     ParseContextKindFun,
     ParseContextKindEnum,
     ParseContextKindRecord,
-    ParseContextKindEnumObject
+    ParseContextKindEnumObject,
+    ParseContextKindRecordObject
 };
 
 typedef struct ParseContext
@@ -154,7 +155,7 @@ __new__ParseContextEnum(struct EnumParseContext *enum_, bool is_object);
  * @brief Contruct the ParseContext type (Record variant).
  */
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext *record);
+__new__ParseContextRecord(struct RecordParseContext *record, bool is_object);
 
 /**
  *

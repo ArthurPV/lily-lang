@@ -16,13 +16,40 @@
                     expected,                       \
                     token_kind_to_string__Token(*parse_block->current))));
 
-#define CLOSE_BLOCK_NOTE(parse_block)                        \
+#define CLOSE_BLOCK_NOTE()                                   \
     NEW(DiagnosticWithNoteParser,                            \
         parse_block,                                         \
         format("you may have forgotten to close the block"), \
         *parse_block->current->loc,                          \
         format(""),                                          \
         None());
+
+#define PARSE_GENERIC_TYPE_AND_OBJECT(self)                               \
+    if (((struct Token *)get__Vec(*self->scanner->tokens, self->pos + 1)) \
+            ->kind == TokenKindLHook ||                                   \
+        self->current->kind == TokenKindIdentifier)                       \
+        next_token_pb(self);                                              \
+                                                                          \
+    if (self->current->kind == TokenKindLHook) {                          \
+        struct Vec *content = get_generic_params(self);                   \
+                                                                          \
+        concat__Vec(generic_params, content);                             \
+                                                                          \
+        FREE(Vec, content);                                               \
+    }                                                                     \
+                                                                          \
+    if (len__Vec(*generic_params) != 0)                                   \
+        has_generic_params = true;                                        \
+                                                                          \
+    if (self->current->kind != TokenKindColon) {                          \
+                                                                          \
+        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, ':');           \
+                                                                          \
+        err->err->s = from__String(":");                                  \
+                                                                          \
+        emit__Diagnostic(err);                                            \
+    } else                                                                \
+        next_token_pb(self);
 
 static inline void
 next_token_pb(struct ParseBlock *self);
@@ -32,8 +59,12 @@ static struct String *
 get_type_name(struct ParseBlock *self);
 static void
 get_type_context(struct ParseBlock *self, bool is_pub);
+static struct String *
+get_object_name(struct ParseBlock *self);
+static void
+get_object_context(struct ParseBlock *self, bool is_pub);
 static struct Vec *
-get_generic_params_type(struct ParseBlock *self);
+get_generic_params(struct ParseBlock *self);
 static inline bool
 valid_fun_body_item(struct FunParseContext *self,
                     struct ParseBlock *parse_block,
@@ -150,7 +181,7 @@ run__ParseBlock(struct ParseBlock *self)
                         get_type_context(self, true);
                         break;
                     case TokenKindObjectKw:
-                        TODO("");
+                        get_object_context(self, true);
                         break;
                     case TokenKindTagKw:
                         TODO("");
@@ -194,6 +225,7 @@ run__ParseBlock(struct ParseBlock *self)
                 get_type_context(self, false);
                 break;
             case TokenKindObjectKw:
+                get_object_context(self, false);
                 break;
             default:
                 assert(0 && "error");
@@ -265,31 +297,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
     bool has_generic_params = false;
 
-    if (((struct Token *)get__Vec(*self->scanner->tokens, self->pos + 1))
-            ->kind == TokenKindLHook ||
-        self->current->kind == TokenKindIdentifier)
-        next_token_pb(self);
-
-    if (self->current->kind == TokenKindLHook) {
-        struct Vec *content = get_generic_params_type(self);
-
-        concat__Vec(generic_params, content);
-
-        FREE(Vec, content);
-    }
-
-    if (len__Vec(*generic_params) != 0)
-        has_generic_params = true;
-
-    if (self->current->kind != TokenKindColon) {
-        struct Diagnostic *err = EXPECTED_TOKEN_ERR(self, ':');
-
-        err->err->s = from__String(":");
-
-        emit__Diagnostic(err);
-    } else {
-        next_token_pb(self);
-    }
+    PARSE_GENERIC_TYPE_AND_OBJECT(self);
 
     switch (self->current->kind) {
         case TokenKindEnumKw: {
@@ -319,8 +327,10 @@ get_type_context(struct ParseBlock *self, bool is_pub)
             get_record_parse_context(record_parse_context, self);
 
             push__Vec(self->blocks,
-                      NEW(ParseContextRecord, record_parse_context));
+                      NEW(ParseContextRecord, record_parse_context, false));
 
+            break;
+        case TokenKindAliasKw:
             break;
         default: {
             struct Diagnostic *err =
@@ -344,8 +354,67 @@ get_type_context(struct ParseBlock *self, bool is_pub)
     }
 }
 
+static struct String *
+get_object_name(struct ParseBlock *self)
+{
+    next_token_pb(self);
+
+    if (self->current->kind != TokenKindIdentifier) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              self,
+              NEW(LilyError, LilyErrorMissObjectName),
+              *self->current->loc,
+              format(""),
+              Some(format("add object's name, found `{Sr}`",
+                          token_kind_to_string__Token(*self->current))));
+
+        emit__Diagnostic(err);
+
+        return NULL;
+    }
+
+    return &*self->current->lit;
+}
+
+static void
+get_object_context(struct ParseBlock *self, bool is_pub)
+{
+    struct String *name = get_object_name(self);
+    struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
+    bool has_generic_params = false;
+
+    PARSE_GENERIC_TYPE_AND_OBJECT(self);
+
+    switch (self->current->kind) {
+        case TokenKindEnumKw: {
+            struct EnumParseContext *enum_parse_context = NEW(EnumParseContext);
+
+            enum_parse_context->name = name;
+            enum_parse_context->generic_params = generic_params;
+            enum_parse_context->is_pub = is_pub;
+            enum_parse_context->has_generic_params = has_generic_params;
+
+            get_enum_parse_context(enum_parse_context, self);
+
+            push__Vec(self->blocks,
+                      NEW(ParseContextEnum, enum_parse_context, true));
+
+            break;
+        }
+        case TokenKindRecordKw:
+            break;
+        case TokenKindTraitKw:
+            break;
+        case TokenKindClassKw:
+            break;
+        default:
+            assert(0 && "error");
+    }
+}
+
 static struct Vec *
-get_generic_params_type(struct ParseBlock *self)
+get_generic_params(struct ParseBlock *self)
 {
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
 
@@ -429,7 +498,7 @@ valid_fun_body_item(struct FunParseContext *self,
                       format("this token is invalid inside the function"),
                       None());
 
-                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE();
 
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
@@ -771,7 +840,7 @@ valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              "`(`, `)`, `[`, `]`, `ID`, `?`, `!` or `,`"),
                       None());
 
-                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE();
 
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
@@ -813,7 +882,6 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
         case TokenKindRParen:
         case TokenKindLHook:
         case TokenKindRHook:
-        case TokenKindColon:
         case TokenKindInterrogation:
         case TokenKindBang:
         case TokenKindComma:
@@ -827,10 +895,10 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
                   NEW(LilyError, LilyErrorInvalidTokenInRecordField),
                   *parse_block->current->loc,
                   format("this token is invalid inside the record, expected: "
-                         "`(`, `)`, `[`, `]`, `ID`, `?`, `!`, `,` or `:`"),
+                         "`(`, `)`, `[`, `]`, `ID`, `?`, `!`, or `,`"),
                   None());
 
-                struct Diagnostic *note = CLOSE_BLOCK_NOTE(parse_block);
+                struct Diagnostic *note = CLOSE_BLOCK_NOTE();
 
                 emit__Diagnostic(err);
                 emit__Diagnostic(note);
@@ -963,10 +1031,15 @@ __new__ParseContextEnum(struct EnumParseContext *enum_, bool is_object)
 }
 
 struct ParseContext *
-__new__ParseContextRecord(struct RecordParseContext *record)
+__new__ParseContextRecord(struct RecordParseContext *record, bool is_object)
 {
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
-    self->kind = ParseContextKindRecord;
+
+    if (is_object)
+        self->kind = ParseContextKindRecordObject;
+    else
+        self->kind = ParseContextKindRecord;
+
     self->value.record = record;
     return self;
 }
@@ -1004,6 +1077,7 @@ __free__ParseContextAll(struct ParseContext *self)
             FREE(ParseContextEnum, self);
             break;
         case ParseContextKindRecord:
+        case ParseContextKindRecordObject:
             FREE(ParseContextRecord, self);
             break;
         default:

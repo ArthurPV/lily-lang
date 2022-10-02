@@ -71,7 +71,8 @@ enum LilyErrorKind
     LilyErrorBadUsageOfType,
     LilyErrorMissTypeName,
     LilyErrorInvalidTokenInEnumVariant,
-    LilyErrorInvalidTokenInRecordField
+    LilyErrorInvalidTokenInRecordField,
+    LilyErrorMissObjectName
 };
 
 typedef struct LilyError

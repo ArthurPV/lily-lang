@@ -8,8 +8,13 @@ type Name: enum(error) =
 end
 
 type Person: record =
-	name: string
-	age: u32
+	name string
+	age u32
 end
 
 fun div(x, y) = x/y;
+
+object PersonObj: enum =
+	F
+	G
+end
