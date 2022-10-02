@@ -22,11 +22,13 @@ extern "C"
     typedef uint16_t MutU16;
     typedef uint32_t MutU32;
     typedef uint64_t MutU64;
+    typedef __int128_t MutI128;
 
     typedef const uint8_t U8;
     typedef const uint16_t U16;
     typedef const uint32_t U32;
     typedef const uint64_t U64;
+    typedef const __int128_t I128;
 
     typedef int8_t MutI8;
     typedef int16_t MutI16;

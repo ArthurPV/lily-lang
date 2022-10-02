@@ -2,24 +2,21 @@
 #include <stdio.h>
 
 LILY_API I16
-add__Int16(MutI16 x, MutI16 y)
+add__Int16(I16 x, I16 y)
 {
-    x = (x & y) << 1;
-
-    return x == 0 ? x ^ y : add__Int16(x, x ^ y);
-}
-
-LILY_API I16
-sub__Int16(MutI16 x, MutI16 y)
-{
-
     if (y == 0)
         return x;
 
-    x = x ^ y;
-    y = ((~x) & y) << 1;
+    return add__Int16(x ^ y, (x & y) << 1);
+}
 
-    return sub__Int16(x, y);
+LILY_API I16
+sub__Int16(I16 x, I16 y)
+{
+    if (y == 0)
+        return x;
+
+    return sub__Int16(x ^ y, ((~x) & y) << 1);
 }
 
 LILY_API I16

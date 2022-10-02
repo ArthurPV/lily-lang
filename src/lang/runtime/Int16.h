@@ -12,11 +12,11 @@ extern "C"
 #define VERIFY_I16(res, x, y)                              \
     if ((x > 0 && y > 0 && (int16_t)(uintptr_t)res < 0) || \
         (x < 0 && y < 0 && (int16_t)(uintptr_t)res > 0)) { \
-        RUNTIME_ERROR("Int8 overflow: -32768..32767");     \
+        RUNTIME_ERROR("Int16 overflow: -32768..32767");    \
     }
 
-    LILY_API I16 add__Int16(MutI16 x, MutI16 y);
-    LILY_API I16 sub__Int16(MutI16 x, MutI16 y);
+    LILY_API I16 add__Int16(I16 x, I16 y);
+    LILY_API I16 sub__Int16(I16 x, I16 y);
     LILY_API I16 mul__Int16(I16 x, I16 y);
     LILY_API I16 div__Int16(I16 x, I16 y);
     LILY_API I16 mod__Int16(I16 x, I16 y);
@@ -49,4 +49,4 @@ extern "C"
 }
 #endif
 
-#endif // LILY_RUNTIME_INT8_H
+#endif // LILY_RUNTIME_INT16_H

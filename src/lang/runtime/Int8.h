@@ -15,8 +15,8 @@ extern "C"
         RUNTIME_ERROR("Int8 overflow: -128..127");        \
     }
 
-    LILY_API I8 add__Int8(MutI8 x, MutI8 y);
-    LILY_API I8 sub__Int8(MutI8 x, MutI8 y);
+    LILY_API I8 add__Int8(I8 x, I8 y);
+    LILY_API I8 sub__Int8(I8 x, I8 y);
     LILY_API I8 mul__Int8(I8 x, I8 y);
     LILY_API I8 div__Int8(I8 x, I8 y);
     LILY_API I8 mod__Int8(I8 x, I8 y);

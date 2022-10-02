@@ -2,23 +2,21 @@
 #include <stdio.h>
 
 LILY_API I8
-add__Int8(MutI8 x, MutI8 y)
-{
-    x = (x & y) << 1;
-
-    return x == 0 ? x ^ y : add__Int8(x, x ^ y);
-}
-
-LILY_API I8
-sub__Int8(MutI8 x, MutI8 y)
+add__Int8(I8 x, I8 y)
 {
     if (y == 0)
         return x;
 
-    x = x ^ y;
-    y = ((~x) & y) << 1;
+    return add__Int8(x ^ y, (x & y) << 1);
+}
 
-    return sub__Int8(x, y);
+LILY_API I8
+sub__Int8(I8 x, I8 y)
+{
+    if (y == 0)
+        return x;
+
+    return sub__Int8(x ^ y, ((~x) & y) << 1);
 }
 
 LILY_API I8
