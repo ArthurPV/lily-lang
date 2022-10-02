@@ -550,6 +550,13 @@ __free__ExprSymbolFunCall(struct ExprSymbol *self)
 }
 
 void
+__free__ExprSymbolRecordCall(struct ExprSymbol *self)
+{
+    FREE(RecordCallSymbol, self->value.record_call);
+    free(self);
+}
+
+void
 __free__ExprSymbolLambda(struct ExprSymbol *self)
 {
     TODO("Free lambda symbol");

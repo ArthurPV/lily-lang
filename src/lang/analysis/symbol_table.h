@@ -1626,12 +1626,8 @@ __free__ExprSymbolFunCall(struct ExprSymbol *self);
  *
  * @brief Free the ExprSymbol type (RecordCall variant).
  */
-inline void
-__free__ExprSymbolRecordCall(struct ExprSymbol *self)
-{
-    FREE(RecordCallSymbol, self->value.record_call);
-    free(self);
-}
+void
+__free__ExprSymbolRecordCall(struct ExprSymbol *self);
 
 /**
  *
