@@ -247,6 +247,8 @@ lily_warning_to_string(struct LilyWarning warn)
             return from__String("ignored tags");
         case LilyWarningIgnoredGenericParams:
             return from__String("ignored generic params");
+        case LilyWarningIgnoredLambdaDataType:
+            return from__String("ignored lambda data type");
         default:
             UNREACHABLE("unknown lily warning kind");
     }
@@ -343,6 +345,8 @@ get_code_of_lily_warning(struct LilyWarning warn)
             return "0002";
         case LilyWarningIgnoredGenericParams:
             return "0003";
+        case LilyWarningIgnoredLambdaDataType:
+            return "0004";
         default:
             UNREACHABLE("unknown lily warning kind");
     }

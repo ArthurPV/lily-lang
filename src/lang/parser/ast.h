@@ -211,9 +211,9 @@ typedef struct Generic
     struct Location loc;
     union
     {
-        struct String *data_type;
+        struct String *data_type; // struct String&
         struct Tuple
-          *restricted_data_type; // struct Tuple<struct String*, struct
+          *restricted_data_type; // struct Tuple<struct String&, struct
                                  // Tuple<struct DataType*, struct Location*>*>*
     } value;
 } Generic;

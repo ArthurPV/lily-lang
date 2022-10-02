@@ -118,6 +118,7 @@ enum LilyWarningKind
     LilyWarningUnusedParen,
     LilyWarningIgnoredTags,
     LilyWarningIgnoredGenericParams,
+    LilyWarningIgnoredLambdaDataType
 };
 
 typedef struct LilyWarning

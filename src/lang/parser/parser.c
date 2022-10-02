@@ -252,7 +252,7 @@ is_data_type(struct ParseDecl *self);
 static struct DataType *
 parse_data_type(struct Parser self, struct ParseDecl *parse_decl);
 static struct Vec *
-parse_generic_params(struct Parser *self, struct Vec *generic_params_token);
+parse_generic_params(struct Parser self, struct ParseDecl *parse_decl);
 static void
 parse_fun_declaration(struct Parser *self);
 static void
@@ -2293,9 +2293,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                         UInt64 size_u = _atoi64(size_str);
 
                         *size = (Usize)size_u;
-#endif
-
-#ifdef LILY_LINUX_OS
+#else
                         int size_u = atoi(size_str);
 
                         *size = (Usize)size_u;
@@ -2413,6 +2411,48 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             data_type =
               NEW(DataTypeException, parse_data_type(self, parse_decl));
             break;
+        case TokenKindAmpersand:
+            data_type = NEW(DataTypeRef, parse_data_type(self, parse_decl));
+        case TokenKindBar: {
+            next_token(parse_decl);
+
+            struct Vec *params = NEW(Vec, sizeof(struct Vec));
+
+            push__Vec(params, parse_data_type(self, parse_decl));
+
+            while (parse_decl->current != TokenKindBar) {
+                next_token(parse_decl);
+
+                push__Vec(params, parse_data_type(self, parse_decl));
+            }
+
+            struct DataType *return_type = pop__Vec(params);
+
+            if (len__Vec(*params) == 0) {
+                assert(0 && "warning");
+                struct Diagnostic *warn =
+                  NEW(DiagnosticWithWarnParser,
+                      &self.parse_block,
+                      NEW(LilyWarning, LilyWarningIgnoredLambdaDataType),
+                      *parse_decl->current->loc,
+                      format("the lambda data type is ignored because they are "
+                             "no return data type"),
+                      None());
+
+                emit_warning__Diagnostic(warn,
+                                         self.parse_block.disable_warning);
+
+                FREE(Vec, params);
+
+                return return_type;
+            }
+
+            next_token(parse_decl);
+
+            data_type = NEW(DataTypeLambda, params, return_type);
+
+            break;
+        }
         default:
             break;
     }
@@ -2422,9 +2462,86 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
 // struct Vec<struct Generic*>*
 static struct Vec *
-parse_generic_params(struct Parser *self, struct Vec *generic_params_token)
+parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *generic_params = NEW(Vec, sizeof(struct Generic));
+
+    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        struct String *data_type = NULL;
+        struct Location loc = NEW(Location);
+
+        start__Location(&loc,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
+
+        switch (parse_decl->current->kind) {
+            case TokenKindIdentifier: {
+                data_type = &*parse_decl->current->lit;
+
+                next_token(parse_decl);
+
+                if (parse_decl->current->lit == TokenKindColon) {
+                    struct Location loc_data_type = NEW(Location);
+
+                    start__Location(&loc_data_type,
+                                    parse_decl->current->loc->s_line,
+                                    parse_decl->current->loc->s_col);
+
+                    struct DataType *restricted_data_type =
+                      parse_data_type(self, parse_decl);
+
+                    end__Location(&loc_data_type,
+                                  parse_decl->current->loc->s_line,
+                                  parse_decl->current->loc->s_col);
+
+                    end__Location(&loc,
+                                  parse_decl->current->loc->s_line,
+                                  parse_decl->current->loc->s_col);
+
+                    push__Vec(generic_params,
+                              NEW(GenericRestrictedDataType,
+                                  data_type,
+                                  loc,
+                                  NEW(Tuple,
+                                      2,
+                                      restricted_data_type,
+                                      copy__Location(&loc_data_type))));
+                } else {
+                    end__Location(&loc,
+                                  parse_decl->current->loc->s_line,
+                                  parse_decl->current->loc->s_col);
+                    push__Vec(generic_params,
+                              NEW(GenericDataType, data_type, loc));
+                }
+            }
+            default: {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorUnexpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = token_kind_to_string__Token(*parse_decl->current);
+
+                emit__Diagnostic(err);
+            }
+        }
+
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         format(""),
+                                         None());
+
+            err->err->s = from__String("`,`");
+
+            emit__Diagnostic(err);
+        });
+    }
 
     return generic_params;
 }

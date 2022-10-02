@@ -403,20 +403,16 @@ to_string__Generic(struct Generic self)
 void
 __free__GenericDataType(struct Generic *self)
 {
-    FREE(String, self->value.data_type);
     free(self);
 }
 
 void
 __free__GenericRestrictedDataType(struct Generic *self)
 {
-    FREE(String, self->value.restricted_data_type->items[0]);
     FREE(
       DataTypeAll,
       ((struct Tuple *)self->value.restricted_data_type->items[1])->items[0]);
-    FREE(
-      Location,
-      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
+    free(((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
     FREE(Tuple, self->value.restricted_data_type->items[1]);
     FREE(Tuple, self->value.restricted_data_type);
     free(self);
