@@ -53,7 +53,8 @@ typedef struct DataType
         struct Tuple *lambda; // struct Tuple<struct Vec*, struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct Option<struct DataType*>*,
                               // struct Option<Usize*>*>*
-        struct Tuple *custom; // struct Tuple<struct String&, struct Vec<struct GenericParams*>*>*
+        struct Tuple *custom; // struct Tuple<struct String&, struct Vec<struct
+                              // GenericParams*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
 } DataType;

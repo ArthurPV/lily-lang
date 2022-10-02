@@ -152,38 +152,64 @@ __new__DataTypeSymbolTuple(struct Vec *tuple);
 
 /**
  *
- * @brief Free the DataTypeSymbol type.
+ * @brief Free the DataTypeSymbol type (all variants).
  */
 void
-__free__DataTypeSymbol(struct DataTypeSymbol *self);
+__free__DataTypeSymbolAll(struct DataTypeSymbol *self);
+
+/**
+ *
+ * @brief Free the DataTypeSymbol type.
+ */
+inline void
+__free__DataTypeSymbol(struct DataTypeSymbol *self)
+{
+    free(self);
+}
 
 /**
  *
  * @brief Free the DataTypeSymbol type (Ptr variant).
  */
-void
-__free__DataTypeSymbolPtr(struct DataTypeSymbol *self);
+inline void
+__free__DataTypeSymbolPtr(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.ptr);
+    free(self);
+}
 
 /**
  *
  * @brief Free the DataTypeSymbol type (Ref variant).
  */
-void
-__free__DataTypeSymbolRef(struct DataTypeSymbol *self);
+inline void
+__free__DataTypeSymbolRef(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.ref);
+    free(self);
+}
 
 /**
  *
  * @brief Free the DataTypeSymbol type (Optional variant).
  */
-void
-__free__DataTypeSymbolOptional(struct DataTypeSymbol *self);
+inline void
+__free__DataTypeSymbolOptional(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.optional);
+    free(self);
+}
 
 /**
  *
  * @brief Free the DataTypeSymbol type (Exception variant).
  */
-void
-__free__DataTypeSymbolException(struct DataTypeSymbol *self);
+inline void
+__free__DataTypeSymbolException(struct DataTypeSymbol *self)
+{
+    FREE(DataTypeSymbolAll, self->value.exception);
+    free(self);
+}
 
 /**
  *
@@ -210,15 +236,12 @@ __free__DataTypeSymbolCustom(struct DataTypeSymbol *self);
  *
  * @brief Free the DataTypeSymbol type (Tuple variant).
  */
-void
-__free__DataTypeSymbolTuple(struct DataTypeSymbol *self);
-
-/**
- *
- * @brief Free the DataTypeSymbol type (all variants).
- */
-void
-__free__DataTypeSymbolAll(struct DataTypeSymbol *self);
+inline void
+__free__DataTypeSymbolTuple(struct DataTypeSymbol *self)
+{
+    FREE(Vec, self->value.tuple);
+    free(self);
+}
 
 /**
  *
@@ -233,30 +256,6 @@ __free__GenericSymbolRestrictedDataType(struct Generic *self);
  */
 void
 __free__GenericSymbolAll(struct Generic *self);
-
-typedef struct VariableSymbol
-{
-    struct String *name; // struct String&
-    struct DataTypeSymbol *data_type;
-    struct ExprSymbol *expr;
-    struct Scope *scope; // struct Scope&
-    struct Location loc;
-    bool is_mut;
-} VariableSymbol;
-
-/**
- *
- * @brief Construct the VariableDecl type.
- */
-struct VariableSymbol
-__new__VariableSymbol(struct VariableDecl decl, struct Location decl_loc);
-
-/**
- *
- * @brief Free the VariableDecl type.
- */
-void
-__free__VariableSymbol(struct VariableSymbol self);
 
 typedef struct FunSymbol
 {
@@ -415,127 +414,234 @@ typedef struct LiteralSymbol
  *
  * @brief Construct LiteralSymbol (Bool variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolBool(bool bool_);
+inline struct LiteralSymbol
+__new__LiteralSymbolBool(bool bool_)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBool,
+                                  .value.bool_ = bool_ };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Char variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolChar(char char_);
+inline struct LiteralSymbol
+__new__LiteralSymbolChar(char char_)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindChar,
+                                  .value.char_ = char_ };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (BitChar variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolBitChar(UInt8 bit_char);
+inline struct LiteralSymbol
+__new__LiteralSymbolBitChar(UInt8 bit_char)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBitChar,
+                                  .value.bit_char = bit_char };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Int8 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolInt8(Int8 int8);
+inline struct LiteralSymbol
+__new__LiteralSymbolInt8(Int8 int8)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt8,
+                                  .value.int8 = int8 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Int16 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolInt16(Int16 int16);
+inline struct LiteralSymbol
+__new__LiteralSymbolInt16(Int16 int16)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt16,
+                                  .value.int16 = int16 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Int32 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolInt32(Int32 int32);
+inline struct LiteralSymbol
+__new__LiteralSymbolInt32(Int32 int32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt32,
+                                  .value.int32 = int32 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Int64 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolInt64(Int64 int64);
+inline struct LiteralSymbol
+__new__LiteralSymbolInt64(Int64 int64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt64,
+                                  .value.int64 = int64 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Int128 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolInt128(Int128 int128);
+inline struct LiteralSymbol
+__new__LiteralSymbolInt128(Int128 int128)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindInt128,
+                                  .value.int128 = int128 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Uint8 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUint8(UInt8 uint8);
+inline struct LiteralSymbol
+__new__LiteralSymbolUint8(UInt8 uint8)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint8,
+                                  .value.uint8 = uint8 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Uint16 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUint16(UInt16 uint16);
+inline struct LiteralSymbol
+__new__LiteralSymbolUint16(UInt16 uint16)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint16,
+                                  .value.uint16 = uint16 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Uint32 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUint32(UInt32 uint32);
+inline struct LiteralSymbol
+__new__LiteralSymbolUint32(UInt32 uint32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint32,
+                                  .value.uint32 = uint32 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Uint64 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUint64(UInt64 uint64);
+inline struct LiteralSymbol
+__new__LiteralSymbolUint64(UInt64 uint64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint64,
+                                  .value.uint64 = uint64 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Uint128 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUint128(Int128 uint128);
+inline struct LiteralSymbol
+__new__LiteralSymbolUint128(Int128 uint128)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUint128,
+                                  .value.uint128 = uint128 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Float32 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolFloat32(Float32 float32);
+inline struct LiteralSymbol
+__new__LiteralSymbolFloat32(Float32 float32)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat32,
+                                  .value.float32 = float32 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Float64 variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolFloat64(Float64 float64);
+inline struct LiteralSymbol
+__new__LiteralSymbolFloat64(Float64 float64)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat64,
+                                  .value.float64 = float64 };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Str variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolStr(Str str);
+inline struct LiteralSymbol
+__new__LiteralSymbolStr(Str str)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindStr,
+                                  .value.str = str };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (BitStr variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolBitStr(UInt8 **bit_str);
+inline struct LiteralSymbol
+__new__LiteralSymbolBitStr(UInt8 **bit_str)
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindBitStr,
+                                  .value.bit_str = bit_str };
+
+    return self;
+}
 
 /**
  *
  * @brief Construct LiteralSymbol (Unit variant).
  */
-struct LiteralSymbol
-__new__LiteralSymbolUnit();
+inline struct LiteralSymbol
+__new__LiteralSymbolUnit()
+{
+    struct LiteralSymbol self = { .kind = LiteralSymbolKindUnit };
+
+    return self;
+}
 
 typedef struct UnaryOpSymbol
 {
@@ -635,8 +741,14 @@ typedef struct FieldCallSymbol
  *
  * @brief Construct the FieldCallSymbol type.
  */
-struct FieldCallSymbol *
-__new__FieldCallSymbol(struct String *name, struct ExprSymbol *value);
+inline struct FieldCallSymbol *
+__new__FieldCallSymbol(struct String *name, struct ExprSymbol *value)
+{
+    struct FieldCallSymbol *self = malloc(sizeof(struct FieldCallSymbol));
+    self->name = name;
+    self->value = value;
+    return self;
+}
 
 /**
  *
@@ -656,8 +768,13 @@ typedef struct RecordCallSymbol
  *
  * @brief Construct the RecordCallSymbol type.
  */
-struct RecordCallSymbol
-__new__RecordCallSymbol(struct Scope id, struct Vec *fields);
+inline struct RecordCallSymbol
+__new__RecordCallSymbol(struct Scope id, struct Vec *fields)
+{
+    struct RecordCallSymbol self = { .id = id, .fields = fields };
+
+    return self;
+}
 
 /**
  *
@@ -676,8 +793,13 @@ typedef struct ArrayAccessSymbol
  *
  * @brief Construct the ArrayAccessSymbol type.
  */
-struct ArrayAccessSymbol
-__new__ArrayAccessSymbol(struct Scope id, struct Vec *access);
+inline struct ArrayAccessSymbol
+__new__ArrayAccessSymbol(struct Scope id, struct Vec *access)
+{
+    struct ArrayAccessSymbol self = { .id = id, .access = access };
+
+    return self;
+}
 
 /**
  *
@@ -696,8 +818,13 @@ typedef struct TupleAccessSymbol
  *
  * @brief Construct the TupleAccessSymbol type.
  */
-struct TupleAccessSymbol
-__new__TupleAccessSymbol(struct Scope id, struct Vec *access);
+inline struct TupleAccessSymbol
+__new__TupleAccessSymbol(struct Scope id, struct Vec *access)
+{
+    struct TupleAccessSymbol self = { .id = id, .access = access };
+
+    return self;
+}
 
 /**
  *
@@ -724,8 +851,13 @@ typedef struct VariantSymbol
  *
  * @brief Construct the VariantSymbol type.
  */
-struct VariantSymbol
-__new__VariantSymbol(struct Scope id, struct ExprSymbol *value);
+inline struct VariantSymbol
+__new__VariantSymbol(struct Scope id, struct ExprSymbol *value)
+{
+    struct VariantSymbol self = { .id = id, .value = value };
+
+    return self;
+}
 
 /**
  *
@@ -760,7 +892,7 @@ typedef struct ExprSymbol
         struct Scope dereference;
         struct Scope ref;
         struct LiteralSymbol literal;
-        struct VariableSymbol variable;
+        struct VariableSymbol *variable;
     } value;
 } ExprSymbol;
 
@@ -906,28 +1038,46 @@ __new__ExprSymbolLiteral(struct Expr expr, struct LiteralSymbol literal);
  * @brief Construct the ExprSymbol type (Variable variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol variable);
+__new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol *variable);
+
+/**
+ *
+ * @brief Free the ExprSymbol type (all variants).
+ */
+void
+__free__ExprSymbolAll(struct ExprSymbol *self);
 
 /**
  *
  * @brief Free the ExprSymbol type.
  */
-void
-__free__ExprSymbol(struct ExprSymbol *self);
+inline void
+__free__ExprSymbol(struct ExprSymbol *self)
+{
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Unary variant).
  */
-void
-__free__ExprSymbolUnaryOp(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolUnaryOp(struct ExprSymbol *self)
+{
+    FREE(UnaryOpSymbol, self->value.unary_op);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Binary variant).
  */
-void
-__free__ExprSymbolBinaryOp(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolBinaryOp(struct ExprSymbol *self)
+{
+    FREE(BinaryOpSymbol, self->value.binary_op);
+    free(self);
+}
 
 /**
  *
@@ -940,36 +1090,56 @@ __free__ExprSymbolFunCall(struct ExprSymbol *self);
  *
  * @brief Free the ExprSymbol type (RecordCall variant).
  */
-void
-__free__ExprSymbolRecordCall(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolRecordCall(struct ExprSymbol *self)
+{
+    FREE(RecordCallSymbol, self->value.record_call);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Identifier variant).
  */
-void
-__free__ExprSymbolIdentifier(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolIdentifier(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.identifier);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (IdentifierAccess variant).
  */
-void
-__free__ExprSymbolIdentifierAccess(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolIdentifierAccess(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.identifier_access);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (ArrayAccess variant).
  */
-void
-__free__ExprSymbolArrayAccess(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolArrayAccess(struct ExprSymbol *self)
+{
+    FREE(ArrayAccessSymbol, self->value.array_access);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (TupleAccess variant).
  */
-void
-__free__ExprSymbolTupleAccess(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolTupleAccess(struct ExprSymbol *self)
+{
+    FREE(TupleAccessSymbol, self->value.tuple_access);
+    free(self);
+}
 
 /**
  *
@@ -996,15 +1166,23 @@ __free__ExprSymbolArray(struct ExprSymbol *self);
  *
  * @brief Free the ExprSymbol type (Variant variant).
  */
-void
-__free__ExprSymbolVariant(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolVariant(struct ExprSymbol *self)
+{
+    FREE(VariantSymbol, self->value.variant);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Try variant).
  */
-void
-__free__ExprSymbolTry(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolTry(struct ExprSymbol *self)
+{
+    FREE(ExprSymbolAll, self->value.try);
+    free(self);
+}
 
 /**
  *
@@ -1017,29 +1195,44 @@ __free__ExprSymbolBlock(struct ExprSymbol *self);
  *
  * @brief Free the ExprSymbol type (QuestionMark variant).
  */
-void
-__free__ExprSymbolQuestionMark(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolQuestionMark(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.question_mark);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Dereference variant).
  */
-void
-__free__ExprSymbolDereference(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolDereference(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.dereference);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Ref variant).
  */
-void
-__free__ExprSymbolRef(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolRef(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.ref);
+    free(self);
+}
 
 /**
  *
  * @brief Free the ExprSymbol type (Literal variant).
  */
-void
-__free__ExprSymbolLiteral(struct ExprSymbol *self);
+inline void
+__free__ExprSymbolLiteral(struct ExprSymbol *self)
+{
+    free(self);
+}
 
 /**
  *
@@ -1048,12 +1241,41 @@ __free__ExprSymbolLiteral(struct ExprSymbol *self);
 void
 __free__ExprSymbolVariable(struct ExprSymbol *self);
 
+typedef struct VariableSymbol
+{
+    struct String *name; // struct String&
+    struct DataTypeSymbol *data_type;
+    struct ExprSymbol *expr;
+    struct Scope *scope; // struct Scope&
+    struct Location loc;
+    bool is_mut;
+} VariableSymbol;
+
 /**
  *
- * @brief Free the ExprSymbol type (all variants).
+ * @brief Construct the VariableDecl type.
  */
-void
-__free__ExprSymbolAll(struct ExprSymbol *self);
+inline struct VariableSymbol *
+__new__VariableSymbol(struct VariableDecl decl, struct Location decl_loc)
+{
+    struct VariableSymbol *self = malloc(sizeof(struct VariableSymbol));
+    self->name = decl.name;
+    self->loc = decl_loc;
+    self->is_mut = decl.is_mut;
+    return self;
+}
+
+/**
+ *
+ * @brief Free the VariableDecl type.
+ */
+inline void
+__free__VariableSymbol(struct VariableSymbol *self)
+{
+    FREE(DataTypeSymbol, self->data_type);
+    FREE(ExprSymbolAll, self->expr);
+    free(self);
+}
 
 typedef struct MatchSymbol
 {
@@ -1066,15 +1288,20 @@ typedef struct MatchSymbol
  *
  * @brief Construct the MatchSymbol type.
  */
-struct MatchSymbol
-__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *pattern);
+inline struct MatchSymbol
+__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *pattern)
+{
+    struct MatchSymbol self = { .matching = matching, .pattern = pattern };
+
+    return self;
+}
 
 /**
  *
  * @brief Free the MatchSymbol type.
  */
 void
-__free_MatchSymbol(struct MatchSymbol self);
+__free__MatchSymbol(struct MatchSymbol self);
 
 typedef struct IfBranchSymbol
 {
@@ -1154,8 +1381,13 @@ typedef struct WhileSymbol
  *
  * @brief Construct the WhileSymbol type.
  */
-struct WhileSymbol
-__new__WhileSymbol(struct ExprSymbol *cond, struct Vec *body);
+inline struct WhileSymbol
+__new__WhileSymbol(struct ExprSymbol *cond, struct Vec *body)
+{
+    struct WhileSymbol self = { .cond = cond, .body = body };
+
+    return self;
+}
 
 /**
  *
@@ -1172,12 +1404,176 @@ typedef struct StmtSymbol
     union
     {
         struct IfCondSymbol if_;
+        struct ExprSymbol *return_;
         struct ExprSymbol *await;
-        struct TrySymbol *try;
+        struct TrySymbol try;
         struct MatchSymbol match;
         struct WhileSymbol while_;
     } value;
 } StmtSymbol;
+
+/**
+ *
+ * @brief Construct the StmtSymbol type.
+ */
+inline struct StmtSymbol
+__new__StmtSymbol(struct Stmt stmt)
+{
+    struct StmtSymbol self = { .kind = stmt.kind, .loc = stmt.loc };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (If variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolIf(struct Stmt stmt, struct IfCondSymbol if_)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.if_ = if_ };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (Return variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolReturn(struct Stmt stmt, struct ExprSymbol *return_)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.return_ = return_ };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (Await variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolAwait(struct Stmt stmt, struct ExprSymbol *await)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.await = await };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (Try variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolTry(struct Stmt stmt, struct TrySymbol try)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.try = try };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (Match variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolMatch(struct Stmt stmt, struct MatchSymbol match)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.match = match };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct the StmtSymbol type (While variant).
+ */
+inline struct StmtSymbol
+__new__StmtSymbolWhile(struct Stmt stmt, struct WhileSymbol while_)
+{
+    struct StmtSymbol self = { .kind = stmt.kind,
+                               .loc = stmt.loc,
+                               .value.while_ = while_ };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (If variant).
+ */
+inline void
+__free__StmtSymbolIf(struct StmtSymbol self)
+{
+    FREE(IfCondSymbol, self.value.if_);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (Return variant).
+ */
+inline void
+__free__StmtSymbolReturn(struct StmtSymbol self)
+{
+    FREE(ExprSymbolAll, self.value.return_);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (Await variant).
+ */
+inline void
+__free__StmtSymbolAwait(struct StmtSymbol self)
+{
+    FREE(ExprSymbolAll, self.value.await);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (Try variant).
+ */
+inline void
+__free__StmtSymbolTry(struct StmtSymbol self)
+{
+    FREE(TrySymbol, self.value.try);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (Match variant).
+ */
+inline void
+__free__StmtSymbolMatch(struct StmtSymbol self)
+{
+    FREE(MatchSymbol, self.value.match);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (While variant).
+ */
+inline void
+__free__StmtSymbolWhile(struct StmtSymbol self)
+{
+    FREE(WhileSymbol, self.value.while_);
+}
+
+/**
+ *
+ * @brief Free the StmtSymbol type (all variants).
+ */
+void
+__free__StmtSymbolAll(struct StmtSymbol self);
 
 enum SymbolTableKind
 {
@@ -1227,15 +1623,23 @@ __new__SymbolTableExpr(struct ExprSymbol *expr, struct Expr *expr_ast);
  *
  * @brief Free the SymbolTable type (Fun variant).
  */
-void
-__free__SymbolTableFun(struct SymbolTable *self);
+inline void
+__free__SymbolTableFun(struct SymbolTable *self)
+{
+    FREE(FunSymbol, self->value.fun);
+    free(self);
+}
 
 /**
  *
  * @brief Free the SymbolTable type (Expr variant).
  */
-void
-__free__SymbolTableExpr(struct SymbolTable *self);
+inline void
+__free__SymbolTableExpr(struct SymbolTable *self)
+{
+    FREE(ExprSymbolAll, self->value.expr);
+    free(self);
+}
 
 /**
  *

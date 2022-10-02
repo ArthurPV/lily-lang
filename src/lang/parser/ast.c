@@ -1962,7 +1962,6 @@ __free__StmtAll(struct Stmt *self)
     }
 }
 
-
 struct FunBodyItem *
 __new__FunBodyItemExpr(struct Expr *expr)
 {
