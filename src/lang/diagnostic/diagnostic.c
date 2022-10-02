@@ -259,6 +259,8 @@ lily_error_to_string(struct LilyError err)
 			return from__String("duplicate declaration");
 		case LilyErrorDuplicateVariant:
 			return from__String("duplicate variant");
+		case LilyErrorDuplicateField:
+			return from__String("duplicate field");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -407,6 +409,8 @@ get_code_of_lily_error(struct LilyError err)
 			return "0060";
 		case LilyErrorDuplicateVariant:
 			return "0061";
+		case LilyErrorDuplicateField:
+			return "0062";
         default:
             UNREACHABLE("unknown lily error kind");
     }

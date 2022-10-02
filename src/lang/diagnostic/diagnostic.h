@@ -130,7 +130,8 @@ enum LilyErrorKind
     LilyErrorUnknownDataType,
     LilyErrorExpectedEnumObjectOrRecordObject,
 	LilyErrorDuplicateDeclaration,
-	LilyErrorDuplicateVariant
+	LilyErrorDuplicateVariant,
+	LilyErrorDuplicateField
 };
 
 typedef struct LilyError

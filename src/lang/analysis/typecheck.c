@@ -678,7 +678,15 @@ verify_if_decl_is_duplicate_in_record(struct Typecheck self,
                               *record->value.record->fields, j))
                              ->name,
                            false)) {
-                assert(0 && "duplicate field");
+                struct Diagnostic *error =
+                  NEW(DiagnosticWithErrTypecheck,
+                      &self,
+                      NEW(LilyError, LilyErrorDuplicateField),
+                      ((struct FieldRecord *)get__Vec(*record->value.record->fields, j))->loc,
+                      from__String(""),
+                      Some(from__String("remove this field")));
+
+                emit__Diagnostic(error);
             }
         }
     }
