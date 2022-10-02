@@ -274,6 +274,28 @@ typedef struct ImportParseContext
 struct ImportParseContext
 __new__ImportParseContext();
 
+typedef struct ConstantParseContext
+{
+    bool is_pub;
+    struct String *name;   // struct String&
+    struct Vec *data_type; // struct Vec<struct Token&>*
+    struct Vec *expr;      // struct Vec<struct Token&>*
+} ConstantParseContext;
+
+/**
+ *
+ * @brief Construct the ConstantParseContext type.
+ */
+struct ConstantParseContext
+__new__ConstantParseContext();
+
+/**
+ *
+ * @brief Free the ConstantParseContext type.
+ */
+void
+__free__ConstantParseContext(struct ConstantParseContext self);
+
 enum ParseContextKind
 {
     ParseContextKindFun,

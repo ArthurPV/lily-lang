@@ -39,7 +39,8 @@ add_library(lily_lang ${LANG_SRC})
 target_link_libraries(lily_lang lily_base)
 target_include_directories(lily_lang PRIVATE src)
 
-add_executable(lily src/bin/main.c)
+add_executable(lily src/bin/main.c
+                    src/command/parse.c)
 target_link_libraries(lily lily_lang lily_base)
 target_include_directories(lily PRIVATE src)
 

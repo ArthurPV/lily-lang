@@ -264,7 +264,7 @@ __free__GenericAll(struct Generic *self);
 
 typedef struct VariableDecl
 {
-    struct String *name;
+    struct String *name; // struct String&
     struct Option *data_type;
     struct Expr *expr;
     struct Location loc;
@@ -274,27 +274,26 @@ typedef struct VariableDecl
  *
  * @brief Construct the VariableDecl type.
  */
-struct VariableDecl *
+struct VariableDecl
 __new__VariableDecl(struct String *name,
                     struct Option *data_type,
                     struct Expr *expr,
                     struct Location loc);
 
 struct String *
-to_string__VariableDecl(struct VariableDecl *self);
+to_string__VariableDecl(struct VariableDecl self);
 
 /**
  *
  * @brief Free the VariableDecl type.
  */
 void
-__free__VariableDecl(struct VariableDecl *self);
+__free__VariableDecl(struct VariableDecl self);
 
 enum FunBodyItemKind
 {
     FunBodyItemKindExpr,
     FunBodyItemKindStmt,
-    FunBodyItemKindVariableDecl
 };
 
 // FunBodyItem: For function.
@@ -306,7 +305,6 @@ typedef struct FunBodyItem
     {
         struct Expr *expr;
         struct Stmt *stmt;
-        struct VariableDecl *var_decl;
     };
 } FunBodyItem;
 
@@ -323,13 +321,6 @@ __new__FunBodyItemExpr(struct Expr *expr);
  */
 struct FunBodyItem *
 __new__FunBodyItemStmt(struct Stmt *stmt);
-
-/**
- *
- * @brief Construct the FunBodyItem type (VariableDecl variant).
- */
-struct FunBodyItem *
-__new__FunBodyItemVariableDecl(struct VariableDecl *var_decl);
 
 /**
  *
@@ -757,6 +748,7 @@ enum ExprKind
     ExprKindNil,
     ExprKindWildcard,
     ExprKindLiteral,
+    ExprKindVariable
 };
 
 typedef struct Expr
@@ -786,6 +778,7 @@ typedef struct Expr
         struct Expr *dereference;
         struct Expr *ref;
         struct Literal literal;
+        struct VariableDecl variable;
     } value;
 } Expr;
 
@@ -939,6 +932,13 @@ __new__ExprLiteral(struct Literal literal, struct Location loc);
 
 /**
  *
+ * @brief Construct the Expr type (Variable variant).
+ */
+struct Expr *
+__new__ExprVariable(struct VariableDecl variable, struct Location loc);
+
+/**
+ *
  * @brief Convert Expr in String.
  */
 struct String *
@@ -1086,6 +1086,13 @@ __free__ExprLiteral(struct Expr *self);
 
 /**
  *
+ * @brief Free the Expr type (Variable variant).
+ */
+void
+__free__ExprVariable(struct Expr *self);
+
+/**
+ *
  * @brief Free the Expr type.
  */
 void
@@ -1160,9 +1167,9 @@ __free__FunParamCallAll(struct FunParamCall *self);
 typedef struct FunParam
 {
     enum FunParamKind kind;
-    struct String *name; // struct String&
-    struct Option 
-      *param_data_type; // struct Option<struct Tuple<struct DataType*, struct Location*>*>*
+    struct String *name;            // struct String&
+    struct Option *param_data_type; // struct Option<struct Tuple<struct
+                                    // DataType*, struct Location*>*>*
     struct Location loc;
 
     union

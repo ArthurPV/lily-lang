@@ -236,6 +236,11 @@ get_property_parse_context(struct PropertyParseContext *self,
 static void
 get_import_parse_context(struct ImportParseContext *self,
                          struct ParseBlock *parse_block);
+static inline bool
+valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid);
+static void
+get_constant_parse_context(struct ConstantParseContext *self,
+                           struct ParseBlock *parse_block);
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -270,6 +275,40 @@ static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
+static struct Stmt *
+parse_return_stmt(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc);
+static struct Stmt *
+parse_if_stmt(struct Parser self,
+              struct ParseDecl *parse_decl,
+              struct Location loc);
+static struct Stmt *
+parse_await_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc);
+static struct Stmt *
+parse_try_stmt(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc);
+static struct Stmt *
+parse_match_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc);
+static struct Stmt *
+parse_while_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc);
+static struct Stmt *
+parse_for_stmt(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc);
+static struct Stmt *
+parse_import_stmt(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc);
+static struct Vec *
+parse_fun_body(struct Parser self, struct ParseDecl *parse_decl);
 static struct Vec *
 parse_fun_params(struct Parser self, struct ParseDecl *parse_decl);
 static struct FunDecl *
@@ -367,13 +406,24 @@ get_block(struct ParseBlock *self)
                 case TokenKindErrorKw:
                     TODO("");
                     break;
+                case TokenKindIdentifier: {
+                    struct ConstantParseContext constant_parse_context =
+                      NEW(ConstantParseContext);
+
+                    constant_parse_context.name = &*self->current->lit;
+
+                    get_constant_parse_context(&constant_parse_context, self);
+
+                    break;
+                }
                 default: {
                     struct Diagnostic *err =
                       NEW(DiagnosticWithErrParser,
                           self,
                           NEW(LilyError, LilyErrorBadUsageOfPub),
                           *self->current->loc,
-                          format("expected `fun`, `async`, `type`, tag` or "
+                          format("expected `fun`, `async`, `type`, tag`, "
+                                 "`error`, `ID` or "
                                  "`object` after `pub` declaration"),
                           None());
 
@@ -473,6 +523,16 @@ get_block(struct ParseBlock *self)
         exit : {
         } break;
         }
+        case TokenKindIdentifier: {
+            struct ConstantParseContext constant_parse_context =
+              NEW(ConstantParseContext);
+
+            constant_parse_context.name = &*self->current->lit;
+
+            get_constant_parse_context(&constant_parse_context, self);
+
+            break;
+        }
         default: {
             struct Diagnostic *err = NEW(
               DiagnosticWithErrParser,
@@ -480,7 +540,7 @@ get_block(struct ParseBlock *self)
               NEW(LilyError, LilyErrorUnexpectedTokenForBeginingInGlobal),
               *self->current->loc,
               from__String("expected `pub`, `fun`, `type`, `object`, `tag`, "
-                           "`import`, `!`"),
+                           "`import`, `ID`, `error`, `!`"),
               None());
 
             err->err->s = token_kind_to_string__Token(*self->current);
@@ -2017,6 +2077,105 @@ get_import_parse_context(struct ImportParseContext *self,
     }
 }
 
+struct ConstantParseContext
+__new__ConstantParseContext()
+{
+    struct ConstantParseContext self = { .is_pub = false,
+                                         .name = NULL,
+                                         .data_type =
+                                           NEW(Vec, sizeof(struct Token)),
+                                         .expr =
+                                           NEW(Vec, sizeof(struct Token)) };
+
+    return self;
+}
+
+static inline bool
+valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
+{
+    switch (parse_block->current->kind) {
+        case TokenKindLHook:
+        case TokenKindRHook:
+        case TokenKindLParen:
+        case TokenKindRParen:
+        case TokenKindIdentifier:
+        case TokenKindComma:
+            return true;
+        default: {
+            if (!already_invalid) {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_block->current->loc,
+                      format("invalid token in constant data type"),
+                      None());
+
+                err->err->s = from__String("`:=`");
+
+                emit__Diagnostic(err);
+            }
+            return false;
+        }
+    }
+}
+
+static void
+get_constant_parse_context(struct ConstantParseContext *self,
+                           struct ParseBlock *parse_block)
+{
+    next_token_pb(parse_block);
+
+    if (parse_block->current->kind != TokenKindColonEq) {
+        bool bad_token = false;
+
+        while (parse_block->current->kind != TokenKindColonEq &&
+               parse_block->current->kind != TokenKindEof) {
+            if (valid_constant_data_type(parse_block, bad_token)) {
+                push__Vec(self->data_type, &*parse_block->current);
+                next_token_pb(parse_block);
+            } else {
+                bad_token = true;
+                next_token_pb(parse_block);
+            }
+        }
+
+        if (parse_block->current->kind == TokenKindEof) {
+            struct Diagnostic *err =
+              NEW(DiagnosticWithErrParser,
+                  parse_block,
+                  NEW(LilyError, LilyErrorExpectedToken),
+                  *((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                             parse_block->pos - 1))
+                     ->loc,
+                  format(""),
+                  None());
+
+            err->err->s = from__String("`:=`");
+
+            emit__Diagnostic(err);
+        } else
+            next_token_pb(parse_block);
+    } else
+        next_token_pb(parse_block);
+
+    while (parse_block->current->kind != TokenKindSemicolon &&
+           parse_block->current->kind != TokenKindEof) {
+        push__Vec(self->expr, &*parse_block->current);
+        next_token_pb(parse_block);
+    }
+
+    VERIFY_EOF(parse_block, false, "`;`");
+    next_token_pb(parse_block);
+}
+
+void
+__free__ConstantParseContext(struct ConstantParseContext self)
+{
+    FREE(Vec, self.data_type);
+    FREE(Vec, self.expr);
+}
+
 static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
@@ -2885,6 +3044,69 @@ parse_expr(struct Parser self, struct ParseDecl *parse_decl)
     return parse_primary_expr(self, parse_decl);
 }
 
+static struct Stmt *
+parse_return_stmt(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc)
+{
+    struct Expr *expr = parse_expr(self, parse_decl);
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(StmtReturn, loc, expr);
+}
+
+static struct Stmt *
+parse_if_stmt(struct Parser self,
+              struct ParseDecl *parse_decl,
+              struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_await_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_try_stmt(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_match_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_while_stmt(struct Parser self,
+                 struct ParseDecl *parse_decl,
+                 struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_for_stmt(struct Parser self,
+               struct ParseDecl *parse_decl,
+               struct Location loc)
+{
+}
+
+static struct Stmt *
+parse_import_stmt(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc)
+{
+}
+
+// struct Vec<struct FunParam*>*
 static struct Vec *
 parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
 {
@@ -2944,11 +3166,7 @@ parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
                 break;
         }
 
-        if (parse_decl->current == NULL)
-            end__Location(&loc,
-                          parse_decl->previous->loc->e_line,
-                          parse_decl->previous->loc->s_col);
-        else if (data_type == NULL && default_value == NULL)
+        if (data_type == NULL && default_value == NULL)
             end__Location(&loc,
                           parse_decl->current->loc->e_line,
                           parse_decl->current->loc->e_col);
@@ -2995,6 +3213,32 @@ parse_fun_params(struct Parser self, struct ParseDecl *parse_decl)
     }
 
     return params;
+}
+
+// struct Vec<struct FunBodyItem*>*
+static struct Vec *
+parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
+{
+    struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
+
+    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        switch (parse_decl->current->kind) {
+            case TokenKindReturnKw:
+            case TokenKindNextKw:
+            case TokenKindBreakKw:
+            case TokenKindIfKw:
+            case TokenKindForKw:
+            case TokenKindWhileKw:
+                assert(0 && "todo");
+                break;
+            default:
+                push__Vec(body,
+                          NEW(FunBodyItemExpr, parse_expr(self, parse_decl)));
+                break;
+        }
+    }
+
+    return body;
 }
 
 static struct FunDecl *
@@ -3045,6 +3289,10 @@ parse_fun_declaration(struct Parser *self)
 
             emit__Diagnostic(err);
         }
+    }
+
+    if (len__Vec(*fun_parse_context.body) > 0) {
+        struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.body);
     }
 
     return NEW(FunDecl,

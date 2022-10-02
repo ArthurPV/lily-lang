@@ -434,38 +434,34 @@ __free__GenericAll(struct Generic *self)
     }
 }
 
-struct VariableDecl *
+struct VariableDecl
 __new__VariableDecl(struct String *name,
                     struct Option *data_type,
                     struct Expr *expr,
                     struct Location loc)
 {
-    struct VariableDecl *self = malloc(sizeof(struct VariableDecl));
-    self->name = name;
-    self->data_type = data_type;
-    self->expr = expr;
-    self->loc = loc;
+    struct VariableDecl self = {
+        .name = name, .data_type = data_type, .expr = expr, .loc = loc
+    };
+
     return self;
 }
 
 struct String *
-to_string__VariableDecl(struct VariableDecl *self)
+to_string__VariableDecl(struct VariableDecl self)
 {
     TODO("");
 }
 
 void
-__free__VariableDecl(struct VariableDecl *self)
+__free__VariableDecl(struct VariableDecl self)
 {
-    FREE(String, self->name);
+    if (is_Some__Option(self.data_type))
+        FREE(DataTypeAll, get__Option(self.data_type));
 
-    if (is_Some__Option(self->data_type))
-        FREE(DataTypeAll, get__Option(self->data_type));
+    FREE(Option, self.data_type);
 
-    FREE(Option, self->data_type);
-
-    FREE(ExprAll, self->expr);
-    free(self);
+    FREE(ExprAll, self.expr);
 }
 
 struct FunBodyItem *
@@ -483,15 +479,6 @@ __new__FunBodyItemStmt(struct Stmt *stmt)
     struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
     self->kind = FunBodyItemKindStmt;
     self->stmt = stmt;
-    return self;
-}
-
-struct FunBodyItem *
-__new__FunBodyItemVariableDecl(struct VariableDecl *var_decl)
-{
-    struct FunBodyItem *self = malloc(sizeof(struct FunBodyItem));
-    self->kind = FunBodyItemKindVariableDecl;
-    self->var_decl = var_decl;
     return self;
 }
 
@@ -525,13 +512,6 @@ __free__FunBodyItemStmt(struct FunBodyItem *self)
 }
 
 void
-__free__FunBodyItemVariableDecl(struct FunBodyItem *self)
-{
-    FREE(VariableDecl, self->var_decl);
-    free(self);
-}
-
-void
 __free__FunBodyItemAll(struct FunBodyItem *self)
 {
     switch (self->kind) {
@@ -540,9 +520,6 @@ __free__FunBodyItemAll(struct FunBodyItem *self)
             break;
         case FunBodyItemKindStmt:
             FREE(FunBodyItemStmt, self);
-            break;
-        case FunBodyItemKindVariableDecl:
-            FREE(FunBodyItemVariableDecl, self);
             break;
     }
 }
@@ -1249,6 +1226,16 @@ __new__ExprLiteral(struct Literal literal, struct Location loc)
     return self;
 }
 
+struct Expr *
+__new__ExprVariable(struct VariableDecl variable, struct Location loc)
+{
+    struct Expr *self = malloc(sizeof(struct Expr));
+    self->kind = ExprKindVariable;
+    self->loc = loc;
+    self->value.variable = variable;
+    return self;
+}
+
 struct String *
 to_string__Expr(struct Expr self)
 {
@@ -1418,6 +1405,13 @@ __free__ExprLiteral(struct Expr *self)
 }
 
 void
+__free__ExprVariable(struct Expr *self)
+{
+    FREE(VariableDecl, self->value.variable);
+    free(self);
+}
+
+void
 __free__Expr(struct Expr *self)
 {
     free(self);
@@ -1486,6 +1480,9 @@ __free__ExprAll(struct Expr *self)
             break;
         case ExprKindLiteral:
             FREE(ExprLiteral, self);
+            break;
+        case ExprKindVariable:
+            FREE(ExprVariable, self);
             break;
         default:
             FREE(Expr, self);
@@ -1597,7 +1594,8 @@ to_string__FunParam(struct FunParam self)
     //         return format("{S} {S} := {S}",
     //                       self.name,
     //                       to_string__DataType(
-    //                         *(struct DataType *)self.param_data_type->items[0]),
+    //                         *(struct DataType
+    //                         *)self.param_data_type->items[0]),
     //                       to_string__Expr(*self.value.default_));
     //     default:
     //         UNREACHABLE("unknown fun param kind");
