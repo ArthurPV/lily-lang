@@ -235,11 +235,12 @@
               body,                                                            \
               NEW(FunBodyItemStmt, parse_try_stmt(self, parse_decl, loc)));    \
             break;                                                             \
-        case TokenKindMatchKw:                                                 \
+        case TokenKindMatchKw: {                                               \
             struct MatchStmt *match =                                          \
               parse_match_stmt(self, parse_decl, &loc);                        \
             push__Vec(body, NEW(FunBodyItemStmt, NEW(StmtMatch, loc, match))); \
             break;                                                             \
+        }                                                                      \
         default:                                                               \
             UNREACHABLE("");                                                   \
     }
