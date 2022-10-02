@@ -280,6 +280,35 @@ parse_unary_op(struct ParseDecl parse_decl);
 static inline int *
 parse_binary_op(struct ParseDecl parse_decl);
 static struct Expr *
+parse_variant_expr(struct Parser self,
+                   struct ParseDecl *parse_decl,
+                   struct Expr *id,
+                   struct Location loc);
+static struct Expr *
+parse_fun_call_expr(struct Parser self,
+                    struct ParseDecl *parse_decl,
+                    struct Expr *id,
+                    struct Location loc);
+static struct Expr *
+parse_record_call_expr(struct Parser self,
+                       struct ParseDecl *parse_decl,
+                       struct Expr *id,
+                       struct Location loc);
+static struct Expr *
+parse_array_access_expr(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Expr *id,
+                        struct Location loc);
+static struct Expr *
+parse_tuple_access_expr(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Expr *id,
+                        struct Location loc);
+static struct Expr *
+parse_identifier_access(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Location loc);
+static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Stmt *
 parse_return_stmt(struct Parser self,
@@ -3198,6 +3227,45 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 
                 expr = NEW(Expr, ExprKindWildcard, loc);
             } else {
+                switch (parse_decl->current->kind) {
+                    case TokenKindDot:
+                        TODO("");
+                        break;
+                    case TokenKindColon:
+                    case TokenKindColonColon:
+                        expr =
+                          parse_variant_expr(self,
+                                             parse_decl,
+                                             NEW(ExprIdentifier,
+                                                 &*parse_decl->previous->lit,
+                                                 *parse_decl->previous->loc),
+                                             loc);
+                        break;
+                    case TokenKindLParen:
+                        TODO("");
+                        break;
+                    case TokenKindLBrace:
+                        TODO("");
+                        break;
+                    case TokenKindLHook:
+                        TODO("");
+                        break;
+                    case TokenKindHashtag: {
+                        next_token(parse_decl);
+
+                        TODO("");
+                        break;
+                    }
+                    default:
+                        end__Location(&loc,
+                                      parse_decl->previous->loc->e_line,
+                                      parse_decl->previous->loc->e_col);
+
+                        expr =
+                          NEW(ExprIdentifier, &*parse_decl->previous->lit, loc);
+
+                        break;
+                }
             }
 
             free(id_str);
@@ -3499,6 +3567,137 @@ parse_binary_op(struct ParseDecl parse_decl)
         default:
             return NULL;
     }
+}
+
+static struct Expr *
+parse_variant_expr(struct Parser self,
+                   struct ParseDecl *parse_decl,
+                   struct Expr *id,
+                   struct Location loc)
+{
+    if (parse_decl->current->kind == TokenKindColon) {
+        struct Expr *expr = parse_expr(self, parse_decl);
+
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(ExprVariant, NEW(Variant, id, Some(expr)), loc);
+    } else { // anyone else token is unreachable
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(ExprVariant, NEW(Variant, id, None()), loc);
+    }
+}
+
+static struct Expr *
+parse_fun_call_expr(struct Parser self,
+                    struct ParseDecl *parse_decl,
+                    struct Expr *id,
+                    struct Location loc)
+{
+    struct Vec *params_call = NEW(Vec, sizeof(struct Tuple));
+
+    next_token(parse_decl);
+
+    PARSE_PAREN(parse_decl, {
+        struct Location loc_param_call = NEW(Location);
+
+        start__Location(&loc_param_call,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
+
+        switch (parse_decl->current->kind) {
+            case TokenKindIdentifier: {
+                if (((struct Token *)get__Vec(*parse_decl->tokens,
+                                              parse_decl->pos + 1))
+                      ->kind == TokenKindColonEq) {
+                    struct String *name = &*parse_decl->current->lit;
+
+                    next_token(parse_decl);
+                    next_token(parse_decl);
+
+                    struct Expr *expr = parse_expr(self, parse_decl);
+
+                    end__Location(&loc_param_call,
+                                  parse_decl->current->loc->s_line,
+                                  parse_decl->current->loc->s_col);
+
+                    push__Vec(params_call,
+                              NEW(Tuple,
+                                  2,
+                                  NEW(FunParamCallDefault, expr, name),
+                                  copy__Location(&loc_param_call)));
+                } else
+                    goto expr;
+
+                break;
+            }
+            default: {
+            expr : {
+                struct Expr *expr = parse_expr(self, parse_decl);
+
+                end__Location(&loc_param_call,
+                              parse_decl->current->loc->s_line,
+                              parse_decl->current->loc->s_col);
+
+                push__Vec(params_call,
+                          NEW(Tuple,
+                              2,
+                              NEW(FunParamCall, expr),
+                              copy__Location(&loc_param_call)));
+            }
+
+            break;
+            }
+        }
+
+        EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+            struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                         &self.parse_block,
+                                         NEW(LilyError, LilyErrorExpectedToken),
+                                         *parse_decl->current->loc,
+                                         format(""),
+                                         None());
+
+            err->err->s = from__String("`,`");
+
+            emit__Diagnostic(err);
+        });
+    });
+}
+
+static struct Expr *
+parse_record_call_expr(struct Parser self,
+                       struct ParseDecl *parse_decl,
+                       struct Expr *id,
+                       struct Location loc)
+{
+}
+
+static struct Expr *
+parse_array_access_expr(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Expr *id,
+                        struct Location loc)
+{
+}
+
+static struct Expr *
+parse_tuple_access_expr(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Expr *id,
+                        struct Location loc)
+{
+}
+
+static struct Expr *
+parse_identifier_access(struct Parser self,
+                        struct ParseDecl *parse_decl,
+                        struct Location loc)
+{
 }
 
 static struct Expr *

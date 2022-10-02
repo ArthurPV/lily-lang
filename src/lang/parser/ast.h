@@ -571,7 +571,7 @@ __free__BinaryOp(struct BinaryOp self);
 
 typedef struct FunCall
 {
-    struct String *name; // struct String&
+    struct Expr *id; 
     struct Vec *params;  // struct Vec<struct Tuple<struct FunParamCall*, struct
                          // Location&>*>*
 } FunCall;
@@ -581,7 +581,7 @@ typedef struct FunCall
  * @brief Construct the FunCall type.
  */
 struct FunCall
-__new__FunCall(struct String *name, struct Vec *params);
+__new__FunCall(struct Expr *id, struct Vec *params);
 
 /**
  *
@@ -704,7 +704,7 @@ __free__Lambda(struct Lambda self);
 
 typedef struct Variant
 {
-    struct String *name;  // struct String&
+    struct Expr *id;
     struct Option *value; // struct Option<struct Expr*>*
 } Variant;
 
@@ -713,7 +713,7 @@ typedef struct Variant
  * @brief Construct the Variant type.
  */
 struct Variant
-__new__Variant(struct String *name, struct Option *value);
+__new__Variant(struct Expr *id, struct Option *value);
 
 /**
  *

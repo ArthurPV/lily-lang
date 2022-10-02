@@ -849,9 +849,9 @@ __free__BinaryOp(struct BinaryOp self)
 }
 
 struct FunCall
-__new__FunCall(struct String *name, struct Vec *params)
+__new__FunCall(struct Expr *id, struct Vec *params)
 {
-    struct FunCall self = { .name = name, .params = params };
+    struct FunCall self = { .id = id, .params = params };
 
     return self;
 }
@@ -859,26 +859,28 @@ __new__FunCall(struct String *name, struct Vec *params)
 struct String *
 to_string__FunCall(struct FunCall self)
 {
-    struct String *s = NEW(String);
+    // struct String *s = NEW(String);
 
-    append__String(s, format("{S}(", self.name), true);
+    // append__String(s, format("{S}(", self.name), true);
 
-    for (Usize i = 0; i < len__Vec(*self.params); i++)
-        append__String(
-          s,
-          format("{S}, ",
-                 to_string__FunParamCall(
-                   *((struct FunParamCall *)get__Vec(*self.params, i)))),
-          true);
+    // for (Usize i = 0; i < len__Vec(*self.params); i++)
+    //     append__String(
+    //       s,
+    //       format("{S}, ",
+    //              to_string__FunParamCall(
+    //                *((struct FunParamCall *)get__Vec(*self.params, i)))),
+    //       true);
 
-    push_str__String(s, ")");
+    // push_str__String(s, ")");
 
-    return s;
+    // return s;
 }
 
 void
 __free__FunCall(struct FunCall self)
 {
+    FREE(ExprAll, self.id);
+
     for (Usize i = 0; i < len__Vec(*self.params); i++) {
         FREE(FunParamCallAll,
              ((struct Tuple *)get__Vec(*self.params, i))->items[0]);
@@ -1001,9 +1003,9 @@ __free__Lambda(struct Lambda self)
 }
 
 struct Variant
-__new__Variant(struct String *name, struct Option *value)
+__new__Variant(struct Expr *id, struct Option *value)
 {
-    struct Variant self = { .name = name, .value = value };
+    struct Variant self = { .id = id, .value = value };
 
     return self;
 }
@@ -1011,6 +1013,8 @@ __new__Variant(struct String *name, struct Option *value)
 void
 __free__Variant(struct Variant self)
 {
+    FREE(ExprAll, self.id);
+
     if (is_Some__Option(self.value))
         FREE(ExprAll, get__Option(self.value));
 
