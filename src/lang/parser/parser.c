@@ -3425,7 +3425,6 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             expr = parse_literal_expr(self, parse_decl);
             break;
         default:
-            // Println("{d}", parse_decl->previous->kind);
             assert(0 && "error");
     }
 

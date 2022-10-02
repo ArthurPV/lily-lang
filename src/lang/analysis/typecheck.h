@@ -1,0 +1,4 @@
+#ifndef LILY_TYPECHECK_H
+#define LILY_TYPECHECK_H
+
+#endif // LILY_TYPECHECK_H

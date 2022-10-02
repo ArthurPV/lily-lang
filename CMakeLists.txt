@@ -25,6 +25,8 @@ set(BASE_SRC
         src/base/vec.c)
 
 set(LANG_SRC
+        src/lang/analysis/symbol_table.c
+        src/lang/analysis/typecheck.c
         src/lang/diagnostic/diagnostic.c
         src/lang/diagnostic/summary.c
         src/lang/parser/ast.c
