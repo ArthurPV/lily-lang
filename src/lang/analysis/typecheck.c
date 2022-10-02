@@ -4133,14 +4133,15 @@ search_value_in_function(struct Typecheck *self,
                          struct Vec *local_value,
                          struct String *id)
 {
-	struct Scope *found_local_value = search_in_fun_local_value(local_value, id);
+    struct Scope *found_local_value =
+      search_in_fun_local_value(local_value, id);
 
-	if (!found_local_value) {
-		assert(0 && "error");
-	} else if (found_local_value)
-		return found_local_value;
+    if (!found_local_value) {
+        assert(0 && "error");
+    } else if (found_local_value)
+        return found_local_value;
 
-	return NULL;
+    return NULL;
 }
 
 static struct DataTypeSymbol *
@@ -4299,16 +4300,13 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolUnaryOp,
                       *expr,
-                      NEW(
-                        UnaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          !return_type ? get_data_type_of_expression(
-                                           self, right, local_value)
-                                       : return_type),
-                        right));
+                      NEW(UnaryOpSymbol, *expr, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        !return_type ? get_data_type_of_expression(
+                                         self, right, local_value)
+                                     : return_type));
                 }
                 case UnaryOpKindBitNot:
                 case UnaryOpKindNegative: {
@@ -4327,15 +4325,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolUnaryOp,
                       *expr,
-                      NEW(
-                        UnaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, module_name, op_str, 2)),
-                        right));
+                      NEW(UnaryOpSymbol, *expr, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, module_name, op_str, 2)));
                 }
                 case UnaryOpKindNot:
                     verify_type_of_fun_builtin(
@@ -4347,15 +4342,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolUnaryOp,
                       *expr,
-                      NEW(
-                        UnaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, "Bool", "not", 2)),
-                        right));
+                      NEW(UnaryOpSymbol, *expr, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, "Bool", "not", 2)));
                 case UnaryOpKindCustom:
                     TODO("check unary operator kind custom");
             }
@@ -4429,16 +4421,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolBinaryOp,
                       *expr,
-                      NEW(
-                        BinaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, module_name, op_str, 3)),
-                        left,
-                        right));
+                      NEW(BinaryOpSymbol, *expr, left, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, module_name, op_str, 3)));
                 }
                 case BinaryOpKindAnd:
                 case BinaryOpKindOr: {
@@ -4452,16 +4440,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolBinaryOp,
                       *expr,
-                      NEW(
-                        BinaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, "Bool", op_str, 3)),
-                        left,
-                        right));
+                      NEW(BinaryOpSymbol, *expr, left, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, "Bool", op_str, 3)));
                 }
                 case BinaryOpKindMergeAssign:
                 case BinaryOpKindUnmergeAssign:
@@ -4477,16 +4461,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolBinaryOp,
                       *expr,
-                      NEW(
-                        BinaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, "Array", op_str, 3)),
-                        left,
-                        right));
+                      NEW(BinaryOpSymbol, *expr, left, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, "Array", op_str, 3)));
                 }
                 case BinaryOpKindChain:
                     TODO("check chain binary op");
@@ -4503,16 +4483,12 @@ check_expression(struct Typecheck *self,
                     return NEW(
                       ExprSymbolBinaryOp,
                       *expr,
-                      NEW(
-                        BinaryOpSymbol,
-                        *expr,
-                        check_if_defined_data_type_is_equal_to_infered_data_type(
-                          self,
-                          defined_data_type,
-                          get_return_type_of_fun_builtin(
-                            self, "Str", op_str, 3)),
-                        left,
-                        right));
+                      NEW(BinaryOpSymbol, *expr, left, right),
+                      check_if_defined_data_type_is_equal_to_infered_data_type(
+                        self,
+                        defined_data_type,
+                        get_return_type_of_fun_builtin(
+                          self, "Str", op_str, 3)));
                 }
                 case BinaryOpKindCustom:
                     TODO("check binary op custom");
@@ -4524,13 +4500,12 @@ check_expression(struct Typecheck *self,
         case ExprKindRecordCall:
             TODO("check record call");
         case ExprKindIdentifier: {
-			struct Scope *value = search_value_in_function(self, local_value, expr->value.identifier);
+            struct Scope *value = search_value_in_function(
+              self, local_value, expr->value.identifier);
 
-			if (!value) {
-				TODO("");
-			}
+            TODO("check data_type");
 
-            TODO("check identifier");
+            return NEW(ExprSymbolIdentifier, *expr, value, NULL);
         }
         case ExprKindIdentifierAccess:
             TODO("check identifier access");

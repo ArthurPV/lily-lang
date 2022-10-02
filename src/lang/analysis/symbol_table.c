@@ -320,194 +320,245 @@ __free__VariantSymbol(struct VariantSymbol self)
 }
 
 struct ExprSymbol *
-__new__ExprSymbol(struct Expr *expr)
+__new__ExprSymbol(struct Expr *expr, struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr->kind;
     self->loc = expr->loc;
+    self->data_type = data_type;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolUnaryOp(struct Expr expr, struct UnaryOpSymbol unary_op)
+__new__ExprSymbolUnaryOp(struct Expr expr,
+                         struct UnaryOpSymbol unary_op,
+                         struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.unary_op = unary_op;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolBinaryOp(struct Expr expr, struct BinaryOpSymbol binary_op)
+__new__ExprSymbolBinaryOp(struct Expr expr,
+                          struct BinaryOpSymbol binary_op,
+                          struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.binary_op = binary_op;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolFunCall(struct Expr expr, struct FunCallSymbol fun_call)
+__new__ExprSymbolFunCall(struct Expr expr,
+                         struct FunCallSymbol fun_call,
+                         struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.fun_call = fun_call;
     return self;
 }
 
 struct ExprSymbol *
 __new__ExprSymbolRecordCall(struct Expr expr,
-                            struct RecordCallSymbol record_call)
+                            struct RecordCallSymbol record_call,
+                            struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.record_call = record_call;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier)
+__new__ExprSymbolIdentifier(struct Expr expr,
+                            struct Scope *identifier,
+                            struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.identifier = identifier;
     return self;
 }
 
 struct ExprSymbol *
 __new__ExprSymbolIdentifierAccess(struct Expr expr,
-                                  struct Scope *identifier_access)
+                                  struct Scope *identifier_access,
+                                  struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.identifier_access = identifier_access;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access)
+__new__ExprSymbolGlobalAccess(struct Expr expr,
+                              struct Scope *global_access,
+                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.global_access = global_access;
     return self;
 }
 
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-                             struct ArrayAccessSymbol array_access)
+                             struct ArrayAccessSymbol array_access,
+                             struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.array_access = array_access;
     return self;
 }
 
 struct ExprSymbol *
 __new__ExprSymbolTupleAccess(struct Expr expr,
-                             struct TupleAccessSymbol tuple_access)
+                             struct TupleAccessSymbol tuple_access,
+                             struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.tuple_access = tuple_access;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolLambda(struct Expr expr, struct LambdaSymbol lambda)
+__new__ExprSymbolLambda(struct Expr expr,
+                        struct LambdaSymbol lambda,
+                        struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.lambda = lambda;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolTuple(struct Expr expr, struct Tuple *tuple)
+__new__ExprSymbolTuple(struct Expr expr,
+                       struct Tuple *tuple,
+                       struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.tuple = tuple;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolArray(struct Expr expr, struct Tuple *array)
+__new__ExprSymbolArray(struct Expr expr,
+                       struct Tuple *array,
+                       struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.array = array;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolVariant(struct Expr expr, struct VariantSymbol variant)
+__new__ExprSymbolVariant(struct Expr expr,
+                         struct VariantSymbol variant,
+                         struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.variant = variant;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolTry(struct Expr expr, struct ExprSymbol *try)
+__new__ExprSymbolTry(struct Expr expr,
+                     struct ExprSymbol *try,
+                     struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.try = try;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolBlock(struct Expr expr, struct Vec *block)
+__new__ExprSymbolBlock(struct Expr expr,
+                       struct Vec *block,
+                       struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.block = block;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope *question_mark)
+__new__ExprSymbolQuestionMark(struct Expr expr,
+                              struct Scope *question_mark,
+                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.question_mark = question_mark;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolDereference(struct Expr expr, struct Scope *dereference)
+__new__ExprSymbolDereference(struct Expr expr,
+                             struct Scope *dereference,
+                             struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.dereference = dereference;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolRef(struct Expr expr, struct Scope *ref)
+__new__ExprSymbolRef(struct Expr expr,
+                     struct Scope *ref,
+                     struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.ref = ref;
     return self;
 }
@@ -518,6 +569,7 @@ __new__ExprSymbolLiteral(struct Expr expr, struct LiteralSymbol literal)
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = literal.data_type;
     self->value.literal = literal;
     return self;
 }
@@ -528,16 +580,20 @@ __new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol *variable)
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = NULL;
     self->value.variable = variable;
     return self;
 }
 
 struct ExprSymbol *
-__new__ExprSymbolGrouping(struct Expr expr, struct Tuple *grouping)
+__new__ExprSymbolGrouping(struct Expr expr,
+                          struct Tuple *grouping,
+                          struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
     self->loc = expr.loc;
+    self->data_type = data_type;
     self->value.grouping = grouping;
     return self;
 }
@@ -546,6 +602,7 @@ void
 __free__ExprSymbolFunCall(struct ExprSymbol *self)
 {
     FREE(FunCallSymbol, self->value.fun_call);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -553,6 +610,7 @@ void
 __free__ExprSymbolRecordCall(struct ExprSymbol *self)
 {
     FREE(RecordCallSymbol, self->value.record_call);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -560,6 +618,7 @@ void
 __free__ExprSymbolLambda(struct ExprSymbol *self)
 {
     TODO("Free lambda symbol");
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -573,6 +632,7 @@ __free__ExprSymbolTuple(struct ExprSymbol *self)
     FREE(Vec, self->value.tuple->items[0]);
     FREE(DataTypeSymbolAll, self->value.tuple->items[1]);
     FREE(Tuple, self->value.tuple);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -586,6 +646,7 @@ __free__ExprSymbolArray(struct ExprSymbol *self)
     FREE(Vec, self->value.array->items[0]);
     FREE(DataTypeSymbolAll, self->value.array->items[1]);
     FREE(Tuple, self->value.array);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -596,6 +657,7 @@ __free__ExprSymbolBlock(struct ExprSymbol *self)
         FREE(SymbolTableAll, get__Vec(*self->value.block, i));
 
     FREE(Vec, self->value.block);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -611,6 +673,7 @@ __free__ExprSymbolGrouping(struct ExprSymbol *self)
 {
     FREE(ExprSymbolAll, self->value.grouping->items[0]);
     FREE(DataTypeSymbolAll, self->value.grouping->items[1]);
+    FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
 
@@ -1311,12 +1374,9 @@ __free__TraitSymbol(struct TraitSymbol *self)
 }
 
 struct UnaryOpSymbol
-__new__UnaryOpSymbol(struct Expr unary_op,
-                     struct DataTypeSymbol *data_type,
-                     struct ExprSymbol *right)
+__new__UnaryOpSymbol(struct Expr unary_op, struct ExprSymbol *right)
 {
     struct UnaryOpSymbol self = { .kind = unary_op.value.unary_op.kind,
-                                  .data_type = data_type,
                                   .right = right };
 
     return self;
@@ -1334,17 +1394,15 @@ to_Str__UnaryOpSymbol(unsigned int kind)
 void
 __free__UnaryOpSymbol(struct UnaryOpSymbol self)
 {
-    FREE(DataTypeSymbolAll, self.data_type);
+    FREE(ExprSymbolAll, self.right);
 }
 
 struct BinaryOpSymbol
 __new__BinaryOpSymbol(struct Expr binary_op,
-                      struct DataTypeSymbol *data_type,
                       struct ExprSymbol *left,
                       struct ExprSymbol *right)
 {
     struct BinaryOpSymbol self = { .kind = binary_op.value.binary_op.kind,
-                                   .data_type = data_type,
                                    .left = left,
                                    .right = right };
 
@@ -1367,18 +1425,15 @@ to_Str__BinaryOpSymbol(unsigned int kind)
 void
 __free__BinaryOpSymbol(struct BinaryOpSymbol self)
 {
-    FREE(DataTypeSymbolAll, self.data_type);
+    FREE(ExprSymbolAll, self.left);
+    FREE(ExprSymbolAll, self.right);
 }
 
 struct FunCallSymbol
-__new__FunCallSymbol(bool is_builtin,
-                     struct Scope *id,
-                     struct DataType *data_type,
-                     struct Vec *params)
+__new__FunCallSymbol(bool is_builtin, struct Scope *id, struct Vec *params)
 {
     struct FunCallSymbol self = { .is_builtin = is_builtin,
                                   .id = id,
-                                  .data_type = data_type,
                                   .params = params };
 
     return self;
@@ -1387,7 +1442,6 @@ __new__FunCallSymbol(bool is_builtin,
 void
 __free__FunCallSymbol(struct FunCallSymbol self)
 {
-    FREE(DataTypeAll, self.data_type);
     TODO("FREE all");
     FREE(Vec, self.params);
 }
