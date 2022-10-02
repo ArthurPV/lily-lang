@@ -945,9 +945,9 @@ get_block(struct ParseBlock *self, bool in_module)
             end__Location(
               &loc,
               ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
-                ->loc->s_line,
+                ->loc->e_line,
               ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
-                ->loc->s_col);
+                ->loc->e_col);
 
             return NEW(ParseContextImport, import_parse_context, loc);
         }

@@ -522,7 +522,7 @@ resolve_global_import(struct Typecheck *self)
             DeclKindImport)
             push__Vec(imports, get__Vec(*self->parser.decls, i));
 
-	// Resolve import in priority @core and @std import value
+    // Resolve import in priority @core and @std import value
     for (Usize i = 0; i < len__Vec(*imports); i++) {
         enum ImportStmtValueKind kind =
           ((struct ImportStmtValue *)get__Vec(
@@ -556,160 +556,142 @@ resolve_import(struct Typecheck *self,
                struct Location import_loc,
                struct ImportStmt *import_stmt)
 {
+    struct String *path = NULL;
+    Str path_str = NULL;
+
     switch (((struct ImportStmtValue *)get__Vec(*import_stmt->import_value, 0))
               ->kind) {
-        case ImportStmtValueKindStd: {
+        case ImportStmtValueKindStd:
 #ifdef LOCAL
 #if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
-            struct String *path = from__String("lib/std/std.lily");
-            Str path_str = to_Str__String(*path);
+            path = from__String("lib/std/std.lily");
+            path_str = to_Str__String(*path);
 #elif defined(LILY_WINDOWS_OS)
-            struct String *path = from__String("lib\\std\\std.lily");
-            Str path_str = to_Str__String(*path);
+            path = from__String("lib\\std\\std.lily");
+            path_str = to_Str__String(*path);
 #else
 #error "unknown OS"
 #endif
 #else
 #if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
-            struct String *path = from__String("");
-            Str path_str = to_Str__String(*path);
+            path = from__String("");
+            path_str = to_Str__String(*path);
 #elif defined(LILY_WINDOWS_OS)
-            struct String *path = from__String("");
-            Str path_str = to_Str__String(*path);
+            path = from__String("");
+            path_str = to_Str__String(*path);
 #else
 #error "unknown OS"
 #endif
 #endif
-            struct File file = NEW(File, path_str);
-            struct Source src = NEW(Source, file);
-            struct Scanner scanner = NEW(Scanner, &src);
-
-            run__Scanner(&scanner);
-
-            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
-
-            run__ParseBlock(&parse_block);
-
-            struct Parser parser = NEW(Parser, parse_block);
-
-            run__Parser(&parser);
-
-            struct Typecheck tc = NEW(Typecheck, parser);
-
-            run__Typecheck(&tc, self->buffer);
-
-            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
-
-            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
-            push__Vec(self->buffer, tc_copy);
-
-            if (path)
-                FREE(String, path);
-
-            FREE(Typecheck, tc);
-        }
-        case ImportStmtValueKindCore: {
+            break;
+        case ImportStmtValueKindCore:
 #ifdef LOCAL
 #if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
-            struct String *path = from__String("lib/core/core.lily");
-            Str path_str = to_Str__String(*path);
+            path = from__String("lib/core/core.lily");
+            path_str = to_Str__String(*path);
 #elif defined(LILY_WINDOWS_OS)
-            struct String *path = from__String("lib\\core\\core.lily");
-            Str path_str = to_Str__String(*path);
+            path = from__String("lib\\core\\core.lily");
+            path_str = to_Str__String(*path);
 #else
 #error "unknown OS"
 #endif
 #else
 #if defined(LILY_LINUX_OS) || defined(LILY_APPLE_OS) || defined(LILY_BSD_OS)
-            struct String *path = from__String("");
-            Str path_str = to_Str__String(*path);
+            path = from__String("");
+            path_str = to_Str__String(*path);
 #elif defined(LILY_WINDOWS_OS)
-            struct String *path = from__String("");
-            Str path_str = to_Str__String(*path);
+            path = from__String("");
+            path_str = to_Str__String(*path);
 #else
 #error "unknown OS"
 #endif
 #endif
-            struct File file = NEW(File, path_str);
-            struct Source src = NEW(Source, file);
-            struct Scanner scanner = NEW(Scanner, &src);
-
-            run__Scanner(&scanner);
-
-            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
-
-            run__ParseBlock(&parse_block);
-
-            struct Parser parser = NEW(Parser, parse_block);
-
-            run__Parser(&parser);
-
-            struct Typecheck tc = NEW(Typecheck, parser);
-
-            run__Typecheck(&tc, self->buffer);
-
-            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
-
-            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
-            push__Vec(self->buffer, tc_copy);
-
-            if (path)
-                FREE(String, path);
-
-            FREE(Typecheck, tc);
-        }
+            break;
         case ImportStmtValueKindBuiltin:
             TODO("@builtin");
+            break;
         case ImportStmtValueKindFile:
-            TODO("@file");
+            path = format("{S}",
+                          ((struct ImportStmtValue *)get__Vec(
+                             *import_stmt->import_value, 0))
+                            ->value.file);
+            path_str = to_Str__String(*path);
+
+            break;
         case ImportStmtValueKindUrl:
             TODO("@url");
-        case ImportStmtValueKindAccess: {
-            struct String *path = format("{S}.lily",
-                                         ((struct ImportStmtValue *)get__Vec(
-                                            *import_stmt->import_value, 0))
-                                           ->value.access);
-            Str path_str = to_Str__String(*path);
+        case ImportStmtValueKindAccess:
+            path = format("{S}.lily",
+                          ((struct ImportStmtValue *)get__Vec(
+                             *import_stmt->import_value, 0))
+                            ->value.access);
+            path_str = to_Str__String(*path);
 
-            if (!strcmp(path_str,
-                        self->parser.parse_block.scanner.src->file.name))
-                assert(0 && "error");
-
-            struct File file = NEW(File, path_str);
-            struct Source src = NEW(Source, file);
-            struct Scanner scanner = NEW(Scanner, &src);
-
-            run__Scanner(&scanner);
-
-            struct ParseBlock parse_block = NEW(ParseBlock, scanner);
-
-            run__ParseBlock(&parse_block);
-
-            struct Parser parser = NEW(Parser, parse_block);
-
-            run__Parser(&parser);
-
-            struct Typecheck tc = NEW(Typecheck, parser);
-
-            run__Typecheck(&tc, self->buffer);
-
-            struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
-
-            memcpy(tc_copy, &tc, sizeof(struct Typecheck));
-            push__Vec(self->buffer, tc_copy);
-
-            if (path)
-                FREE(String, path);
-
-            FREE(Typecheck, tc);
-        }
+            break;
         case ImportStmtValueKindSelector:
-        case ImportStmtValueKindWildcard:
-            assert(0 && "error");
+        case ImportStmtValueKindWildcard: {
+            struct Diagnostic *error =
+              NEW(DiagnosticWithErrTypecheck,
+                  self,
+                  NEW(LilyError, LilyErrorNotExpectedImportValue),
+                  import_loc,
+                  from__String(""),
+                  Some(from__String(
+                    "selector or wildcard is not expected value in first")));
+
+            emit__Diagnostic(error);
+
+            goto exit;
+        }
     }
+
+	// This error is fatal
+    if (!strcmp(path_str, self->parser.parse_block.scanner.src->file.name)) {
+        struct Diagnostic *error =
+          NEW(DiagnosticWithErrTypecheck,
+              self,
+              NEW(LilyError, LilyErrorDependencyCycleImportValue),
+              import_loc,
+              from__String(""),
+              Some(from__String("remove this import")));
+
+        emit__Diagnostic(error);
+        SUMMARY();
+    }
+
+    struct File file = NEW(File, path_str);
+    struct Source src = NEW(Source, file);
+    struct Scanner scanner = NEW(Scanner, &src);
+
+    run__Scanner(&scanner);
+
+    struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+
+    run__ParseBlock(&parse_block);
+
+    struct Parser parser = NEW(Parser, parse_block);
+
+    run__Parser(&parser);
+
+    struct Typecheck tc = NEW(Typecheck, parser);
+
+    run__Typecheck(&tc, self->buffer);
+
+    struct Typecheck *tc_copy = malloc(sizeof(struct Typecheck));
+
+    memcpy(tc_copy, &tc, sizeof(struct Typecheck));
+    push__Vec(self->buffer, tc_copy);
+
+    if (path)
+        FREE(String, path);
+
+    FREE(Typecheck, tc);
 
     for (Usize i = 1; i < len__Vec(*import_stmt->import_value); i++) {
     }
+
+exit : {
+}
 }
 
 static void

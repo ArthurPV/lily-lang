@@ -138,6 +138,8 @@ enum LilyErrorKind
     LilyErrorUnknownDocFlag,
     LilyErrorExpectedCharacterInImportValue,
 	LilyErrorEmptyImportValue,
+	LilyErrorNotExpectedImportValue,
+	LilyErrorDependencyCycleImportValue
 };
 
 typedef struct LilyError
