@@ -177,6 +177,11 @@
               body,                                                            \
               NEW(FunBodyItemStmt, parse_return_stmt(self, parse_decl, loc))); \
             break;                                                             \
+        case TokenKindAwaitKw:                                                 \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_await_stmt(self, parse_decl, loc)));  \
+            break;                                                             \
         case TokenKindNextKw:                                                  \
             push__Vec(                                                         \
               body,                                                            \
@@ -192,6 +197,7 @@
         case TokenKindIfKw: {                                                  \
             struct IfCond *if_ = parse_if_stmt(self, parse_decl, &loc);        \
             push__Vec(body, NEW(FunBodyItemStmt, NEW(StmtIf, loc, if_)));      \
+            break;                                                             \
         }                                                                      \
         case TokenKindForKw:                                                   \
         case TokenKindWhileKw:                                                 \
@@ -203,6 +209,7 @@
 #define PARSE_BODY(body)                                                   \
     switch (parse_decl->current->kind) {                                   \
         case TokenKindReturnKw:                                            \
+        case TokenKindAwaitKw:                                             \
         case TokenKindNextKw:                                              \
         case TokenKindBreakKw:                                             \
         case TokenKindIfKw:                                                \
@@ -4251,8 +4258,6 @@ parse_if_stmt(struct Parser self,
 {
     struct Expr *if_cond = NULL;
     struct Vec *if_body = NEW(Vec, sizeof(struct FunBodyItem));
-
-    next_token(parse_decl);
 
     if_cond = parse_expr(self, parse_decl);
 
