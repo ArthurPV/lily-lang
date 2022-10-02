@@ -51,6 +51,7 @@ set(RUNTIME_SRC
         src/lang/runtime/Int32.c
         src/lang/runtime/Int64.c
         src/lang/runtime/Int128.c
+		src/lang/runtime/Mem.c
         src/lang/runtime/Net.c
         src/lang/runtime/Tuple.c
         src/lang/runtime/Uint8.c

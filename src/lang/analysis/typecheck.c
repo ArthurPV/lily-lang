@@ -1053,6 +1053,56 @@ check_error(struct Typecheck *self,
             struct Vec *scope_id,
             bool is_global)
 {
+    error->scope = NEW(Scope,
+                       self->parser.parse_block.scanner.src->file.name,
+                       error->name,
+                       scope_id,
+                       ScopeItemKindError,
+                       error->visibility ? ScopeKindGlobal : ScopeKindLocal);
+
+    // Check generic params
+    if (error->error_decl->value.error->generic_params) {
+        error->generic_params = NEW(Vec, sizeof(struct Generic));
+
+        // Check if generic param name is duplicate
+        for (Usize i = 0;
+             i < len__Vec(*error->error_decl->value.error->generic_params);
+             i++) {
+            for (Usize j = i + 1;
+                 j < len__Vec(*error->error_decl->value.error->generic_params);
+                 j++)
+                if (eq__String(
+                      get_name__Generic(get__Vec(
+                        *error->error_decl->value.error->generic_params, i)),
+                      get_name__Generic(get__Vec(
+                        *error->error_decl->value.error->generic_params, j)),
+                      false))
+                    assert(0 && "error: duplicate generic param name");
+
+            // Push generic params of enum_decl in enum_->generic_params
+            switch (((struct Generic *)get__Vec(
+                       *error->error_decl->value.error->generic_params, i))
+                      ->kind) {
+                case GenericKindDataType:
+                    push__Vec(
+                      error->generic_params,
+                      NEW(
+                        GenericDataType,
+                        get_name__Generic(get__Vec(
+                          *error->error_decl->value.error->generic_params, i)),
+                        ((struct Generic *)get__Vec(
+                           *error->error_decl->value.error->generic_params, i))
+                          ->loc));
+                    break;
+                case GenericKindRestrictedDataType:
+                    TODO("check data type");
+                    break;
+            }
+        }
+    }
+
+    if (is_global)
+        ++count_error_id;
 }
 
 static void
