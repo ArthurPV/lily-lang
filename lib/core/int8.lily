@@ -42,3 +42,12 @@ fun min(x, y) = if x < y do x else y;;
 
 /// @prot(Int8 -> Int8 -> Int8)
 fun max(x, y) = if x > y do x else y;;
+
+/// @prot(Int8 -> Int8 -> Bool)
+fun eq(x, y) = x == y;
+
+/// @prot(Int8 -> Float32)
+fun to_float32(x) = to_float32(x);
+
+/// @prot(Int8 -> Float64)
+fun to_float64(x) = to_float64(x);

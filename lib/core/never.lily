@@ -1,0 +1,5 @@
+/// @prot(Never -> Never -> Bool)
+fun eq(x, y) = x == y;
+
+/// @prot(Never -> Never -> Bool)
+fun ne(x, y) = x not= y;

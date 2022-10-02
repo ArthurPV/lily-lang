@@ -1,0 +1,5 @@
+/// @prot(Any -> Any -> Bool)
+fun eq(x, y) = x == y;
+
+/// @prot(Any -> Any -> Bool)
+fun ne(x, y) = x not= y;

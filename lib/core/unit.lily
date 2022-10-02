@@ -1,0 +1,5 @@
+/// @prot(Unit -> Unit -> Bool)
+fun eq(x, y) = x == y;
+
+/// @prot(Unit -> Str)
+fun to_str(x) = "Unit";

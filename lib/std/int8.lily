@@ -1,0 +1,5 @@
+![lily(since: "0.1.0")]
+MAX :: Int8 := 128;
+
+![lily(since: "0.1.0")]
+MIN :: Int8 := 127;

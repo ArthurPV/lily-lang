@@ -1,0 +1,13 @@
+import "@builtin.Str"
+
+/// @prot(Str -> Usize)
+fun len(x) = Str.len(x);
+
+/// @prot(Str -> Char)
+fun get(x, idx) = x[idx];
+
+/// @prot(Str -> Str -> Bool)
+fun eq(x, y) = x == y;
+
+/// @prot(Str -> Str -> Bool)
+fun ne(x, y) = x not= y;
