@@ -249,7 +249,10 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
 // Emits an error if the expected char doesn't match to the current char.
 // Not used for the moment.
 static inline void
-expected_char(struct Scanner *self, struct Scanner *scan_doc, struct Diagnostic *dgn, char *expected);
+expected_char(struct Scanner *self,
+              struct Scanner *scan_doc,
+              struct Diagnostic *dgn,
+              char *expected);
 
 // Get escape in char or string literal
 static struct Result *
@@ -283,7 +286,7 @@ static struct Doc *
 scan_doc_author(struct Scanner *self);
 static struct Result *
 scan_doc_contract(struct Scanner *self);
-static struct Result *
+static struct Doc *
 scan_doc_description(struct Scanner *self);
 static struct Doc *
 scan_doc_file(struct Scanner *self);
@@ -694,7 +697,10 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
 }
 
 static inline void
-expected_char(struct Scanner *self, struct Scanner *scan_doc, struct Diagnostic *dgn, char *expected)
+expected_char(struct Scanner *self,
+              struct Scanner *scan_doc,
+              struct Diagnostic *dgn,
+              char *expected)
 {
     skip_space(scan_doc);
 
@@ -1126,6 +1132,44 @@ align_location(struct Scanner *self)
     self->loc.e_col += 3;
 }
 
+#define GET_TOKENS()                                                     \
+    struct Vec *tokens = NEW(Vec, sizeof(struct Token));                 \
+    while (self->src->pos < len__String(*self->src->file.content) &&     \
+           self->src->c != (char *)')') {                                \
+        skip_space(self);                                                \
+                                                                         \
+        if (self->src->pos >= len__String(*self->src->file.content) - 1) \
+            break;                                                       \
+                                                                         \
+        struct Result *tok = get_token(self);                            \
+                                                                         \
+        if (is_err__Result(*tok))                                        \
+            return tok;                                                  \
+                                                                         \
+        struct Token *token_ok = get_ok__Result(*tok);                   \
+                                                                         \
+        end_token(self);                                                 \
+        next_char_by_token(self, *token_ok);                             \
+                                                                         \
+        if (token_ok->loc == NULL) {                                     \
+            struct Location *copy = copy__Location(&self->loc);          \
+                                                                         \
+            token_ok->loc = copy;                                        \
+        }                                                                \
+                                                                         \
+        push__Vec(tokens, token_ok);                                     \
+        FREE(Result, tok);                                               \
+    }
+
+#define GET_STRING(s)                                                    \
+    skip_space(self);                                                    \
+                                                                         \
+    while (self->src->c != (char *)')' &&                                \
+           self->src->pos < len__String(*self->src->file.content) - 1) { \
+        push__String(s, self->src->c);                                   \
+        next_char(self);                                                 \
+    }
+
 static struct Doc *
 scan_doc_author(struct Scanner *self)
 {
@@ -1145,11 +1189,19 @@ scan_doc_author(struct Scanner *self)
 static struct Result *
 scan_doc_contract(struct Scanner *self)
 {
+    GET_TOKENS();
+
+    return Ok(NEW(DocContract, tokens));
 }
 
-static struct Result *
+static struct Doc *
 scan_doc_description(struct Scanner *self)
 {
+    struct String *desc = NEW(String);
+
+    GET_STRING(desc);
+
+    return NEW(DocWithString, DocKindDescription, desc);
 }
 
 static struct Doc *
@@ -1157,13 +1209,7 @@ scan_doc_file(struct Scanner *self)
 {
     struct String *file = NEW(String);
 
-    skip_space(self);
-
-    while (self->src->c != (char *)')' &&
-           self->src->pos < len__String(*self->src->file.content) - 1) {
-        push__String(file, self->src->c);
-        next_char(self);
-    }
+    GET_STRING(file);
 
     return NEW(DocWithString, DocKindFile, file);
 }
@@ -1171,39 +1217,15 @@ scan_doc_file(struct Scanner *self)
 static struct Result *
 scan_doc_generics(struct Scanner *self)
 {
+    GET_TOKENS();
+
+    return Ok(NEW(DocGenerics, tokens));
 }
 
 static struct Result *
 scan_doc_prototype(struct Scanner *self)
 {
-    struct Vec *tokens = NEW(Vec, sizeof(struct Token));
-
-    while (self->src->pos < len__String(*self->src->file.content) &&
-           self->src->c != (char *)')') {
-        skip_space(self);
-
-        if (self->src->pos >= len__String(*self->src->file.content) - 1)
-            break;
-
-        struct Result *tok = get_token(self);
-
-        if (is_err__Result(*tok))
-            return tok;
-
-        struct Token *token_ok = get_ok__Result(*tok);
-
-        end_token(self);
-        next_char_by_token(self, *token_ok);
-
-        if (token_ok->loc == NULL) {
-            struct Location *copy = copy__Location(&self->loc);
-
-            token_ok->loc = copy;
-        }
-
-        push__Vec(tokens, token_ok);
-        FREE(Result, tok);
-    }
+    GET_TOKENS();
 
     return Ok(NEW(DocPrototype, tokens));
 }
@@ -1213,13 +1235,7 @@ scan_doc_see(struct Scanner *self)
 {
     struct String *see = NEW(String);
 
-    skip_space(self);
-
-    while (self->src->c != (char *)')' &&
-           self->src->pos < len__String(*self->src->file.content) - 1) {
-        push__String(see, self->src->c);
-        next_char(self);
-    }
+    GET_STRING(see);
 
     return NEW(DocWithString, DocKindSee, see);
 }
@@ -1229,13 +1245,7 @@ scan_doc_version(struct Scanner *self)
 {
     struct String *version = NEW(String);
 
-    skip_space(self);
-
-    while (self->src->c != (char *)')' &&
-           self->src->pos < len__String(*self->src->file.content) - 1) {
-        push__String(version, self->src->c);
-        next_char(self);
-    }
+    GET_STRING(version);
 
     return NEW(DocWithString, DocKindVersion, version);
 }
@@ -1249,8 +1259,8 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
         if (i >= len__String(*scan_doc->src->file.content) - 2)
             break;
 
-		Usize s_line = scan_doc->line;
-		Usize s_col = scan_doc->col;
+        Usize s_line = scan_doc->line;
+        Usize s_col = scan_doc->col;
 
         start_token(scan_doc);
 
@@ -1335,12 +1345,40 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
 
                             break;
                         }
-                        case DocKindContract:
-                            TODO("@contract");
+                        case DocKindContract: {
+                            struct Result *contract =
+                              scan_doc_generics(scan_doc);
+
+                            scan_doc->loc.s_line = s_line;
+                            scan_doc->loc.s_col = s_col;
+
+                            end_token(scan_doc);
+                            align_location(scan_doc);
+
+                            if (is_err__Result(*contract))
+                                emit__Diagnostic(contract->err);
+                            else
+                                push__Vec(scan_doc->tokens,
+                                          NEW(TokenDoc,
+                                              copy__Location(&scan_doc->loc),
+                                              get_ok__Result(*contract)));
+
+                            FREE(Result, contract);
+
                             break;
-                        case DocKindDescription:
-                            TODO("@desc");
+                        }
+                        case DocKindDescription: {
+                            struct Doc *desc = scan_doc_description(scan_doc);
+
+                            end_token(scan_doc);
+                            align_location(scan_doc);
+                            push__Vec(scan_doc->tokens,
+                                      NEW(TokenDoc,
+                                          copy__Location(&scan_doc->loc),
+                                          desc));
+
                             break;
+                        }
                         case DocKindText:
                             TODO("@text");
                             break;
@@ -1357,7 +1395,25 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                             break;
                         }
                         case DocKindGenerics: {
-                            TODO("@generics");
+                            struct Result *generics =
+                              scan_doc_generics(scan_doc);
+
+                            scan_doc->loc.s_line = s_line;
+                            scan_doc->loc.s_col = s_col;
+
+                            end_token(scan_doc);
+                            align_location(scan_doc);
+
+                            if (is_err__Result(*generics))
+                                emit__Diagnostic(generics->err);
+                            else
+                                push__Vec(scan_doc->tokens,
+                                          NEW(TokenDoc,
+                                              copy__Location(&scan_doc->loc),
+                                              get_ok__Result(*generics)));
+
+                            FREE(Result, generics);
+
                             break;
                         }
                         case DocKindGlobal:
@@ -1409,32 +1465,21 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                             break;
                         }
                     }
+                    end_token(scan_doc);
+                    align_location(scan_doc);
 
-                    switch ((int)(UPtr)doc_kind) {
-                        case DocKindAuthor:
-                        case DocKindVersion: {
-                            end_token(scan_doc);
-                            align_location(scan_doc);
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrScanner,
+                          self,
+                          NEW(LilyError, LilyErrorExpectedCharacter),
+                          scan_doc->loc,
+                          from__String(""),
+                          Some(from__String("add `)` after the end of "
+                                            "doc flag declaration")));
 
-                            struct Diagnostic *err =
-                              NEW(DiagnosticWithErrScanner,
-                                  self,
-                                  NEW(LilyError, LilyErrorExpectedCharacter),
-                                  scan_doc->loc,
-                                  from__String(""),
-                                  Some(from__String("add `)` after the end of "
-                                                    "doc flag declaration")));
+                    err->err->s = format("{c}", (char)(UPtr)scan_doc->src->c);
 
-                            err->err->s =
-                              format("{c}", (char)(UPtr)scan_doc->src->c);
-
-                            expected_char(self, scan_doc, err, (char *)')');
-
-                            break;
-                        }
-                        default:
-                            break;
-                    }
+                    expected_char(self, scan_doc, err, (char *)')');
                 }
 
                 break;

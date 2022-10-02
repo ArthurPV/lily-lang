@@ -108,16 +108,7 @@ __new__DocContract(struct Vec *contract)
 }
 
 struct Doc *
-__new__DocDescription(struct Vec *desc)
-{
-    struct Doc *self = malloc(sizeof(struct Doc));
-    self->kind = DocKindDescription;
-    self->desc = desc;
-    return self;
-}
-
-struct Doc *
-__new__DocGenerics(struct Tuple *generics)
+__new__DocGenerics(struct Vec *generics)
 {
     struct Doc *self = malloc(sizeof(struct Doc));
     self->kind = DocKindGenerics;
@@ -148,12 +139,60 @@ to_string__Doc(struct Doc self)
 }
 
 void
-__free__Doc(struct Doc *self)
+__free__DocString(struct Doc *self)
 {
     if (self->s)
         FREE(String, self->s);
 
     free(self);
+}
+
+void
+__free__DocContract(struct Doc *self)
+{
+    if (self->contract) {
+        for (Usize i = len__Vec(*self->contract); i--;)
+            FREE(Token, get__Vec(*self->contract, i));
+
+        FREE(Vec, self->contract);
+    }
+}
+
+void
+__free__DocGenerics(struct Doc *self)
+{
+    if (self->generics) {
+        for (Usize i = len__Vec(*self->generics); i--;)
+            FREE(Token, get__Vec(*self->generics, i));
+
+        FREE(Vec, self->generics);
+    }
+}
+
+void
+__free__DocPrototype(struct Doc *self)
+{
+    if (self->prot) {
+        for (Usize i = len__Vec(*self->prot); i--;)
+            FREE(Token, get__Vec(*self->prot, i));
+
+        FREE(Vec, self->prot);
+    }
+}
+
+void
+__free__DocAll(struct Doc *self)
+{
+    switch (self->kind) {
+        case DocKindContract:
+            FREE(DocContract, self);
+        case DocKindGenerics:
+            FREE(DocGenerics, self);
+        case DocKindPrototype:
+            FREE(DocPrototype, self);
+        default:
+            FREE(DocString, self);
+    }
 }
 
 struct Token *
@@ -468,7 +507,7 @@ __free__TokenLit(struct Token *self)
 void
 __free__TokenDoc(struct Token *self)
 {
-    FREE(Doc, self->doc);
+    FREE(DocAll, self->doc);
     free(self->loc);
     free(self);
 }

@@ -221,11 +221,9 @@ typedef struct Doc
     union
     {
         struct String *s;
-        struct Vec *contract;   // struct Vec<struct Token*>*
-        struct Vec *desc;       // struct Vec<struct Doc*>*
-        struct Tuple *generics; // struct Tuple<struct Vec<struct String*>*,
-                                // struct Vec<struct Token*>*>*
-        struct Vec *prot;       // struct Vec<struct Token*>*
+        struct Vec *contract; // struct Vec<struct Token*>*
+        struct Vec *generics; // struct Vec<struct Token*>*
+        struct Vec *prot;     // struct Vec<struct Token*>*
     };
 } Doc;
 
@@ -245,17 +243,10 @@ __new__DocContract(struct Vec *contract);
 
 /**
  *
- * @return new instance of Doc (Description variant).
- */
-struct Doc *
-__new__DocDescription(struct Vec *desc);
-
-/**
- *
  * @return new instance of Doc (Generics variant).
  */
 struct Doc *
-__new__DocGenerics(struct Tuple *generics);
+__new__DocGenerics(struct Vec *generics);
 
 /**
  *
@@ -273,10 +264,38 @@ to_string__Doc(struct Doc self);
 
 /**
  *
+ * @brief Free Doc type (String variant).
+ */
+void
+__free__DocString(struct Doc *self);
+
+/**
+ *
+ * @brief Free Doc type (Contract variant).
+ */
+void
+__free__DocContract(struct Doc *self);
+
+/**
+ *
+ * @brief Free Doc type (Generics variant).
+ */
+void
+__free__DocGenerics(struct Doc *self);
+
+/**
+ *
+ * @brief Free Doc type (Prototype variant).
+ */
+void
+__free__DocPrototype(struct Doc *self);
+
+/**
+ *
  * @brief Free Doc type.
  */
 void
-__free__Doc(struct Doc *self);
+__free__DocAll(struct Doc *self);
 
 typedef struct Token
 {

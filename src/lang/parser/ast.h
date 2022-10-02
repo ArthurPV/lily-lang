@@ -2987,4 +2987,15 @@ __free__DeclImport(struct Decl *self)
 void
 __free__DeclAll(struct Decl *self);
 
+typedef struct CommentDoc {
+	enum DocKind kind;
+
+	union {
+		struct String *s;
+		struct Expr *contract;
+		// struct String *desc;
+		// struct Tuple *generics;
+	} value;
+} CommentDoc;
+
 #endif // LILY_AST_H
