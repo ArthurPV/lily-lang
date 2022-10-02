@@ -65,9 +65,36 @@ __new__FunParseContext();
 void
 __free__FunParseContext(struct FunParseContext *self);
 
+typedef struct EnumParseContext
+{
+    bool is_pub;
+    bool has_generic_params;
+    bool has_data_type;
+    bool is_error;
+    struct String *name;        // struct String&
+    struct Vec *data_type; // struct Vec<struct Token&>*
+    struct Vec *generic_params; // struct Vec<struct Token&>*
+    struct Vec *variants;       // struct Vec<struct Token&>*
+} EnumParseContext;
+
+/**
+ *
+ * @brief Construct the FunParseContext type.
+ */
+struct EnumParseContext *
+__new__EnumParseContext();
+
+/**
+ *
+ * @brief Free the FunParseContext type.
+ */
+void
+__free__EnumParseContext(struct EnumParseContext *self);
+
 enum ParseContextKind
 {
-    ParseContextKindFun
+    ParseContextKindFun,
+    ParseContextKindEnum
 };
 
 typedef struct ParseContext
@@ -77,6 +104,7 @@ typedef struct ParseContext
     union
     {
         struct FunParseContext *fun;
+        struct EnumParseContext *enum_;
     } value;
 } ParseContext;
 
@@ -89,10 +117,24 @@ __new__ParseContextFun(struct FunParseContext *fun);
 
 /**
  *
+ * @brief Contruct the ParseContext type (Enum variant).
+ */
+struct ParseContext *
+__new__ParseContextEnum(struct EnumParseContext *enum_);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
 __free__ParseContextFun(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Enum variant).
+ */
+void
+__free__ParseContextEnum(struct ParseContext *self);
 
 /**
  *
