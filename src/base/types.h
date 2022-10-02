@@ -28,6 +28,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#if __clang_major__ >= 15
+typedef unsigned _BitInt(8) UInt8;
+typedef unsigned _BitInt(16) UInt16;
+typedef unsigned _BitInt(32) UInt32;
+typedef unsigned _BitInt(64) UInt64;
+typedef unsigned _BitInt(128) UInt128;
+
+typedef _BitInt(8) Int8;
+typedef _BitInt(16) Int16;
+typedef _BitInt(32) Int32;
+typedef _BitInt(64) Int64;
+typedef _BitInt(128) Int128;
+#else
 typedef uint8_t UInt8;
 typedef uint16_t UInt16;
 typedef uint32_t UInt32;
@@ -54,6 +67,7 @@ typedef struct Int128
 {
     Int64 x, y;
 } Int128;
+#endif
 #endif
 
 typedef float Float32;
