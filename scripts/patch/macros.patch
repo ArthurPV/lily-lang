@@ -1,0 +1,15 @@
+--- macros.h    2022-09-26 13:10:38.303545533 -0400
++++ ../../src/base/macros.h     2022-09-26 13:06:17.403544162 -0400
+@@ -33,10 +33,10 @@
+ #undef DEBUG
+
+ #define INSTALL
+-// #undef INSTALL
++#undef INSTALL
+
+ #define LOCAL
+-#undef LOCAL
++// #undef LOCAL
+
+ #define UNREACHABLE(msg)                                             \
+     {                                                                \
