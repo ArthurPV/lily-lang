@@ -726,7 +726,7 @@ __free__ParseBlock(struct ParseBlock *self)
 
     FREE(Vec, self->blocks);
     FREE(Vec, self->disable_warning);
-    FREE(Scanner, self->scanner);
+    FREE(Scanner, *self->scanner);
     free(self);
 }
 
@@ -1706,7 +1706,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
 {
     self->count_error += 1;
     return NEW(
-      DiagnosticWithErr, err, loc, *self->scanner->src->file, detail_msg, help);
+      DiagnosticWithErr, err, loc, self->scanner->src->file, detail_msg, help);
 }
 
 static inline struct Diagnostic *
@@ -1720,7 +1720,7 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
     return NEW(DiagnosticWithWarn,
                warn,
                loc,
-               *self->scanner->src->file,
+               self->scanner->src->file,
                detail_msg,
                help);
 }
@@ -1735,7 +1735,7 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
     return NEW(DiagnosticWithNote,
                note,
                loc,
-               *self->scanner->src->file,
+               self->scanner->src->file,
                detail_msg,
                help);
 }

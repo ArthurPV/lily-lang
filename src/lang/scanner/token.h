@@ -134,7 +134,7 @@ typedef struct Location
  *
  * @return new instance of Location.
  */
-struct Location *
+struct Location
 __new__Location();
 
 /**
@@ -168,8 +168,8 @@ struct Location * copy__Location(struct Location *self);
  *
  * @brief Free Location type.
  */
-void
-__free__Location(struct Location *self);
+// void
+// __free__Location(struct Location *self);
 
 enum DocKind
 {

@@ -84,7 +84,7 @@ static inline void
 start_token(struct Scanner *self);
 static inline void
 end_token(struct Scanner *self);
-static struct Option *
+static inline char *
 peek_char(struct Scanner self, Usize n);
 static void
 next_char_by_token(struct Scanner *self, struct Token tok);
@@ -153,14 +153,12 @@ get_closing(struct Scanner *self, char *target);
 static struct Result *
 get_token(struct Scanner *self);
 
-struct File *
+struct File
 __new__File(Str name)
 {
-    struct File *self = malloc(sizeof(struct File));
     struct Path *path = NEW(Path, name);
 
-    self->name = name;
-    self->content = read_file__Path(*path);
+    struct File self = { .name = name, .content = read_file__Path(*path) };
 
     FREE(Path, path);
 
@@ -168,45 +166,40 @@ __new__File(Str name)
 }
 
 void
-__free__File(struct File *self)
+__free__File(struct File self)
 {
-    FREE(String, self->content);
-    free(self);
+    FREE(String, self.content);
 }
 
-struct Source *
-__new__Source(struct File *file)
+struct Source
+__new__Source(struct File file)
 {
-    struct Source *self = malloc(sizeof(struct Source));
-    self->file = file;
-    self->pos = 0;
+    struct Source self = { .file = file, .pos = 0 };
 
-    if (len__String(*file->content) > 0) {
-        self->c = get__String(*file->content, 0);
-    } else {
-        self->c = (char *)'\0';
-    }
+    if (len__String(*file.content) > 0)
+        self.c = get__String(*file.content, 0);
+    else
+        self.c = (char *)'\0';
 
     return self;
 }
 
 void
-__free__Source(struct Source *self)
+__free__Source(struct Source self)
 {
-    FREE(File, self->file);
-    free(self);
+    FREE(File, self.file);
 }
 
-struct Scanner *
+struct Scanner
 __new__Scanner(struct Source *src)
 {
-    struct Scanner *self = malloc(sizeof(struct Scanner));
-    self->src = src;
-    self->line = 1;
-    self->col = 1;
-    self->loc = NEW(Location);
-    self->tokens = NEW(Vec, sizeof(struct Token));
-    self->count_error = 0;
+    struct Scanner self = { .src = src,
+                            .line = 1,
+                            .col = 1,
+                            .loc = NEW(Location),
+                            .tokens = NEW(Vec, sizeof(struct Token)),
+                            .count_error = 0 };
+
     return self;
 }
 
@@ -309,7 +302,7 @@ get_keyword(const Str id)
 static inline void
 next_char(struct Scanner *self)
 {
-    if (self->src->pos < len__String(*self->src->file->content) - 1) {
+    if (self->src->pos < len__String(*self->src->file.content) - 1) {
         if (self->src->c == (char *)'\n') {
             self->line++;
             self->col = 1;
@@ -317,7 +310,7 @@ next_char(struct Scanner *self)
             self->col++;
         }
         self->src->pos++;
-        self->src->c = get__String(*self->src->file->content, self->src->pos);
+        self->src->c = get__String(*self->src->file.content, self->src->pos);
     }
 }
 
@@ -325,8 +318,8 @@ static inline void
 skip_space(struct Scanner *self)
 {
     while ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
-         self->src->c == (char *)'\r' || self->src->c == (char *)' ') &&
-        self->src->pos < len__String(*self->src->file->content) - 1) {
+            self->src->c == (char *)'\r' || self->src->c == (char *)' ') &&
+           self->src->pos < len__String(*self->src->file.content) - 1) {
         next_char(self);
     }
 }
@@ -343,30 +336,30 @@ previous_char(struct Scanner *self)
 {
     self->col--;
     self->src->pos--;
-    self->src->c = get__String(*self->src->file->content, self->src->pos);
+    self->src->c = get__String(*self->src->file.content, self->src->pos);
 }
 
 static inline void
 start_token(struct Scanner *self)
 {
-    self->loc->s_line = self->line;
-    self->loc->s_col = self->col;
+    self->loc.s_line = self->line;
+    self->loc.s_col = self->col;
 }
 
 static inline void
 end_token(struct Scanner *self)
 {
-    self->loc->e_line = self->line;
-    self->loc->e_col = self->col;
+    self->loc.e_line = self->line;
+    self->loc.e_col = self->col;
 }
 
-static struct Option *
+static inline char *
 peek_char(struct Scanner self, Usize n)
 {
-    if (self.src->pos + n < len__String(*self.src->file->content) - 1) {
-        return Some(get__String(*self.src->file->content, self.src->pos + n));
+    if (self.src->pos + n < len__String(*self.src->file.content) - 1) {
+        return get__String(*self.src->file.content, self.src->pos + n);
     }
-    return None();
+    return NULL;
 }
 
 static void
@@ -496,15 +489,9 @@ is_bin(struct Scanner self)
 static inline bool
 is_num(struct Scanner self)
 {
-    struct Option *next_one = peek_char(self, 1);
-    bool res =
-      is_digit(self) ||
-      (self.src->c == (char *)'.' && !eq__Option(*next_one, (char *)'.') ||
-       self.src->c == (char *)'e' || self.src->c == (char *)'E');
-
-    FREE(Option, next_one);
-
-    return res;
+    return is_digit(self) ||
+           (self.src->c == (char *)'.' && peek_char(self, 1) != (char *)'.') ||
+           self.src->c == (char *)'e' || self.src->c == (char *)'E';
 }
 
 static struct Diagnostic *
@@ -515,7 +502,7 @@ __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct Option *help)
 {
     self->count_error += 1;
-    return NEW(DiagnosticWithErr, err, loc, *self->src->file, detail_msg, help);
+    return NEW(DiagnosticWithErr, err, loc, self->src->file, detail_msg, help);
 }
 
 static struct Diagnostic *
@@ -526,7 +513,7 @@ __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct Option *help)
 {
     return NEW(
-      DiagnosticWithWarn, warn, loc, *self->src->file, detail_msg, help);
+      DiagnosticWithWarn, warn, loc, self->src->file, detail_msg, help);
 }
 
 static struct Diagnostic *
@@ -537,7 +524,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct Option *help)
 {
     return NEW(
-      DiagnosticWithNote, note, loc, *self->src->file, detail_msg, help);
+      DiagnosticWithNote, note, loc, self->src->file, detail_msg, help);
 }
 
 static inline void
@@ -572,7 +559,7 @@ get_escape(struct Scanner *self, char *previous)
     else if (previous == (char *)'\\' && self->src->c == (char *)'\"')
         res = Ok(from__String("\""));
     else if (previous == (char *)'\\' &&
-             len__String(*self->src->file->content) < self->src->pos - 1) {
+             len__String(*self->src->file.content) < self->src->pos - 1) {
         end__Location(&loc_error, self->line, self->col);
 
         res = Err(NEW(DiagnosticWithErrScanner,
@@ -618,9 +605,8 @@ scan_comment_multi(struct Scanner *self)
 
     start__Location(&location_error, self->line, self->col);
 
-    while (self->src->c != (char *)'*' ||
-           eq__Option(*peek_char(*self, 1), (char *)'.')) {
-        if (self->src->pos >= len__String(*self->src->file->content) - 2) {
+    while (self->src->c != (char *)'*' || peek_char(*self, 1) != (char *)'.') {
+        if (self->src->pos >= len__String(*self->src->file.content) - 2) {
             end__Location(&location_error, self->line, self->col);
 
             return Err(NEW(DiagnosticWithErrScanner,
@@ -649,12 +635,12 @@ scan_comment_doc(struct Scanner *self)
     while (self->src->c != (char *)'\n') {
         next_char(self);
 
-        if (self->src->pos >= len__String(*self->src->file->content) - 1)
+        if (self->src->pos >= len__String(*self->src->file.content) - 1)
             break;
 
         push__String(
           doc,
-          (char *)get__String(*self->src->file->content, self->src->pos - 1));
+          (char *)get__String(*self->src->file.content, self->src->pos - 1));
     }
 
     previous_char(self);
@@ -669,8 +655,8 @@ scan_identifier(struct Scanner *self)
 
     while (is_ident(*self)) {
         next_char(self);
-        push__String(
-          id, get__String(*self->src->file->content, self->src->pos - 1));
+        push__String(id,
+                     get__String(*self->src->file.content, self->src->pos - 1));
     }
 
     previous_char(self);
@@ -691,7 +677,7 @@ scan_char(struct Scanner *self, bool is_bit)
 
         char *target = self->src->c;
         struct Result *escape = get_escape(
-          self, get__String(*self->src->file->content, self->src->pos - 1));
+          self, get__String(*self->src->file.content, self->src->pos - 1));
 
         end__Location(&loc_error, self->line, self->col);
 
@@ -740,7 +726,7 @@ scan_string(struct Scanner *self)
     next_char(self);
 
     while ((UPtr)self->src->c != '\"') {
-        if (self->src->pos > len__String(*self->src->file->content) - 2) {
+        if (self->src->pos > len__String(*self->src->file.content) - 2) {
             end__Location(&location_error, self->line, self->col);
 
             return Err(
@@ -755,7 +741,7 @@ scan_string(struct Scanner *self)
         next_char(self);
 
         struct Result *escape = get_escape(
-          self, get__String(*self->src->file->content, self->src->pos - 1));
+          self, get__String(*self->src->file.content, self->src->pos - 1));
 
         if (is_err__Result(*escape))
             return escape;
@@ -889,11 +875,11 @@ scan_bin(struct Scanner *self)
 static struct Result *
 scan_num(struct Scanner *self)
 {
-    struct Location *num_location = NEW(Location);
+    struct Location num_location = NEW(Location);
     struct String *num = NEW(String);
     bool is_float = false;
 
-    start__Location(num_location, self->line, self->col);
+    start__Location(&num_location, self->line, self->col);
 
     while (is_num(*self)) {
         if (self->src->c == (char *)'e' || self->src->c == (char *)'E') {
@@ -907,25 +893,25 @@ scan_num(struct Scanner *self)
 
                 is_float = true;
             } else {
-                end__Location(num_location, self->line, self->col);
+                end__Location(&num_location, self->line, self->col);
 
                 return Err(
                   NEW(DiagnosticWithErrScanner,
                       self,
                       NEW(LilyError, LilyErrorInvalidNumLiteral),
-                      *num_location,
+                      num_location,
                       format(""),
                       Some(format("add digit or `-` or `+` after `e` or `E` "
                                   "scientific number indicator"))));
             }
         } else if (self->src->c == (char *)'.' && is_float) {
-            end__Location(num_location, self->line, self->col);
+            end__Location(&num_location, self->line, self->col);
 
             return Err(NEW(
               DiagnosticWithErrScanner,
               self,
               NEW(LilyError, LilyErrorInvalidNumLiteral),
-              *num_location,
+              num_location,
               format("you can't have more than one point on a float literal"),
               Some(format("remove `.`"))));
         } else if (self->src->c == (char *)'.' && !is_float) {
@@ -940,7 +926,7 @@ scan_num(struct Scanner *self)
         }
     }
 
-    end__Location(num_location, self->line, self->col);
+    end__Location(&num_location, self->line, self->col);
     previous_char(self);
 
     if (is_float) {
@@ -949,33 +935,30 @@ scan_num(struct Scanner *self)
               DiagnosticWithErrScanner,
               self,
               NEW(LilyError, LilyErrorInvalidNumLiteral),
-              *num_location,
+              num_location,
               format(""),
               Some(format("add digit after `-` or `+` in scientific number"))));
         }
 
-        return Ok(NEW(TokenLit, TokenKindFloatLit, num_location, num));
+        return Ok(NEW(TokenLit, TokenKindFloatLit, &num_location, num));
     }
 
-    return Ok(NEW(TokenLit, TokenKindIntLit, num_location, num));
+    return Ok(NEW(TokenLit, TokenKindIntLit, &num_location, num));
 }
 
 static struct Result *
 get_all_num(struct Scanner *self)
 {
     struct Result *res = NULL;
-    struct Option *next_one = peek_char(*self, 1);
 
-    if (self->src->c == (char *)'0' && eq__Option(*next_one, (char *)'x'))
+    if (self->src->c == (char *)'0' && peek_char(*self, 1) == (char *)'x')
         res = scan_hex(self);
-    else if (self->src->c == (char *)'0' && eq__Option(*next_one, (char *)'o'))
+    else if (self->src->c == (char *)'0' && peek_char(*self, 1) == (char *)'o')
         res = scan_oct(self);
-    else if (self->src->c == (char *)'0' && eq__Option(*next_one, (char *)'b'))
+    else if (self->src->c == (char *)'0' && peek_char(*self, 1) == (char *)'b')
         res = scan_bin(self);
     else
         res = scan_num(self);
-
-    FREE(Option, next_one);
 
     return res;
 }
@@ -997,7 +980,7 @@ get_closing(struct Scanner *self, char *target)
     while (skip_and_verify(self, target)) {
         start__Location(&location_error, self->line, self->col);
 
-        if (self->src->pos >= len__String(*self->src->file->content) - 1) {
+        if (self->src->pos >= len__String(*self->src->file.content) - 1) {
             end__Location(&location_error, self->line, self->col);
 
             return Err(
@@ -1020,7 +1003,7 @@ get_closing(struct Scanner *self, char *target)
         next_char_by_token(self, *token_ok);
 
         if (token_ok->loc == NULL) {
-            struct Location *copy = copy__Location(self->loc);
+            struct Location *copy = copy__Location(&self->loc);
 
             token_ok->loc = copy;
         }
@@ -1047,21 +1030,21 @@ get_closing(struct Scanner *self, char *target)
 static struct Result *
 get_token(struct Scanner *self)
 {
-    struct Option *c2 = peek_char(*self, 1);
-    struct Option *c3 = peek_char(*self, 2);
+    char *c2 = peek_char(*self, 1);
+    char *c3 = peek_char(*self, 2);
     enum TokenKind kind = TokenKindEof;
 
     start_token(self);
 
     switch ((UPtr)self->src->c) {
         case '.':
-            if (eq__Option(*c2, (char *)'.') && eq__Option(*c3, (char *)'.'))
+            if (c2 == (char *)'.' && c3 == (char *)'.')
                 kind = TokenKindDotDotDot;
-            else if (eq__Option(*c2, (char *)'.'))
+            else if (c2 == (char *)'.')
                 kind = TokenKindDotDot;
-            else if (eq__Option(*c2, (char *)'*'))
+            else if (c2 == (char *)'*')
                 kind = TokenKindDotStar;
-            else if (eq__Option(*c2, (char *)'?'))
+            else if (c2 == (char *)'?')
                 kind = TokenKindDotInterrogation;
             else
                 kind = TokenKindDot;
@@ -1072,16 +1055,16 @@ get_token(struct Scanner *self)
             break;
 
         case ':':
-            if (eq__Option(*c2, (char *)'='))
+            if (c2 == (char *)'=')
                 kind = TokenKindColonEq;
-            else if (eq__Option(*c2, (char *)':'))
+            else if (c2 == (char *)':')
                 kind = TokenKindColonColon;
             else
                 kind = TokenKindColon;
             break;
 
         case '|':
-            if (eq__Option(*c2, (char *)'>'))
+            if (c2 == (char *)'>')
                 kind = TokenKindBarRShift;
             else
                 kind = TokenKindBar;
@@ -1096,11 +1079,8 @@ get_token(struct Scanner *self)
 
             next_char_by_token(self, *tok);
             end_token(self);
-            tok->loc = copy__Location(self->loc);
+            tok->loc = copy__Location(&self->loc);
             push_token(self, tok);
-
-            FREE(Option, c2);
-            FREE(Option, c3);
 
             return get_closing(self, (char *)')');
         }
@@ -1108,13 +1088,10 @@ get_token(struct Scanner *self)
         case ')': {
             end_token(self);
 
-            FREE(Option, c2);
-            FREE(Option, c3);
-
             return Err(NEW(DiagnosticWithErrScanner,
                            self,
                            NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                           *self->loc,
+                           self->loc,
                            format(""),
                            Some(format("remove this `)`"))));
         }
@@ -1124,11 +1101,8 @@ get_token(struct Scanner *self)
 
             next_char_by_token(self, *tok);
             end_token(self);
-            tok->loc = copy__Location(self->loc);
+            tok->loc = copy__Location(&self->loc);
             push_token(self, tok);
-
-            FREE(Option, c2);
-            FREE(Option, c3);
 
             return get_closing(self, (char *)'}');
         }
@@ -1136,13 +1110,10 @@ get_token(struct Scanner *self)
         case '}': {
             end_token(self);
 
-            FREE(Option, c2);
-            FREE(Option, c3);
-
             return Err(NEW(DiagnosticWithErrScanner,
                            self,
                            NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                           *self->loc,
+                           self->loc,
                            format(""),
                            Some(format("remove this `}`"))));
         }
@@ -1152,11 +1123,8 @@ get_token(struct Scanner *self)
 
             next_char_by_token(self, *tok);
             end_token(self);
-            tok->loc = copy__Location(self->loc);
+            tok->loc = copy__Location(&self->loc);
             push_token(self, tok);
-
-            FREE(Option, c2);
-            FREE(Option, c3);
 
             return get_closing(self, (char *)']');
         }
@@ -1164,13 +1132,10 @@ get_token(struct Scanner *self)
         case ']': {
             end_token(self);
 
-            FREE(Option, c2);
-            FREE(Option, c3);
-
             return Err(NEW(DiagnosticWithErrScanner,
                            self,
                            NEW(LilyError, LilyErrorMismatchedClosingDelimiter),
-                           *self->loc,
+                           self->loc,
                            format(""),
                            Some(format("remove this `]`"))));
         }
@@ -1192,49 +1157,49 @@ get_token(struct Scanner *self)
             break;
 
         case '+':
-            if (eq__Option(*c2, (char *)'+') && eq__Option(*c3, (char *)'='))
+            if (c2 == (char *)'+' && c3 == (char *)'=')
                 kind = TokenKindPlusPlusEq;
-            else if (eq__Option(*c2, (char *)'='))
+            else if (c2 == (char *)'=')
                 kind = TokenKindPlusEq;
-            else if (eq__Option(*c2, (char *)'+'))
+            else if (c2 == (char *)'+')
                 kind = TokenKindPlusPlus;
             else
                 kind = TokenKindPlus;
             break;
 
         case '~':
-            if (eq__Option(*c2, (char *)'='))
+            if (c2 == (char *)'=')
                 kind = TokenKindWaveEq;
             else
                 kind = TokenKindWave;
             break;
 
         case '-':
-            if (eq__Option(*c2, (char *)'-') && eq__Option(*c3, (char *)'='))
+            if (c2 == (char *)'-' && c3 == (char *)'=')
                 kind = TokenKindMinusMinusEq;
-            else if (eq__Option(*c2, (char *)'='))
+            else if (c2 == (char *)'=')
                 kind = TokenKindMinusEq;
-            else if (eq__Option(*c2, (char *)'-'))
+            else if (c2 == (char *)'-')
                 kind = TokenKindMinusMinus;
-            else if (eq__Option(*c2, (char *)'>'))
+            else if (c2 == (char *)'>')
                 kind = TokenKindArrow;
             else
                 kind = TokenKindMinus;
             break;
 
         case '*':
-            if (eq__Option(*c2, (char *)'*') && eq__Option(*c3, (char *)'='))
+            if (c2 == (char *)'*' && c3 == (char *)'=')
                 kind = TokenKindStarStarEq;
-            else if (eq__Option(*c2, (char *)'='))
+            else if (c2 == (char *)'=')
                 kind = TokenKindStarEq;
-            else if (eq__Option(*c2, (char *)'*'))
+            else if (c2 == (char *)'*')
                 kind = TokenKindStarStar;
             else
                 kind = TokenKindStar;
             break;
 
         case '/':
-            if (eq__Option(*c2, (char *)'/') && eq__Option(*c3, (char *)'/')) {
+            if (c2 == (char *)'/' && c3 == (char *)'/') {
                 jump(self, 3);
 
                 struct String *doc = scan_comment_doc(self);
@@ -1244,21 +1209,20 @@ get_token(struct Scanner *self)
                 skip_space(self);
 
                 while (true) {
-                    struct Option *c2_doc = peek_char(*self, 1);
-                    struct Option *c3_doc = peek_char(*self, 2);
+                    char *c2_doc = peek_char(*self, 1);
+                    char *c3_doc = peek_char(*self, 2);
 
-                    if (self->src->c == (char *)'/' &&
-                        eq__Option(*c2_doc, (char *)'/') &&
-                        eq__Option(*c3_doc, (char *)'/')) {
+                    if (self->src->c == (char *)'/' && c2_doc == (char *)'/' &&
+                        c3_doc == (char *)'/') {
                         skip_space(self);
                         jump(self, 3);
 
                         struct String *doc2 = scan_comment_doc(self);
-                        struct Option *next_one = peek_char(*self, 1);
+                        char *next_one = peek_char(*self, 1);
 
                         push__String(doc2, (char *)'\n');
 
-                        if (eq__Option(*next_one, NULL)) {
+                        if (next_one == NULL) {
                             append__String(doc, doc2, true);
                             next_char(self);
                             break;
@@ -1267,17 +1231,9 @@ get_token(struct Scanner *self)
                         append__String(doc, doc2, true);
                         next_char(self);
                         skip_space(self);
-
-                        FREE(Option, next_one);
                     } else {
-                        FREE(Option, c2_doc);
-                        FREE(Option, c3_doc);
-
                         break;
                     }
-
-                    FREE(Option, c2_doc);
-                    FREE(Option, c3_doc);
                 }
 
                 bool is_eof = false;
@@ -1287,67 +1243,61 @@ get_token(struct Scanner *self)
 
                 skip_space(self);
 
-                FREE(Option, c2);
-                FREE(Option, c3);
-
                 return get_token(self);
 
-            } else if (eq__Option(*c2, (char *)'/')) {
+            } else if (c2 == (char *)'/') {
                 kind = scan_comment_one(self);
                 next_char(self);
-            } else if (eq__Option(*c2, (char *)'='))
+            } else if (c2 == (char *)'=')
                 kind = TokenKindSlashEq;
-            else if (eq__Option(*c2, (char *)'*')) {
-                FREE(Option, c2);
-                FREE(Option, c3);
-
+            else if (c2 == (char *)'*')
                 return scan_comment_multi(self);
-            } else
+            else
                 kind = TokenKindSlash;
             break;
 
         case '%':
-            if (eq__Option(*c2, (char *)'='))
+            if (c2 == (char *)'=')
                 kind = TokenKindPercentageEq;
             else
                 kind = TokenKindPercentage;
             break;
 
         case '^':
-            if (eq__Option(*c2, (char *)'='))
+            if (c2 == (char *)'=')
                 kind = TokenKindHatEq;
             else
                 kind = TokenKindHat;
             break;
 
         case '=':
-            if (eq__Option(*c2, (char *)'='))
+            if (c2 == (char *)'=')
                 kind = TokenKindEqEq;
-            else if (eq__Option(*c2, (char *)'>'))
+            else if (c2 == (char *)'>')
                 kind = TokenKindFatArrow;
             else
                 kind = TokenKindEq;
             break;
 
         case '<':
-            if (eq__Option(*c2, (char *)'<') && eq__Option(*c3, (char *)'='))
+            if (c2 == (char *)'<' && c3 == (char *)'=')
                 kind = TokenKindLShiftLShiftEq;
-            else if (eq__Option(*c2, (char *)'<'))
+            else if (c2 == (char *)'<')
                 kind = TokenKindLShiftLShift;
-            else if (eq__Option(*c2, (char *)'='))
+            else if (c2 == (char *)'=')
                 kind = TokenKindLShiftEq;
-            else if (eq__Option(*c2, (char *)'-'))
+            else if (c2 == (char *)'-')
                 kind = TokenKindInverseArrow;
             else
                 kind = TokenKindLShift;
             break;
 
         case '>':
-            if (eq__Option(*c2, (char *)'>') && eq__Option(*c3, (char *)'='))
+            if (c2 == (char *)'>' && c3 == (char *)'=')
                 kind = TokenKindRShiftRShiftEq;
-            else if (eq__Option(*c2, (char *)'>'))
+            else if (c2 == (char *)'>')
                 kind = TokenKindRShiftRShift;
-            else if (eq__Option(*c2, (char *)'='))
+            else if (c2 == (char *)'=')
                 kind = TokenKindRShiftEq;
             else
                 kind = TokenKindRShift;
@@ -1366,17 +1316,11 @@ get_token(struct Scanner *self)
             break;
 
         case IS_DIGIT:
-            FREE(Option, c2);
-            FREE(Option, c3);
-
             return get_all_num(self);
 
         case '\"': {
             struct Result *string = scan_string(self);
             struct String *string_ok = NULL;
-
-            FREE(Option, c2);
-            FREE(Option, c3);
 
             if (is_err__Result(*string))
                 return string;
@@ -1387,28 +1331,21 @@ get_token(struct Scanner *self)
 
                 FREE(Result, string);
 
-                struct Location *copy = copy__Location(self->loc);
+                struct Location *copy = copy__Location(&self->loc);
 
                 return Ok(NEW(TokenLit, TokenKindStringLit, copy, string_ok));
             }
         }
 
-        case '\'': {
-            FREE(Option, c2);
-            FREE(Option, c3);
-
+        case '\'':
             return scan_char(self, false);
-        }
 
         case IS_ID: {
-            if (self->src->c == (char*)'b' && eq__Option(*c2, (char *)'\"')) {
+            if (self->src->c == (char *)'b' && c2 == (char *)'\"') {
                 next_char(self);
 
                 struct Result *string = scan_string(self);
                 struct String *string_ok = NULL;
-
-                FREE(Option, c2);
-                FREE(Option, c3);
 
                 if (is_err__Result(*string)) {
                     return string;
@@ -1419,16 +1356,13 @@ get_token(struct Scanner *self)
 
                     FREE(Result, string);
 
-                    struct Location *copy = copy__Location(self->loc);
+                    struct Location *copy = copy__Location(&self->loc);
 
                     return Ok(
                       NEW(TokenLit, TokenKindBitStringLit, copy, string_ok));
                 }
-            } else if (self->src->c == (char*)'b' && eq__Option(*c2, (char *)'\'')) {
+            } else if (self->src->c == (char *)'b' && c2 == (char *)'\'') {
                 next_char(self);
-
-                FREE(Option, c2);
-                FREE(Option, c3);
 
                 return scan_char(self, true);
             }
@@ -1440,39 +1374,30 @@ get_token(struct Scanner *self)
             end_token(self);
 
             free(id_str);
-            FREE(Option, c2);
-            FREE(Option, c3);
 
             switch (tok_kw) {
                 case TokenKindIdentifier: {
-                    struct Location *copy = copy__Location(self->loc);
+                    struct Location *copy = copy__Location(&self->loc);
 
                     return Ok(NEW(TokenLit, tok_kw, copy, id));
                 }
                 default: {
                     FREE(String, id);
 
-                    struct Option *next_one = peek_char(*self, 1);
-    
-                    if (tok_kw == TokenKindXorKw &&
-                        eq__Option(*next_one, (char *)'=')) {
-                        next_char(self);
+                    char *next_one = peek_char(*self, 1);
 
-                        FREE(Option, next_one);
+                    if (tok_kw == TokenKindXorKw && next_one == (char *)'=') {
+                        next_char(self);
 
                         return Ok(NEW(Token, TokenKindXorEq, NULL));
                     } else if (tok_kw == TokenKindNotKw &&
-                               eq__Option(*next_one, (char *)'=')) {
+                               next_one == (char *)'=') {
                         next_char(self);
-
-                        FREE(Option, next_one);
 
                         return Ok(NEW(Token, TokenKindNotEq, NULL));
                     }
 
-                    FREE(Option, next_one);
-
-                    struct Location *copy = copy__Location(self->loc);
+                    struct Location *copy = copy__Location(&self->loc);
 
                     return Ok(NEW(Token, tok_kw, copy));
                 }
@@ -1480,16 +1405,13 @@ get_token(struct Scanner *self)
         }
 
         default: {
-            FREE(Option, c2);
-            FREE(Option, c3);
-
             end_token(self);
 
             struct Diagnostic *dgn = NEW(
               DiagnosticWithErrScanner,
               self,
               NEW(LilyError, LilyErrorInvalidCharacter),
-              *self->loc,
+              self->loc,
               format("unexpected character"),
               Some(format("remove this character: `{c}`", (UPtr)self->src->c)));
 
@@ -1499,20 +1421,17 @@ get_token(struct Scanner *self)
         }
     }
 
-    FREE(Option, c2);
-    FREE(Option, c3);
-
     return Ok(NEW(Token, kind, NULL));
 }
 
 void
 run__Scanner(struct Scanner *self)
 {
-    if (len__String(*self->src->file->content) > 1) {
-        while (self->src->pos < len__String(*self->src->file->content) - 1) {
+    if (len__String(*self->src->file.content) > 1) {
+        while (self->src->pos < len__String(*self->src->file.content) - 1) {
             skip_space(self);
 
-            if (self->src->pos >= len__String(*self->src->file->content) - 1)
+            if (self->src->pos >= len__String(*self->src->file.content) - 1)
                 break;
 
             struct Result *token = get_token(self);
@@ -1561,7 +1480,7 @@ run__Scanner(struct Scanner *self)
                         end_token(self);
 
                         if (token_ok->loc == NULL) {
-                            struct Location *copy = copy__Location(self->loc);
+                            struct Location *copy = copy__Location(&self->loc);
 
                             token_ok->loc = copy;
                         }
@@ -1592,7 +1511,7 @@ run__Scanner(struct Scanner *self)
                         end_token(self);
 
                         if (token_ok->loc == NULL) {
-                            struct Location *copy = copy__Location(self->loc);
+                            struct Location *copy = copy__Location(&self->loc);
 
                             token_ok->loc = copy;
                         }
@@ -1614,8 +1533,7 @@ run__Scanner(struct Scanner *self)
 
                 FREE(Result, token);
 
-                if (self->src->pos >=
-                    len__String(*self->src->file->content) - 1)
+                if (self->src->pos >= len__String(*self->src->file.content) - 1)
                     break;
             }
         }
@@ -1623,7 +1541,7 @@ run__Scanner(struct Scanner *self)
         start_token(self);
         end_token(self);
 
-        struct Location *copy = copy__Location(self->loc);
+        struct Location *copy = copy__Location(&self->loc);
 
         push_token(self, NEW(Token, TokenKindEof, copy));
 
@@ -1635,7 +1553,7 @@ run__Scanner(struct Scanner *self)
         start_token(self);
         end_token(self);
 
-        struct Location *copy = copy__Location(self->loc);
+        struct Location *copy = copy__Location(&self->loc);
 
         push_token(self, NEW(Token, TokenKindEof, copy));
     }
@@ -1648,13 +1566,11 @@ run__Scanner(struct Scanner *self)
 }
 
 void
-__free__Scanner(struct Scanner *self)
+__free__Scanner(struct Scanner self)
 {
-    for (Usize i = len__Vec(*self->tokens); i--;)
-        FREE(TokenAll, get__Vec(*self->tokens, i));
+    for (Usize i = len__Vec(*self.tokens); i--;)
+        FREE(TokenAll, get__Vec(*self.tokens, i));
 
-    FREE(Vec, self->tokens);
-    FREE(Source, self->src);
-    FREE(Location, self->loc);
-    free(self);
+    FREE(Vec, self.tokens);
+    FREE(Source, *self.src);
 }

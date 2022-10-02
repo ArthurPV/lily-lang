@@ -5,14 +5,16 @@
 #include <base/string.h>
 #include <lang/scanner/token.h>
 
-struct Location *
+struct Location
 __new__Location()
 {
-    struct Location *self = malloc(sizeof(struct Location));
-    self->s_line = 1;
-    self->s_col = 1;
-    self->e_line = 1;
-    self->e_col = 1;
+    struct Location self = {
+        .s_line = 1,
+        .s_col = 1,
+        .e_line = 1,
+        .e_col = 1
+    };
+    
     return self;
 }
 
@@ -49,11 +51,11 @@ struct Location * copy__Location(struct Location *self) {
     return copy;
 }
 
-void
-__free__Location(struct Location *self)
-{
-    free(self);
-}
+// void
+// __free__Location(struct Location *self)
+// {
+//     // free(self);
+// }
 
 struct Doc *
 __new__DocWithString(enum DocKind kind, struct String *s)
@@ -371,19 +373,19 @@ struct Token *copy__Token(struct Token *self) {
 
 void
 __free__Token(struct Token *self) {
-    FREE(Location, self->loc);
+    free(self->loc);
     free(self);
 }
 
 void __free__TokenLit(struct Token *self) {
-    FREE(Location, self->loc);
     FREE(String, self->lit);
+    free(self->loc);
     free(self);
 }
 
 void __free__TokenDoc(struct Token *self) {
-    FREE(Location, self->loc);
     FREE(Doc, self->doc);
+    free(self->loc);
     free(self);
 }
 

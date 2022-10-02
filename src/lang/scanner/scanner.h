@@ -15,7 +15,7 @@ typedef struct File
 
 typedef struct Source
 {
-    struct File *file;
+    struct File file;
     Usize pos;
     char *c;
 } Source;
@@ -25,7 +25,7 @@ typedef struct Scanner
     struct Source *src;
     UInt64 line;
     UInt64 col;
-    struct Location *loc;
+    struct Location loc;
     struct Vec *tokens;
     Usize count_error;
 } Scanner;
@@ -34,7 +34,7 @@ typedef struct Scanner
  *
  * @brief Construct File type.
  */
-struct File *
+struct File
 __new__File(Str name);
 
 /**
@@ -42,27 +42,27 @@ __new__File(Str name);
  * @brief Free File type.
  */
 void
-__free__File(struct File *self);
+__free__File(struct File self);
 
 /**
  *
  * @brief Construct Source type.
  */
-struct Source *
-__new__Source(struct File *file);
+struct Source
+__new__Source(struct File file);
 
 /**
  *
  * @brief Free Source type.
  */
 void
-__free__Source(struct Source *self);
+__free__Source(struct Source self);
 
 /**
  *
  * @brief Construct Scanner type.
  */
-struct Scanner *
+struct Scanner
 __new__Scanner(struct Source *src);
 
 /**
@@ -77,6 +77,6 @@ run__Scanner(struct Scanner *self);
  * @brief Free Scanner type.
  */
 void
-__free__Scanner(struct Scanner *self);
+__free__Scanner(struct Scanner self);
 
 #endif // LILY_SCANNER_H

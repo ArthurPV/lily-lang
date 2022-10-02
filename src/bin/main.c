@@ -333,13 +333,13 @@ int main() {
 //        push__Vec(st, (int*)i);
 //    }
 
-    struct File *file = NEW(File, "./app.lily");
-    struct Source *src = NEW(Source, file);
-    struct Scanner *scanner = NEW(Scanner, src);
+    struct File file = NEW(File, "./app.lily");
+    struct Source src = NEW(Source, file);
+    struct Scanner scanner = NEW(Scanner, &src);
 
-    run__Scanner(scanner);
+    run__Scanner(&scanner);
 
-    struct ParseBlock *parse_block = NEW(ParseBlock, scanner);
+    struct ParseBlock *parse_block = NEW(ParseBlock, &scanner);
 
     run__ParseBlock(parse_block);
 
