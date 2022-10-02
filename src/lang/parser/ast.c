@@ -67,11 +67,11 @@ __new__DataTypeArray(struct Option *data_type, struct Option *size)
 }
 
 struct DataType *
-__new__DataTypeCustom(struct String *name, struct Option *generic_params)
+__new__DataTypeCustom(struct Vec *names, struct Option *generic_params)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindCustom;
-    self->value.custom = NEW(Tuple, 2, name, generic_params);
+    self->value.custom = NEW(Tuple, 2, names, generic_params);
     return self;
 }
 
@@ -311,6 +311,8 @@ __free__DataTypeArray(struct DataType *self)
 void
 __free__DataTypeCustom(struct DataType *self)
 {
+    FREE(Vec, self->value.custom->items[0]);
+
     if (is_Some__Option(self->value.custom->items[1])) {
         struct Vec *temporary =
           (struct Vec *)get__Option(self->value.custom->items[1]);
@@ -2197,9 +2199,9 @@ __free__FunDecl(struct FunDecl *self)
 {
     if (self->tags != NULL) {
         for (Usize i = len__Vec(*self->tags); i--;) {
-            struct Tuple *temporary = (struct Tuple *)get__Vec(*self->tags, i);
-            FREE(String, (struct String *)temporary->items[0]);
-            FREE(Tuple, (struct Tuple *)get__Vec(*self->tags, i));
+            struct Tuple *temp = (struct Tuple *)get__Vec(*self->tags, i);
+            FREE(DataTypeAll, temp->items[0]);
+            FREE(Tuple, temp);
         }
 
         FREE(Vec, self->tags);

@@ -743,6 +743,17 @@ get_block(struct ParseBlock *self, bool in_module)
             return NEW(ParseContextConstant, constant_parse_context, loc);
         }
 
+        case TokenKindImportKw: {
+            struct ImportParseContext import_parse_context =
+              NEW(ImportParseContext);
+
+            get_import_parse_context(&import_parse_context, self);
+            end__Location(
+              &loc, self->current->loc->s_line, self->current->loc->s_col);
+
+            return NEW(ParseContextImport, import_parse_context, loc);
+        }
+
         default: {
             struct Diagnostic *err = NEW(
               DiagnosticWithErrParser,
@@ -1406,19 +1417,22 @@ get_fun_parse_context(struct FunParseContext *self,
                 next_token_pb(parse_block);
             }
 
-            end__Location(&loc_warn,
-                          parse_block->current->loc->s_line,
-                          parse_block->current->loc->s_col);
+            if (parse_block->current->kind == TokenKindRParen &&
+                len__Vec(*self->tags) == 0) {
+                end__Location(&loc_warn,
+                              parse_block->current->loc->s_line,
+                              parse_block->current->loc->s_col);
 
-            struct Diagnostic *warn =
-              NEW(DiagnosticWithWarnParser,
-                  parse_block,
-                  NEW(LilyWarning, LilyWarningIgnoredTags),
-                  loc_warn,
-                  format("tags are ignored because the tag list is empty"),
-                  None());
+                struct Diagnostic *warn =
+                  NEW(DiagnosticWithWarnParser,
+                      parse_block,
+                      NEW(LilyWarning, LilyWarningIgnoredTags),
+                      loc_warn,
+                      format("tags are ignored because the tag list is empty"),
+                      None());
 
-            emit_warning__Diagnostic(warn, parse_block->disable_warning);
+                emit_warning__Diagnostic(warn, parse_block->disable_warning);
+            }
 
             if (len__Vec(*self->tags) == 0)
                 self->has_tags = false;
@@ -2386,6 +2400,7 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindRParen:
         case TokenKindIdentifier:
         case TokenKindComma:
+        case TokenKindDot:
             return true;
 
         default: {
@@ -3121,6 +3136,21 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 data_type = NEW(DataType, DataTypeKindUnit);
 
             else {
+                struct Vec *names = NEW(Vec, sizeof(struct String));
+
+                push__Vec(names, &*parse_decl->previous->lit);
+
+                while (parse_decl->current->kind == TokenKindDot) {
+                    next_token(parse_decl);
+
+                    if (parse_decl->current->kind == TokenKindIdentifier)
+                        push__Vec(names, &*parse_decl->current->lit);
+                    else
+                        assert(0 && "error");
+
+                    next_token(parse_decl);
+                }
+
                 if (parse_decl->current->kind == TokenKindLHook) {
                     struct Vec *data_types = NEW(Vec, sizeof(struct DataType));
 
@@ -3161,12 +3191,9 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                           warn, self.parse_block.disable_warning);
                     }
 
-                    data_type = NEW(DataTypeCustom,
-                                    &*parse_decl->current->lit,
-                                    Some(data_types));
+                    data_type = NEW(DataTypeCustom, names, Some(data_types));
                 } else
-                    data_type =
-                      NEW(DataTypeCustom, &*parse_decl->current->lit, None());
+                    data_type = NEW(DataTypeCustom, names, None());
             }
 
             free(identifier_str);
@@ -3367,15 +3394,27 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 static struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *tags = NEW(Vec, sizeof(struct String));
+    struct Vec *tags = NEW(Vec, sizeof(struct Tuple));
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+        struct Location loc = NEW(Location);
+
+        start__Location(&loc,
+                        parse_decl->current->loc->s_line,
+                        parse_decl->current->loc->s_col);
+
         switch (parse_decl->current->kind) {
-            case TokenKindIdentifier:
-                push__Vec(tags, &*parse_decl->current->lit);
-                next_token(parse_decl);
+            case TokenKindIdentifier: {
+                struct DataType *data_type = parse_data_type(self, parse_decl);
+
+                end__Location(&loc,
+                              parse_decl->previous->loc->s_line,
+                              parse_decl->previous->loc->s_col);
+
+                push__Vec(tags, NEW(Tuple, 2, data_type, &loc));
 
                 break;
+            }
             default: {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -5413,7 +5452,12 @@ parse_trait_declaration(struct Parser *self,
         }
     }
 
-    return NEW(TraitDecl, trait_parse_context.name, generic_params, inh, body, trait_parse_context.is_pub);
+    return NEW(TraitDecl,
+               trait_parse_context.name,
+               generic_params,
+               inh,
+               body,
+               trait_parse_context.is_pub);
 }
 
 static struct Vec *

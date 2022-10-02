@@ -53,7 +53,7 @@ typedef struct DataType
         struct Tuple *lambda; // struct Tuple<struct Vec*, struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct Option<struct DataType*>*,
                               // struct Option<Usize*>*>*
-        struct Tuple *custom; // struct Tuple<struct String&, struct Vec<struct
+        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct Vec<struct
                               // GenericParams*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
@@ -113,12 +113,12 @@ __new__DataTypeArray(struct Option *data_type, struct Option *size);
  * @brief Construct DataType type (Custom variant).
  */
 struct DataType *
-__new__DataTypeCustom(struct String *name, struct Option *generic_params);
+__new__DataTypeCustom(struct Vec *names, struct Option *generic_params);
 
 /**
  *
  * @brief Construct DataType type (Tuple variant).
- */
+ */;
 struct DataType *
 __new__DataTypeTuple(struct Vec *tuple);
 
@@ -1937,7 +1937,7 @@ typedef struct FunDecl
 {
     struct String *name; // struct String&
     struct Vec
-      *tags; // struct Vec<struct Tuple<struct String*, struct Location&>*>*
+      *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *params;         // struct Vec<struct FunParam*>*
     struct DataType *return_type;

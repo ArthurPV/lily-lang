@@ -5,8 +5,29 @@
 #include <lang/builtin/builtin_c.h>
 #include <lang/parser/ast.h>
 
+static Usize pos = 0;
+static Usize count_error = 0;
+static Usize count_warning = 0;
+static Usize current_fun_id = 0;
+static Usize current_const_id = 0;
+static Usize current_module_id = 0;
+static Usize current_alias_id = 0;
+static Usize current_record_id = 0;
+static Usize current_enum_id = 0;
+static Usize current_error_id = 0;
+static Usize current_class_id = 0;
+static Usize current_trait_id = 0;
+static Usize current_record_obj_id = 0;
+static Usize current_enum_obj_id = 0;
+
 static void
 push_all_symbols(struct Typecheck *self);
+static void
+check_symbols(struct Typecheck *self);
+static Usize *
+search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
+static Usize *
+search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
 static inline struct DataType *
 get_data_type_of_expr_symbol(struct ExprSymbol *symb);
 static struct SymbolTable *
@@ -30,20 +51,6 @@ __new__Typecheck(struct Parser parser)
         .parser = parser,
         .decl =
           len__Vec(*parser.decls) == 0 ? NULL : get__Vec(*parser.decls, 0),
-        .pos = 0,
-        .count_error = 0,
-        .count_warning = 0,
-        .current_fun_id = 0,
-        .current_const_id = 0,
-        .current_module_id = 0,
-        .current_alias_id = 0,
-        .current_record_id = 0,
-        .current_enum_id = 0,
-        .current_error_id = 0,
-        .current_class_id = 0,
-        .current_trait_id = 0,
-        .current_record_obj_id = 0,
-        .current_enum_obj_id = 0,
         .builtins = Load_C_builtins(),
         .funs = NULL,
         .consts = NULL,
@@ -64,6 +71,7 @@ void
 run__Typecheck(struct Typecheck *self)
 {
     push_all_symbols(self);
+    check_symbols(self);
 }
 
 void
@@ -154,10 +162,10 @@ __free__Typecheck(struct Typecheck self)
     FREE(Parser, self.parser);
 }
 
-#define NEXT_DECL()                                                            \
-    self->pos += 1;                                                            \
-    self->decl = self->pos < len__Vec(*self->parser.decls)                     \
-                   ? ((struct Decl *)get__Vec(*self->parser.decls, self->pos)) \
+#define NEXT_DECL()                                                      \
+    pos += 1;                                                            \
+    self->decl = pos < len__Vec(*self->parser.decls)                     \
+                   ? ((struct Decl *)get__Vec(*self->parser.decls, pos)) \
                    : NULL
 
 #define ALLOC_FUNS()        \
@@ -172,7 +180,7 @@ __free__Typecheck(struct Typecheck self)
     if (self->modules == NULL) \
     self->modules = NEW(Vec, sizeof(struct ModuleSymbol))
 
-#define ALLOC_ALIASES()      \
+#define ALLOC_ALIASES()        \
     if (self->aliases == NULL) \
     self->aliases = NEW(Vec, sizeof(struct AliasSymbol))
 
@@ -207,7 +215,7 @@ __free__Typecheck(struct Typecheck self)
 static void
 push_all_symbols(struct Typecheck *self)
 {
-    while (self->pos < len__Vec(*self->parser.decls)) {
+    while (pos < len__Vec(*self->parser.decls)) {
         switch (self->decl->kind) {
             case DeclKindFun:
                 ALLOC_FUNS();
@@ -228,7 +236,8 @@ push_all_symbols(struct Typecheck *self)
             case DeclKindRecord:
                 if (self->decl->value.record->is_object) {
                     ALLOC_RECORDS_OBJ();
-                    push__Vec(self->records_obj, NEW(RecordObjSymbol, self->decl));
+                    push__Vec(self->records_obj,
+                              NEW(RecordObjSymbol, self->decl));
                 } else {
                     ALLOC_RECORDS();
                     push__Vec(self->records, NEW(RecordSymbol, self->decl));
@@ -256,7 +265,9 @@ push_all_symbols(struct Typecheck *self)
                 push__Vec(self->traits, NEW(TraitSymbol, self->decl));
                 break;
             case DeclKindTag:
+                break;
             case DeclKindImport:
+                TODO("import");
                 break;
             default:
                 UNREACHABLE("unknown decl kind");
@@ -264,6 +275,108 @@ push_all_symbols(struct Typecheck *self)
 
         NEXT_DECL();
     }
+
+    self->decl = pos > 0 ? get__Vec(*self->parser.decls, 0) : NULL;
+    pos = 0;
+}
+
+static void
+check_symbols(struct Typecheck *self)
+{
+    while (pos < len__Vec(*self->parser.decls)) {
+        switch (self->decl->kind) {
+            case DeclKindFun: {
+                void *items[1] = { (Usize *)current_fun_id };
+                struct Scope scope =
+                  NEW(Scope,
+                      self->parser.parse_block.scanner.src->file.name,
+                      get__Vec(*self->funs, current_fun_id),
+                      from__Vec(items, sizeof(Usize), 1),
+                      ScopeItemKindFun,
+                      ScopeKindGlobal);
+                struct FunSymbol *fun_symbol =
+                  ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id));
+                struct FunDecl *fun_decl = fun_symbol->fun_decl->value.fun;
+
+                {
+                    struct Vec *id = NEW(Vec, sizeof(Usize));
+
+                    for (Usize i = len__Vec(*fun_decl->tags); i--;) {
+                        struct Tuple *data_type_tuple =
+                          get__Vec(*fun_decl->tags, i);
+                        struct DataType *data_type = data_type_tuple->items[0];
+
+                        if (len__Vec((*(struct Vec *)data_type->value.custom
+                                         ->items[0])) == 1) {
+                            Usize *id_enums_obj = search_in_enums_obj_from_name(
+                              self,
+                              get__Vec((*(struct Vec *)
+                                           data_type->value.custom->items[0]),
+                                       0));
+                            Usize *id_records_obj =
+                              id_enums_obj == NULL
+                                ? search_in_records_obj_from_name(
+                                    self,
+                                    get__Vec((*(struct Vec *)data_type->value
+                                                 .custom->items[0]),
+                                             0))
+                                : NULL;
+
+                            if (id_enums_obj == NULL && id_records_obj == NULL)
+                                assert(0 && "error");
+                            else if (id_enums_obj != NULL)
+                                push__Vec(id, id_enums_obj);
+                            else if (id_records_obj != NULL)
+                                push__Vec(id, id_records_obj);
+                        }
+                    }
+                }
+
+                scope.is_checked = true;
+                fun_symbol->scope = &scope;
+                ++current_fun_id;
+
+                break;
+            }
+            default:
+                Println("{d}", self->decl->kind);
+                TODO("check symbols");
+        }
+
+        NEXT_DECL();
+    }
+}
+
+static Usize *
+search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
+{
+    if (self->enums_obj == NULL)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->enums_obj); i--;) {
+        struct EnumObjSymbol *symb = get__Vec(*self->enums_obj, i);
+
+        if (eq__String(name, symb->name, true))
+            return (Usize *)i;
+    }
+
+    return NULL;
+}
+
+static Usize *
+search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
+{
+    if (self->records_obj == NULL)
+        return NULL;
+
+    for (Usize i = len__Vec(*self->records_obj); i--;) {
+        struct RecordObjSymbol *symb = get__Vec(*self->records_obj, i);
+
+        if (eq__String(name, symb->name, true))
+            return (Usize *)i;
+    }
+
+    return NULL;
 }
 
 static struct SymbolTable *

@@ -1,8 +1,11 @@
+import "std.*" as std
+
 A := 3;
 B := 120;
 C := "hello";
 D := "Hi!!";
 E := A:2;
+F MyError.F[T] := MyError:1;
 
 error[T] MyError T;
 

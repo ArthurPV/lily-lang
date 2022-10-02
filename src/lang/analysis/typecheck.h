@@ -6,21 +6,7 @@
 typedef struct Typecheck
 {
     struct Parser parser;
-    struct Decl *decl;
-    Usize pos;
-    Usize count_error;
-    Usize count_warning;
-    Usize current_fun_id;
-    Usize current_const_id;
-    Usize current_module_id;
-    Usize current_alias_id;
-    Usize current_record_id;
-    Usize current_enum_id;
-    Usize current_error_id;
-    Usize current_class_id;
-    Usize current_trait_id;
-    Usize current_record_obj_id;
-    Usize current_enum_obj_id;
+    struct Decl *decl; 
     struct Vec *builtins;    // struct Vec<struct Builtin*>*
     struct Vec *funs;        // struct Vec<struct FunSymbol*>*
     struct Vec *consts;      // struct Vec<struct ConstantSymbol*>*

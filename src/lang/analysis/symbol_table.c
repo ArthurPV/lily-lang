@@ -737,8 +737,12 @@ __new__FunSymbol(struct Decl *fun_decl)
 void
 __free__FunSymbol(struct FunSymbol *self)
 {
-    if (self->tagged_type != NULL)
+    if (self->tagged_type != NULL) {
+        for (Usize i = len__Vec(*self->tagged_type); i--;)
+            FREE(DataTypeSymbolAll, ((struct Tuple*)self->tagged_type)->items[0]);
+
         FREE(Vec, self->tagged_type);
+    }
 
     if (self->params != NULL) {
         for (Usize i = len__Vec(*self->params); i--;)

@@ -305,7 +305,7 @@ __free__FunParamSymbol(struct FunParamSymbol *self);
 typedef struct FunSymbol
 {
     struct String *name;        // struct String&
-    struct Vec *tagged_type;    // struct Vec<struct SymbolTable*>*
+    struct Vec *tagged_type;    // struct Vec<struct Tuple<struct DataTypeSymbol*, struct Location&>>*
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
     enum Visibility visibility;
