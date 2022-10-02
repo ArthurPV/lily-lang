@@ -34,27 +34,25 @@ typedef struct Scope
     struct Vec *id;      // struct Vec<Usize*>*
     enum ScopeItemKind item_kind;
     enum ScopeKind kind;
-    bool is_checked;
 } ScopdId;
 
 /**
  *
  * @brief Construct the Scope type.
  */
-inline struct Scope
+inline struct Scope *
 __new__Scope(const Str filename,
              struct String *name,
              struct Vec *id,
              enum ScopeItemKind item_kind,
              enum ScopeKind kind)
 {
-    struct Scope self = { .filename = filename,
-                          .name = name,
-                          .id = id,
-                          .item_kind = item_kind,
-                          .kind = kind,
-                          .is_checked = false };
-
+    struct Scope *self = malloc(sizeof(struct Scope));
+    self->filename = filename;
+    self->name = name;
+    self->id = id;
+    self->item_kind = item_kind;
+    self->kind = kind;
     return self;
 }
 
@@ -63,9 +61,10 @@ __new__Scope(const Str filename,
  * @brief Free the Scope type.
  */
 inline void
-__free__Scope(struct Scope scope)
+__free__Scope(struct Scope *scope)
 {
-    FREE(Vec, scope.id);
+    FREE(Vec, scope->id);
+    free(scope);
 }
 
 enum Visibility
@@ -90,8 +89,7 @@ typedef struct DataTypeSymbol
         struct Tuple
           *lambda; // struct Tuple<struct Vec*, struct DataTypeSymbol*>*
         struct Tuple *array;  // struct Tuple<struct DataTypeSymbol*, Usize*>*
-        struct Tuple *custom; // struct Tuple<struct String&, struct Vec<struct
-                              // GenericParams*>*>*
+        struct Vec *custom; // struct Vec<struct DataTypeSymbol*>*
         struct Vec *tuple;    // struct Vec<struct DataTypeSymbol*>*
     } value;
 } DataTypeSymbol;
@@ -152,8 +150,7 @@ __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
  * @brief Construct the DataTypeSymbol type (Custom variant).
  */
 struct DataTypeSymbol *
-__new__DataTypeSymbolCustom(struct String *name,
-                            struct Vec *generic_params,
+__new__DataTypeSymbolCustom(struct Vec *generic_params,
                             struct Scope *scope);
 
 /**
@@ -305,7 +302,7 @@ __free__FunParamSymbol(struct FunParamSymbol *self);
 typedef struct FunSymbol
 {
     struct String *name;        // struct String&
-    struct Vec *tagged_type;    // struct Vec<struct Tuple<struct DataTypeSymbol*, struct Location&>>*
+    struct Vec *tagged_type;    // struct Vec<struct Tuple<struct DataTypeSymbol*, struct Location&>*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
     enum Visibility visibility;
@@ -576,7 +573,7 @@ inline void
 __free__ErrorSymbol(struct ErrorSymbol *self)
 {
     FREE(DataTypeSymbolAll, self->data_type);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1222,8 +1219,8 @@ typedef struct ExprSymbol
         struct BinaryOpSymbol binary_op;
         struct FunCallSymbol fun_call;
         struct RecordCallSymbol record_call;
-        struct Scope identifier;
-        struct Scope identifier_access;
+        struct Scope *identifier;
+        struct Scope *identifier_access;
         struct ArrayAccessSymbol array_access;
         struct TupleAccessSymbol tuple_access;
         struct LambdaSymbol lambda;
@@ -1233,9 +1230,9 @@ typedef struct ExprSymbol
         struct ExprSymbol *try;
         // struct IfCond
         struct Vec *block; // struct Vec<struct SymbolTable*>*
-        struct Scope question_mark;
-        struct Scope dereference;
-        struct Scope ref;
+        struct Scope *question_mark;
+        struct Scope *dereference;
+        struct Scope *ref;
         struct LiteralSymbol literal;
         struct VariableSymbol *variable;
     } value;
@@ -1282,7 +1279,7 @@ __new__ExprSymbolRecordCall(struct Expr expr,
  * @brief Construct the ExprSymbol type (Identifier variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolIdentifier(struct Expr expr, struct Scope identifier);
+__new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier);
 
 /**
  *
@@ -1290,7 +1287,7 @@ __new__ExprSymbolIdentifier(struct Expr expr, struct Scope identifier);
  */
 struct ExprSymbol *
 __new__ExprSymbolIdentifierAccess(struct Expr expr,
-                                  struct Scope identifier_access);
+                                  struct Scope *identifier_access);
 
 /**
  *
@@ -1355,21 +1352,21 @@ __new__ExprSymbolBlock(struct Expr expr, struct Vec *block);
  * @brief Construct the ExprSymbol type (QuestionMark variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope question_mark);
+__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope *question_mark);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Dereference variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolDereference(struct Expr expr, struct Scope dereference);
+__new__ExprSymbolDereference(struct Expr expr, struct Scope *dereference);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Ref variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolRef(struct Expr expr, struct Scope ref);
+__new__ExprSymbolRef(struct Expr expr, struct Scope *ref);
 
 /**
  *

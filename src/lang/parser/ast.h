@@ -53,8 +53,7 @@ typedef struct DataType
         struct Tuple *lambda; // struct Tuple<struct Vec*, struct DataType*>*
         struct Tuple *array;  // struct Tuple<struct Option<struct DataType*>*,
                               // struct Option<Usize*>*>*
-        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct Vec<struct
-                              // GenericParams*>*>*
+        struct Tuple *custom; // struct Tuple<struct Vec<String&>*, struct Vec<struct DataType*>*>*
         struct Vec *tuple;    // struct Vec<struct DataType*>*
     } value;
 } DataType;
@@ -113,7 +112,7 @@ __new__DataTypeArray(struct Option *data_type, struct Option *size);
  * @brief Construct DataType type (Custom variant).
  */
 struct DataType *
-__new__DataTypeCustom(struct Vec *names, struct Option *generic_params);
+__new__DataTypeCustom(struct Vec *names, struct Vec *generic_params);
 
 /**
  *
@@ -216,6 +215,7 @@ typedef struct Generic
 {
     enum GenericKind kind;
     struct Location loc;
+
     union
     {
         struct String *data_type; // struct String&

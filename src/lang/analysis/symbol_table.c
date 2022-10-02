@@ -73,14 +73,12 @@ __new__DataTypeSymbolArray(struct DataTypeSymbol *data_type,
 }
 
 struct DataTypeSymbol *
-__new__DataTypeSymbolCustom(struct String *name,
-                            struct Vec *generic_params,
-                            struct Scope *scope)
+__new__DataTypeSymbolCustom(struct Vec *generic_params, struct Scope *scope)
 {
     struct DataTypeSymbol *self = malloc(sizeof(struct DataTypeSymbol));
     self->kind = DataTypeKindCustom;
     self->scope = scope;
-    self->value.custom = NEW(Tuple, 2, name, generic_params);
+    self->value.custom = generic_params;
     return self;
 }
 
@@ -150,9 +148,13 @@ __free__DataTypeSymbolArray(struct DataTypeSymbol *self)
 void
 __free__DataTypeSymbolCustom(struct DataTypeSymbol *self)
 {
-    TODO("generic params");
-    FREE(Vec, self->value.custom->items[1]);
-    FREE(Tuple, self->value.custom);
+    if (self->value.custom != NULL) {
+        for (Usize i = len__Vec(*self->value.custom); i--;)
+            FREE(DataTypeSymbolAll, get__Vec(*self->value.custom, i));
+
+        FREE(Vec, self->value.custom);
+    }
+
     free(self);
 }
 
@@ -280,7 +282,7 @@ __new__ExprSymbolRecordCall(struct Expr expr,
 }
 
 struct ExprSymbol *
-__new__ExprSymbolIdentifier(struct Expr expr, struct Scope identifier)
+__new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -291,7 +293,7 @@ __new__ExprSymbolIdentifier(struct Expr expr, struct Scope identifier)
 
 struct ExprSymbol *
 __new__ExprSymbolIdentifierAccess(struct Expr expr,
-                                  struct Scope identifier_access)
+                                  struct Scope *identifier_access)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -383,7 +385,7 @@ __new__ExprSymbolBlock(struct Expr expr, struct Vec *block)
 }
 
 struct ExprSymbol *
-__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope question_mark)
+__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope *question_mark)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -393,7 +395,7 @@ __new__ExprSymbolQuestionMark(struct Expr expr, struct Scope question_mark)
 }
 
 struct ExprSymbol *
-__new__ExprSymbolDereference(struct Expr expr, struct Scope dereference)
+__new__ExprSymbolDereference(struct Expr expr, struct Scope *dereference)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -403,7 +405,7 @@ __new__ExprSymbolDereference(struct Expr expr, struct Scope dereference)
 }
 
 struct ExprSymbol *
-__new__ExprSymbolRef(struct Expr expr, struct Scope ref)
+__new__ExprSymbolRef(struct Expr expr, struct Scope *ref)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
     self->kind = expr.kind;
@@ -738,8 +740,11 @@ void
 __free__FunSymbol(struct FunSymbol *self)
 {
     if (self->tagged_type != NULL) {
-        for (Usize i = len__Vec(*self->tagged_type); i--;)
-            FREE(DataTypeSymbolAll, ((struct Tuple*)self->tagged_type)->items[0]);
+        for (Usize i = len__Vec(*self->tagged_type); i--;) {
+            FREE(DataTypeSymbolAll,
+                 ((struct Tuple *)get__Vec(*self->tagged_type, i))->items[0]);
+            FREE(Tuple, get__Vec(*self->tagged_type, i));
+        }
 
         FREE(Vec, self->tagged_type);
     }
@@ -761,7 +766,7 @@ __free__FunSymbol(struct FunSymbol *self)
         FREE(Vec, self->body);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -782,7 +787,7 @@ void
 __free__ConstantSymbol(struct ConstantSymbol *self)
 {
     FREE(ExprSymbolAll, self->expr_symbol);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -805,7 +810,7 @@ __free__ModuleSymbol(struct ModuleSymbol *self)
         FREE(SymbolTableAll, get__Vec(*self->body, i));
 
     FREE(Vec, self->body);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -826,7 +831,7 @@ void
 __free__AliasSymbol(struct AliasSymbol *self)
 {
     FREE(DataTypeSymbolAll, self->data_type);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -873,7 +878,7 @@ __free__RecordSymbol(struct RecordSymbol *self)
         FREE(Vec, self->fields);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
 
     free(self);
 }
@@ -909,7 +914,7 @@ __free__RecordObjSymbol(struct RecordObjSymbol *self)
         FREE(Vec, self->attached);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -951,7 +956,7 @@ __free__EnumSymbol(struct EnumSymbol *self)
     if (self->type_value != NULL)
         FREE(DataTypeSymbolAll, self->type_value);
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -989,7 +994,7 @@ __free__EnumObjSymbol(struct EnumObjSymbol *self)
     }
 
     FREE(DataTypeSymbol, self->type_value);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1044,7 +1049,7 @@ __free__MethodSymbol(struct MethodSymbol *self)
         FREE(Vec, self->body);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1066,7 +1071,7 @@ __free__PropertySymbol(struct PropertySymbol *self)
     if (self->data_type != NULL)
         FREE(DataTypeSymbolAll, self->data_type);
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1109,7 +1114,7 @@ __free__ClassSymbol(struct ClassSymbol *self)
         FREE(Vec, self->body);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1136,7 +1141,7 @@ __free__PrototypeSymbol(struct PrototypeSymbol *self)
 
     FREE(Vec, self->params_type);
     FREE(DataTypeSymbolAll, self->return_type);
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1171,7 +1176,7 @@ __free__TraitSymbol(struct TraitSymbol *self)
         FREE(Vec, self->body);
     }
 
-    FREE(Scope, *self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 

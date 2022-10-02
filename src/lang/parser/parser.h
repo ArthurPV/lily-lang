@@ -11,8 +11,6 @@ typedef struct ParseBlock
     struct Token *current; // struct Token&
     struct Vec *disable_warning; // struct Vec<Str>*
     Usize pos;
-    Usize count_error;
-    Usize count_warning;
 } ParseBlock;
 
 /**

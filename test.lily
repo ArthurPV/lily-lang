@@ -1,1 +1,1 @@
-fun #(F, F.F[T]) add = 3;
+fun #(F) add = 3;

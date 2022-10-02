@@ -226,6 +226,9 @@
             break;                                                         \
     }
 
+static Usize count_error = 0;
+static Usize count_warning = 0;
+
 static struct ParseContext *
 get_block(struct ParseBlock *self, bool in_module);
 static inline void
@@ -473,9 +476,7 @@ __new__ParseBlock(struct Scanner scanner)
                                .current =
                                  &*(struct Token *)get__Vec(*scanner.tokens, 0),
                                .disable_warning = NEW(Vec, sizeof(Str)),
-                               .pos = 0,
-                               .count_error = 0,
-                               .count_warning = 0 };
+                               .pos = 0 };
 
     return self;
 }
@@ -790,9 +791,9 @@ run__ParseBlock(struct ParseBlock *self)
             push__Vec(self->blocks, block);
     }
 
-    if (self->count_error > 0) {
-        emit__Summary(self->count_error,
-                      self->count_warning,
+    if (count_error > 0) {
+        emit__Summary(count_error,
+                      count_warning,
                       "the parse block phase has been failed");
         exit(1);
     }
@@ -2685,7 +2686,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct String *detail_msg,
                                struct Option *help)
 {
-    self->count_error += 1;
+    count_error += 1;
     return NEW(
       DiagnosticWithErr, err, loc, self->scanner.src->file, detail_msg, help);
 }
@@ -2697,7 +2698,7 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct String *detail_msg,
                                 struct Option *help)
 {
-    self->count_warning += 1;
+    count_warning += 1;
     return NEW(
       DiagnosticWithWarn, warn, loc, self->scanner.src->file, detail_msg, help);
 }
@@ -3191,9 +3192,9 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                           warn, self.parse_block.disable_warning);
                     }
 
-                    data_type = NEW(DataTypeCustom, names, Some(data_types));
+                    data_type = NEW(DataTypeCustom, names, data_types);
                 } else
-                    data_type = NEW(DataTypeCustom, names, None());
+                    data_type = NEW(DataTypeCustom, names, NULL);
             }
 
             free(identifier_str);
@@ -3411,7 +3412,7 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
                               parse_decl->previous->loc->s_line,
                               parse_decl->previous->loc->s_col);
 
-                push__Vec(tags, NEW(Tuple, 2, data_type, &loc));
+                push__Vec(tags, NEW(Tuple, 2, data_type, copy__Location(&loc)));
 
                 break;
             }

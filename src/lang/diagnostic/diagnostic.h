@@ -103,6 +103,7 @@ enum LilyErrorKind
     LilyErrorUnexpectedSelfParamInFunction,
     LilyErrorDupliateSelfParam,
     LilyErrorSelfParamMustBeTheFirstParam,
+    LilyErrorUnknownDataType
 };
 
 typedef struct LilyError

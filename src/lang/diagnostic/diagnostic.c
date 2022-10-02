@@ -251,6 +251,8 @@ lily_error_to_string(struct LilyError err)
             return from__String("unexpected self param in function");
         case LilyErrorSelfParamMustBeTheFirstParam:
             return from__String("the self param must be in first");
+        case LilyErrorUnknownDataType:
+            return format("unknown data type: `{S}`", err.s);
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -391,6 +393,8 @@ get_code_of_lily_error(struct LilyError err)
             return "0056";
         case LilyErrorSelfParamMustBeTheFirstParam:
             return "0057";
+        case LilyErrorUnknownDataType:
+            return "0058";
         default:
             UNREACHABLE("unknown lily error kind");
     }

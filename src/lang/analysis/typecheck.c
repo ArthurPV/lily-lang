@@ -1,8 +1,11 @@
+#include <base/format.h>
 #include <base/macros.h>
+#include <base/string.h>
 #include <lang/analysis/symbol_table.h>
 #include <lang/analysis/typecheck.h>
 #include <lang/builtin/builtin.h>
 #include <lang/builtin/builtin_c.h>
+#include <lang/diagnostic/diagnostic.h>
 #include <lang/parser/ast.h>
 
 static Usize pos = 0;
@@ -20,6 +23,42 @@ static Usize current_trait_id = 0;
 static Usize current_record_obj_id = 0;
 static Usize current_enum_obj_id = 0;
 
+static Int128 MinUInt8 = 0x0;
+static Int128 MaxUInt8 = 0xFF;
+static Int128 MinUInt16 = 0x100;
+static Int128 MaxUInt16 = 0xFFFF;
+static Int128 MinUInt32 = 0x10000;
+static Int128 MaxUInt32 = 0xFFFFFFFF;
+static Int128 MinUInt64 = 0x100000000;
+static Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
+
+static Int128 MinInt8 = -0x80;
+static Int128 MaxInt8 = 0x7F;
+static Int128 MinInt16 = -0x8000;
+static Int128 MaxInt16 = 0x7FFF;
+static Int128 MinInt32 = -0x80000000;
+static Int128 MaxInt32 = 0x7FFFFFFF;
+static Int128 MinInt64 = -0x8000000000000000;
+static Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
+
+static inline struct Diagnostic *
+__new__DiagnosticWithErrTypecheck(struct Typecheck *self,
+                                  struct LilyError *err,
+                                  struct Location loc,
+                                  struct String *detail_msg,
+                                  struct Option *help);
+static inline struct Diagnostic *
+__new__DiagnosticWithWarnTypecheck(struct Typecheck *self,
+                                   struct LilyWarning *warn,
+                                   struct Location loc,
+                                   struct String *detail_msg,
+                                   struct Option *help);
+static inline struct Diagnostic *
+__new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
+                                   struct String *note,
+                                   struct Location loc,
+                                   struct String *detail_msg,
+                                   struct Option *help);
 static void
 push_all_symbols(struct Typecheck *self);
 static void
@@ -28,21 +67,12 @@ static Usize *
 search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
-static inline struct DataType *
-get_data_type_of_expr_symbol(struct ExprSymbol *symb);
-static struct SymbolTable *
-check_function(struct Decl decl);
-static struct ExprSymbol *
-check_variable(struct Expr expr);
-static inline void
-verify_expr_data_type(struct Expr expr,
-                      struct DataType *already_defined_data_type);
-static inline struct DataType *
-infer_on_integer(struct Expr expr);
-static inline struct DataType *
-expr_to_data_type(struct Expr expr, struct DataType *already_defined_data_type);
-static inline struct ExprSymbol *
-expr_to_symbol(struct Expr expr, struct DataType *already_defined_data_type);
+static struct DataTypeSymbol *
+check_data_type(struct Typecheck *self,
+                struct Location data_type_loc,
+                struct DataType *data_type,
+                struct Vec *local_data_type,
+                bool must_object);
 
 struct Typecheck
 __new__Typecheck(struct Parser parser)
@@ -160,6 +190,53 @@ __free__Typecheck(struct Typecheck self)
     }
 
     FREE(Parser, self.parser);
+}
+
+static inline struct Diagnostic *
+__new__DiagnosticWithErrTypecheck(struct Typecheck *self,
+                                  struct LilyError *err,
+                                  struct Location loc,
+                                  struct String *detail_msg,
+                                  struct Option *help)
+{
+    count_error += 1;
+    return NEW(DiagnosticWithErr,
+               err,
+               loc,
+               self->parser.parse_block.scanner.src->file,
+               detail_msg,
+               help);
+}
+
+static inline struct Diagnostic *
+__new__DiagnosticWithWarnTypecheck(struct Typecheck *self,
+                                   struct LilyWarning *warn,
+                                   struct Location loc,
+                                   struct String *detail_msg,
+                                   struct Option *help)
+{
+    count_warning += 1;
+    return NEW(DiagnosticWithWarn,
+               warn,
+               loc,
+               self->parser.parse_block.scanner.src->file,
+               detail_msg,
+               help);
+}
+
+static inline struct Diagnostic *
+__new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
+                                   struct String *note,
+                                   struct Location loc,
+                                   struct String *detail_msg,
+                                   struct Option *help)
+{
+    return NEW(DiagnosticWithNote,
+               note,
+               loc,
+               self->parser.parse_block.scanner.src->file,
+               detail_msg,
+               help);
 }
 
 #define NEXT_DECL()                                                      \
@@ -286,60 +363,51 @@ check_symbols(struct Typecheck *self)
     while (pos < len__Vec(*self->parser.decls)) {
         switch (self->decl->kind) {
             case DeclKindFun: {
-                void *items[1] = { (Usize *)current_fun_id };
-                struct Scope scope =
+                struct Vec *scope_id = NEW(Vec, sizeof(Usize));
+
+                push__Vec(scope_id, (Usize *)current_fun_id);
+
+                struct Scope *scope =
                   NEW(Scope,
                       self->parser.parse_block.scanner.src->file.name,
                       get__Vec(*self->funs, current_fun_id),
-                      from__Vec(items, sizeof(Usize), 1),
+                      scope_id,
                       ScopeItemKindFun,
                       ScopeKindGlobal);
                 struct FunSymbol *fun_symbol =
                   ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id));
                 struct FunDecl *fun_decl = fun_symbol->fun_decl->value.fun;
+                struct Vec *tagged_type = NULL;
 
-                {
-                    struct Vec *id = NEW(Vec, sizeof(Usize));
+                if (fun_decl->tags != NULL) {
+                    if (len__Vec(*fun_decl->tags) > 0) {
+                        tagged_type = NEW(Vec, sizeof(struct Tuple));
 
-                    for (Usize i = len__Vec(*fun_decl->tags); i--;) {
-                        struct Tuple *data_type_tuple =
-                          get__Vec(*fun_decl->tags, i);
-                        struct DataType *data_type = data_type_tuple->items[0];
-
-                        if (len__Vec((*(struct Vec *)data_type->value.custom
-                                         ->items[0])) == 1) {
-                            Usize *id_enums_obj = search_in_enums_obj_from_name(
+                        for (Usize i = len__Vec(*fun_decl->tags); i--;) {
+                            struct Tuple *current =
+                              get__Vec(*fun_decl->tags, i);
+                            struct DataTypeSymbol *dts = check_data_type(
                               self,
-                              get__Vec((*(struct Vec *)
-                                           data_type->value.custom->items[0]),
-                                       0));
-                            Usize *id_records_obj =
-                              id_enums_obj == NULL
-                                ? search_in_records_obj_from_name(
-                                    self,
-                                    get__Vec((*(struct Vec *)data_type->value
-                                                 .custom->items[0]),
-                                             0))
-                                : NULL;
+                              *(struct Location *)current->items[1],
+                              current->items[0],
+                              NULL,
+                              true);
 
-                            if (id_enums_obj == NULL && id_records_obj == NULL)
-                                assert(0 && "error");
-                            else if (id_enums_obj != NULL)
-                                push__Vec(id, id_enums_obj);
-                            else if (id_records_obj != NULL)
-                                push__Vec(id, id_records_obj);
+                            if (dts != NULL)
+                                push__Vec(tagged_type, dts);
                         }
                     }
                 }
 
-                scope.is_checked = true;
-                fun_symbol->scope = &scope;
+                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
+                  ->scope = scope;
+                ((struct FunSymbol *)get__Vec(*self->funs, current_fun_id))
+                  ->tagged_type = tagged_type;
                 ++current_fun_id;
 
                 break;
             }
             default:
-                Println("{d}", self->decl->kind);
                 TODO("check symbols");
         }
 
@@ -379,170 +447,129 @@ search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct SymbolTable *
-check_function(struct Decl decl)
+static struct DataTypeSymbol *
+check_data_type(struct Typecheck *self,
+                struct Location data_type_loc,
+                struct DataType *data_type,
+                struct Vec *local_data_type,
+                bool must_object)
 {
-}
+    struct Vec *id = NULL;
 
-static inline struct DataType *
-get_data_type_of_expr_symbol(struct ExprSymbol *symb)
-{
-    switch (symb->kind) {
-        case ExprKindUnaryOp:
-            return symb->value.unary_op.data_type;
-        case ExprKindBinaryOp:
-            return symb->value.binary_op.data_type;
-        case ExprKindFunCall:
-            return symb->value.fun_call.data_type;
-        default:
-            TODO("");
-    }
-}
+    if (must_object) {
+        switch (data_type->kind) {
+            case DataTypeKindCustom: {
+                if (len__Vec(
+                      *(struct Vec *)data_type->value.custom->items[0]) == 1) {
+                    Usize *id_enums_obj = search_in_enums_obj_from_name(
+                      self,
+                      get__Vec(
+                        (*(struct Vec *)data_type->value.custom->items[0]), 0));
+                    Usize *id_records_obj =
+                      id_enums_obj == NULL
+                        ? search_in_records_obj_from_name(
+                            self,
+                            get__Vec((*(struct Vec *)
+                                         data_type->value.custom->items[0]),
+                                     0))
+                        : NULL;
+                    struct Vec *generic_params = NULL;
 
-static struct ExprSymbol *
-check_variable(struct Expr expr)
-{
-    struct ExprSymbol *var_expr = NULL;
-    struct DataType *var_dt = NULL;
+                    if (data_type->value.custom->items[1] == NULL) {
+                    return_data_type : {
+                        if (id_enums_obj == NULL && id_records_obj == NULL) {
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorUnknownDataType),
+                                  data_type_loc,
+                                  from__String(""),
+                                  None());
 
-    if (is_Some__Option(expr.value.variable.data_type))
-        var_expr = expr_to_symbol(*expr.value.variable.expr,
-                                  get__Option(expr.value.variable.data_type));
-    else
-        var_expr = expr_to_data_type(*expr.value.variable.expr, NULL);
+                            err->err->s =
+                              format("{S}",
+                                     (struct String *)get__Vec(
+                                       (*(struct Vec *)
+                                           data_type->value.custom->items[0]),
+                                       0));
 
-    if (var_dt == NULL)
-        var_dt = copy__DataType(get_data_type_of_expr_symbol(var_expr));
-}
+                            emit__Diagnostic(err);
 
-static inline void
-verify_expr_data_type(struct Expr expr,
-                      struct DataType *already_defined_data_type)
-{
-    switch (expr.kind) {
-        case ExprKindLiteral: {
-            switch (expr.kind) {
-                case LiteralKindBool:
-                    if (already_defined_data_type->kind != DataTypeKindBool)
-                        assert(0 && "error");
-                    break;
-                default:
-                    TODO("");
-            }
-        }
-        default:
-            TODO("");
-    }
-}
+                            return NULL;
+                        } else if (id_enums_obj != NULL) {
+                            id = NEW(Vec, sizeof(Usize));
 
-static Int128 MinUInt8 = 0x0;
-static Int128 MaxUInt8 = 0xFF;
-static Int128 MinUInt16 = 0x100;
-static Int128 MaxUInt16 = 0xFFFF;
-static Int128 MinUInt32 = 0x10000;
-static Int128 MaxUInt32 = 0xFFFFFFFF;
-static Int128 MinUInt64 = 0x100000000;
-static Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
+                            push__Vec(id, id_enums_obj);
 
-static Int128 MinInt8 = -0x80;
-static Int128 MaxInt8 = 0x7F;
-static Int128 MinInt16 = -0x8000;
-static Int128 MaxInt16 = 0x7FFF;
-static Int128 MinInt32 = -0x80000000;
-static Int128 MaxInt32 = 0x7FFFFFFF;
-static Int128 MinInt64 = -0x8000000000000000;
-static Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
+                            return NEW(
+                              DataTypeSymbolCustom,
+                              generic_params,
+                              NEW(
+                                Scope,
+                                self->parser.parse_block.scanner.src->file.name,
+                                (struct String *)get__Vec(
+                                  (*(struct Vec *)
+                                      data_type->value.custom->items[0]),
+                                  0),
+                                id,
+                                ScopeItemKindEnumObj,
+                                ScopeKindGlobal));
+                        } else if (id_records_obj != NULL) {
+                            id = NEW(Vec, sizeof(Usize));
 
-static inline struct DataType *
-infer_on_integer(struct Expr expr)
-{
-    switch (expr.value.literal.kind) {
-        case LiteralKindInt32:
-            if (expr.value.literal.value.int32 >= MinInt8 &&
-                expr.value.literal.value.int32 <= MaxInt8)
-                return NEW(DataType, DataTypeKindI8);
-            else if (expr.value.literal.value.int32 >= MinInt16 &&
-                     expr.value.literal.value.int32 <= MaxInt16)
-                return NEW(DataType, DataTypeKindI16);
-            else
-                return NEW(DataType, DataTypeKindI32);
-        case LiteralKindInt64:
-            return NEW(DataType, DataTypeKindI64);
-        case LiteralKindInt128:
-            return NEW(DataType, DataTypeKindI128);
-    }
-}
+                            push__Vec(id, id_records_obj);
 
-static inline struct DataType *
-expr_to_data_type(struct Expr expr, struct DataType *already_defined_data_type)
-{
-    switch (expr.kind) {
-        case ExprKindUnaryOp: {
-            switch (expr.value.unary_op.kind) {
-                case UnaryOpKindNegative: {
-                    struct DataType *already = NEW(DataType, DataTypeKindBool);
-
-                    verify_expr_data_type(*expr.value.unary_op.right, already);
-
-                    return already;
-                }
-                case UnaryOpKindNot: {
-                    struct DataType *already = NEW(DataType, DataTypeKindBool);
-
-                    verify_expr_data_type(*expr.value.unary_op.right, already);
-
-                    return already;
-                }
-                case UnaryOpKindReference: {
-                    break;
-                }
-            }
-            break;
-        }
-        case ExprKindLiteral: {
-            switch (expr.value.literal.kind) {
-                case LiteralKindBool:
-                    return NEW(DataType, DataTypeKindBool);
-                case LiteralKindChar:
-                    return NEW(DataType, DataTypeKindChar);
-                case LiteralKindBitChar:
-                    assert(0 && "todo");
-                case LiteralKindInt32: {
-                    if (already_defined_data_type != NULL) {
-                        switch (already_defined_data_type->kind) {
-                            case DataTypeKindI32:
-                            case DataTypeKindI16:
-                            case DataTypeKindI8:
-                                return already_defined_data_type;
-                            default:
-                                assert(0 && "error");
+                            return NEW(
+                              DataTypeSymbolCustom,
+                              generic_params,
+                              NEW(
+                                Scope,
+                                self->parser.parse_block.scanner.src->file.name,
+                                (struct String *)get__Vec(
+                                  (*(struct Vec *)
+                                      data_type->value.custom->items[0]),
+                                  0),
+                                id,
+                                ScopeItemKindRecordObj,
+                                ScopeKindGlobal));
                         }
-                    } else
-                        return infer_on_integer(expr);
+                    }
+                    } else {
+                        generic_params =
+                          NEW(Vec, sizeof(struct DataTypeSymbol));
+
+                        for (Usize i = len__Vec(*(struct Vec *)data_type->value
+                                                   .custom->items[1]);
+                             i--;) {
+                            struct DataType *current = get__Vec(
+                              *(struct Vec *)data_type->value.custom->items[1],
+                              i);
+                            push__Vec(generic_params,
+                                      check_data_type(self,
+                                                      data_type_loc,
+                                                      current,
+                                                      local_data_type,
+                                                      false));
+                        }
+
+                        goto return_data_type;
+                    }
                 }
-                default:
-                    TODO("")
+                break;
+            }
+            default: {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrTypecheck,
+                      self,
+                      NEW(LilyError, LilyErrorExpectedUserDefinedDataType),
+                      data_type_loc,
+                      from__String(""),
+                      None());
+
+                emit__Diagnostic(err);
+
+                return NULL;
             }
         }
-        default:
-            break;
-    }
-}
-
-static inline struct ExprSymbol *
-expr_to_symbol(struct Expr expr, struct DataType *already_defined_data_type)
-{
-    switch (expr.kind) {
-        case ExprKindUnaryOp: {
-            struct ExprSymbol *right = expr_to_symbol(
-              *expr.value.unary_op.right, already_defined_data_type);
-            struct DataType *dt =
-              expr_to_data_type(expr, already_defined_data_type);
-
-            /* return NEW(
-              ExprSymbolUnary, expr, NEW(UnaryOpSymbol, expr, dt, right)); */
-        }
-        default:
-            TODO("");
     }
 }
