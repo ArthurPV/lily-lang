@@ -360,6 +360,16 @@ __new__ExprSymbolIdentifierAccess(struct Expr expr,
 }
 
 struct ExprSymbol *
+__new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access)
+{
+    struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
+    self->kind = expr.kind;
+    self->loc = expr.loc;
+    self->value.global_access = global_access;
+    return self;
+}
+
+struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
                              struct ArrayAccessSymbol array_access)
 {

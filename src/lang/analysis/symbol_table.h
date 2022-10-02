@@ -1362,6 +1362,7 @@ typedef struct ExprSymbol
         struct RecordCallSymbol record_call;
         struct Scope *identifier;
         struct Scope *identifier_access;
+        struct Scope *global_access;
         struct ArrayAccessSymbol array_access;
         struct TupleAccessSymbol tuple_access;
         struct LambdaSymbol lambda;
@@ -1433,6 +1434,13 @@ __new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier);
 struct ExprSymbol *
 __new__ExprSymbolIdentifierAccess(struct Expr expr,
                                   struct Scope *identifier_access);
+
+/**
+ *
+ * @brief Construct the ExprSymbol type (GlobalAccess variant).
+ */
+struct ExprSymbol *
+__new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access);
 
 /**
  *
@@ -1610,6 +1618,17 @@ inline void
 __free__ExprSymbolIdentifierAccess(struct ExprSymbol *self)
 {
     FREE(Scope, self->value.identifier_access);
+    free(self);
+}
+
+/**
+ *
+ * @brief Free the ExprSymbol type (GlobalAccess variant).
+ */
+inline void
+__free__ExprSymbolGlobalAccess(struct ExprSymbol *self)
+{
+    FREE(Scope, self->value.global_access);
     free(self);
 }
 

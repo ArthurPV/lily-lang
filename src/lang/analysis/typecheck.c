@@ -85,7 +85,10 @@ check_symbols(struct Typecheck *self);
 static struct ModuleSymbol *
 entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx);
 static struct Scope *
-search_from_access(struct Typecheck *self, struct Vec *name, struct SearchModuleContext);
+search_from_access(struct Typecheck *self,
+                   struct Expr *id,
+                   struct Vec *name,
+                   struct SearchModuleContext search_module_context);
 static struct Scope *
 search_in_modules_from_name(struct Typecheck *self,
                             struct Vec *name,
@@ -681,8 +684,19 @@ entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx)
 }
 
 static struct Scope *
-search_from_access(struct Typecheck *self, struct Vec *name, struct SearchModuleContext)
+search_from_access(struct Typecheck *self,
+                   struct Expr *id,
+                   struct Vec *name,
+                   struct SearchModuleContext search_module_context)
 {
+    switch (id->kind) {
+        case ExprKindGlobalAccess:
+            break;
+        case ExprKindIdentifierAccess:
+            break;
+        default:
+            UNREACHABLE("");
+    }
 }
 
 static struct Scope *
@@ -750,40 +764,53 @@ search_in_modules_from_name(struct Typecheck *self,
     }
 
     if (len__Vec(*name) == 1) {
-        Usize *end_idx_scope_id = NULL;
 
-        DEFINE_END_INDEX();
+        if (id->kind == ExprKindIdentifier) {
+            Usize *end_idx_scope_id = NULL;
 
-        for (Usize i = (Usize)(UPtr)end_idx_scope_id; i--;) {
-            struct ModuleSymbol *current_module =
-              entry_in_module(self, scope->id, i);
+            DEFINE_END_INDEX();
 
-            if (current_module != NULL) {
-                for (Usize j = len__Vec(*current_module->body); j--;) {
-                    if (eq__String(get_name__SymbolTable(
-                                     get__Vec(*current_module->body, j)),
-                                   get__Vec(*name, 0),
-                                   false)) {
-                        FREE(Vec, name);
-                        VALID_CONTEXT(((struct SymbolTable *)get__Vec(
-                                         *current_module->body, j))
-                                        ->kind,
-                                      get_scope__SymbolTable(
-                                        get__Vec(*current_module->body, j));)
+            for (Usize i = (Usize)(UPtr)end_idx_scope_id; i--;) {
+                struct ModuleSymbol *current_module =
+                  entry_in_module(self, scope->id, i);
+
+                if (current_module != NULL) {
+                    for (Usize j = len__Vec(*current_module->body); j--;) {
+                        if (eq__String(get_name__SymbolTable(
+                                         get__Vec(*current_module->body, j)),
+                                       get__Vec(*name, 0),
+                                       false)) {
+                            FREE(Vec, name);
+                            VALID_CONTEXT(((struct SymbolTable *)get__Vec(
+                                             *current_module->body, j))
+                                            ->kind,
+                                          get_scope__SymbolTable(get__Vec(
+                                            *current_module->body, j));)
+                        }
                     }
-                }
-            } else {
-                struct Scope *res = search_with_search_module_context(
-                  self, name, search_module_context);
+                } else {
+                    struct Scope *res = search_with_search_module_context(
+                      self, name, search_module_context);
 
-                if (res == NULL) {
-                    assert(0 && "error");
-                    return NULL;
-                }
+                    if (res == NULL) {
+                        assert(0 && "error");
+                        return NULL;
+                    }
 
-                return res;
+                    return res;
+                }
             }
-        }
+        } else if (id->kind == ExprKindGlobalAccess) {
+			struct Scope *res = search_with_search_module_context(self, name, search_module_context);
+
+			if (res == NULL) {
+				assert(0 && "error");
+				return NULL;
+			}
+
+			return res;
+		} else
+			UNREACHABLE("");
     } else {
     }
 
@@ -1179,7 +1206,8 @@ identifier_access_to_string_vec(struct Expr *id)
         push__Vec(name, id->value.identifier);
 
         return name;
-    } else if (id->kind == ExprKindIdentifierAccess) {
+    } else if (id->kind == ExprKindIdentifierAccess ||
+               id->kind == ExprKindGlobalAccess) {
         for (Usize i = 0; i < len__Vec(*id->value.identifier_access); i++) {
             struct Expr *temp = get__Vec(*id->value.identifier_access, i);
 

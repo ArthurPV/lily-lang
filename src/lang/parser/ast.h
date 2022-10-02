@@ -820,6 +820,7 @@ enum ExprKind
     ExprKindRecordCall,
     ExprKindIdentifier,
     ExprKindIdentifierAccess,
+	ExprKindGlobalAccess,
     ExprKindArrayAccess,
     ExprKindTupleAccess,
     ExprKindLambda,
@@ -854,6 +855,7 @@ typedef struct Expr
         struct RecordCall record_call;
         struct String *identifier;     // struct String&
         struct Vec *identifier_access; // struct Vec<struct Expr*>*
+		struct Vec *global_access; // struct Vec<struct Expr*>*
         struct ArrayAccess array_access;
         struct TupleAccess tuple_access;
         struct Lambda lambda;
@@ -919,6 +921,12 @@ __new__ExprIdentifier(struct String *identifier, struct Location loc);
  */
 struct Expr *
 __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc);
+
+/**
+ * @brief Construct the Expr type (GlobalAccess variant).
+ */
+struct Expr *
+__new__ExprGlobalAccess(struct Vec *global_access, struct Location loc);
 
 /**
  *
@@ -1103,6 +1111,13 @@ __free__ExprIdentifier(struct Expr *self)
  */
 void
 __free__ExprIdentifierAccess(struct Expr *self);
+
+/**
+ *
+ * @brief Free the Expr type (GlobalAccess variant).
+ */
+void
+__free__ExprGlobalAccess(struct Expr *self);
 
 /**
  *

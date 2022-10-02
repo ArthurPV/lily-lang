@@ -1132,6 +1132,16 @@ __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc)
 }
 
 struct Expr *
+__new__ExprGlobalAccess(struct Vec *global_access, struct Location loc)
+{
+	struct Expr *self = malloc(sizeof(struct Expr));
+	self->kind = ExprKindGlobalAccess;
+	self->loc = loc;
+	self->value.global_access = global_access;
+	return self;
+}
+
+struct Expr *
 __new__ExprArrayAccess(struct ArrayAccess array_access, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
@@ -1357,6 +1367,16 @@ __free__ExprIdentifierAccess(struct Expr *self)
 }
 
 void
+__free__ExprGlobalAccess(struct Expr *self)
+{
+    for (Usize i = len__Vec(*self->value.global_access); i--;)
+        FREE(ExprAll, get__Vec(*self->value.global_access, i));
+
+    FREE(Vec, self->value.global_access);
+    free(self);
+}
+
+void
 __free__ExprArray(struct Expr *self)
 {
     for (Usize i = len__Vec(*self->value.array); i--;)
@@ -1450,6 +1470,9 @@ __free__ExprAll(struct Expr *self)
         case ExprKindIdentifierAccess:
             FREE(ExprIdentifierAccess, self);
             break;
+		case ExprKindGlobalAccess:
+			FREE(ExprGlobalAccess, self);
+			break;
         case ExprKindArrayAccess:
             FREE(ExprArrayAccess, self);
             break;

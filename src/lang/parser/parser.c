@@ -4032,6 +4032,14 @@ exit_unary : {
             break;
         }
 
+		case TokenKindGlobalKw: {
+			struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+			expr = parse_identifier_access(self, parse_decl, loc, ids);
+
+			break;
+		}
+
         case TokenKindLParen: {
             if (verify_if_has_comma(*parse_decl, 0)) {
                 if (parse_decl->current->kind == TokenKindRParen) {
