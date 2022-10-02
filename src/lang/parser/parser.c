@@ -202,6 +202,16 @@
         case TokenKindForKw:                                                   \
         case TokenKindWhileKw:                                                 \
             assert(0 && "todo");                                               \
+        case TokenKindTryKw:                                                   \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_try_stmt(self, parse_decl, loc)));    \
+            break;                                                             \
+        case TokenKindMatchKw:                                                 \
+            struct MatchStmt *match =                                          \
+              parse_match_stmt(self, parse_decl, &loc);                        \
+            push__Vec(body, NEW(FunBodyItemStmt, NEW(StmtMatch, loc, match))); \
+            break;                                                             \
         default:                                                               \
             UNREACHABLE("");                                                   \
     }
@@ -213,8 +223,10 @@
         case TokenKindNextKw:                                              \
         case TokenKindBreakKw:                                             \
         case TokenKindIfKw:                                                \
+        case TokenKindTryKw:                                               \
         case TokenKindForKw:                                               \
         case TokenKindWhileKw:                                             \
+        case TokenKindMatchKw:                                             \
             next_token(parse_decl);                                        \
             PARSE_STMT(body);                                              \
                                                                            \
@@ -353,6 +365,12 @@ skip_container(struct ParseDecl parse_decl, Usize *pos);
 static bool
 verify_if_has_comma(struct ParseDecl parse_decl, Usize add);
 static struct Expr *
+parse_expr_binary_op(struct Parser self,
+                     struct ParseDecl *parse_decl,
+                     struct Expr *left,
+                     struct Location loc,
+                     Usize prec);
+static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
 static inline int *
 parse_unary_op(enum TokenKind kind);
@@ -406,10 +424,10 @@ static struct Stmt *
 parse_try_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc);
-static struct Stmt *
+static struct MatchStmt *
 parse_match_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
-                 struct Location loc);
+                 struct Location *loc);
 static struct Stmt *
 parse_while_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
@@ -3782,6 +3800,48 @@ verify_if_has_comma(struct ParseDecl parse_decl, Usize add)
 }
 
 static struct Expr *
+parse_expr_binary_op(struct Parser self,
+                     struct ParseDecl *parse_decl,
+                     struct Expr *left,
+                     struct Location loc,
+                     Usize prec)
+{
+    while (1) {
+        int *binary_op_kind = parse_binary_op(parse_decl->current->kind);
+        struct String *binary_op_string = NULL;
+        binary_op_string = &*parse_decl->current->lit;
+
+        if (binary_op_kind == NULL)
+            break;
+
+        Usize next_prec =
+          get_precedence__BinaryOpKind((enum BinaryOpKind)(UPtr)binary_op_kind);
+
+        if (next_prec > prec)
+            break;
+
+        if (next_prec < prec)
+            left = parse_expr_binary_op(self, parse_decl, left, loc, next_prec);
+        else {
+            next_token(parse_decl);
+            struct Expr *right = parse_primary_expr(self, parse_decl);
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+            left = NEW(ExprBinaryOp,
+                       NEW(BinaryOp,
+                           (enum BinaryOpKind)(UPtr)binary_op_kind,
+                           left,
+                           right,
+                           binary_op_string),
+                       loc);
+        }
+    }
+
+    return left;
+}
+
+static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Expr *expr = NULL;
@@ -4188,42 +4248,98 @@ exit_unary : {
         }
     }
 
-    int *binary_op = parse_binary_op(parse_decl->current->kind);
+    /* int *binary_op = parse_binary_op(parse_decl->current->kind);
     struct String *binop_string = NULL;
 
     if (binary_op != NULL) {
         if (binary_op == (int *)BinaryOpKindCustom)
             binop_string = parse_decl->current->lit;
 
-        next_token(parse_decl);
+        // next_token(parse_decl);
 
-        struct Expr *expr2 =
-          parse_primary_expr(self, parse_decl); // right value
+        struct Expr *left = expr;
+        Usize prec = get_precedence__Expr(expr);
+
+        // struct Expr *expr2 =
+          // parse_primary_expr(self, parse_decl); // right value
+
+        // struct Expr *left;
+        // struct Expr *right;
+
+        while (1) {
+            Usize next_prec = get_precedence__BinaryOpKind((enum
+    BinaryOpKind)(UPtr)binary_op);
+
+            if (next_prec > prec)
+                break;
+            if (next_prec < prec) {
+                next_token(parse_decl);
+                // left =
+            }
+        }
 
         end__Location(&loc,
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
-        struct Expr *left;
-        struct Expr *right;
+    if (expr2->kind == ExprKindBinaryOp) {
+            if (get_precedence__BinaryOpKind(
+                  (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind) >
+                get_precedence__BinaryOpKind(
+                  (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind)) {
+                expr = NEW(ExprBinaryOp,
+                           NEW(BinaryOp,
+                               (enum BinaryOpKind)(UPtr)(binary_op),
+                               expr,
+                               expr2,
+                               binop_string),
+                           loc);
+            } else {
+                left = expr2;
+                right = expr;
+                expr = NEW(ExprBinaryOp,
+                           NEW(BinaryOp,
+                               (enum BinaryOpKind)(UPtr)(binary_op),
+                               left,
+                               right,
+                               binop_string),
+                           loc);
+            }
+        } else {
+            return expr;
+        } */
 
-        if (get_precedence__Expr(expr2) <
-            get_precedence__BinaryOpKind((enum BinaryOpKind)(UPtr)binary_op)) {
-            left = expr2;
-            right = expr;
+    /* if (expr2->kind == ExprKindBinaryOp) {
+        if (get_precedence__BinaryOpKind(
+              (enum BinaryOpKind)(UPtr)expr2->value.binary_op.kind) <
+            get_precedence__BinaryOpKind(
+              (enum BinaryOpKind)(UPtr)binary_op)) {
+            switch ((enum BinaryOpKind)(UPtr)binary_op) {
+                case BinaryOpKindAdd:
+                case BinaryOpKindMul:
+                    left = expr2;
+                    right = expr;
+                    break;
+                default:
+                    left = expr;
+                    right = expr2;
+                    break;
+                left = expr2;
+                right = expr;
         } else {
             left = expr;
             right = expr2;
         }
-
-        return NEW(ExprBinaryOp,
-                   NEW(BinaryOp,
-                       (enum BinaryOpKind)(UPtr)(binary_op),
-                       left,
-                       right,
-                       binop_string),
-                   loc);
+    } else {
+        left = expr;
+        right = expr2;
     }
+
+    Println("{S}",
+            to_string__Expr(*expr));
+
+    return expr;
+} */
 
     return expr;
 }
@@ -4711,7 +4827,17 @@ parse_identifier_access(struct Parser self,
 static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
-    return parse_primary_expr(self, parse_decl);
+    struct Location loc = NEW(Location);
+
+    start__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    struct Expr *left = parse_primary_expr(self, parse_decl);
+
+    struct Expr *expr = parse_expr_binary_op(
+      self, parse_decl, left, loc, get_precedence__Expr(left));
+
+    return expr;
 }
 
 static struct Stmt *
@@ -4869,13 +4995,101 @@ parse_try_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc)
 {
+    next_token(parse_decl);
+
+    struct Vec *try_body = NEW(Vec, sizeof(struct FunBodyItem));
+    struct Option *catch_expr = NULL;
+    struct Option *catch_body = NULL;
+
+    while (parse_decl->current->kind != TokenKindEndKw &&
+           parse_decl->current->kind != TokenKindCatchKw) {
+        PARSE_BODY(try_body);
+    }
+
+    if (parse_decl->current->kind == TokenKindCatchKw) {
+        next_token(parse_decl);
+
+        struct Expr *expr = parse_expr(self, parse_decl);
+
+        if (expr->kind == ExprKindWildcard)
+            catch_expr = None();
+        else
+            catch_expr = Some(expr);
+
+        next_token(parse_decl);
+
+        struct Vec *catch_body_vec = NEW(Vec, sizeof(struct FunBodyItem));
+
+        while (parse_decl->current->kind != TokenKindEndKw) {
+            PARSE_BODY(catch_body_vec);
+        }
+
+        catch_body = Some(catch_body_vec);
+
+        next_token(parse_decl);
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(
+          StmtTry, loc, NEW(TryStmt, try_body, catch_expr, catch_body));
+    } else {
+        next_token(parse_decl);
+
+        catch_expr = None();
+        catch_body = None();
+
+        end__Location(&loc,
+                      parse_decl->current->loc->s_line,
+                      parse_decl->current->loc->s_col);
+
+        return NEW(
+          StmtTry, loc, NEW(TryStmt, try_body, catch_expr, catch_body));
+    }
 }
 
-static struct Stmt *
+static struct MatchStmt *
 parse_match_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
-                 struct Location loc)
+                 struct Location *loc)
 {
+    struct Expr *matching = parse_expr(self, parse_decl);
+    struct Vec *patterns = NEW(Vec, sizeof(struct Tuple));
+
+    next_token(parse_decl);
+
+    while (parse_decl->current->kind != TokenKindEndKw) {
+        struct Expr *pattern_match = parse_expr(self, parse_decl);
+        struct Expr *cond = NULL;
+
+        if (parse_decl->current->kind == TokenKindInterrogation) {
+            next_token(parse_decl);
+
+            cond = parse_expr(self, parse_decl);
+        }
+
+        if (parse_decl->current->kind != TokenKindFatArrow)
+            assert(0 && "error");
+        else
+            next_token(parse_decl);
+
+        struct Expr *pattern_expr = parse_expr(self, parse_decl);
+
+        push__Vec(patterns, NEW(Tuple, 3, pattern_match, cond, pattern_expr));
+
+        if (parse_decl->current->kind != TokenKindEndKw) {
+            if (parse_decl->current->kind != TokenKindComma) {
+                assert(0 && "error");
+            } else
+                next_token(parse_decl);
+        }
+    }
+
+    next_token(parse_decl);
+    end__Location(
+      loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(MatchStmt, matching, patterns);
 }
 
 static struct Stmt *
@@ -4883,6 +5097,20 @@ parse_while_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location loc)
 {
+    struct Expr *while_expr = parse_expr(self, parse_decl);
+    struct Vec *while_body = NEW(Vec, sizeof(struct FunBodyItem));
+
+    next_token(parse_decl);
+
+    while (parse_decl->current->kind != TokenKindEndKw) {
+        PARSE_BODY(while_body);
+    }
+
+    next_token(parse_decl);
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(StmtWhile, loc, NEW(WhileStmt, while_expr, while_body));
 }
 
 static struct Stmt *

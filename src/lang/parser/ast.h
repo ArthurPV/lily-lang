@@ -1260,8 +1260,8 @@ __free__ExprAll(struct Expr *self);
 typedef struct MatchStmt
 {
     struct Expr *matching;
-    struct Vec *pattern; // struct Vec<struct Tuple<struct Expr*, struct
-                         // Vec<struct FunBodyItem*>*>*
+    struct Vec *pattern; // struct Vec<struct Tuple<struct Expr*, struct Expr*,
+                         // struct Expr*>*>*
 } MatchStmt;
 
 /**
@@ -1335,7 +1335,6 @@ __free__IfCond(struct IfCond *self);
 
 typedef struct TryStmt
 {
-    struct Expr *try_expr;
     struct Vec *try_body;      // struct Vec<struct FunBodyItem*>*
     struct Option *catch_expr; // struct Option<struct Expr*>*
     struct Option
@@ -1347,8 +1346,7 @@ typedef struct TryStmt
  * @brief Construct the TryStmt type.
  */
 struct TryStmt *
-__new__TryStmt(struct Expr *try_expr,
-               struct Vec *try_body,
+__new__TryStmt(struct Vec *try_body,
                struct Option *catch_expr,
                struct Option *catch_body);
 

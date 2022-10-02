@@ -2009,8 +2009,9 @@ check_expression(struct Typecheck *self,
                     TODO("check binary op");
             }
         }
-        case ExprKindFunCall:
+        case ExprKindFunCall: {
             TODO("check fun call");
+        }
         case ExprKindRecordCall:
             TODO("check record call");
         case ExprKindIdentifier:

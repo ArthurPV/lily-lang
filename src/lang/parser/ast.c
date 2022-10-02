@@ -1336,6 +1336,9 @@ to_string__Expr(struct Expr self)
             return format("{S}", to_string__BinaryOp(self.value.binary_op));
         case ExprKindLiteral:
             return format("{S}", to_string__Literal(self.value.literal));
+        case ExprKindGrouping:
+            assert(self.value.grouping != NULL);
+            return format("({S})", to_string__Expr(*self.value.grouping));
         default:
             UNREACHABLE("unknown expr kind");
     }
@@ -1545,16 +1548,11 @@ __free__MatchStmt(struct MatchStmt *self)
 
     for (Usize i = len__Vec(*self->pattern); i--;) {
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[0]);
+        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
+        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[2]);
 
-        struct Vec *temp =
-          ((struct Tuple *)get__Vec(*self->pattern, i))->items[1];
-
-        for (Usize j = len__Vec(*temp); j--;) {
-            FREE(FunBodyItemAll, get__Vec(*temp, j));
-        }
-
-        FREE(Vec, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
-        FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
+        if ((struct Tuple *)get__Vec(*self->pattern, i) != NULL)
+            FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
     }
 
     FREE(Vec, self->pattern);
@@ -1686,13 +1684,11 @@ __free__IfCond(struct IfCond *self)
 }
 
 struct TryStmt *
-__new__TryStmt(struct Expr *try_expr,
-               struct Vec *try_body,
+__new__TryStmt(struct Vec *try_body,
                struct Option *catch_expr,
                struct Option *catch_body)
 {
     struct TryStmt *self = malloc(sizeof(struct TryStmt));
-    self->try_expr = try_expr;
     self->try_body = try_body;
     self->catch_expr = catch_expr;
     self->catch_body = catch_body;
@@ -1704,8 +1700,6 @@ to_string__TryStmt(struct TryStmt self)
 {
     struct String *s = NEW(String);
 
-    append__String(
-      s, format("Try {Sr}:\n", to_string__Expr(*self.try_expr)), true);
     push_str__String(s, "Body:\n");
 
     for (Usize i = 0; i < len__Vec(*self.try_body); i++)
@@ -1745,8 +1739,6 @@ to_string__TryStmt(struct TryStmt self)
 void
 __free__TryStmt(struct TryStmt *self)
 {
-    FREE(ExprAll, self->try_expr);
-
     for (Usize i = len__Vec(*self->try_body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self->try_body, i));
 

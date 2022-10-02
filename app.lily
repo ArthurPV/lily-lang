@@ -20,6 +20,15 @@ type Letter: enum =
 	D FF[Int32]
 end
 
+fun letter_to_str(x) =
+	match x do
+		A:_ => "A",
+		B:_ => "B",
+		C:_ => "C",
+		D:_ => "D"
+	end
+end
+
 type Person: record =
 	name Str,
 	age Uint8
