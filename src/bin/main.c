@@ -36,12 +36,12 @@
 #include <lang/scanner/token.h>
 
 #if defined(__clang__)
-#if __clang_major__ < 14
-#error "Use Clang v14.0 or later"
+#if __clang_major__ < 9
+#error "Use Clang v9.0 or later"
 #endif
 #elif defined(__GNUC__)
-#if __GNUC__ < 12
-#error "Use GCC v12.0 or later"
+#if __GNUC__ < 8
+#error "Use GCC v8.0 or later"
 #endif
 #else
 #error "unknown C compiler"
