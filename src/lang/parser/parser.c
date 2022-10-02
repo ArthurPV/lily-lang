@@ -8,8 +8,10 @@
 
 static inline void
 next_token_pb(struct ParseBlock *self);
-static inline struct String *get_type_name(struct ParseBlock *self);
-static inline struct Vec *get_generic_params_type(struct ParseBlock *self);
+static inline struct String *
+get_type_name(struct ParseBlock *self);
+static inline struct Vec *
+get_generic_params_type(struct ParseBlock *self);
 static inline bool
 valid_fun_body_item(struct FunParseContext *self,
                     struct ParseBlock *parse_block);
@@ -114,22 +116,29 @@ run__ParseBlock(struct ParseBlock *self)
                     }
                     case TokenKindTypeKw: {
                         struct String *name = get_type_name(self);
-                        struct Vec *generic_params = get_generic_params_type(self);
+                        struct Vec *generic_params =
+                          get_generic_params_type(self);
 
-                        assert(self->current->kind == TokenKindColon && "error");
+                        assert(self->current->kind == TokenKindColon &&
+                               "error");
                         next_token_pb(self);
 
                         switch (self->current->kind) {
                             case TokenKindEnumKw: {
-                                struct EnumParseContext *enum_parse_context = NEW(EnumParseContext);
+                                struct EnumParseContext *enum_parse_context =
+                                  NEW(EnumParseContext);
 
                                 enum_parse_context->name = name;
-                                enum_parse_context->generic_params = generic_params;
+                                enum_parse_context->generic_params =
+                                  generic_params;
                                 enum_parse_context->is_pub = true;
 
-                                get_enum_parse_context(enum_parse_context, self);
+                                get_enum_parse_context(enum_parse_context,
+                                                       self);
 
-                                push__Vec(self->blocks, NEW(ParseContextEnum, enum_parse_context));
+                                push__Vec(
+                                  self->blocks,
+                                  NEW(ParseContextEnum, enum_parse_context));
 
                                 break;
                             }
@@ -193,15 +202,18 @@ run__ParseBlock(struct ParseBlock *self)
     }
 }
 
-
-struct String *get_type_name(struct ParseBlock *self) {
+struct String *
+get_type_name(struct ParseBlock *self)
+{
     next_token_pb(self);
     assert(self->current->kind == TokenKindIdentifier && "error");
 
     return &*self->current->lit;
 }
 
-struct Vec *get_generic_params_type(struct ParseBlock *self) {
+struct Vec *
+get_generic_params_type(struct ParseBlock *self)
+{
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
 
     next_token_pb(self);
@@ -214,7 +226,7 @@ struct Vec *get_generic_params_type(struct ParseBlock *self) {
             next_token_pb(self);
         }
 
-    next_token_pb(self);
+        next_token_pb(self);
     }
 
     return generic_params;
@@ -584,6 +596,7 @@ get_enum_parse_context(struct EnumParseContext *self,
 void
 __free__EnumParseContext(struct EnumParseContext *self)
 {
+    FREE(Vec, self->data_type);
     FREE(Vec, self->generic_params);
     FREE(Vec, self->variants);
     free(self);
@@ -642,7 +655,8 @@ __new__ParseContextFun(struct FunParseContext *fun)
 }
 
 struct ParseContext *
-__new__ParseContextEnum(struct EnumParseContext *enum_) {
+__new__ParseContextEnum(struct EnumParseContext *enum_)
+{
     struct ParseContext *self = malloc(sizeof(struct ParseContext));
     self->kind = ParseContextKindEnum;
     self->value.enum_ = enum_;
@@ -657,7 +671,8 @@ __free__ParseContextFun(struct ParseContext *self)
 }
 
 void
-__free__ParseContextEnum(struct ParseContext *self) {
+__free__ParseContextEnum(struct ParseContext *self)
+{
     FREE(EnumParseContext, self->value.enum_);
     free(self);
 }

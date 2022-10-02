@@ -72,7 +72,7 @@ typedef struct EnumParseContext
     bool has_data_type;
     bool is_error;
     struct String *name;        // struct String&
-    struct Vec *data_type; // struct Vec<struct Token&>*
+    struct Vec *data_type;      // struct Vec<struct Token&>*
     struct Vec *generic_params; // struct Vec<struct Token&>*
     struct Vec *variants;       // struct Vec<struct Token&>*
 } EnumParseContext;
