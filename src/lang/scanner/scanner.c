@@ -940,10 +940,14 @@ scan_num(struct Scanner *self)
               Some(format("add digit after `-` or `+` in scientific number"))));
         }
 
-        return Ok(NEW(TokenLit, TokenKindFloatLit, &num_location, num));
+        struct Location *copy = copy__Location(&num_location);
+
+        return Ok(NEW(TokenLit, TokenKindFloatLit, copy, num));
     }
 
-    return Ok(NEW(TokenLit, TokenKindIntLit, &num_location, num));
+    struct Location *copy = copy__Location(&num_location);
+
+    return Ok(NEW(TokenLit, TokenKindIntLit, copy, num));
 }
 
 static struct Result *
