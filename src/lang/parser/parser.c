@@ -8,6 +8,7 @@
 
 static inline void
 next_token_pb(struct ParseBlock *self);
+static inline void skip_to_next_block(struct ParseBlock *self);
 static inline struct String *
 get_type_name(struct ParseBlock *self);
 static inline struct Vec *
@@ -94,7 +95,7 @@ run__ParseBlock(struct ParseBlock *self)
                             struct Diagnostic *err = NEW(
                               DiagnosticWithErrParser,
                               self,
-                              NEW(LilyError, LilyErrorBadUseOfAsync),
+                              NEW(LilyError, LilyErrorBadUsageOfAsync),
                               *self->current->loc,
                               format("expected `fun` after async declaration"),
                               None());
@@ -159,8 +160,25 @@ run__ParseBlock(struct ParseBlock *self)
                             }
                             case TokenKindRecordKw:
                                 break;
-                            default:
-                                assert(0 && "error");
+                            default: {
+                                struct Diagnostic *err = NEW(
+                                  DiagnosticWithErrParser,
+                                  self,
+                                  NEW(LilyError, LilyErrorBadUsageOfType),
+                                  *self->current->loc,
+                                  format(""),
+                                  Some(format(
+                                    "expected `enum` or `record`, found `{Sr}`",
+                                    token_kind_to_string__Token(
+                                      *self->current))));
+
+                                emit__Diagnostic(err);
+                                emit__Summary(self->count_error, self->count_warning, "the parser has been failed");
+
+                                exit(1);
+
+                                break;
+                            }
                         }
 
                         break;
@@ -178,18 +196,16 @@ run__ParseBlock(struct ParseBlock *self)
                         struct Diagnostic *err =
                           NEW(DiagnosticWithErrParser,
                               self,
-                              NEW(LilyError, LilyErrorBadUseOfPub),
+                              NEW(LilyError, LilyErrorBadUsageOfPub),
                               *self->current->loc,
                               format("expected `fun`, `async`, `type`, tag` or "
                                      "`object` after `pub` declaration"),
                               None());
 
                         emit__Diagnostic(err);
-                        emit__Summary(self->count_error,
-                                      self->count_warning,
-                                      "the parser phase has been failed");
-
-                        exit(1);
+                        skip_to_next_block(self);
+                    
+                        break;
                     }
                 }
 
@@ -255,6 +271,18 @@ next_token_pb(struct ParseBlock *self)
         self->current =
           &*(struct Token *)get__Vec(*self->scanner->tokens, self->pos);
     }
+}
+
+void skip_to_next_block(struct ParseBlock *self) {
+    while (self->current->kind != TokenKindEndKw && self->current->kind != TokenKindEof) {
+        next_token_pb(self);
+    }
+
+    if (self->current->kind == TokenKindEof)
+        return;
+
+    if (self->current->kind == TokenKindEndKw)
+        next_token_pb(self);
 }
 
 void

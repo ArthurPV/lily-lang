@@ -1395,13 +1395,77 @@ run__Scanner(struct Scanner *self)
             } else {
                 token_ok = get_ok__Result(*token);
 
-                next_char_by_token(self, *token_ok);
-                end_token(self);
+                switch (token_ok->kind) {
+                    case TokenKindDot:
+                    case TokenKindComma:
+                    case TokenKindColon:
+                    case TokenKindBar:
+                    case TokenKindArrow:
+                    case TokenKindAt:
+                    case TokenKindLParen:
+                    case TokenKindRParen:
+                    case TokenKindLBrace:
+                    case TokenKindRBrace:
+                    case TokenKindLHook:
+                    case TokenKindRHook:
+                    case TokenKindHashtag:
+                    case TokenKindSemicolon:
+                    case TokenKindDollar:
+                    case TokenKindBacktrick:
+                    case TokenKindPlus:
+                    case TokenKindMinus:
+                    case TokenKindStar:
+                    case TokenKindSlash:
+                    case TokenKindPercentage:
+                    case TokenKindHat:
+                    case TokenKindWave:
+                    case TokenKindEq:
+                    case TokenKindLShift:
+                    case TokenKindRShift:
+                    case TokenKindBang:
+                    case TokenKindInterrogation:
+                    case TokenKindAmpersand: {
+                        token_with_len_1: {
+                            end_token(self);
 
-                if (token_ok->loc == NULL) {
-                    struct Location *copy = copy__Location(self->loc);
+                            if (token_ok->loc == NULL) {
+                                struct Location *copy = copy__Location(self->loc);
 
-                    token_ok->loc = copy;
+                                token_ok->loc = copy;
+                            }
+
+                            next_char_by_token(self, *token_ok);
+                        }
+
+                        break;
+                    }
+                    case TokenKindIntLit:
+                    case TokenKindIdentifier: {
+                        struct String *token_string = token_kind_to_string__Token(*token_ok);
+
+                        if (len__String(*token_string) == 1) {
+                            FREE(String, token_string);
+                            goto token_with_len_1;
+                        } else {
+                            FREE(String, token_string);
+                            goto token_with_len_over_1;
+                        }
+
+                        break;
+                    }
+                    default: {
+                        token_with_len_over_1: {
+                            next_char_by_token(self, *token_ok);
+                            end_token(self);
+
+                            if (token_ok->loc == NULL) {
+                                struct Location *copy = copy__Location(self->loc);
+
+                                token_ok->loc = copy;
+                            }
+                        }
+                        break;
+                    }
                 }
 
 #ifdef HIDDEN_UNUSED_COMMENT

@@ -111,7 +111,7 @@ detail_to_string(struct Detail self,
             else
                 push_str__String(repeat3, " ");
 
-        if (loc.e_col - loc.s_col <= 1)
+        if (loc.e_col - loc.s_col < 1)
             repeat4 = repeat__String("^", loc.e_col - loc.s_col);
         else
             repeat4 = repeat__String("^", loc.e_col - loc.s_col + 1);
@@ -197,12 +197,14 @@ lily_error_to_string(struct LilyError err)
             return format("miss closing block, expected: {S}", err.s);
         case LilyErrorMisuseOfSpecialClosingBlock:
             return from__String("misuse of special closing block");
-        case LilyErrorBadUseOfAsync:
-            return from__String("bad use of `async`");
-        case LilyErrorBadUseOfPub:
-            return from__String("bad use of `pub`");
+        case LilyErrorBadUsageOfAsync:
+            return from__String("bad usage of `async`");
+        case LilyErrorBadUsageOfPub:
+            return from__String("bad usage of `pub`");
         case LilyErrorInvalidItemInFunBody:
             return from__String("invalid item in `fun` body");
+        case LilyErrorBadUsageOfType:
+            return from__String("bad usage of `type`");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -259,12 +261,14 @@ get_code_of_lily_error(struct LilyError err)
             return "0015";
         case LilyErrorMisuseOfSpecialClosingBlock:
             return "0016";
-        case LilyErrorBadUseOfAsync:
+        case LilyErrorBadUsageOfAsync:
             return "0017";
-        case LilyErrorBadUseOfPub:
+        case LilyErrorBadUsageOfPub:
             return "0018";
         case LilyErrorInvalidItemInFunBody:
             return "0019";
+        case LilyErrorBadUsageOfType:
+            return "0020";
         default:
             UNREACHABLE("unknown lily error kind");
     }
