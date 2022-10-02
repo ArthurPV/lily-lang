@@ -104,15 +104,26 @@ check_data_type(struct Typecheck *self,
                 struct Vec *local_data_type,
                 bool must_object,
                 bool must_trait);
-static struct StmtSymbol *
+static struct StmtSymbol
 check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
            bool is_return_type);
-static struct ExprSymbol *
-check_expression(struct Typecheck *self,
+static struct DataTypeSymbol *
+infer_expression(struct Typecheck *self,
+                 struct FunSymbol *fun,
                  struct Expr *expr,
                  struct Vec *local_value,
+                 struct Vec *local_data_type,
+                 struct DataTypeSymbol *defined_data_type,
+                 bool is_return_type);
+static struct ExprSymbol *
+check_expression(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Expr *expr,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type,
+                 struct DataTypeSymbol *defined_data_type,
                  bool is_return_type);
 static void
 check_fun_body(struct Typecheck *self,
@@ -1334,18 +1345,127 @@ check_data_type(struct Typecheck *self,
     return NULL;
 }
 
-static struct StmtSymbol *
+static struct StmtSymbol
 check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
            bool is_return_type)
 {
+    switch (stmt->kind) {
+        case StmtKindBreak:
+            return NEW(StmtSymbol, *stmt);
+        case StmtKindNext:
+            return NEW(StmtSymbol, *stmt);
+        case StmtKindReturn:
+            break;
+        case StmtKindAwait:
+            break;
+        default:
+            TODO("stmt");
+    }
+}
+
+static struct DataTypeSymbol *
+infer_expression(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Expr *expr,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type,
+                 struct DataTypeSymbol *defined_data_type,
+                 bool is_return_type)
+{
+#define INFER(dt)                                          \
+    if (defined_data_type != NULL)                         \
+        return copy__DataTypeSymbol(defined_data_type);    \
+    else if (is_return_type && fun != NULL)                \
+        if (fun->return_type != NULL)                      \
+            return copy__DataTypeSymbol(fun->return_type); \
+        else                                               \
+            return dt;                                     \
+    else                                                   \
+        return dt
+
+    switch (expr->kind) {
+        case ExprKindUnaryOp:
+            TODO("infer unary op");
+        case ExprKindBinaryOp:
+            TODO("infer binary op");
+        case ExprKindFunCall:
+            TODO("infer fun call");
+        case ExprKindRecordCall:
+            TODO("infer record call");
+        case ExprKindIdentifier:
+            TODO("infer identifier");
+        case ExprKindIdentifierAccess:
+            TODO("infer identifier access");
+        case ExprKindArrayAccess:
+            TODO("infer array access");
+        case ExprKindTupleAccess:
+            TODO("infer tuple access");
+        case ExprKindLambda:
+            TODO("infer lambda");
+        case ExprKindTuple:
+            TODO("infer tuple");
+        case ExprKindArray:
+            TODO("infer array");
+        case ExprKindVariant:
+            TODO("infer variant");
+        case ExprKindTry:
+            TODO("infer try");
+        case ExprKindIf:
+            TODO("infer if");
+        case ExprKindBlock:
+            TODO("infer block");
+        case ExprKindQuestionMark:
+            TODO("infer question mark");
+        case ExprKindDereference:
+            TODO("infer dereference");
+        case ExprKindRef:
+            TODO("infer ref");
+        case ExprKindSelf:
+            TODO("infer self");
+        case ExprKindUndef:
+            TODO("infer undef");
+        case ExprKindNil:
+            TODO("infer nil");
+        case ExprKindWildcard:
+            break;
+        case ExprKindLiteral:
+            switch (expr->value.literal.kind) {
+                case LiteralKindBool:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindBool));
+                case LiteralKindChar:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindChar));
+                case LiteralKindBitChar:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindU8));
+                case LiteralKindInt32:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindI32));
+                case LiteralKindInt64:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindI64));
+                case LiteralKindInt128:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindI128));
+                case LiteralKindFloat:
+                    INFER(NEW(DataTypeSymbol, DataTypeKindF64));
+                case LiteralKindBitStr: {
+                }
+                case LiteralKindStr:
+                    return NEW(DataTypeSymbol, DataTypeKindStr);
+                case LiteralKindUnit:
+                    return NEW(DataTypeSymbol, DataTypeKindUnit);
+            }
+            TODO("infer literal");
+        case ExprKindVariable:
+            TODO("infer variable");
+    }
 }
 
 static struct ExprSymbol *
 check_expression(struct Typecheck *self,
+                 struct FunSymbol *fun,
                  struct Expr *expr,
                  struct Vec *local_value,
+                 struct Vec *local_data_type,
+                 struct DataTypeSymbol *defined_data_type,
                  bool is_return_type)
 {
 }

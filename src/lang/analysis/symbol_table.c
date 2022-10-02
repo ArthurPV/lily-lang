@@ -1,3 +1,4 @@
+#include <string.h>
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 
@@ -110,6 +111,16 @@ __new__DataTypeSymbolTuple(struct Vec *tuple)
     self->scope = NULL;
     self->value.tuple = tuple;
     return self;
+}
+
+struct DataTypeSymbol *
+copy__DataTypeSymbol(struct DataTypeSymbol *self)
+{
+    struct DataTypeSymbol *copy = malloc(sizeof(struct DataTypeSymbol));
+
+    memcpy(copy, self, sizeof(struct DataTypeSymbol));
+
+    return copy;
 }
 
 void
@@ -1208,7 +1219,7 @@ __free__TraitSymbol(struct TraitSymbol *self)
 
 struct UnaryOpSymbol
 __new__UnaryOpSymbol(struct Expr unary_op,
-                     struct DataType *data_type,
+                     struct DataTypeSymbol *data_type,
                      struct ExprSymbol *right)
 {
     struct UnaryOpSymbol self = { .kind = unary_op.value.unary_op.kind,
@@ -1230,12 +1241,12 @@ to_Str__UnaryOpSymbol(unsigned int kind)
 void
 __free__UnaryOpSymbol(struct UnaryOpSymbol self)
 {
-    FREE(DataTypeAll, self.data_type);
+    FREE(DataTypeSymbolAll, self.data_type);
 }
 
 struct BinaryOpSymbol
 __new__BinaryOpSymbol(struct Expr binary_op,
-                      struct DataType *data_type,
+                      struct DataTypeSymbol *data_type,
                       struct ExprSymbol *left,
                       struct ExprSymbol *right)
 {
@@ -1263,7 +1274,7 @@ to_Str__BinaryOpSymbol(unsigned int kind)
 void
 __free__BinaryOpSymbol(struct BinaryOpSymbol self)
 {
-    FREE(DataTypeAll, self.data_type);
+    FREE(DataTypeSymbolAll, self.data_type);
 }
 
 struct FunCallSymbol

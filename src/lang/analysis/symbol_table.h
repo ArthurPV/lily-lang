@@ -195,6 +195,13 @@ __new__DataTypeSymbolTuple(struct Vec *tuple);
 
 /**
  *
+ * @brief Copy the DataTypeSymbol type.
+ */
+struct DataTypeSymbol *
+copy__DataTypeSymbol(struct DataTypeSymbol *self);
+
+/**
+ *
  * @brief Free the DataTypeSymbol type (all variants).
  */
 void
@@ -1035,7 +1042,7 @@ __new__LiteralSymbolUnit()
 typedef struct UnaryOpSymbol
 {
     enum UnaryOpKind kind;
-    struct DataType *data_type;
+    struct DataTypeSymbol *data_type;
     struct ExprSymbol *right;
 } UnaryOpSymbol;
 
@@ -1045,7 +1052,7 @@ typedef struct UnaryOpSymbol
  */
 struct UnaryOpSymbol
 __new__UnaryOpSymbol(struct Expr unary_op,
-                     struct DataType *data_type,
+                     struct DataTypeSymbol *data_type,
                      struct ExprSymbol *right);
 
 /**
@@ -1065,7 +1072,7 @@ __free__UnaryOpSymbol(struct UnaryOpSymbol self);
 typedef struct BinaryOpSymbol
 {
     enum BinaryOpKind kind;
-    struct DataType *data_type;
+    struct DataTypeSymbol *data_type;
     struct ExprSymbol *left;
     struct ExprSymbol *right;
 } BinaryOpSymbol;
@@ -1076,7 +1083,7 @@ typedef struct BinaryOpSymbol
  */
 struct BinaryOpSymbol
 __new__BinaryOpSymbol(struct Expr binary_op,
-                      struct DataType *data_type,
+                      struct DataTypeSymbol *data_type,
                       struct ExprSymbol *left,
                       struct ExprSymbol *right);
 
