@@ -309,6 +309,10 @@ parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Location loc);
 static struct Expr *
+parse_self_access(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc);
+static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
 static struct Stmt *
 parse_return_stmt(struct Parser self,
@@ -2636,7 +2640,8 @@ next_token(struct ParseDecl *self)
     if (self->pos < len__Vec(*self->tokens)) {
         self->current = get__Vec(*self->tokens, self->pos);
         self->previous = get__Vec(*self->tokens, self->pos - 1);
-    }
+    } else
+        self->previous = self->current;
 }
 
 static inline bool
@@ -3194,18 +3199,18 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 static struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
-    next_token(parse_decl);
-
     struct Expr *expr = NULL;
     struct Location loc = NEW(Location);
 
     start__Location(&loc,
-                    parse_decl->previous->loc->s_line,
-                    parse_decl->previous->loc->s_col);
+                    parse_decl->current->loc->s_line,
+                    parse_decl->current->loc->s_col);
 
     int *unary_op = parse_unary_op(*parse_decl);
 
     if (unary_op != NULL) {
+        next_token(parse_decl);
+
         struct Expr *right = parse_primary_expr(self, parse_decl);
 
         end__Location(&loc,
@@ -3213,8 +3218,10 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                       parse_decl->current->loc->s_col);
 
         return NEW(
-          ExprUnaryOp, NEW(UnaryOp, (enum UnaryOpKind)(*unary_op), right), loc);
+          ExprUnaryOp, NEW(UnaryOp, (enum UnaryOpKind)(UPtr)(unary_op), right), loc);
     }
+
+    next_token(parse_decl);
 
     switch (parse_decl->previous->kind) {
         case TokenKindIdentifier: {
@@ -3418,12 +3425,15 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             expr = parse_literal_expr(self, parse_decl);
             break;
         default:
+            // Println("{d}", parse_decl->previous->kind);
             assert(0 && "error");
     }
 
     int *binary_op = parse_binary_op(*parse_decl);
 
     if (binary_op != NULL) {
+        next_token(parse_decl);
+
         struct Expr *right = parse_primary_expr(self, parse_decl);
 
         end__Location(&loc,
@@ -3431,7 +3441,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
                       parse_decl->current->loc->s_col);
 
         return NEW(ExprBinaryOp,
-                   NEW(BinaryOp, (enum BinaryOpKind)(*binary_op), expr, right),
+                   NEW(BinaryOp, (enum BinaryOpKind)(UPtr)(binary_op), expr, right),
                    loc);
     }
 
@@ -3441,7 +3451,7 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 static inline int *
 parse_unary_op(struct ParseDecl parse_decl)
 {
-    switch (parse_decl.previous->kind) {
+    switch (parse_decl.current->kind) {
         case TokenKindMinus:
             return (int *)UnaryOpKindNegative;
 
@@ -3459,7 +3469,7 @@ parse_unary_op(struct ParseDecl parse_decl)
 static inline int *
 parse_binary_op(struct ParseDecl parse_decl)
 {
-    switch (parse_decl.previous->kind) {
+    switch (parse_decl.current->kind) {
         case TokenKindPlus:
             return (int *)BinaryOpKindAdd;
 
@@ -3835,6 +3845,13 @@ parse_identifier_access(struct Parser self,
 }
 
 static struct Expr *
+parse_self_access(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc)
+{
+}
+
+static struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     return parse_primary_expr(self, parse_decl);
@@ -4116,6 +4133,8 @@ parse_fun_declaration(struct Parser *self)
 
     if (len__Vec(*fun_parse_context.body) > 0) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.body);
+
+        body = parse_fun_body(*self, &parse);
     }
 
     return NEW(FunDecl,
