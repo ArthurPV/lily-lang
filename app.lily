@@ -3,7 +3,11 @@ fun add(x, y) = return x+y;
 fun is_zero(x) = if x == 0 do true;;
 
 fun main =
-	begin =
-		x := 3
+	if x == 0 do
+		true
+	elif x == 1 do
+		false
+	else
+		true
 	end
 end

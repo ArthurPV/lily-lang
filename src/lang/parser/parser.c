@@ -1224,7 +1224,8 @@ valid_body_item(struct ParseBlock *parse_block,
 static void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
-    if (parse_block->current->kind == TokenKindDoKw || parse_block->current->kind == TokenKindBeginKw) {
+    if (parse_block->current->kind == TokenKindDoKw ||
+        parse_block->current->kind == TokenKindBeginKw) {
         Usize start_line = parse_block->current->loc->s_line;
         bool bad_item = false;
 
@@ -1236,7 +1237,27 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
                parse_block->current->kind != TokenKindSemicolon &&
                parse_block->current->kind != TokenKindEof) {
             if (valid_body_item(parse_block, bad_item, is_fun)) {
-                if (parse_block->current->kind == TokenKindDoKw || parse_block->current->kind == TokenKindBeginKw)
+                if (parse_block->current->kind == TokenKindElifKw ||
+                    parse_block->current->kind ==
+                      TokenKindCatchKw) { // Special case with catch and elif to
+                                          // avoid unintended errors
+                    while (parse_block->current->kind != TokenKindDoKw &&
+                           parse_block->current->kind != TokenKindEof) {
+                        PUSH_BODY();
+                        next_token_pb(parse_block);
+                    }
+
+                    if (parse_block->current->kind == TokenKindEof) {
+                        VERIFY_EOF(parse_block, false, "`do`");
+                        break;
+                    }
+
+                    PUSH_BODY();
+                    next_token_pb(parse_block);
+                }
+
+                if (parse_block->current->kind == TokenKindDoKw ||
+                    parse_block->current->kind == TokenKindBeginKw)
                     verify_stmt(self, parse_block, is_fun);
 
                 PUSH_BODY();
@@ -3761,13 +3782,16 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 
             struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
 
-            while (parse_decl->current->kind != TokenKindEndKw && parse_decl->current->kind != TokenKindSemicolon) {
+            while (parse_decl->current->kind != TokenKindEndKw &&
+                   parse_decl->current->kind != TokenKindSemicolon) {
                 PARSE_BODY(body);
             }
 
             next_token(parse_decl);
 
-            end__Location(&loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
 
             return NEW(ExprBlock, body, loc);
         }
