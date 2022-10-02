@@ -12,7 +12,9 @@ type Person: record =
 	age u32
 end
 
-fun div(x, y) = x/y;
+fun div(x, y) =
+	if x == 0 do true;
+end
 
 type TT: alias = int;
 
@@ -28,4 +30,6 @@ end
 object Person: class =
 	@name string;
 	@age u32;
+	
+	@get_name(self) = self.name;
 end

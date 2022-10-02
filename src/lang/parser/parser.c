@@ -115,6 +115,25 @@
         next_token_pb(parse_block);                             \
     }
 
+#define VERIFY_CLOSING_BODY(parse_block)                                      \
+    VERIFY_EOF(parse_block, bad_item, "`;` or `end`");                        \
+                                                                              \
+    if (parse_block->current->kind == TokenKindSemicolon &&                   \
+        start_line != end_line) {                                             \
+        struct Diagnostic *err =                                              \
+          NEW(DiagnosticWithErrParser,                                        \
+              parse_block,                                                    \
+              NEW(LilyError, LilyErrorMisuseOfSpecialClosingBlock),           \
+              *parse_block->current->loc,                                     \
+              format("the `;` is used when a function is write on one line"), \
+              Some(format("replace `;` closing, by `end` closing")));         \
+                                                                              \
+        emit__Diagnostic(err);                                                \
+    }                                                                         \
+                                                                              \
+    if (parse_block->current->kind == TokenKindSemicolon)                     \
+        next_token_pb(parse_block);
+
 static void
 get_block(struct ParseBlock *self);
 static inline void
@@ -132,9 +151,11 @@ get_object_context(struct ParseBlock *self, bool is_pub);
 static struct Vec *
 get_generic_params(struct ParseBlock *self);
 static inline bool
-valid_body_item(struct ParseBlock *parse_block, bool already_invalid);
+valid_body_item(struct ParseBlock *parse_block,
+                bool already_invalid,
+                bool is_fun);
 static void
-get_body_parse_context(void *self, struct ParseBlock *parse_block);
+get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun);
 static void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block);
@@ -728,8 +749,13 @@ __new__FunParseContext()
 }
 
 static inline bool
-valid_body_item(struct ParseBlock *parse_block, bool already_invalid)
+valid_body_item(struct ParseBlock *parse_block,
+                bool already_invalid,
+                bool is_fun)
 {
+    if (!is_fun && parse_block->current->kind == TokenKindSelfKw)
+        return true;
+
     switch (parse_block->current->kind) {
         case TokenKindEof:
         case TokenKindPubKw:
@@ -749,11 +775,6 @@ valid_body_item(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindAsmKw:
         case TokenKindMacroKw:
         case TokenKindImplKw: {
-#ifdef METHOD_BODY
-            if (parse_block->current->kind == TokenKindSelfKw)
-                return true;
-#endif
-
             if (!already_invalid) {
                 struct Diagnostic *err = NEW(
                   DiagnosticWithErrParser,
@@ -777,7 +798,7 @@ valid_body_item(struct ParseBlock *parse_block, bool already_invalid)
 }
 
 static void
-get_body_parse_context(void *self, struct ParseBlock *parse_block)
+get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
     Usize start_line = parse_block->current->loc->s_line;
     bool bad_item = false;
@@ -785,22 +806,40 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block)
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_body_item(parse_block, bad_item)) {
+        if (valid_body_item(parse_block, bad_item, is_fun)) {
             switch (parse_block->current->kind) {
                 case TokenKindDoKw:
                 case TokenKindIfKw:
-                    get_body_parse_context(self, parse_block);
+                    next_token_pb(parse_block);
+
+                    Usize start_line = parse_block->current->loc->s_line;
+
+                    while (parse_block->current->kind != TokenKindEndKw &&
+                           parse_block->current->kind != TokenKindSemicolon &&
+                           parse_block->current->kind != TokenKindEof) {
+                        if (is_fun)
+                            push__Vec(((struct FunParseContext *)self)->body,
+                                      &*parse_block->current);
+                        else
+                            push__Vec(((struct MethodParseContext *)self)->body,
+                                      &*parse_block->current);
+
+                        next_token_pb(parse_block);
+                    }
+
+                    Usize end_line = parse_block->current->loc->e_line;
+
+                    VERIFY_CLOSING_BODY(parse_block);
+
                     break;
                 default:
-#ifdef FUNCTION_BODY
-                    push__Vec(((struct FunParseContext *)self)->body,
-                              &*parse_block->current);
-#endif
+                    if (is_fun)
+                        push__Vec(((struct FunParseContext *)self)->body,
+                                  &*parse_block->current);
+                    else
+                        push__Vec(((struct MethodParseContext *)self)->body,
+                                  &*parse_block->current);
 
-#ifdef METHOD_BODY
-                    push__Vec(((struct MethodParseContext *)self)->body,
-                              &*parse_block->current);
-#endif
                     next_token_pb(parse_block);
                     break;
             }
@@ -812,22 +851,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block)
 
     Usize end_line = parse_block->current->loc->e_line;
 
-    VERIFY_EOF(parse_block, bad_item, "`;` or `end`");
-
-    if (parse_block->current->kind == TokenKindSemicolon &&
-        start_line != end_line) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMisuseOfSpecialClosingBlock),
-              *parse_block->current->loc,
-              format("the `;` is used when a function is write one line"),
-              Some(format("replace `;` closing, by `end` closing")));
-
-        emit__Diagnostic(err);
-    }
-
-    next_token_pb(parse_block);
+    VERIFY_CLOSING_BODY(parse_block);
 }
 
 static void
@@ -929,9 +953,7 @@ get_fun_parse_context(struct FunParseContext *self,
         emit__Diagnostic(err);
     });
 
-#define FUNCTION_BODY
-    get_body_parse_context(self, parse_block);
-#undef FUNCTION_BODY
+    get_body_parse_context(self, parse_block, true);
 }
 
 void
@@ -1352,7 +1374,7 @@ __new__ClassParseContext()
 static inline bool
 valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
-    bool is_valid = valid_body_item(parse_block, already_invalid);
+    bool is_valid = valid_body_item(parse_block, already_invalid, false);
 
     if (parse_block->current->kind == TokenKindAt || is_valid)
         return true;
@@ -1434,8 +1456,8 @@ get_class_parse_context(struct ClassParseContext *self,
 
         next_token_pb(parse_block);
 
-        if (parse_block->current->kind != TokenKindLParen ||
-            parse_block->current->kind != TokenKindLHook ||
+        if (parse_block->current->kind != TokenKindLParen &&
+            parse_block->current->kind != TokenKindLHook &&
             parse_block->current->kind != TokenKindEq) {
 
             if (is_async) {
@@ -1476,26 +1498,28 @@ get_class_parse_context(struct ClassParseContext *self,
         PARSE_GENERIC_PARAMS(method_parse_context);
         PARSE_PARAMS(method_parse_context);
 
-#define METHOD_BODY
-        get_body_parse_context(method_parse_context, parse_block);
-#undef METHOD_BODY
-
         EXPECTED_TOKEN(parse_block, TokenKindEq, {
             struct Diagnostic *err = EXPECTED_TOKEN_ERR(parse_block, "`=`");
 
             err->err->s = from__String("`=`");
 
             emit__Diagnostic(err);
-        })
+        });
+
+        get_body_parse_context(method_parse_context, parse_block, false);
+
+        push__Vec(self->body, NEW(ParseContextMethod, method_parse_context));
+
+        goto exit;
     }
 
-        import: {
+        import : { goto exit;
+    }
 
-        }
-
-        property: {
-            while (parse_block->current->kind != TokenKindSemicolon && parse_block->current->kind != TokenKindEof) {
-                push__Vec(property_parse_context->data_type, &*parse_block->current);
+property : {
+    while (parse_block->current->kind != TokenKindSemicolon &&
+           parse_block->current->kind != TokenKindEof) {
+        push__Vec(property_parse_context->data_type, &*parse_block->current);
         next_token_pb(parse_block);
     }
 
@@ -1503,6 +1527,11 @@ get_class_parse_context(struct ClassParseContext *self,
     next_token_pb(parse_block);
 
     push__Vec(self->body, NEW(ParseContextProperty, property_parse_context));
+
+    goto exit;
+}
+
+exit : {
 }
 }
 
@@ -1552,7 +1581,7 @@ __new__TagParseContext()
 static inline bool
 valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
-    if (valid_body_item(parse_block, true))
+    if (valid_body_item(parse_block, true, false))
         return true;
     else {
         if (!already_invalid) {
@@ -1617,8 +1646,8 @@ __new__MethodParseContext()
     self->has_generic_params = false;
     self->has_params = false;
     self->name = NULL;
-    self->generic_params = NULL;
-    self->params = NULL;
+    self->generic_params = NEW(Vec, sizeof(struct Token));
+    self->params = NEW(Vec, sizeof(struct Token));
     self->body = NEW(Vec, sizeof(struct Token));
     return self;
 }
