@@ -57,6 +57,24 @@
     } else                                           \
         next_token_pb(parse_block);
 
+#define EOF_ERR(parse_block, bad_token, expected)                       \
+    if (parse_block->current->kind == TokenKindEof && !bad_token) {     \
+        struct Diagnostic *err =                                        \
+          NEW(DiagnosticWithErrParser,                                  \
+              parse_block,                                              \
+              NEW(LilyError, LilyErrorMissClosingBlock),                \
+              *((struct Token *)get__Vec(*parse_block->scanner->tokens, \
+                                         parse_block->pos - 1))         \
+                 ->loc,                                                 \
+              format("expected closing block here"),                    \
+              None());                                                  \
+                                                                        \
+        err->err->s = format("{s}", expected);                          \
+                                                                        \
+        emit__Diagnostic(err);                                          \
+    } else                                                              \
+        next_token_pb(parse_block);
+
 static void
 get_block(struct ParseBlock *self);
 static inline void
@@ -743,21 +761,7 @@ get_body_fun_parse_context(struct FunParseContext *self,
 
     Usize end_line = parse_block->current->loc->e_line;
 
-    if (parse_block->current->kind == TokenKindEof && !bad_item) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = format("`;` or `end`");
-
-        emit__Diagnostic(err);
-    }
+    EOF_ERR(parse_block, bad_item, "`;` or `end`");
 
     if (parse_block->current->kind == TokenKindSemicolon &&
         start_line != end_line) {
@@ -994,22 +998,7 @@ get_enum_parse_context(struct EnumParseContext *self,
         }
     }
 
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`end`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    EOF_ERR(parse_block, bad_token, "`end`");
 }
 
 static inline bool
@@ -1136,22 +1125,7 @@ get_record_parse_context(struct RecordParseContext *self,
         }
     }
 
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`end`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    EOF_ERR(parse_block, bad_token, "`end`")
 }
 
 void
@@ -1238,22 +1212,7 @@ get_alias_parse_context(struct AliasParseContext *self,
         }
     }
 
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`;`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    EOF_ERR(parse_block, bad_token, "`;`");
 }
 
 void
@@ -1342,22 +1301,7 @@ get_trait_parse_context(struct TraitParseContext *self,
         }
     }
 
-    if (parse_block->current->kind == TokenKindEof && !bad_token) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`end`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    EOF_ERR(parse_block, bad_token, "`end`");
 }
 
 void
@@ -1534,22 +1478,7 @@ get_class_parse_context(struct ClassParseContext *self,
         next_token_pb(parse_block);
     }
 
-    if (parse_block->current->kind == TokenKindEof) {
-        struct Diagnostic *err =
-          NEW(DiagnosticWithErrParser,
-              parse_block,
-              NEW(LilyError, LilyErrorMissClosingBlock),
-              *((struct Token *)get__Vec(*parse_block->scanner->tokens,
-                                         parse_block->pos - 1))
-                 ->loc,
-              format("expected closing block here"),
-              None());
-
-        err->err->s = from__String("`;`");
-
-        emit__Diagnostic(err);
-    } else
-        next_token_pb(parse_block);
+    EOF_ERR(parse_block, bad_token, "`;`");
 }
 }
 
