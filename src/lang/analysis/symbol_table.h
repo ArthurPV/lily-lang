@@ -521,7 +521,7 @@ typedef struct RecordSymbol
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct Vec *fields;         // struct Vec<struct FieldRecordSymbol*>*
+    struct Vec *fields;         // struct Vec<struct SymbolTable*>*
     struct Scope *scope;        // struct Scope&
     struct Decl *record_decl;   // struct Decl&
     enum Visibility visibility;
@@ -545,7 +545,7 @@ typedef struct RecordObjSymbol
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct Vec *fields;         // struct Vec<struct FieldRecordSymbol*>*
+    struct Vec *fields;         // struct Vec<struct SymbolTable*>*
     struct Vec *attached;       // struct Vec<struct SymbolTable*>*
     struct Scope *scope;        // struct Scope&
     struct Decl *record_decl;   // struct Decl&
@@ -591,11 +591,12 @@ __free__VariantEnumSymbol(struct VariantEnumSymbol *self)
     free(self);
 }
 
+// TODO: struct Vec<struct VariantEnumSymbol*>* -> struct Vec<struct SymbolTable*>*
 typedef struct EnumSymbol
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct Vec *variants;       // struct Vec<struct VariantEnumSymbol*>*
+    struct Vec *variants;       // struct Vec<struct SymbolTable*>*
     struct DataTypeSymbol *type_value;
     struct Scope *scope;
     struct Decl *enum_decl; // struct Decl&
@@ -621,7 +622,7 @@ typedef struct EnumObjSymbol
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
-    struct Vec *variants;       // struct Vec<struct VariantEnumSymbol*>*
+    struct Vec *variants;       // struct Vec<struct SymbolTable*>*
     struct Vec *attached;       // struct Vec<struct SymbolTable*>*
     struct DataTypeSymbol *type_value;
     struct Scope *scope;
@@ -2110,7 +2111,9 @@ enum SymbolTableKind
     SymbolTableKindRecordObj,
     SymbolTableKindEnumObj,
     SymbolTableKindExpr,
-    SymbolTableKindStmt
+    SymbolTableKindStmt,
+    SymbolTableKindVariant,
+    SymbolTableKindField
 };
 
 typedef struct SymbolTable
@@ -2132,6 +2135,8 @@ typedef struct SymbolTable
         struct TraitSymbol *trait;
         struct ExprSymbol *expr;
         struct StmtSymbol stmt;
+        struct VariantEnumSymbol *variant;
+        struct FieldRecordSymbol *field;
     } value;
 } SymbolTable;
 
@@ -2225,6 +2230,20 @@ __new__SymbolTableExpr(struct ExprSymbol *expr);
  */
 struct SymbolTable *
 __new__SymbolTableStmt(struct StmtSymbol stmt);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Variant variant).
+ */
+struct SymbolTable *
+__new__SymbolTableVariant(struct VariantEnumSymbol *variant);
+
+/**
+ *
+ * @brief Construct the SymbolTable type (Field variant).
+ */
+struct SymbolTable *
+__new__SymbolTableField(struct FieldRecordSymbol *field);
 
 /**
  *
@@ -2380,6 +2399,18 @@ inline void
 __free__SymbolTableStmt(struct SymbolTable *self)
 {
     FREE(StmtSymbolAll, self->value.stmt);
+    free(self);
+}
+
+inline void
+__free__SymbolTableVariant(struct SymbolTable *self) {
+    FREE(VariantEnumSymbol, self->value.variant);
+    free(self);
+}
+
+inline void
+__free__SymbolTableField(struct SymbolTable *self) {
+    FREE(FieldRecordSymbol, self->value.field);
     free(self);
 }
 

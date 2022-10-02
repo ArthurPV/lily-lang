@@ -964,7 +964,7 @@ __free__RecordSymbol(struct RecordSymbol *self)
 {
     if (self->fields != NULL) {
         for (Usize i = len__Vec(*self->fields); i--;)
-            FREE(FieldRecordSymbol, get__Vec(*self->fields, i));
+            FREE(SymbolTableAll, get__Vec(*self->fields, i));
 
         FREE(Vec, self->fields);
     }
@@ -993,7 +993,7 @@ __free__RecordObjSymbol(struct RecordObjSymbol *self)
 {
     if (self->fields != NULL) {
         for (Usize i = len__Vec(*self->fields); i--;)
-            FREE(FieldRecordSymbol, get__Vec(*self->fields, i));
+            FREE(SymbolTableAll, get__Vec(*self->fields, i));
 
         FREE(Vec, self->fields);
     }
@@ -1039,7 +1039,7 @@ __free__EnumSymbol(struct EnumSymbol *self)
 {
     if (self->variants != NULL) {
         for (Usize i = len__Vec(*self->variants); i--;)
-            FREE(VariantEnumSymbol, get__Vec(*self->variants, i));
+            FREE(SymbolTableAll, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
     }
@@ -1072,7 +1072,7 @@ __free__EnumObjSymbol(struct EnumObjSymbol *self)
 {
     if (self->variants != NULL) {
         for (Usize i = len__Vec(*self->variants); i--;)
-            FREE(VariantEnumSymbol, get__Vec(*self->variants, i));
+            FREE(SymbolTableAll, get__Vec(*self->variants, i));
 
         FREE(Vec, self->variants);
     }
@@ -1470,6 +1470,24 @@ __new__SymbolTableStmt(struct StmtSymbol stmt)
     return self;
 }
 
+struct SymbolTable *
+__new__SymbolTableVariant(struct VariantEnumSymbol *variant)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindVariant;
+    self->value.variant = variant;
+    return self;
+}
+
+struct SymbolTable *
+__new__SymbolTableField(struct FieldRecordSymbol *field)
+{
+    struct SymbolTable *self = malloc(sizeof(struct SymbolTable));
+    self->kind = SymbolTableKindField;
+    self->value.field = field;
+    return self;
+}
+
 struct String *
 get_name__SymbolTable(struct SymbolTable *self)
 {
@@ -1572,6 +1590,12 @@ __free__SymbolTableAll(struct SymbolTable *self)
             break;
         case SymbolTableKindStmt:
             FREE(SymbolTableStmt, self);
+            break;
+        case SymbolTableKindVariant:
+            FREE(SymbolTableVariant, self);
+            break;
+        case SymbolTableKindField:
+            FREE(SymbolTableField, self);
             break;
         default:
             UNREACHABLE("unknown symbol table kind");

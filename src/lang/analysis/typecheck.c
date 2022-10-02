@@ -90,14 +90,12 @@ search_from_access(struct Typecheck *self,
                    struct Vec *name,
                    struct SearchModuleContext search_module_context);
 static struct Scope *
-search_in_modules_from_name(struct Typecheck *self,
-                            struct Vec *name,
-                            struct SearchModuleContext search_module_context);
-static struct Scope *
 search_with_search_module_context(
   struct Typecheck *self,
   struct Vec *name,
   struct SearchModuleContext search_module_context);
+static Usize *
+search_in_modules_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_funs_from_name(struct Typecheck *self, struct String *name);
 static Usize *
@@ -112,6 +110,42 @@ static Usize *
 search_in_classes_from_name(struct Typecheck *self, struct String *name);
 static Usize *
 search_in_traits_from_name(struct Typecheck *self, struct String *name);
+static struct SymbolTable *
+search_module_in_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope);
+static struct SymbolTable *
+search_fun_in_scope(struct Typecheck *self,
+                    struct Expr *id,
+                    struct SymbolTable *scope);
+static struct SymbolTable *
+search_enum_in_scope(struct Typecheck *self,
+                     struct Expr *id,
+                     struct SymbolTable *scope);
+static struct SymbolTable *
+search_record_in_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope);
+static struct SymbolTable *
+search_enum_obj_in_scope(struct Typecheck *self,
+                         struct Expr *id,
+                         struct SymbolTable *scope);
+static struct SymbolTable *
+search_record_obj_in_scope(struct Typecheck *self,
+                           struct Expr *id,
+                           struct SymbolTable *scope);
+static struct SymbolTable *
+search_class_in_scope(struct Typecheck *self,
+                      struct Expr *id,
+                      struct SymbolTable *scope);
+static struct SymbolTable *
+search_trait_in_scope(struct Typecheck *self,
+                      struct Expr *id,
+                      struct SymbolTable *scope);
+static struct SymbolTable *
+search_in_custom_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope);
 static struct Vec *
 search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id);
 static struct Vec *
@@ -699,383 +733,17 @@ search_from_access(struct Typecheck *self,
     }
 }
 
-static struct Scope *
-search_in_modules_from_name(struct Typecheck *self,
-                            struct Expr *id,
-                            struct Scope *scope,
-                            struct SearchModuleContext search_module_context)
+static Usize *
+search_in_modules_from_name(struct Typecheck *self, struct String *name)
 {
     if (self->modules == NULL)
         return NULL;
-
-    struct Vec *name = identifier_access_to_string_vec(id);
-
-#define DEFINE_END_INDEX()                                    \
-    switch (scope->item_kind) {                               \
-        case ScopeItemKindVariable:                           \
-        case ScopeItemKindParam:                              \
-        case ScopeItemKindVariant:                            \
-        case ScopeItemKindGeneric:                            \
-            UNREACHABLE("can't determine end index");         \
-        case ScopeItemKindRecord:                             \
-        case ScopeItemKindAlias:                              \
-        case ScopeItemKindEnum:                               \
-        case ScopeItemKindConstant:                           \
-        case ScopeItemKindFun:                                \
-        case ScopeItemKindError:                              \
-        case ScopeItemKindTrait:                              \
-            if (len__Vec(*scope->id) - 1 > 0)                 \
-                *end_idx_scope_id = len__Vec(*scope->id) - 1; \
-            break;                                            \
-        case ScopeItemKindRecordObj:                          \
-        case ScopeItemKindEnumObj:                            \
-        case ScopeItemKindClass:                              \
-        case ScopeItemKindModule:                             \
-            *end_idx_scope_id = len__Vec(*scope->id);         \
-            break;                                            \
-    }
-
-#define VALID_CONTEXT(kind, symb)                      \
-    switch (kind) {                                    \
-        case DeclKindRecord:                           \
-        case DeclKindEnum:                             \
-        case DeclKindClass:                            \
-        case DeclKindTrait:                            \
-        case DeclKindAlias:                            \
-            if (!search_module_context.search_type) {  \
-                assert(0 && "error");                  \
-                return NULL;                           \
-            } else                                     \
-                return symb;                           \
-        case DeclKindFun:                              \
-            if (!search_module_context.search_fun) {   \
-                assert(0 && "error");                  \
-                return NULL;                           \
-            } else                                     \
-                return symb;                           \
-        case DeclKindConstant:                         \
-            if (!search_module_context.search_value) { \
-                assert(0 && "error");                  \
-                return NULL;                           \
-            } else                                     \
-                return symb;                           \
-        default:                                       \
-            break;                                     \
-    }
-
-    if (len__Vec(*name) == 1) {
-
-        if (id->kind == ExprKindIdentifier) {
-            Usize *end_idx_scope_id = NULL;
-
-            DEFINE_END_INDEX();
-
-            for (Usize i = (Usize)(UPtr)end_idx_scope_id; i--;) {
-                struct ModuleSymbol *current_module =
-                  entry_in_module(self, scope->id, i);
-
-                if (current_module != NULL) {
-                    for (Usize j = len__Vec(*current_module->body); j--;) {
-                        if (eq__String(get_name__SymbolTable(
-                                         get__Vec(*current_module->body, j)),
-                                       get__Vec(*name, 0),
-                                       false)) {
-                            FREE(Vec, name);
-                            VALID_CONTEXT(((struct SymbolTable *)get__Vec(
-                                             *current_module->body, j))
-                                            ->kind,
-                                          get_scope__SymbolTable(get__Vec(
-                                            *current_module->body, j));)
-                        }
-                    }
-                } else {
-                    struct Scope *res = search_with_search_module_context(
-                      self, name, search_module_context);
-
-                    if (res == NULL) {
-                        assert(0 && "error");
-                        return NULL;
-                    }
-
-                    return res;
-                }
-            }
-        } else if (id->kind == ExprKindGlobalAccess) {
-			struct Scope *res = search_with_search_module_context(self, name, search_module_context);
-
-			if (res == NULL) {
-				assert(0 && "error");
-				return NULL;
-			}
-
-			return res;
-		} else
-			UNREACHABLE("");
-    } else {
-    }
-
-    FREE(Vec, name);
-}
-
-static struct Scope *
-search_with_search_module_context(
-  struct Typecheck *self,
-  struct Vec *name,
-  struct SearchModuleContext search_module_context)
-{
-    // TODO: analysis if (*)->scope == NULL
-    if (search_module_context.search_type) {
-        {
-            Usize *enum_ = search_in_enums_from_name(self, get__Vec(*name, 0));
-
-            if (enum_ != NULL)
-                return ((struct EnumSymbol *)get__Vec(*self->enums,
-                                                      (UPtr)(Usize)enum_))
-                  ->scope;
-        }
-
-        {
-            Usize *record =
-              search_in_records_from_name(self, get__Vec(*name, 0));
-
-            if (record != NULL)
-                return ((struct RecordSymbol *)get__Vec(*self->records,
-                                                        (UPtr)(Usize)record))
-                  ->scope;
-        }
-
-        {
-            Usize *record_obj =
-              search_in_records_obj_from_name(self, get__Vec(*name, 0));
-
-            if (record_obj != NULL)
-                return ((struct RecordObjSymbol *)get__Vec(
-                          *self->records_obj, (UPtr)(Usize)record_obj))
-                  ->scope;
-        }
-
-        {
-            Usize *enum_obj =
-              search_in_enums_obj_from_name(self, get__Vec(*name, 0));
-
-            if (enum_obj != NULL)
-                return ((struct EnumObjSymbol *)get__Vec(*self->enums_obj,
-                                                         (UPtr)(Usize)enum_obj))
-                  ->scope;
-        }
-
-        {
-            Usize *class =
-              search_in_classes_from_name(self, get__Vec(*name, 0));
-
-            if (class != NULL)
-                return ((struct ClassSymbol *)get__Vec(*self->classes,
-                                                       (UPtr)(Usize) class))
-                  ->scope;
-        }
-
-        assert(0 && "error");
-
-        return NULL;
-    } else if (search_module_context.search_fun) {
-        Usize *fun = search_in_funs_from_name(self, get__Vec(*name, 0));
-
-        if (fun != NULL)
-            return ((struct FunSymbol *)get__Vec(*self->funs, (UPtr)(Usize)fun))
-              ->scope;
-
-        assert(0 && "error");
-
-        return NULL;
-    } else // TODO: not sure if `else` is correct
-        UNREACHABLE("can't search value in global");
-}
-
-static struct Scope *
-search_in_modules_from_name(struct Typecheck *self,
-                            struct Vec *name,
-                            struct SearchModuleContext search_module_context)
-{
-    if (self->modules == NULL)
-        return NULL;
-
-    struct Vec *ids = NEW(Vec, sizeof(Usize));
 
     for (Usize i = len__Vec(*self->modules); i--;)
         if (eq__String(
-              get__Vec(*name, 0),
+              name,
               ((struct ModuleSymbol *)get__Vec(*self->modules, i))->name,
-              false)) {
-            push__Vec(ids, (Usize *)i);
-            break;
-        }
-
-    if (len__Vec(*ids) == 0) {
-        FREE(Vec, ids);
-        assert(0 && "error");
-        return NULL;
-    }
-
-#define VALID_CONTEXT(kind)                          \
-    switch (kind) {                                  \
-        case DeclKindRecord:                         \
-        case DeclKindEnum:                           \
-        case DeclKindClass:                          \
-        case DeclKindTrait:                          \
-        case DeclKindAlias:                          \
-            if (!search_module_context.search_type)  \
-                assert(0 && "error");                \
-            break;                                   \
-        case DeclKindFun:                            \
-            if (!search_module_context.search_fun)   \
-                assert(0 && "error");                \
-            break;                                   \
-        case DeclKindConstant:                       \
-            if (!search_module_context.search_value) \
-                assert(0 && "error");                \
-            break;                                   \
-        default:                                     \
-            break;                                   \
-    }
-
-#define CHECK_ID(decl, kind)                           \
-    if (eq__String(current_name, decl->name, false)) { \
-        *id = j;                                       \
-        push__Vec(ids, id);                            \
-        VALID_CONTEXT(kind);                           \
-    }                                                  \
-    if (len__Vec(*name) != i)                          \
-        assert(0 && "error");                          \
-    break;
-
-    struct Decl *current_module =
-      get__Vec(*self->parser.decls, *(Usize *)get__Vec(*ids, 0));
-    struct Decl *current_decl = NULL;
-    struct String *current_name = NULL;
-
-    for (Usize i = 1; i < len__Vec(*name); i++) {
-        current_name = get__Vec(*name, i);
-
-        if (((struct ModuleBodyItem *)get__Vec(
-               *current_module->value.module->body, 0))
-              ->kind == ModuleBodyItemKindDecl) {
-            current_decl =
-              ((struct ModuleBodyItem *)get__Vec(
-                 *current_module->value.module->body,
-                 len__Vec(*current_module->value.module->body) - 1))
-                ->value.decl;
-            Usize *id = NULL;
-            bool entry_in_module = false;
-
-            for (Usize j = len__Vec(*current_module->value.module->body);
-                 j--;) {
-                switch (current_decl->kind) {
-                    case DeclKindRecord:
-                        CHECK_ID(current_decl->value.record,
-                                 current_decl->kind);
-                    case DeclKindEnum:
-                        CHECK_ID(current_decl->value.enum_, current_decl->kind);
-                    case DeclKindClass:
-                        CHECK_ID(current_decl->value.class, current_decl->kind);
-                    case DeclKindTrait:
-                        CHECK_ID(current_decl->value.trait, current_decl->kind);
-                    case DeclKindFun:
-                        CHECK_ID(current_decl->value.fun, current_decl->kind);
-                    case DeclKindError:
-                        CHECK_ID(current_decl->value.error, current_decl->kind);
-                    case DeclKindAlias:
-                        CHECK_ID(current_decl->value.alias, current_decl->kind);
-                    case DeclKindConstant:
-                        CHECK_ID(current_decl->value.constant,
-                                 current_decl->kind);
-                    case DeclKindModule:
-                        if (eq__String(current_decl->value.module->name,
-                                       current_name,
-                                       false)) {
-                            entry_in_module = true;
-                            *id = j;
-                            current_module = current_decl;
-
-                            push__Vec(ids, id);
-                        }
-                        break;
-                    case DeclKindTag:
-                        break;
-                    case DeclKindImport:
-                        UNREACHABLE("");
-                }
-
-                if (id != NULL || entry_in_module)
-                    break;
-
-                current_decl = ((struct ModuleBodyItem *)get__Vec(
-                                  *current_module->value.module->body, j))
-                                 ->value.decl;
-            }
-
-            if (id == NULL) {
-                assert(0 && "error");
-                return NULL;
-            }
-        }
-    }
-
-    if (current_decl == NULL)
-        assert(0 && "error");
-
-    if (len__Vec(*ids) != len__Vec(*name)) {
-        assert(0 && "error");
-        return NULL;
-    }
-
-#define SCOPE(kind)                                      \
-    NEW(Scope,                                           \
-        self->parser.parse_block.scanner.src->file.name, \
-        current_name,                                    \
-        ids,                                             \
-        kind,                                            \
-        ScopeKindGlobal)
-
-    switch (current_decl->kind) {
-        case DeclKindRecord:
-            if (current_decl->value.record->is_object)
-                return SCOPE(ScopeItemKindRecordObj);
-            else
-                return SCOPE(ScopeItemKindRecord);
-        case DeclKindEnum:
-            if (current_decl->value.record->is_object)
-                return SCOPE(ScopeItemKindEnumObj);
-            else
-                return SCOPE(ScopeItemKindEnum);
-        case DeclKindClass:
-            return SCOPE(ScopeItemKindClass);
-        case DeclKindTrait:
-            return SCOPE(ScopeItemKindTrait);
-        case DeclKindFun:
-            return SCOPE(ScopeItemKindFun);
-        case DeclKindError:
-            return SCOPE(ScopeItemKindError);
-        case DeclKindAlias:
-            return SCOPE(ScopeItemKindAlias);
-        case DeclKindConstant:
-            return SCOPE(ScopeItemKindConstant);
-        case DeclKindModule:
-            return SCOPE(ScopeItemKindModule);
-        default:
-            UNREACHABLE("");
-    }
-}
-
-static Usize *
-search_in_funs_from_name(struct Typecheck *self, struct String *name)
-{
-    if (self->funs == NULL)
-        return NULL;
-
-    for (Usize i = len__Vec(*self->funs); i--;)
-        if (eq__String(name,
-                       ((struct FunSymbol *)get__Vec(*self->funs, i))->name,
-                       false))
+              false))
             return (Usize *)i;
 
     return NULL;
@@ -1175,6 +843,111 @@ search_in_traits_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
+static struct SymbolTable *
+search_module_in_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope)
+{
+    TODO("search_module_in_scope");
+}
+
+static struct SymbolTable *
+search_fun_in_scope(struct Typecheck *self,
+                    struct Expr *id,
+                    struct SymbolTable *scope)
+{
+    TODO("search_fun_in_scope");
+}
+
+static struct SymbolTable *
+search_enum_in_scope(struct Typecheck *self,
+                     struct Expr *id,
+                     struct SymbolTable *scope)
+{
+    TODO("search_module_in_scope");
+}
+
+static struct SymbolTable *
+search_record_in_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope)
+{
+    TODO("search_module_in_scope");
+}
+
+static struct SymbolTable *
+search_enum_obj_in_scope(struct Typecheck *self,
+                         struct Expr *id,
+                         struct SymbolTable *scope)
+{
+    TODO("search_enum_obj_in_scope");
+}
+
+static struct SymbolTable *
+search_record_obj_in_scope(struct Typecheck *self,
+                           struct Expr *id,
+                           struct SymbolTable *scope)
+{
+    TODO("search_record_obj_in_scope");
+}
+
+static struct SymbolTable *
+search_class_in_scope(struct Typecheck *self,
+                      struct Expr *id,
+                      struct SymbolTable *scope)
+{
+    TODO("search_class_in_scope");
+}
+
+static struct SymbolTable *
+search_trait_in_scope(struct Typecheck *self,
+                      struct Expr *id,
+                      struct SymbolTable *scope)
+{
+    TODO("search_trait_in_scope")
+}
+
+static struct SymbolTable *
+search_in_custom_scope(struct Typecheck *self,
+                       struct Expr *id,
+                       struct SymbolTable *scope)
+{
+    struct Vec *body = NULL; // struct Vec<struct SymbolTable*>*
+    struct Vec *variants = NULL; // struct Vec<struct SymbolTable*>*
+    struct Vec *fields = NULL; // struct Vec<struct SymbolTable*>*
+
+    switch (scope->kind) {
+      case SymbolTableKindClass:
+        body = scope->value.class->body;
+        break;
+      case SymbolTableKindEnum:
+        variants = scope->value.enum_->variants;
+        break;
+      case SymbolTableKindRecord:
+        fields = scope->value.record->fields;
+        break;
+      case SymbolTableKindEnumObj:
+        variants = scope->value.enum_obj->variants;
+        body = scope->value.enum_obj->attached;
+        break;
+      case SymbolTableKindRecordObj:
+        fields = scope->value.record_obj->fields;
+        body = scope->value.record_obj->attached;
+        break;
+      default:
+        assert(0 && "error: cannot search in scope in this case");
+    }
+
+    if (body != NULL) {
+    } else if (body != NULL && variants != NULL) {
+    } else if (body != NULL && fields != NULL) {
+    } else if (variants != NULL) {
+    } else if (fields != NULL) {
+    }
+
+    TODO("search_in_custom_scope");
+}
+
 static struct Vec *
 search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
 {
@@ -1186,13 +959,13 @@ search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
                 return get__Vec(*self->funs, i);
         }
     } else if (id->kind == ExprKindIdentifierAccess) {
-        struct Scope *scope = search_in_modules_from_name(
+        /* struct Scope *scope = search_in_modules_from_name(
           self,
           id->value.identifier_access,
           (struct SearchModuleContext){ .search_fun = true,
                                         .search_type = false,
                                         .search_value = false,
-                                        .search_variant = false });
+                                        .search_variant = false }); */
     } else
         assert(0 && "error");
 }
@@ -1522,13 +1295,13 @@ check_data_type(struct Typecheck *self,
                         .search_value = false,
                         .search_variant = false
                     };
-                    return NEW(DataTypeSymbolCustom,
+                    /* return NEW(DataTypeSymbolCustom,
                                data_type->value.custom->items[1],
                                NULL,
                                search_in_modules_from_name(
                                  self,
                                  data_type->value.custom->items[0],
-                                 search_module_context));
+                                 search_module_context)); */
                     return NULL;
                 }
             } break;
