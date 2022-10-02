@@ -276,6 +276,25 @@ scan_bin(struct Scanner *self);
 static struct Result *
 scan_num(struct Scanner *self);
 
+static struct Result *
+scan_doc_author(struct Scanner *self);
+static struct Result *
+scan_doc_contract(struct Scanner *self);
+static struct Result *
+scan_doc_description(struct Scanner *self);
+static struct Result *
+scan_doc_file(struct Scanner *self);
+static struct Result *
+scan_doc_generics(struct Scanner *self);
+static struct Result *
+scan_doc_prototype(struct Scanner *self);
+static struct Result *
+scan_doc_see(struct Scanner *self);
+static struct Result *
+scan_doc_version(struct Scanner *self);
+static void
+get_doc(struct Scanner *self);
+
 // Scan all numbers (integer or float literal).
 static struct Result *
 get_all_nums(struct Scanner *self);
@@ -1092,6 +1111,88 @@ scan_num(struct Scanner *self)
 }
 
 static struct Result *
+scan_doc_author(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_contract(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_description(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_file(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_generics(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_prototype(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_see(struct Scanner *self)
+{
+}
+
+static struct Result *
+scan_doc_version(struct Scanner *self)
+{
+}
+
+static void
+get_doc(struct Scanner *self)
+{
+    for (Usize i = 0; i < len__String(*self->src->file.content); i++) {
+        switch ((char)(UPtr)self->src->c) {
+            case '@': {
+                next_char(self);
+
+                const struct String *id = scan_identifier(self);
+                const Str id_str = to_Str__String(*id);
+
+                if (strcmp(id_str, "")) {
+                    assert(0 && "error");
+                } else if (strcmp(id_str, "author")) {
+                    TODO("@author");
+                } else if (strcmp(id_str, "contract")) {
+                    TODO("@contract");
+                } else if (strcmp(id_str, "desc")) {
+                    TODO("@desc");
+                } else if (strcmp(id_str, "file")) {
+                    TODO("@file");
+                } else if (strcmp(id_str, "generics")) {
+                    TODO("@generics");
+                } else if (strcmp(id_str, "prot")) {
+                    TODO("@prot");
+                } else if (strcmp(id_str, "see")) {
+                    TODO("@see");
+                } else if (strcmp(id_str, "version")) {
+                    TODO("@version");
+                } else {
+                    assert(0 && "error");
+                }
+
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+}
+
+static struct Result *
 get_all_nums(struct Scanner *self)
 {
     struct Result *res = NULL;
@@ -1389,6 +1490,9 @@ get_token(struct Scanner *self)
 
         case '/':
             if (c2 == (char *)'/' && c3 == (char *)'/') {
+                Usize start_line = self->line;
+                Usize start_col = self->col;
+
                 jump(self, 3);
 
                 struct String *doc = scan_comment_doc(self);
@@ -1427,8 +1531,18 @@ get_token(struct Scanner *self)
 
                 bool is_eof = false;
 
-                TODO("Get flags");
+                struct Source scan_doc_src =
+                  NEW(Source,
+                      (struct File){ .content = doc,
+                                     .name = self->src->file.name });
+                struct Scanner scan_doc = NEW(Scanner, &scan_doc_src);
 
+                scan_doc.line = start_line;
+                scan_doc.col = start_col;
+
+                get_doc(&scan_doc);
+
+                TODO("Get flags");
                 // GET FLAGS
                 // ...
 

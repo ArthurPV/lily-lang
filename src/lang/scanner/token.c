@@ -98,6 +98,42 @@ __new__DocWithString(enum DocKind kind, struct String *s)
     return self;
 }
 
+struct Doc *
+__new__DocContract(struct Vec *contract)
+{
+    struct Doc *self = malloc(sizeof(struct Doc));
+    self->kind = DocKindContract;
+    self->contract = contract;
+    return self;
+}
+
+struct Doc *
+__new__DocDescription(struct Vec *desc)
+{
+    struct Doc *self = malloc(sizeof(struct Doc));
+    self->kind = DocKindDescription;
+    self->desc = desc;
+    return self;
+}
+
+struct Doc *
+__new__DocGenerics(struct Tuple *generics)
+{
+    struct Doc *self = malloc(sizeof(struct Doc));
+    self->kind = DocKindGenerics;
+    self->generics = generics;
+    return self;
+}
+
+struct Doc *
+__new__DocPrototype(struct Vec *prot)
+{
+    struct Doc *self = malloc(sizeof(struct Doc));
+    self->kind = DocKindPrototype;
+    self->prot = prot;
+    return self;
+}
+
 struct String *
 to_string__Doc(struct Doc self)
 {

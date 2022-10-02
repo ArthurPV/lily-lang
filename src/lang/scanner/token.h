@@ -204,7 +204,14 @@ copy__Location(struct Location *self);
 enum DocKind
 {
     DocKindAuthor,
-    DocKindVersion
+    DocKindContract,
+    DocKindDescription,
+    DocKindText,
+    DocKindFile,
+    DocKindGenerics,
+    DocKindPrototype,
+    DocKindSee,
+    DocKindVersion,
 };
 
 typedef struct Doc
@@ -213,6 +220,11 @@ typedef struct Doc
     union
     {
         struct String *s;
+        struct Vec *contract;   // struct Vec<struct Token*>*
+        struct Vec *desc;       // struct Vec<struct Doc*>*
+        struct Tuple *generics; // struct Tuple<struct Vec<struct String*>*,
+                                // struct Vec<struct Token*>*>*
+        struct Vec *prot;       // struct Vec<struct Token*>*
     };
 } Doc;
 
@@ -222,6 +234,34 @@ typedef struct Doc
  */
 struct Doc *
 __new__DocWithString(enum DocKind kind, struct String *s);
+
+/**
+ *
+ * @return new instance of Doc (Contract variant).
+ */
+struct Doc *
+__new__DocContract(struct Vec *contract);
+
+/**
+ *
+ * @return new instance of Doc (Description variant).
+ */
+struct Doc *
+__new__DocDescription(struct Vec *desc);
+
+/**
+ *
+ * @return new instance of Doc (Generics variant).
+ */
+struct Doc *
+__new__DocGenerics(struct Tuple *generics);
+
+/**
+ *
+ * @return new instance of Doc (Prototype variant).
+ */
+struct Doc *
+__new__DocPrototype(struct Vec *prot);
 
 /**
  *

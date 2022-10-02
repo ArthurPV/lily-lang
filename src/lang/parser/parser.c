@@ -5374,8 +5374,7 @@ parse_import_value__parse_import_stmt(struct Parser self,
                           NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
                           loc_err,
                           from__String(""),
-                          Some(format("found `{c}`, expected `.`, `ID`, `{{`, "
-                                      "`}`, `@` or `*`",
+                          Some(format("found `{c}`, expected `.`",
                                       (char)(UPtr)current)));
 
                     emit__Diagnostic(err);
@@ -5416,8 +5415,7 @@ parse_import_value__parse_import_stmt(struct Parser self,
                           NEW(LilyError, LilyErrorUnexpectedCharInImportValue),
                           loc_err,
                           from__String(""),
-                          Some(format("found `{c}`, expected `.`, `ID`, `{{`, "
-                                      "`}`, `@` or `*`",
+                          Some(format("found `{c}`, expected `.`",
                                       (char)(UPtr)current)));
 
                     emit__Diagnostic(err);
