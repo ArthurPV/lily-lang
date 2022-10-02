@@ -53,3 +53,8 @@ end
 module hello =
 	pub fun hello = "hello";
 end
+
+module calc =
+	pub fun add(x, y) = x+y;
+	pub fun sub(x, y) = x-y;
+end

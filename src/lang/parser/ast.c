@@ -2526,7 +2526,7 @@ __free__FunDecl(struct FunDecl *self)
 
 struct ConstantDecl *
 __new__ConstantDecl(struct String *name,
-                    struct Option *data_type,
+                    struct DataType *data_type,
                     struct Expr *expr,
                     bool is_pub)
 {
@@ -2541,10 +2541,9 @@ __new__ConstantDecl(struct String *name,
 void
 __free__ConstantDecl(struct ConstantDecl *self)
 {
-    if (is_Some__Option(self->data_type))
-        FREE(DataTypeAll, get__Option(self->data_type));
+    if (self->data_type != NULL)
+        FREE(DataTypeAll, self->data_type);
 
-    FREE(Option, self->data_type);
     FREE(ExprAll, self->expr);
     free(self);
 }
@@ -2738,7 +2737,7 @@ struct EnumDecl *
 __new__EnumDecl(struct String *name,
                 struct Vec *generic_params,
                 struct Vec *variants,
-                struct Option *type_value,
+                struct DataType *type_value,
                 bool is_pub,
                 bool is_object,
                 bool is_error)
@@ -2771,10 +2770,9 @@ __free__EnumDecl(struct EnumDecl *self)
         FREE(Vec, self->variants);
     }
 
-    if (is_Some__Option(self->type_value))
-        FREE(DataTypeAll, get__Option(self->type_value));
+    if (self->type_value != NULL)
+        FREE(DataTypeAll, self->type_value);
 
-    FREE(Option, self->type_value);
     free(self);
 }
 

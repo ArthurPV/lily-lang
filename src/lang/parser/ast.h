@@ -1805,7 +1805,7 @@ __free__FunDecl(struct FunDecl *self);
 typedef struct ConstantDecl
 {
     struct String *name;
-    struct Option *data_type;
+    struct DataType *data_type;
     struct Expr *expr;
     bool is_pub;
 } ConstantDecl;
@@ -1816,7 +1816,7 @@ typedef struct ConstantDecl
  */
 struct ConstantDecl *
 __new__ConstantDecl(struct String *name,
-                    struct Option *data_type,
+                    struct DataType *data_type,
                     struct Expr *expr,
                     bool is_pub);
 
@@ -2008,7 +2008,7 @@ typedef struct EnumDecl
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *variants;       // struct Vec<struct VariantEnum*>*
-    struct Option *type_value;  // struct Option<struct DataType*>*
+    struct DataType *type_value;
     bool is_pub;
     bool is_object;
     bool is_error;
@@ -2022,7 +2022,7 @@ struct EnumDecl *
 __new__EnumDecl(struct String *name,
                 struct Vec *generic_params,
                 struct Vec *variants,
-                struct Option *type_value,
+                struct DataType *type_value,
                 bool is_pub,
                 bool is_object,
                 bool is_error);

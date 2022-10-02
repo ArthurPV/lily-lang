@@ -543,7 +543,7 @@ static struct Result *
 get_escape(struct Scanner *self, char *previous)
 {
     struct Result *res = NULL;
-    struct Location loc_error = {};
+    struct Location loc_error = NEW(Location);
 
     start__Location(&loc_error, self->line, self->col);
 
@@ -604,7 +604,7 @@ scan_comment_one(struct Scanner *self)
 static struct Result *
 scan_comment_multi(struct Scanner *self)
 {
-    struct Location location_error = {};
+    struct Location location_error = NEW(Location);
 
     start__Location(&location_error, self->line, self->col);
 
@@ -670,7 +670,7 @@ scan_identifier(struct Scanner *self)
 static struct Result *
 scan_char(struct Scanner *self, bool is_bit)
 {
-    struct Location loc_error = {};
+    struct Location loc_error = NEW(Location);
 
     start__Location(&loc_error, self->line, self->col);
     next_char(self);
@@ -722,7 +722,7 @@ scan_char(struct Scanner *self, bool is_bit)
 static struct Result *
 scan_string(struct Scanner *self)
 {
-    struct Location location_error = {};
+    struct Location location_error = NEW(Location);
     struct String *s = NEW(String);
 
     start__Location(&location_error, self->line, self->col);
@@ -760,7 +760,7 @@ scan_string(struct Scanner *self)
 static struct Result *
 scan_hex(struct Scanner *self)
 {
-    struct Location loc_error = {};
+    struct Location loc_error = NEW(Location);
     struct String *hex = from__String("0x");
 
     start__Location(&loc_error, self->line, self->col);
@@ -799,7 +799,7 @@ scan_hex(struct Scanner *self)
 static struct Result *
 scan_oct(struct Scanner *self)
 {
-    struct Location loc_error = {};
+    struct Location loc_error = NEW(Location);
     struct String *oct = from__String("0o");
 
     start__Location(&loc_error, self->line, self->col);
@@ -839,7 +839,7 @@ static struct Result *
 scan_bin(struct Scanner *self)
 {
 
-    struct Location loc_error = {};
+    struct Location loc_error = NEW(Location);
     struct String *bin = from__String("0b");
 
     start__Location(&loc_error, self->line, self->col);

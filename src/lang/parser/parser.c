@@ -4960,7 +4960,7 @@ parse_enum_declaration(struct Parser *self,
                        bool is_object)
 {
     struct Vec *generic_params = NULL;
-    struct Option *type_value = NULL;
+    struct DataType *type_value = NULL;
     struct Vec *variants = NULL;
 
     if (enum_parse_context.has_generic_params) {
@@ -4973,7 +4973,7 @@ parse_enum_declaration(struct Parser *self,
     if (enum_parse_context.has_data_type) {
         struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.data_type);
 
-        type_value = Some(parse_data_type(*self, &parse));
+        type_value = parse_data_type(*self, &parse);
 
         if (parse.pos != len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
@@ -4988,8 +4988,7 @@ parse_enum_declaration(struct Parser *self,
 
             emit__Diagnostic(err);
         }
-    } else
-        type_value = None();
+    }
 
     if (len__Vec(*enum_parse_context.variants) > 0) {
         struct ParseDecl parse = NEW(ParseDecl, enum_parse_context.variants);
@@ -5582,14 +5581,14 @@ static struct ConstantDecl *
 parse_constant_declaration(struct Parser *self,
                            struct ConstantParseContext constant_parse_context)
 {
-    struct Option *data_type = NULL;
+    struct DataType *data_type = NULL;
     struct Expr *expr = NULL;
 
     if (len__Vec(*constant_parse_context.data_type) > 0) {
         struct ParseDecl parse =
           NEW(ParseDecl, constant_parse_context.data_type);
 
-        data_type = Some(parse_data_type(*self, &parse));
+        data_type = parse_data_type(*self, &parse);
 
         if (parse.pos != len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
@@ -5604,8 +5603,7 @@ parse_constant_declaration(struct Parser *self,
 
             emit__Diagnostic(err);
         }
-    } else
-        data_type = None();
+    }
 
     if (len__Vec(*constant_parse_context.expr) > 0) {
         struct ParseDecl parse = NEW(ParseDecl, constant_parse_context.expr);
