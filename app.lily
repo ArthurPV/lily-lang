@@ -2,4 +2,8 @@ fun add(x, y) = return x+y;
 
 fun is_zero(x) = if x == 0 do true;;
 
-fun main = x;
+fun main =
+	begin =
+		x := 3
+	end
+end

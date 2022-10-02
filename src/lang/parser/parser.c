@@ -1224,7 +1224,7 @@ valid_body_item(struct ParseBlock *parse_block,
 static void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
-    if (parse_block->current->kind == TokenKindDoKw) {
+    if (parse_block->current->kind == TokenKindDoKw || parse_block->current->kind == TokenKindBeginKw) {
         Usize start_line = parse_block->current->loc->s_line;
         bool bad_item = false;
 
@@ -1236,7 +1236,7 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
                parse_block->current->kind != TokenKindSemicolon &&
                parse_block->current->kind != TokenKindEof) {
             if (valid_body_item(parse_block, bad_item, is_fun)) {
-                if (parse_block->current->kind == TokenKindDoKw)
+                if (parse_block->current->kind == TokenKindDoKw || parse_block->current->kind == TokenKindBeginKw)
                     verify_stmt(self, parse_block, is_fun);
 
                 PUSH_BODY();
@@ -1268,6 +1268,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
            parse_block->current->kind != TokenKindEof) {
         if (valid_body_item(parse_block, bad_item, is_fun)) {
             switch (parse_block->current->kind) {
+                case TokenKindBeginKw:
                 case TokenKindDoKw:
                     verify_stmt(self, parse_block, is_fun);
                     break;
@@ -3719,16 +3720,61 @@ parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
             break;
         }
 
-        case TokenKindTryKw:
-            break;
+        case TokenKindTryKw: {
+            next_token(parse_decl);
 
-        case TokenKindIfKw:
-            break;
+            struct Expr *expr_try = parse_expr(self, parse_decl);
 
-        case TokenKindBeginKw:
+            end__Location(&loc,
+                          parse_decl->current->loc->s_line,
+                          parse_decl->current->loc->s_col);
+
+            expr = NEW(ExprTry, expr_try, loc);
+
             break;
+        }
+
+        case TokenKindIfKw: {
+            next_token(parse_decl);
+
+            struct IfCond *if_ = parse_if_stmt(self, parse_decl, &loc);
+
+            expr = NEW(ExprIf, if_, loc);
+
+            break;
+        }
+
+        case TokenKindBeginKw: {
+            EXPECTED_TOKEN(parse_decl, TokenKindEq, {
+                struct Diagnostic *err =
+                  NEW(DiagnosticWithErrParser,
+                      &self.parse_block,
+                      NEW(LilyError, LilyErrorExpectedToken),
+                      *parse_decl->current->loc,
+                      format(""),
+                      None());
+
+                err->err->s = from__String("`=`");
+
+                emit__Diagnostic(err);
+            });
+
+            struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
+
+            while (parse_decl->current->kind != TokenKindEndKw && parse_decl->current->kind != TokenKindSemicolon) {
+                PARSE_BODY(body);
+            }
+
+            next_token(parse_decl);
+
+            end__Location(&loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+            return NEW(ExprBlock, body, loc);
+        }
 
         case TokenKindAmpersand: {
+            next_token(parse_decl);
+
             struct Expr *expr_ref = parse_expr(self, parse_decl);
 
             end__Location(&loc,

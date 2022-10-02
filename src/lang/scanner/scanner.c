@@ -422,6 +422,7 @@ next_char_by_token(struct Scanner *self, struct Token tok)
         case TokenKindImplKw:
         case TokenKindInKw:
         case TokenKindMutKw:
+        case TokenKindBeginKw:
         case TokenKindStringLit:
         case TokenKindCharLit:
         case TokenKindBitStringLit:
