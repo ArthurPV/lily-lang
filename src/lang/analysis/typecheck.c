@@ -337,6 +337,48 @@ check_expression(struct Typecheck *self,
                  struct Vec *local_data_type,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type);
+static struct StmtSymbol
+check_await_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type);
+static struct StmtSymbol
+check_return_stmt(struct Typecheck *self,
+                  struct FunSymbol *fun,
+                  struct Stmt *stmt,
+                  struct Vec *local_value,
+                  struct Vec *local_data_type);
+static struct StmtSymbol
+check_for_stmt(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Stmt *stmt,
+               struct Vec *local_value,
+               struct Vec *local_data_type);
+static struct StmtSymbol
+check_if_stmt(struct Typecheck *self,
+              struct FunSymbol *fun,
+              struct Stmt *stmt,
+              struct Vec *local_value,
+              struct Vec *local_data_type);
+static struct StmtSymbol
+check_match_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type);
+static struct StmtSymbol
+check_try_stmt(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Stmt *stmt,
+               struct Vec *local_value,
+               struct Vec *local_data_type);
+static struct StmtSymbol
+check_while_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type);
 static void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
@@ -4529,6 +4571,8 @@ check_expression(struct Typecheck *self,
                                local_data_type,
                                defined_data_type,
                                is_return_type));
+        case ExprKindGlobalAccess:
+            TODO("check global access");
         case ExprKindArrayAccess: {
             struct Expr *identifier_access_expr =
               NEW(ExprIdentifierAccess,
@@ -4626,6 +4670,16 @@ check_expression(struct Typecheck *self,
             TODO("check wildcard");
         case ExprKindLiteral:
             TODO("check literal");
+        case ExprKindIf:
+            TODO("check if");
+        case ExprKindGrouping:
+            return check_expression(self,
+                                    fun,
+                                    expr->value.grouping,
+                                    local_value,
+                                    local_data_type,
+                                    defined_data_type,
+                                    is_return_type);
         case ExprKindVariable: {
             struct DataTypeSymbol *defined_data_type_expr_variable =
               expr->value.variable.data_type
@@ -4672,6 +4726,69 @@ check_expression(struct Typecheck *self,
     }
 }
 
+static struct StmtSymbol
+check_await_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_return_stmt(struct Typecheck *self,
+                  struct FunSymbol *fun,
+                  struct Stmt *stmt,
+                  struct Vec *local_value,
+                  struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_for_stmt(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Stmt *stmt,
+               struct Vec *local_value,
+               struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_if_stmt(struct Typecheck *self,
+              struct FunSymbol *fun,
+              struct Stmt *stmt,
+              struct Vec *local_value,
+              struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_match_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_try_stmt(struct Typecheck *self,
+               struct FunSymbol *fun,
+               struct Stmt *stmt,
+               struct Vec *local_value,
+               struct Vec *local_data_type)
+{
+}
+
+static struct StmtSymbol
+check_while_stmt(struct Typecheck *self,
+                 struct FunSymbol *fun,
+                 struct Stmt *stmt,
+                 struct Vec *local_value,
+                 struct Vec *local_data_type)
+{
+}
+
 static void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
@@ -4682,17 +4799,98 @@ check_fun_body(struct Typecheck *self,
         switch (
           ((struct FunBodyItem *)get__Vec(*fun->fun_decl->value.fun->body, i))
             ->kind) {
-            case FunBodyItemKindExpr: {
-                struct Expr *expr = ((struct FunBodyItem *)get__Vec(
-                                       *fun->fun_decl->value.fun->body, i))
-                                      ->expr;
+            case FunBodyItemKindExpr:
+                push__Vec(
+                  fun->body,
+                  NEW(SymbolTableExpr,
+                      check_expression(self,
+                                       fun,
+                                       ((struct FunBodyItem *)get__Vec(
+                                          *fun->fun_decl->value.fun->body, i))
+                                         ->expr,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       false)));
 
-                switch (expr->kind) {
+                break;
+            case FunBodyItemKindStmt: {
+                struct Stmt *stmt = ((struct FunBodyItem *)get__Vec(
+                                       *fun->fun_decl->value.fun->body, i))
+                                      ->stmt;
+
+                switch (stmt->kind) {
+                    case StmtKindAwait:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_await_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindReturn:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_return_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindFor:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_for_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindIf:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_if_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindMatch:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_match_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindTry:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_try_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindWhile:
+                        push__Vec(
+                          fun->body,
+                          NEW(
+                            SymbolTableStmt,
+                            check_while_stmt(
+                              self, fun, stmt, local_value, local_data_type)));
+
+                        break;
+                    case StmtKindImport:
+                    case StmtKindBreak:
+                    case StmtKindNext:
+                        break;
                 }
+
                 break;
             }
-            case FunBodyItemKindStmt:
-                break;
         }
     }
 }
