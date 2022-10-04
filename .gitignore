@@ -5,3 +5,5 @@
 /cmake-build-debug
 /app.lily.c
 /app
+/src/lang/runtime/js/*.js
+/tests/runtime/js/node_modules
