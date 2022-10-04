@@ -9,5 +9,8 @@
   },
   "keywords": [],
   "author": "ArthurPV",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^18.8.1"
+  }
 }
