@@ -26,145 +26,145 @@ const MIN: number = -0x80;
 const MAX: number = 0x7F;
 
 function checkOverflow(n: number): void {
-	if (n > MIN && n < MAX)
-		return;
-	else
-		throw reportError(`Int8 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
+    if (n > MIN && n < MAX)
+        return;
+    else
+        throw reportError(`Int8 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
 }
 
 export class I8 {
-	private _: number;	
+    private _: number;
 
-	constructor(_: number) {
-		this._ = _;
-		checkOverflow(this._);
-	}
+    constructor(_: number) {
+        this._ = _;
+        checkOverflow(this._);
+    }
 
-	public add(y: I8): I8 {
-		return new I8(this._ + y._);
-	}
+    public add(y: I8): I8 {
+        return new I8(this._ + y._);
+    }
 
-	public sub(y: I8): I8 {
-		return new I8(this._ - y._);
-	}
+    public sub(y: I8): I8 {
+        return new I8(this._ - y._);
+    }
 
-	public mul(y: I8): I8 {
-		return new I8(this._ * y._);
-	}
+    public mul(y: I8): I8 {
+        return new I8(this._ * y._);
+    }
 
-	public div(y: I8): I8 {
-		return new I8(Math.floor(this._ / y._));
-	}
+    public div(y: I8): I8 {
+        return new I8(Math.floor(this._ / y._));
+    }
 
-	public mod(y: I8): I8 {
-		return new I8(this._ % y._);
-	}
+    public mod(y: I8): I8 {
+        return new I8(this._ % y._);
+    }
 
-	public exp(y: I8): I8 {
-		return new I8(this._ ** y._);
-	}
+    public exp(y: I8): I8 {
+        return new I8(this._ ** y._);
+    }
 
-	public lShift(y: I8): I8 {
-		return new I8(this._ << y._);
-	}
+    public lShift(y: I8): I8 {
+        return new I8(this._ << y._);
+    }
 
-	public rShift(y: I8): I8 {
-		return new I8(this._ >> y._);
-	}
+    public rShift(y: I8): I8 {
+        return new I8(this._ >> y._);
+    }
 
-	public bitOr(y: I8): I8 {
-		return new I8(this._ | y._);
-	}
+    public bitOr(y: I8): I8 {
+        return new I8(this._ | y._);
+    }
 
-	public bitAnd(y: I8): I8 {
-		return new I8(this._ & y._);
-	}
+    public bitAnd(y: I8): I8 {
+        return new I8(this._ & y._);
+    }
 
-	public bitXor(y: I8): I8 {
-		return new I8(this._ ^ y._);
-	}
+    public bitXor(y: I8): I8 {
+        return new I8(this._ ^ y._);
+    }
 
-	public bitNot(): I8 {
-		return new I8(~this._);
-	}
+    public bitNot(): I8 {
+        return new I8(~this._);
+    }
 
-	public assign(y: I8): void {
-		checkOverflow(this._ = y._);
-	}
+    public assign(y: I8): void {
+        checkOverflow(this._ = y._);
+    }
 
-	public addAssign(y: I8): void {
-		checkOverflow(this._ += y._);
-	}
+    public addAssign(y: I8): void {
+        checkOverflow(this._ += y._);
+    }
 
-	public subAssign(y: I8): void {
-		checkOverflow(this._ -= y._);
-	}
+    public subAssign(y: I8): void {
+        checkOverflow(this._ -= y._);
+    }
 
-	public mulAssign(y: I8): void {
-		checkOverflow(this._ *= y._);
-	}
+    public mulAssign(y: I8): void {
+        checkOverflow(this._ *= y._);
+    }
 
-	public divAssign(y: I8): void {
-		checkOverflow(this._ = Math.floor(this._ /= y._));
-	}
+    public divAssign(y: I8): void {
+        checkOverflow(this._ = Math.floor(this._ /= y._));
+    }
 
-	public modAssign(y: I8): void {
-		checkOverflow(this._ %= y._);
-	}
+    public modAssign(y: I8): void {
+        checkOverflow(this._ %= y._);
+    }
 
-	public expAssign(y: I8): void {
-		checkOverflow(this._ **= y._);
-	}
+    public expAssign(y: I8): void {
+        checkOverflow(this._ **= y._);
+    }
 
-	public lShiftAssign(y: I8): void {
-		checkOverflow(this._ <<= y._);
-	}
+    public lShiftAssign(y: I8): void {
+        checkOverflow(this._ <<= y._);
+    }
 
-	public rShiftAssign(y: I8): void {
-		checkOverflow(this._ >>= y._);
-	}
+    public rShiftAssign(y: I8): void {
+        checkOverflow(this._ >>= y._);
+    }
 
-	public bitOrAssign(y: I8): void {
-		checkOverflow(this._ |= y._);
-	}
+    public bitOrAssign(y: I8): void {
+        checkOverflow(this._ |= y._);
+    }
 
-	public bitAndAssign(y: I8): void {
-		checkOverflow(this._ &= y._);
-	}
+    public bitAndAssign(y: I8): void {
+        checkOverflow(this._ &= y._);
+    }
 
-	public bitXorAssign(y: I8): void {
-		checkOverflow(this._ ^= y._);
-	}
+    public bitXorAssign(y: I8): void {
+        checkOverflow(this._ ^= y._);
+    }
 
-	public eq(y: I8): boolean {
-		return this._ === y._;
-	}
+    public eq(y: I8): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: I8): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: I8): boolean {
+        return this._ !== y._;
+    }
 
-	public neg(): I8 {
-		return new I8(-this._);
-	}
+    public neg(): I8 {
+        return new I8(-this._);
+    }
 
-	public lt(y: I8): boolean {
-		return this._ < y._;
-	}
+    public lt(y: I8): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: I8): boolean {
-		return this._ > y._;
-	}
+    public gt(y: I8): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: I8): boolean {
-		return this._ <= y._;
-	}
+    public le(y: I8): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: I8): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: I8): boolean {
+        return this._ >= y._;
+    }
 
-	public toNumber(): number {
-		return this._;
-	}
+    public toNumber(): number {
+        return this._;
+    }
 };

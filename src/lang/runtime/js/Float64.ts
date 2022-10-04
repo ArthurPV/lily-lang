@@ -26,141 +26,141 @@ const MIN: number = -1.79769313486231570814527423731704356798070567525845e+308;
 const MAX: number = -MIN;
 
 function checkOverflow(n: number): void {
-	if (n > MIN && n < MAX)
-		return;
-	else
-		throw reportError(`Float32 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
+    if (n > MIN && n < MAX)
+        return;
+    else
+        throw reportError(`Float32 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
 }
 
 export class F64 {
-	private _: number;
+    private _: number;
 
-	constructor(_: number) {
-		this._ = _;
-		checkOverflow(this._);
-	}
+    constructor(_: number) {
+        this._ = _;
+        checkOverflow(this._);
+    }
 
-	public add(y: F64): F64 {
-		return new F64(this._ + y._);
-	}
+    public add(y: F64): F64 {
+        return new F64(this._ + y._);
+    }
 
-	public sub(y: F64): F64 {
-		return new F64(this._ - y._);
-	}
+    public sub(y: F64): F64 {
+        return new F64(this._ - y._);
+    }
 
-	public mul(y: F64): F64 {
-		return new F64(this._ * y._);
-	}
+    public mul(y: F64): F64 {
+        return new F64(this._ * y._);
+    }
 
-	public div(y: F64): F64 {
-		return new F64(this._ / y._);
-	}
+    public div(y: F64): F64 {
+        return new F64(this._ / y._);
+    }
 
-	public mod(y: F64): F64 {
-		return new F64(this._ % y._);
-	}
+    public mod(y: F64): F64 {
+        return new F64(this._ % y._);
+    }
 
-	public exp(y: F64): F64 {
-		return new F64(this._ ** y._);
-	}
+    public exp(y: F64): F64 {
+        return new F64(this._ ** y._);
+    }
 
-	public lShift(y: F64): F64 {
-		return new F64(this._ << y._);
-	}
+    public lShift(y: F64): F64 {
+        return new F64(this._ << y._);
+    }
 
-	public rShift(y: F64): F64 {
-		return new F64(this._ >> y._);
-	}
+    public rShift(y: F64): F64 {
+        return new F64(this._ >> y._);
+    }
 
-	public bitOr(y: F64): F64 {
-		return new F64(this._ | y._);
-	}
+    public bitOr(y: F64): F64 {
+        return new F64(this._ | y._);
+    }
 
-	public bitAnd(y: F64): F64 {
-		return new F64(this._ & y._);
-	}
+    public bitAnd(y: F64): F64 {
+        return new F64(this._ & y._);
+    }
 
-	public bitXor(y: F64): F64 {
-		return new F64(this._ ^ y._);
-	}
+    public bitXor(y: F64): F64 {
+        return new F64(this._ ^ y._);
+    }
 
-	public bitNot(): F64 {
-		return new F64(~this._);
-	}
+    public bitNot(): F64 {
+        return new F64(~this._);
+    }
 
-	public assign(y: F64): void {
-		checkOverflow(this._ = y._);
-	}
+    public assign(y: F64): void {
+        checkOverflow(this._ = y._);
+    }
 
-	public add_assign(y: F64): void {
-		checkOverflow(this._ += y._);
-	}
+    public add_assign(y: F64): void {
+        checkOverflow(this._ += y._);
+    }
 
-	public sub_assign(y: F64): void {
-		checkOverflow(this._ -= y._);
-	}
+    public sub_assign(y: F64): void {
+        checkOverflow(this._ -= y._);
+    }
 
-	public mul_assign(y: F64): void {
-		checkOverflow(this._ *= y._);
-	}
+    public mul_assign(y: F64): void {
+        checkOverflow(this._ *= y._);
+    }
 
-	public div_assign(y: F64): void {
-		checkOverflow(this._ /= y._);
-	}
+    public div_assign(y: F64): void {
+        checkOverflow(this._ /= y._);
+    }
 
-	public mod_assign(y: F64): void {
-		checkOverflow(this._ %= y._);
-	}
+    public mod_assign(y: F64): void {
+        checkOverflow(this._ %= y._);
+    }
 
-	public exp_assign(y: F64): void {
-		checkOverflow(this._ **= y._);
-	}
+    public exp_assign(y: F64): void {
+        checkOverflow(this._ **= y._);
+    }
 
-	public l_shift_assign(y: F64): void {
-		checkOverflow(this._ <<= y._);
-	}
+    public l_shift_assign(y: F64): void {
+        checkOverflow(this._ <<= y._);
+    }
 
-	public r_shift_assign(y: F64): void {
-		checkOverflow(this._ >>= y._);
-	}
+    public r_shift_assign(y: F64): void {
+        checkOverflow(this._ >>= y._);
+    }
 
-	public bit_or_assign(y: F64): void {
-		checkOverflow(this._ |= y._);
-	}
+    public bit_or_assign(y: F64): void {
+        checkOverflow(this._ |= y._);
+    }
 
-	public bit_and_assign(y: F64): void {
-		checkOverflow(this._ &= y._);
-	}
+    public bit_and_assign(y: F64): void {
+        checkOverflow(this._ &= y._);
+    }
 
-	public bit_xor_assign(y: F64): void {
-		checkOverflow(this._ ^= y._);
-	}
+    public bit_xor_assign(y: F64): void {
+        checkOverflow(this._ ^= y._);
+    }
 
-	public eq(y: F64): boolean {
-		return this._ === y._;
-	}
+    public eq(y: F64): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: F64): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: F64): boolean {
+        return this._ !== y._;
+    }
 
-	public neg(): F64 {
-		return new F64(-this._);
-	}
+    public neg(): F64 {
+        return new F64(-this._);
+    }
 
-	public lt(y: F64): boolean {
-		return this._ < y._;
-	}
+    public lt(y: F64): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: F64): boolean {
-		return this._ > y._;
-	}
+    public gt(y: F64): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: F64): boolean {
-		return this._ <= y._;
-	}
+    public le(y: F64): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: F64): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: F64): boolean {
+        return this._ >= y._;
+    }
 };

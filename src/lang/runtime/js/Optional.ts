@@ -23,24 +23,24 @@
  */
 
 export class Optional<T> {
-	private _: T;
+    private _: T;
 
-	constructor(v: T) {
-		this._ = v;
-	}
+    constructor(v: T) {
+        this._ = v;
+    }
 
-	public get get(): T {
-		if (this._ === null)
-			throw reportError("Optional: it's impossible to get the value because it is null.");
-		else
-			return this._;
-	}
+    public get get(): T {
+        if (this._ === null)
+            throw reportError("Optional: it's impossible to get the value because it is null.");
+        else
+            return this._;
+    }
 
-	public eq(y: Optional<T>): boolean {
-		return this._ === y._;
-	}
+    public eq(y: Optional<T>): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: Optional<T>): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: Optional<T>): boolean {
+        return this._ !== y._;
+    }
 };

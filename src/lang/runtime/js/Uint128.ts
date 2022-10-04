@@ -26,137 +26,137 @@ const MIN: bigint = 0n;
 const MAX: bigint = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFn;
 
 function checkOverflow(n: bigint): void {
-	if (n > MIN && n < MAX)
-		return;
-	else
-		throw reportError(`Uint128 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
+    if (n > MIN && n < MAX)
+        return;
+    else
+        throw reportError(`Uint128 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
 }
 
 export class U128 {
-	private _: bigint;	
+    private _: bigint;
 
-	constructor(_: bigint) {
-		this._ = _;
-		checkOverflow(this._);
-	}
+    constructor(_: bigint) {
+        this._ = _;
+        checkOverflow(this._);
+    }
 
-	public add(y: U128): U128 {
-		return new U128(this._ + y._);
-	}
+    public add(y: U128): U128 {
+        return new U128(this._ + y._);
+    }
 
-	public sub(y: U128): U128 {
-		return new U128(this._ - y._);
-	}
+    public sub(y: U128): U128 {
+        return new U128(this._ - y._);
+    }
 
-	public mul(y: U128): U128 {
-		return new U128(this._ * y._);
-	}
+    public mul(y: U128): U128 {
+        return new U128(this._ * y._);
+    }
 
-	public div(y: U128): U128 {
-		return new U128(this._ / y._);
-	}
+    public div(y: U128): U128 {
+        return new U128(this._ / y._);
+    }
 
-	public mod(y: U128): U128 {
-		return new U128(this._ % y._);
-	}
+    public mod(y: U128): U128 {
+        return new U128(this._ % y._);
+    }
 
-	public exp(y: U128): U128 {
-		return new U128(this._ ** y._);
-	}
+    public exp(y: U128): U128 {
+        return new U128(this._ ** y._);
+    }
 
-	public lShift(y: U128): U128 {
-		return new U128(this._ << y._);
-	}
+    public lShift(y: U128): U128 {
+        return new U128(this._ << y._);
+    }
 
-	public rShift(y: U128): U128 {
-		return new U128(this._ >> y._);
-	}
+    public rShift(y: U128): U128 {
+        return new U128(this._ >> y._);
+    }
 
-	public bitOr(y: U128): U128 {
-		return new U128(this._ | y._);
-	}
+    public bitOr(y: U128): U128 {
+        return new U128(this._ | y._);
+    }
 
-	public bitAnd(y: U128): U128 {
-		return new U128(this._ & y._);
-	}
+    public bitAnd(y: U128): U128 {
+        return new U128(this._ & y._);
+    }
 
-	public bitXor(y: U128): U128 {
-		return new U128(this._ ^ y._);
-	}
+    public bitXor(y: U128): U128 {
+        return new U128(this._ ^ y._);
+    }
 
-	public bitNot(): U128 {
-		return new U128(~this._);
-	}
+    public bitNot(): U128 {
+        return new U128(~this._);
+    }
 
-	public assign(y: U128): void {
-		checkOverflow(this._ = y._);
-	}
+    public assign(y: U128): void {
+        checkOverflow(this._ = y._);
+    }
 
-	public add_assign(y: U128): void {
-		checkOverflow(this._ += y._);
-	}
+    public add_assign(y: U128): void {
+        checkOverflow(this._ += y._);
+    }
 
-	public sub_assign(y: U128): void {
-		checkOverflow(this._ -= y._);
-	}
+    public sub_assign(y: U128): void {
+        checkOverflow(this._ -= y._);
+    }
 
-	public mul_assign(y: U128): void {
-		checkOverflow(this._ *= y._);
-	}
+    public mul_assign(y: U128): void {
+        checkOverflow(this._ *= y._);
+    }
 
-	public div_assign(y: U128): void {
-		checkOverflow(this._ /= y._);
-	}
+    public div_assign(y: U128): void {
+        checkOverflow(this._ /= y._);
+    }
 
-	public mod_assign(y: U128): void {
-		checkOverflow(this._ %= y._);
-	}
+    public mod_assign(y: U128): void {
+        checkOverflow(this._ %= y._);
+    }
 
-	public exp_assign(y: U128): void {
-		checkOverflow(this._ **= y._);
-	}
+    public exp_assign(y: U128): void {
+        checkOverflow(this._ **= y._);
+    }
 
-	public l_shift_assign(y: U128): void {
-		checkOverflow(this._ <<= y._);
-	}
+    public l_shift_assign(y: U128): void {
+        checkOverflow(this._ <<= y._);
+    }
 
-	public r_shift_assign(y: U128): void {
-		checkOverflow(this._ >>= y._);
-	}
+    public r_shift_assign(y: U128): void {
+        checkOverflow(this._ >>= y._);
+    }
 
-	public bit_or_assign(y: U128): void {
-		checkOverflow(this._ |= y._);
-	}
+    public bit_or_assign(y: U128): void {
+        checkOverflow(this._ |= y._);
+    }
 
-	public bit_and_assign(y: U128): void {
-		checkOverflow(this._ &= y._);
-	}
+    public bit_and_assign(y: U128): void {
+        checkOverflow(this._ &= y._);
+    }
 
-	public bit_xor_assign(y: U128): void {
-		checkOverflow(this._ ^= y._);
-	}
+    public bit_xor_assign(y: U128): void {
+        checkOverflow(this._ ^= y._);
+    }
 
-	public eq(y: U128): boolean {
-		return this._ === y._;
-	}
+    public eq(y: U128): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: U128): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: U128): boolean {
+        return this._ !== y._;
+    }
 
-	public lt(y: U128): boolean {
-		return this._ < y._;
-	}
+    public lt(y: U128): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: U128): boolean {
-		return this._ > y._;
-	}
+    public gt(y: U128): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: U128): boolean {
-		return this._ <= y._;
-	}
+    public le(y: U128): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: U128): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: U128): boolean {
+        return this._ >= y._;
+    }
 };

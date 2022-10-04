@@ -25,25 +25,25 @@
 import { Mut } from "./Mut";
 
 export class Ref<T> { // &T
-	private _: T;
+    private _: T;
 
-	constructor(v: T) {
-		this._ = v;
-	}
+    constructor(v: T) {
+        this._ = v;
+    }
 
-	public get get(): T {
-		return this._;
-	}
+    public get get(): T {
+        return this._;
+    }
 
-	public get get_mut(): Mut<T> {
-		return new Mut<T>(this._);
-	}
+    public get get_mut(): Mut<T> {
+        return new Mut<T>(this._);
+    }
 
-	public eq(y: Ref<T>): boolean {
-		return this._ === y._;
-	}
+    public eq(y: Ref<T>): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: Ref<T>): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: Ref<T>): boolean {
+        return this._ !== y._;
+    }
 };

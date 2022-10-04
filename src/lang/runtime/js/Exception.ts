@@ -23,38 +23,38 @@
  */
 
 export class Exception<T, U> {
-	private value: T | null;
-	private ext: U | null;
+    private value: T | null;
+    private ext: U | null;
 
-	constructor(value: T, ext: U) {
-		if (value === null) {
-			this.value = null;
-			this.ext = ext;
-		} else if (ext === null) {
-			this.value = value;
-			this.ext = null;
-		} else
-			throw reportError("unreachable: this situation is absolutely impossible");
-	}
+    constructor(value: T, ext: U) {
+        if (value === null) {
+            this.value = null;
+            this.ext = ext;
+        } else if (ext === null) {
+            this.value = value;
+            this.ext = null;
+        } else
+            throw reportError("unreachable: this situation is absolutely impossible");
+    }
 
-	public get get(): T | null {
-		if (this.ext !== null)
-			return this.value;
-		else
-			throw reportError("Exception: impossible to get the value because it's off");	
-	}
+    public get get(): T | null {
+        if (this.ext !== null)
+            return this.value;
+        else
+            throw reportError("Exception: impossible to get the value because it's off");
+    }
 
-	public eq(y: Exception<T, U>): boolean {
-		if (this.value !== null && y.value !== null)
-			return this.value === y.value;
-		else
-			throw reportError("Exception: impossible to get the value because it's off");
-	}
+    public eq(y: Exception<T, U>): boolean {
+        if (this.value !== null && y.value !== null)
+            return this.value === y.value;
+        else
+            throw reportError("Exception: impossible to get the value because it's off");
+    }
 
-	public ne(y: Exception<T, U>): boolean {
-		if (this.value !== null && y.value !== null)
-			return this.value !== y.value;
-		else
-			throw reportError("Exception: impossible to get the value because it's off");
-	}
+    public ne(y: Exception<T, U>): boolean {
+        if (this.value !== null && y.value !== null)
+            return this.value !== y.value;
+        else
+            throw reportError("Exception: impossible to get the value because it's off");
+    }
 };

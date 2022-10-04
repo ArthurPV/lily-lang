@@ -23,33 +23,33 @@
  */
 
 export class Char {
-	private _: string;
+    private _: string;
 
-	constructor(s: string) {
-		this._ = s;
-	}
+    constructor(s: string) {
+        this._ = s;
+    }
 
-	public eq(y: Char): boolean {
-		return this._ === y._;
-	}
+    public eq(y: Char): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: Char): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: Char): boolean {
+        return this._ !== y._;
+    }
 
-	public lt(y: Char): boolean {
-		return this._ < y._;
-	}
+    public lt(y: Char): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: Char): boolean {
-		return this._ > y._;
-	}
+    public gt(y: Char): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: Char): boolean {
-		return this._ <= y._;
-	}
+    public le(y: Char): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: Char): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: Char): boolean {
+        return this._ >= y._;
+    }
 };

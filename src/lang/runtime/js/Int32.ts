@@ -26,145 +26,145 @@ const MIN: number = -0x80000000;
 const MAX: number = 0x7FFFFFFF;
 
 function checkOverflow(n: number): void {
-	if (n > MIN && n < MAX)
-		return;
-	else
-		throw reportError(`Int32 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
+    if (n > MIN && n < MAX)
+        return;
+    else
+        throw reportError(`Int32 overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
 }
 
 export class I32 {
-	private _: number;	
+    private _: number;
 
-	constructor(_: number) {
-		this._ = _;
-		checkOverflow(this._);
-	}
+    constructor(_: number) {
+        this._ = _;
+        checkOverflow(this._);
+    }
 
-	public add(y: I32): I32 {
-		return new I32(this._ + y._);
-	}
+    public add(y: I32): I32 {
+        return new I32(this._ + y._);
+    }
 
-	public sub(y: I32): I32 {
-		return new I32(this._ - y._);
-	}
+    public sub(y: I32): I32 {
+        return new I32(this._ - y._);
+    }
 
-	public mul(y: I32): I32 {
-		return new I32(this._ * y._);
-	}
+    public mul(y: I32): I32 {
+        return new I32(this._ * y._);
+    }
 
-	public div(y: I32): I32 {
-		return new I32(Math.floor(this._ / y._));
-	}
+    public div(y: I32): I32 {
+        return new I32(Math.floor(this._ / y._));
+    }
 
-	public mod(y: I32): I32 {
-		return new I32(this._ % y._);
-	}
+    public mod(y: I32): I32 {
+        return new I32(this._ % y._);
+    }
 
-	public exp(y: I32): I32 {
-		return new I32(this._ ** y._);
-	}
+    public exp(y: I32): I32 {
+        return new I32(this._ ** y._);
+    }
 
-	public lShift(y: I32): I32 {
-		return new I32(this._ << y._);
-	}
+    public lShift(y: I32): I32 {
+        return new I32(this._ << y._);
+    }
 
-	public rShift(y: I32): I32 {
-		return new I32(this._ >> y._);
-	}
+    public rShift(y: I32): I32 {
+        return new I32(this._ >> y._);
+    }
 
-	public bitOr(y: I32): I32 {
-		return new I32(this._ | y._);
-	}
+    public bitOr(y: I32): I32 {
+        return new I32(this._ | y._);
+    }
 
-	public bitAnd(y: I32): I32 {
-		return new I32(this._ & y._);
-	}
+    public bitAnd(y: I32): I32 {
+        return new I32(this._ & y._);
+    }
 
-	public bitXor(y: I32): I32 {
-		return new I32(this._ ^ y._);
-	}
+    public bitXor(y: I32): I32 {
+        return new I32(this._ ^ y._);
+    }
 
-	public bitNot(): I32 {
-		return new I32(~this._);
-	}
+    public bitNot(): I32 {
+        return new I32(~this._);
+    }
 
-	public assign(y: I32): void {
-		checkOverflow(this._ = y._);
-	}
+    public assign(y: I32): void {
+        checkOverflow(this._ = y._);
+    }
 
-	public addAssign(y: I32): void {
-		checkOverflow(this._ += y._);
-	}
+    public addAssign(y: I32): void {
+        checkOverflow(this._ += y._);
+    }
 
-	public subAssign(y: I32): void {
-		checkOverflow(this._ -= y._);
-	}
+    public subAssign(y: I32): void {
+        checkOverflow(this._ -= y._);
+    }
 
-	public mulAssign(y: I32): void {
-		checkOverflow(this._ *= y._);
-	}
+    public mulAssign(y: I32): void {
+        checkOverflow(this._ *= y._);
+    }
 
-	public divAssign(y: I32): void {
-		checkOverflow(this._ = Math.floor(this._ /= y._));
-	}
+    public divAssign(y: I32): void {
+        checkOverflow(this._ = Math.floor(this._ /= y._));
+    }
 
-	public modAssign(y: I32): void {
-		checkOverflow(this._ %= y._);
-	}
+    public modAssign(y: I32): void {
+        checkOverflow(this._ %= y._);
+    }
 
-	public expAssign(y: I32): void {
-		checkOverflow(this._ **= y._);
-	}
+    public expAssign(y: I32): void {
+        checkOverflow(this._ **= y._);
+    }
 
-	public lShiftAssign(y: I32): void {
-		checkOverflow(this._ <<= y._);
-	}
+    public lShiftAssign(y: I32): void {
+        checkOverflow(this._ <<= y._);
+    }
 
-	public rShiftAssign(y: I32): void {
-		checkOverflow(this._ >>= y._);
-	}
+    public rShiftAssign(y: I32): void {
+        checkOverflow(this._ >>= y._);
+    }
 
-	public bitOrAssign(y: I32): void {
-		checkOverflow(this._ |= y._);
-	}
+    public bitOrAssign(y: I32): void {
+        checkOverflow(this._ |= y._);
+    }
 
-	public bitAndAssign(y: I32): void {
-		checkOverflow(this._ &= y._);
-	}
+    public bitAndAssign(y: I32): void {
+        checkOverflow(this._ &= y._);
+    }
 
-	public bitXorAssign(y: I32): void {
-		checkOverflow(this._ ^= y._);
-	}
+    public bitXorAssign(y: I32): void {
+        checkOverflow(this._ ^= y._);
+    }
 
-	public eq(y: I32): boolean {
-		return this._ === y._;
-	}
+    public eq(y: I32): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: I32): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: I32): boolean {
+        return this._ !== y._;
+    }
 
-	public neg(): I32 {
-		return new I32(-this._);
-	}
+    public neg(): I32 {
+        return new I32(-this._);
+    }
 
-	public lt(y: I32): boolean {
-		return this._ < y._;
-	}
+    public lt(y: I32): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: I32): boolean {
-		return this._ > y._;
-	}
+    public gt(y: I32): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: I32): boolean {
-		return this._ <= y._;
-	}
+    public le(y: I32): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: I32): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: I32): boolean {
+        return this._ >= y._;
+    }
 
-	public toNumber(): number {
-		return this._;
-	}
+    public toNumber(): number {
+        return this._;
+    }
 };

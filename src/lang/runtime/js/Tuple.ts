@@ -23,21 +23,21 @@
  */
 
 export class Tuple<T extends unknown[]> {
-	public readonly _: T;
+    public readonly _: T;
 
-	constructor(...v: T) {
-		this._ = v;
-	}
+    constructor(...v: T) {
+        this._ = v;
+    }
 
-	public get(i: number): unknown {
-		return this._[i];
-	}
+    public get(i: number): unknown {
+        return this._[i];
+    }
 
-	public eq(y: Tuple<T>): boolean {
-		return this._ === y._;
-	}
+    public eq(y: Tuple<T>): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: Tuple<T>): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: Tuple<T>): boolean {
+        return this._ !== y._;
+    }
 }

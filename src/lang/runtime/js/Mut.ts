@@ -23,13 +23,13 @@
  */
 
 export class Mut<T> {
-	private _: T;
-	
-	constructor(v: T) {
-		this._ = v;
-	}
+    private _: T;
 
-	public assign(v: T): void {
-		this._ = v;
-	}
+    constructor(v: T) {
+        this._ = v;
+    }
+
+    public assign(v: T): void {
+        this._ = v;
+    }
 }

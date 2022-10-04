@@ -26,141 +26,141 @@ const MIN: bigint = -0x8000000000000000n;
 const MAX: bigint = 0x7FFFFFFFFFFFFFFFn;
 
 function checkOverflow(n: bigint): void {
-	if (n > MIN && n < MAX)
-		return;
-	else
-		throw reportError(`Isize overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
+    if (n > MIN && n < MAX)
+        return;
+    else
+        throw reportError(`Isize overflow: ${n} < ${MIN} or ${n} > ${MAX}`);
 }
 
 export class Isize {
-	private _: bigint;	
+    private _: bigint;
 
-	constructor(_: bigint) {
-		this._ = _;
-		checkOverflow(this._);
-	}
+    constructor(_: bigint) {
+        this._ = _;
+        checkOverflow(this._);
+    }
 
-	public add(y: Isize): Isize {
-		return new Isize(this._ + y._);
-	}
+    public add(y: Isize): Isize {
+        return new Isize(this._ + y._);
+    }
 
-	public sub(y: Isize): Isize {
-		return new Isize(this._ - y._);
-	}
+    public sub(y: Isize): Isize {
+        return new Isize(this._ - y._);
+    }
 
-	public mul(y: Isize): Isize {
-		return new Isize(this._ * y._);
-	}
+    public mul(y: Isize): Isize {
+        return new Isize(this._ * y._);
+    }
 
-	public div(y: Isize): Isize {
-		return new Isize(this._ / y._);
-	}
+    public div(y: Isize): Isize {
+        return new Isize(this._ / y._);
+    }
 
-	public mod(y: Isize): Isize {
-		return new Isize(this._ % y._);
-	}
+    public mod(y: Isize): Isize {
+        return new Isize(this._ % y._);
+    }
 
-	public exp(y: Isize): Isize {
-		return new Isize(this._ ** y._);
-	}
+    public exp(y: Isize): Isize {
+        return new Isize(this._ ** y._);
+    }
 
-	public lShift(y: Isize): Isize {
-		return new Isize(this._ << y._);
-	}
+    public lShift(y: Isize): Isize {
+        return new Isize(this._ << y._);
+    }
 
-	public rShift(y: Isize): Isize {
-		return new Isize(this._ >> y._);
-	}
+    public rShift(y: Isize): Isize {
+        return new Isize(this._ >> y._);
+    }
 
-	public bitOr(y: Isize): Isize {
-		return new Isize(this._ | y._);
-	}
+    public bitOr(y: Isize): Isize {
+        return new Isize(this._ | y._);
+    }
 
-	public bitAnd(y: Isize): Isize {
-		return new Isize(this._ & y._);
-	}
+    public bitAnd(y: Isize): Isize {
+        return new Isize(this._ & y._);
+    }
 
-	public bitXor(y: Isize): Isize {
-		return new Isize(this._ ^ y._);
-	}
+    public bitXor(y: Isize): Isize {
+        return new Isize(this._ ^ y._);
+    }
 
-	public bitNot(): Isize {
-		return new Isize(~this._);
-	}
+    public bitNot(): Isize {
+        return new Isize(~this._);
+    }
 
-	public assign(y: Isize): void {
-		checkOverflow(this._ = y._);
-	}
+    public assign(y: Isize): void {
+        checkOverflow(this._ = y._);
+    }
 
-	public add_assign(y: Isize): void {
-		checkOverflow(this._ += y._);
-	}
+    public add_assign(y: Isize): void {
+        checkOverflow(this._ += y._);
+    }
 
-	public sub_assign(y: Isize): void {
-		checkOverflow(this._ -= y._);
-	}
+    public sub_assign(y: Isize): void {
+        checkOverflow(this._ -= y._);
+    }
 
-	public mul_assign(y: Isize): void {
-		checkOverflow(this._ *= y._);
-	}
+    public mul_assign(y: Isize): void {
+        checkOverflow(this._ *= y._);
+    }
 
-	public div_assign(y: Isize): void {
-		checkOverflow(this._ /= y._);
-	}
+    public div_assign(y: Isize): void {
+        checkOverflow(this._ /= y._);
+    }
 
-	public mod_assign(y: Isize): void {
-		checkOverflow(this._ %= y._);
-	}
+    public mod_assign(y: Isize): void {
+        checkOverflow(this._ %= y._);
+    }
 
-	public exp_assign(y: Isize): void {
-		checkOverflow(this._ **= y._);
-	}
+    public exp_assign(y: Isize): void {
+        checkOverflow(this._ **= y._);
+    }
 
-	public l_shift_assign(y: Isize): void {
-		checkOverflow(this._ <<= y._);
-	}
+    public l_shift_assign(y: Isize): void {
+        checkOverflow(this._ <<= y._);
+    }
 
-	public r_shift_assign(y: Isize): void {
-		checkOverflow(this._ >>= y._);
-	}
+    public r_shift_assign(y: Isize): void {
+        checkOverflow(this._ >>= y._);
+    }
 
-	public bit_or_assign(y: Isize): void {
-		checkOverflow(this._ |= y._);
-	}
+    public bit_or_assign(y: Isize): void {
+        checkOverflow(this._ |= y._);
+    }
 
-	public bit_and_assign(y: Isize): void {
-		checkOverflow(this._ &= y._);
-	}
+    public bit_and_assign(y: Isize): void {
+        checkOverflow(this._ &= y._);
+    }
 
-	public bit_xor_assign(y: Isize): void {
-		checkOverflow(this._ ^= y._);
-	}
+    public bit_xor_assign(y: Isize): void {
+        checkOverflow(this._ ^= y._);
+    }
 
-	public eq(y: Isize): boolean {
-		return this._ === y._;
-	}
+    public eq(y: Isize): boolean {
+        return this._ === y._;
+    }
 
-	public ne(y: Isize): boolean {
-		return this._ !== y._;
-	}
+    public ne(y: Isize): boolean {
+        return this._ !== y._;
+    }
 
-	public neg(): Isize {
-		return new Isize(-this._);
-	}
+    public neg(): Isize {
+        return new Isize(-this._);
+    }
 
-	public lt(y: Isize): boolean {
-		return this._ < y._;
-	}
+    public lt(y: Isize): boolean {
+        return this._ < y._;
+    }
 
-	public gt(y: Isize): boolean {
-		return this._ > y._;
-	}
+    public gt(y: Isize): boolean {
+        return this._ > y._;
+    }
 
-	public le(y: Isize): boolean {
-		return this._ <= y._;
-	}
+    public le(y: Isize): boolean {
+        return this._ <= y._;
+    }
 
-	public ge(y: Isize): boolean {
-		return this._ >= y._;
-	}
+    public ge(y: Isize): boolean {
+        return this._ >= y._;
+    }
 };
