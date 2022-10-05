@@ -6,4 +6,5 @@
 /app.lily.c
 /app
 /src/lang/runtime/js/*.js
+/src/lang/runtime/js/node_modules
 /tests/runtime/js/node_modules

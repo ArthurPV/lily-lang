@@ -43,11 +43,10 @@ sub__Uint8(U8 x, U8 y)
     return sub__Uint8(x ^ y, ((~x) & y) << 1);
 }
 
-#define abs(x) -x
-
 LILY_API U8
 mul__Uint8(U8 x, U8 y)
 {
+#define abs(x) x < 0 ? -x : x
     MutU8 n1 = abs(x), n2 = abs(y), res = 0;
     bool neg = MIN(x, y) < 0 && MAX(x, y) >= 0 ? true : false;
 

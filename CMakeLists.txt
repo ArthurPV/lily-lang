@@ -63,4 +63,5 @@ target_include_directories(scanner_test PRIVATE src)
 
 add_test(NAME scanner_test COMMAND scanner_test)
 
-add_subdirectory(src/lang/runtime)
+add_subdirectory(src/lang/runtime/c)
+add_subdirectory(src/lang/runtime/cpp)
