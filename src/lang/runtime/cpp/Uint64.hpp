@@ -32,20 +32,20 @@
 
 class U64
 {
-    uint64_t _;	
+    uint64_t _;
 
   public:
-	static const uint64_t MIN = 0;
-	static const uint64_t MAX = 0xFFFFFFFFFFFFFFFF;
+    static const uint64_t MIN = 0;
+    static const uint64_t MAX = 0xFFFFFFFFFFFFFFFF;
 
     U64(uint64_t _)
       : _(_)
     {
     }
 
-	auto add(U64 y) const -> U64
+    auto add(U64 y) const -> U64
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U64(res);
@@ -53,7 +53,7 @@ class U64
 
     auto sub(U64 y) const -> U64
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U64(res);
@@ -61,8 +61,8 @@ class U64
 
     auto mul(U64 y) const -> U64
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U64(res);
     }
@@ -73,12 +73,12 @@ class U64
 
     auto exp(U64 y) const -> U64
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U64(res);
     }
- 
+
     auto lShift(U64 y) const noexcept -> U64 { return U64(_ << y._); }
 
     auto rShift(U64 y) const noexcept -> U64 { return U64(_ >> y._); }

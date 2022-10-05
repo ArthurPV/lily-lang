@@ -35,8 +35,8 @@ class I32
     int32_t _;
 
   public:
-	static const int32_t MIN = -0x80000000;
-	static const int32_t MAX = 0x7FFFFFFF;
+    static const int32_t MIN = -0x80000000;
+    static const int32_t MAX = 0x7FFFFFFF;
 
     I32(int32_t _)
       : _(_)
@@ -45,7 +45,7 @@ class I32
 
     auto add(I32 y) const -> I32
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I32(res);
@@ -53,7 +53,7 @@ class I32
 
     auto sub(I32 y) const -> I32
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I32(res);
@@ -61,8 +61,8 @@ class I32
 
     auto mul(I32 y) const -> I32
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I32(res);
     }
@@ -73,8 +73,8 @@ class I32
 
     auto exp(I32 y) const -> I32
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I32(res);
     }
@@ -93,11 +93,20 @@ class I32
 
     static auto assign(Mut<I32> x, I32 y) noexcept -> void { x = y; }
 
-    static auto addAssign(Mut<I32> x, I32 y) -> void { x = x.getValue().add(y); }
+    static auto addAssign(Mut<I32> x, I32 y) -> void
+    {
+        x = x.getValue().add(y);
+    }
 
-    static auto subAssign(Mut<I32> x, I32 y) -> void { x = x.getValue().sub(y); }
+    static auto subAssign(Mut<I32> x, I32 y) -> void
+    {
+        x = x.getValue().sub(y);
+    }
 
-    static auto mulAssign(Mut<I32> x, I32 y) -> void { x = x.getValue().mul(y); }
+    static auto mulAssign(Mut<I32> x, I32 y) -> void
+    {
+        x = x.getValue().mul(y);
+    }
 
     static auto divAssign(Mut<I32> x, I32 y) noexcept -> void
     {
@@ -109,7 +118,10 @@ class I32
         x = x.getValue().mod(y);
     }
 
-    static auto expAssign(Mut<I32> x, I32 y) -> void { x = x.getValue().exp(y); }
+    static auto expAssign(Mut<I32> x, I32 y) -> void
+    {
+        x = x.getValue().exp(y);
+    }
 
     static auto lShiftAssign(Mut<I32> x, I32 y) noexcept -> void
     {

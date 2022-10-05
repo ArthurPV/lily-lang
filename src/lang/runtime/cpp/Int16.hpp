@@ -35,8 +35,8 @@ class I16
     int16_t _;
 
   public:
-	static const int16_t MIN = -0x8000;
-	static const int16_t MAX = 0x7FFF;
+    static const int16_t MIN = -0x8000;
+    static const int16_t MAX = 0x7FFF;
 
     I16(int16_t _)
       : _(_)
@@ -45,7 +45,7 @@ class I16
 
     auto add(I16 y) const -> I16
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I16(res);
@@ -53,7 +53,7 @@ class I16
 
     auto sub(I16 y) const -> I16
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I16(res);
@@ -61,8 +61,8 @@ class I16
 
     auto mul(I16 y) const -> I16
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I16(res);
     }
@@ -73,8 +73,8 @@ class I16
 
     auto exp(I16 y) const -> I16
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I16(res);
     }
@@ -93,11 +93,20 @@ class I16
 
     static auto assign(Mut<I16> x, I16 y) noexcept -> void { x = y; }
 
-    static auto addAssign(Mut<I16> x, I16 y) -> void { x = x.getValue().add(y); }
+    static auto addAssign(Mut<I16> x, I16 y) -> void
+    {
+        x = x.getValue().add(y);
+    }
 
-    static auto subAssign(Mut<I16> x, I16 y) -> void { x = x.getValue().sub(y); }
+    static auto subAssign(Mut<I16> x, I16 y) -> void
+    {
+        x = x.getValue().sub(y);
+    }
 
-    static auto mulAssign(Mut<I16> x, I16 y) -> void { x = x.getValue().mul(y); }
+    static auto mulAssign(Mut<I16> x, I16 y) -> void
+    {
+        x = x.getValue().mul(y);
+    }
 
     static auto divAssign(Mut<I16> x, I16 y) noexcept -> void
     {
@@ -109,7 +118,10 @@ class I16
         x = x.getValue().mod(y);
     }
 
-    static auto expAssign(Mut<I16> x, I16 y) -> void { x = x.getValue().exp(y); }
+    static auto expAssign(Mut<I16> x, I16 y) -> void
+    {
+        x = x.getValue().exp(y);
+    }
 
     static auto lShiftAssign(Mut<I16> x, I16 y) noexcept -> void
     {

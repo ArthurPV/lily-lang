@@ -32,20 +32,20 @@
 
 class U16
 {
-    uint16_t _;	
+    uint16_t _;
 
   public:
-	static const uint16_t MIN = 0;
-	static const uint16_t MAX = 0xFFFF;
+    static const uint16_t MIN = 0;
+    static const uint16_t MAX = 0xFFFF;
 
     U16(uint16_t _)
       : _(_)
     {
     }
 
-	auto add(U16 y) const -> U16
+    auto add(U16 y) const -> U16
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U16(res);
@@ -53,7 +53,7 @@ class U16
 
     auto sub(U16 y) const -> U16
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U16(res);
@@ -61,8 +61,8 @@ class U16
 
     auto mul(U16 y) const -> U16
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U16(res);
     }
@@ -73,12 +73,12 @@ class U16
 
     auto exp(U16 y) const -> U16
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U16(res);
     }
- 
+
     auto lShift(U16 y) const noexcept -> U16 { return U16(_ << y._); }
 
     auto rShift(U16 y) const noexcept -> U16 { return U16(_ >> y._); }

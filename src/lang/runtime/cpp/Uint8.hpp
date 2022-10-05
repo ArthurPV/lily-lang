@@ -35,8 +35,8 @@ class U8
     uint8_t _;
 
   public:
-	static const uint8_t MIN = 0;
-	static const uint8_t MAX = 0xFF;
+    static const uint8_t MIN = 0;
+    static const uint8_t MAX = 0xFF;
 
     U8(uint8_t _)
       : _(_)
@@ -45,7 +45,7 @@ class U8
 
     auto add(U8 y) const -> U8
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U8(res);
@@ -53,7 +53,7 @@ class U8
 
     auto sub(U8 y) const -> U8
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U8(res);
@@ -61,8 +61,8 @@ class U8
 
     auto mul(U8 y) const -> U8
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U8(res);
     }
@@ -73,8 +73,8 @@ class U8
 
     auto exp(U8 y) const -> U8
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U8(res);
     }

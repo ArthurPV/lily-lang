@@ -35,8 +35,8 @@ class I64
     int64_t _;
 
   public:
-	static const int64_t MIN = -0x8000000000000000;
-	static const int64_t MAX = 0x7FFFFFFFFFFFFFFF;
+    static const int64_t MIN = -0x8000000000000000;
+    static const int64_t MAX = 0x7FFFFFFFFFFFFFFF;
 
     I64(int64_t _)
       : _(_)
@@ -45,7 +45,7 @@ class I64
 
     auto add(I64 y) const -> I64
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I64(res);
@@ -53,7 +53,7 @@ class I64
 
     auto sub(I64 y) const -> I64
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I64(res);
@@ -61,8 +61,8 @@ class I64
 
     auto mul(I64 y) const -> I64
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I64(res);
     }
@@ -73,8 +73,8 @@ class I64
 
     auto exp(I64 y) const -> I64
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : I64(res);
     }
@@ -93,11 +93,20 @@ class I64
 
     static auto assign(Mut<I64> x, I64 y) noexcept -> void { x = y; }
 
-    static auto addAssign(Mut<I64> x, I64 y) -> void { x = x.getValue().add(y); }
+    static auto addAssign(Mut<I64> x, I64 y) -> void
+    {
+        x = x.getValue().add(y);
+    }
 
-    static auto subAssign(Mut<I64> x, I64 y) -> void { x = x.getValue().sub(y); }
+    static auto subAssign(Mut<I64> x, I64 y) -> void
+    {
+        x = x.getValue().sub(y);
+    }
 
-    static auto mulAssign(Mut<I64> x, I64 y) -> void { x = x.getValue().mul(y); }
+    static auto mulAssign(Mut<I64> x, I64 y) -> void
+    {
+        x = x.getValue().mul(y);
+    }
 
     static auto divAssign(Mut<I64> x, I64 y) noexcept -> void
     {
@@ -109,7 +118,10 @@ class I64
         x = x.getValue().mod(y);
     }
 
-    static auto expAssign(Mut<I64> x, I64 y) -> void { x = x.getValue().exp(y); }
+    static auto expAssign(Mut<I64> x, I64 y) -> void
+    {
+        x = x.getValue().exp(y);
+    }
 
     static auto lShiftAssign(Mut<I64> x, I64 y) noexcept -> void
     {

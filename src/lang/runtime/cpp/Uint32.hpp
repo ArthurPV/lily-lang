@@ -32,20 +32,20 @@
 
 class U32
 {
-    uint32_t _;	
+    uint32_t _;
 
   public:
-	static const uint32_t MIN = 0;
-	static const uint32_t MAX = 0xFFFFFFFF;
+    static const uint32_t MIN = 0;
+    static const uint32_t MAX = 0xFFFFFFFF;
 
     U32(uint32_t _)
       : _(_)
     {
     }
 
-	auto add(U32 y) const -> U32
+    auto add(U32 y) const -> U32
     {
-		auto res = _ + y._;
+        auto res = _ + y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U32(res);
@@ -53,7 +53,7 @@ class U32
 
     auto sub(U32 y) const -> U32
     {
-		auto res = _ - y._;
+        auto res = _ - y._;
         return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U32(res);
@@ -61,8 +61,8 @@ class U32
 
     auto mul(U32 y) const -> U32
     {
-		auto res = _ * y._;
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = _ * y._;
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U32(res);
     }
@@ -73,12 +73,12 @@ class U32
 
     auto exp(U32 y) const -> U32
     {
-		auto res = std::pow(_, y._);
-		return (_ != 0 && y._ != 0 && res == 0)
+        auto res = std::pow(_, y._);
+        return (_ != 0 && y._ != 0 && res == 0)
                  ? throw std::overflow_error("Uint8 overflow")
                  : U32(res);
     }
- 
+
     auto lShift(U32 y) const noexcept -> U32 { return U32(_ << y._); }
 
     auto rShift(U32 y) const noexcept -> U32 { return U32(_ >> y._); }
