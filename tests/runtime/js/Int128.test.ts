@@ -1,4 +1,5 @@
 import { I128 } from "../../../src/lang/runtime/js/Int128";
+import { Mut } from "../../../src/lang/runtime/js/Mut";
 
 test("should do Int128 overflow", () => {
     let failed = false;
@@ -73,99 +74,99 @@ test("bitNot() should do basic bit not", () => {
 });
 
 test("assign() should do basic assign", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.assign(new I128(10n)); // res = 10
-    expect(res.toBigInt()).toEqual(10n);
+    I128.assign(res, new I128(10n)); // res = 10
+    expect(res.toValue().toBigInt()).toEqual(10n);
 });
 
 test("addAssign() should do basic assign (addition)", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.addAssign(new I128(10n)); // res += 10
-    expect(res.toBigInt()).toEqual(30n);
+    I128.addAssign(res, new I128(10n)); // res += 10
+    expect(res.toValue().toBigInt()).toEqual(30n);
 });
 
 test("subAssign() should do basic assign (substraction)", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.subAssign(new I128(10n)); // res -= 10
-    expect(res.toBigInt()).toEqual(10n);
+    I128.subAssign(res, new I128(10n)); // res -= 10
+    expect(res.toValue().toBigInt()).toEqual(10n);
 });
 
 test("mulAssign() should do basic assign (multiplication)", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.mulAssign(new I128(2n)); // res *= 2
-    expect(res.toBigInt()).toEqual(40n);
+    I128.mulAssign(res, new I128(2n)); // res *= 2
+    expect(res.toValue().toBigInt()).toEqual(40n);
 });
 
 test("divAssign() should do basic assign (division)", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.divAssign(new I128(2n)); // res /= 2
-    expect(res.toBigInt()).toEqual(10n);
+    I128.divAssign(res, new I128(2n)); // res /= 2
+    expect(res.toValue().toBigInt()).toEqual(10n);
 });
 
 test("modAssign() should do basic assign (modulo)", () => {
-    const res = new I128(20n);
-    expect(res.toBigInt()).toEqual(20n);
+    const res = new Mut<I128>(new I128(20n));
+    expect(res.toValue().toBigInt()).toEqual(20n);
 
-    res.modAssign(new I128(2n)); // res %= 2
-    expect(res.toBigInt()).toEqual(0n);
+    I128.modAssign(res, new I128(2n)); // res %= 2
+    expect(res.toValue().toBigInt()).toEqual(0n);
 });
 
 test("expAssign() should do basic assign (exponent)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.expAssign(new I128(3n)); // res **= 3
-    expect(res.toBigInt()).toEqual(8n);
+    I128.expAssign(res, new I128(3n)); // res **= 3
+    expect(res.toValue().toBigInt()).toEqual(8n);
 });
 
 test("lShiftAssign() should do basic assign (left shift)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.lShiftAssign(new I128(3n)); // res <<= 3
-    expect(res.toBigInt()).toEqual(16n);
+    I128.lShiftAssign(res, new I128(3n)); // res <<= 3
+    expect(res.toValue().toBigInt()).toEqual(16n);
 });
 
 test("rShiftAssign() should do basic assign (right shift)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.rShiftAssign(new I128(3n)); // res >>= 3
-    expect(res.toBigInt()).toEqual(0n);
+    I128.rShiftAssign(res, new I128(3n)); // res >>= 3
+    expect(res.toValue().toBigInt()).toEqual(0n);
 });
 
 test("bitOrAssign() should do basic assign (bit or)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.bitOrAssign(new I128(3n)); // res |= 3
-    expect(res.toBigInt()).toEqual(3n);
+    I128.bitOrAssign(res, new I128(3n)); // res |= 3
+    expect(res.toValue().toBigInt()).toEqual(3n);
 });
 
 test("bitAndAssign() should do basic assign (bit and)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.bitAndAssign(new I128(3n)); // res &= 3
-    expect(res.toBigInt()).toEqual(2n);
+    I128.bitAndAssign(res, new I128(3n)); // res &= 3
+    expect(res.toValue().toBigInt()).toEqual(2n);
 });
 
 test("bitXorAssign() should do basic assign (bit xor)", () => {
-    const res = new I128(2n);
-    expect(res.toBigInt()).toEqual(2n);
+    const res = new Mut<I128>(new I128(2n));
+    expect(res.toValue().toBigInt()).toEqual(2n);
 
-    res.bitXorAssign(new I128(3n)); // res ^= 3
-    expect(res.toBigInt()).toEqual(1n);
+    I128.bitXorAssign(res, new I128(3n)); // res ^= 3
+    expect(res.toValue().toBigInt()).toEqual(1n);
 });
 
 test("eq() should do basic equal", () => {

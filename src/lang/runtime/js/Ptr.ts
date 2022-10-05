@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-export class Ptr<T> {
+export class Ptr<T> { // *T
     private _: T;
 
     constructor(v: T) {

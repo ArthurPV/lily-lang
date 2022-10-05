@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+import { Mut } from "./Mut";
+
 const MIN: bigint = -0x8000000000000000n;
 const MAX: bigint = 0x7FFFFFFFFFFFFFFFn;
 
@@ -88,53 +90,54 @@ export class Isize {
         return new Isize(~this._);
     }
 
-    public assign(y: Isize): void {
-        checkOverflow(this._ = y._);
+	public static assign(x: Mut<Isize>, y: Isize): void {
+		x.assign(y);
+		checkOverflow(x.toValue().toBigInt());
     }
 
-    public add_assign(y: Isize): void {
-        checkOverflow(this._ += y._);
+    public static addAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().add(y));
     }
 
-    public sub_assign(y: Isize): void {
-        checkOverflow(this._ -= y._);
+    public static subAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().sub(y));
     }
 
-    public mul_assign(y: Isize): void {
-        checkOverflow(this._ *= y._);
+    public static mulAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().mul(y));
     }
 
-    public div_assign(y: Isize): void {
-        checkOverflow(this._ /= y._);
+    public static divAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().div(y));
     }
 
-    public mod_assign(y: Isize): void {
-        checkOverflow(this._ %= y._);
+    public static modAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().mod(y));
     }
 
-    public exp_assign(y: Isize): void {
-        checkOverflow(this._ **= y._);
+    public static expAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().exp(y));
     }
 
-    public l_shift_assign(y: Isize): void {
-        checkOverflow(this._ <<= y._);
+    public static lShiftAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().lShift(y));
     }
 
-    public r_shift_assign(y: Isize): void {
-        checkOverflow(this._ >>= y._);
+    public static rShiftAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().rShift(y));
     }
 
-    public bit_or_assign(y: Isize): void {
-        checkOverflow(this._ |= y._);
+    public static bitOrAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().bitOr(y));
     }
 
-    public bit_and_assign(y: Isize): void {
-        checkOverflow(this._ &= y._);
+    public static bitAndAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().bitAnd(y));
     }
 
-    public bit_xor_assign(y: Isize): void {
-        checkOverflow(this._ ^= y._);
-    }
+    public static bitXorAssign(x: Mut<Isize>, y: Isize): void {
+		x.assign(x.toValue().bitXor(y));
+    } 
 
     public eq(y: Isize): boolean {
         return this._ === y._;
@@ -163,4 +166,8 @@ export class Isize {
     public ge(y: Isize): boolean {
         return this._ >= y._;
     }
+
+	public toBigInt(): bigint {
+		return this._;
+	}
 };

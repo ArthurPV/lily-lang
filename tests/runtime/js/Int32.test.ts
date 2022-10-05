@@ -1,4 +1,5 @@
 import { I32 } from "../../../src/lang/runtime/js/Int32";
+import { Mut } from "../../../src/lang/runtime/js/Mut";
 
 test("should do Int32 overflow", () => {
     let failed = false;
@@ -73,99 +74,99 @@ test("bitNot() should do basic bit not", () => {
 });
 
 test("assign() should do basic assign", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.assign(new I32(10)); // res = 10
-    expect(res.toNumber()).toEqual(10);
+    I32.assign(res, new I32(10)); // res = 10
+    expect(res.toValue().toNumber()).toEqual(10);
 });
 
 test("addAssign() should do basic assign (addition)", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.addAssign(new I32(10)); // res += 10
-    expect(res.toNumber()).toEqual(30);
+    I32.addAssign(res, new I32(10)); // res += 10
+    expect(res.toValue().toNumber()).toEqual(30);
 });
 
 test("subAssign() should do basic assign (substraction)", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.subAssign(new I32(10)); // res -= 10
-    expect(res.toNumber()).toEqual(10);
+    I32.subAssign(res, new I32(10)); // res -= 10
+    expect(res.toValue().toNumber()).toEqual(10);
 });
 
 test("mulAssign() should do basic assign (multiplication)", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.mulAssign(new I32(2)); // res *= 2
-    expect(res.toNumber()).toEqual(40);
+    I32.mulAssign(res, new I32(2)); // res *= 2
+    expect(res.toValue().toNumber()).toEqual(40);
 });
 
 test("divAssign() should do basic assign (division)", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.divAssign(new I32(2)); // res /= 2
-    expect(res.toNumber()).toEqual(10);
+    I32.divAssign(res, new I32(2)); // res /= 2
+    expect(res.toValue().toNumber()).toEqual(10);
 });
 
 test("modAssign() should do basic assign (modulo)", () => {
-    const res = new I32(20);
-    expect(res.toNumber()).toEqual(20);
+    const res = new Mut<I32>(new I32(20));
+    expect(res.toValue().toNumber()).toEqual(20);
 
-    res.modAssign(new I32(2)); // res %= 2
-    expect(res.toNumber()).toEqual(0);
+    I32.modAssign(res, new I32(2)); // res %= 2
+    expect(res.toValue().toNumber()).toEqual(0);
 });
 
 test("expAssign() should do basic assign (exponent)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.expAssign(new I32(3)); // res **= 3
-    expect(res.toNumber()).toEqual(8);
+    I32.expAssign(res, new I32(3)); // res **= 3
+    expect(res.toValue().toNumber()).toEqual(8);
 });
 
 test("lShiftAssign() should do basic assign (left shift)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.lShiftAssign(new I32(3)); // res <<= 3
-    expect(res.toNumber()).toEqual(16);
+    I32.lShiftAssign(res, new I32(3)); // res <<= 3
+    expect(res.toValue().toNumber()).toEqual(16);
 });
 
 test("rShiftAssign() should do basic assign (right shift)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.rShiftAssign(new I32(3)); // res >>= 3
-    expect(res.toNumber()).toEqual(0);
+    I32.rShiftAssign(res, new I32(3)); // res >>= 3
+    expect(res.toValue().toNumber()).toEqual(0);
 });
 
 test("bitOrAssign() should do basic assign (bit or)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.bitOrAssign(new I32(3)); // res |= 3
-    expect(res.toNumber()).toEqual(3);
+    I32.bitOrAssign(res, new I32(3)); // res |= 3
+    expect(res.toValue().toNumber()).toEqual(3);
 });
 
 test("bitAndAssign() should do basic assign (bit and)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.bitAndAssign(new I32(3)); // res &= 3
-    expect(res.toNumber()).toEqual(2);
+    I32.bitAndAssign(res, new I32(3)); // res &= 3
+    expect(res.toValue().toNumber()).toEqual(2);
 });
 
 test("bitXorAssign() should do basic assign (bit xor)", () => {
-    const res = new I32(2);
-    expect(res.toNumber()).toEqual(2);
+    const res = new Mut<I32>(new I32(2));
+    expect(res.toValue().toNumber()).toEqual(2);
 
-    res.bitXorAssign(new I32(3)); // res ^= 3
-    expect(res.toNumber()).toEqual(1);
+    I32.bitXorAssign(res, new I32(3)); // res ^= 3
+    expect(res.toValue().toNumber()).toEqual(1);
 });
 
 test("eq() should do basic equal", () => {

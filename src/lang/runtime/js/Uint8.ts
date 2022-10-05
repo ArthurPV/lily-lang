@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+import { Mut } from "./Mut";
+
 const MIN: number = 0;
 const MAX: number = 0xFF;
 
@@ -86,6 +88,55 @@ export class U8 {
 
     public bitNot(): U8 {
         return new U8(~this._);
+    }
+
+	public static assign(x: Mut<U8>, y: U8): void {
+		x.assign(y);
+		checkOverflow(x.toValue().toNumber());
+    }
+
+    public static addAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().add(y));
+    }
+
+    public static subAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().sub(y));
+    }
+
+    public static mulAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().mul(y));
+    }
+
+    public static divAssign(x: Mut<U8>, y: U8): void {
+		x.assign(new U8(Math.floor(x.toValue().div(y).toNumber())));
+    }
+
+    public static modAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().mod(y));
+    }
+
+    public static expAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().exp(y));
+    }
+
+    public static lShiftAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().lShift(y));
+    }
+
+    public static rShiftAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().rShift(y));
+    }
+
+    public static bitOrAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().bitOr(y));
+    }
+
+    public static bitAndAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().bitAnd(y));
+    }
+
+    public static bitXorAssign(x: Mut<U8>, y: U8): void {
+		x.assign(x.toValue().bitXor(y));
     }
 
     public assign(y: U8): void {
@@ -159,4 +210,8 @@ export class U8 {
     public ge(y: U8): boolean {
         return this._ >= y._;
     }
+
+	public toNumber(): number {
+		return this._;
+	}
 };

@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+import { Mut } from "./Mut";
+
 const MIN: number = -0x8000;
 const MAX: number = 0x7FFF;
 
@@ -88,52 +90,53 @@ export class I16 {
         return new I16(~this._);
     }
 
-    public assign(y: I16): void {
-        checkOverflow(this._ = y._);
+	public static assign(x: Mut<I16>, y: I16): void {
+		x.assign(y);
+		checkOverflow(x.toValue().toNumber());
     }
 
-    public addAssign(y: I16): void {
-        checkOverflow(this._ += y._);
+    public static addAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().add(y));
     }
 
-    public subAssign(y: I16): void {
-        checkOverflow(this._ -= y._);
+    public static subAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().sub(y));
     }
 
-    public mulAssign(y: I16): void {
-        checkOverflow(this._ *= y._);
+    public static mulAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().mul(y));
     }
 
-    public divAssign(y: I16): void {
-        checkOverflow(this._ = Math.floor(this._ /= y._));
+    public static divAssign(x: Mut<I16>, y: I16): void {
+		x.assign(new I16(Math.floor(x.toValue().div(y).toNumber())));
     }
 
-    public modAssign(y: I16): void {
-        checkOverflow(this._ %= y._);
+    public static modAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().mod(y));
     }
 
-    public expAssign(y: I16): void {
-        checkOverflow(this._ **= y._);
+    public static expAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().exp(y));
     }
 
-    public lShiftAssign(y: I16): void {
-        checkOverflow(this._ <<= y._);
+    public static lShiftAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().lShift(y));
     }
 
-    public rShiftAssign(y: I16): void {
-        checkOverflow(this._ >>= y._);
+    public static rShiftAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().rShift(y));
     }
 
-    public bitOrAssign(y: I16): void {
-        checkOverflow(this._ |= y._);
+    public static bitOrAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().bitOr(y));
     }
 
-    public bitAndAssign(y: I16): void {
-        checkOverflow(this._ &= y._);
+    public static bitAndAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().bitAnd(y));
     }
 
-    public bitXorAssign(y: I16): void {
-        checkOverflow(this._ ^= y._);
+    public static bitXorAssign(x: Mut<I16>, y: I16): void {
+		x.assign(x.toValue().bitXor(y));
     }
 
     public eq(y: I16): boolean {

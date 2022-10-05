@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+import { Mut } from "./Mut";
+
 const MIN: bigint = -0x8000000000000000n;
 const MAX: bigint = 0x7FFFFFFFFFFFFFFFn;
 
@@ -88,54 +90,55 @@ export class I64 {
         return new I64(~this._);
     }
 
-    public assign(y: I64): void {
-        checkOverflow(this._ = y._);
+	public static assign(x: Mut<I64>, y: I64): void {
+		x.assign(y);
+		checkOverflow(x.toValue().toBigInt());
     }
 
-    public addAssign(y: I64): void {
-        checkOverflow(this._ += y._);
+    public static addAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().add(y));
     }
 
-    public subAssign(y: I64): void {
-        checkOverflow(this._ -= y._);
+    public static subAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().sub(y));
     }
 
-    public mulAssign(y: I64): void {
-        checkOverflow(this._ *= y._);
+    public static mulAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().mul(y));
     }
 
-    public divAssign(y: I64): void {
-        checkOverflow(this._ /= y._);
+    public static divAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().div(y));
     }
 
-    public modAssign(y: I64): void {
-        checkOverflow(this._ %= y._);
+    public static modAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().mod(y));
     }
 
-    public expAssign(y: I64): void {
-        checkOverflow(this._ **= y._);
+    public static expAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().exp(y));
     }
 
-    public lShiftAssign(y: I64): void {
-        checkOverflow(this._ <<= y._);
+    public static lShiftAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().lShift(y));
     }
 
-    public rShiftAssign(y: I64): void {
-        checkOverflow(this._ >>= y._);
+    public static rShiftAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().rShift(y));
     }
 
-    public bitOrAssign(y: I64): void {
-        checkOverflow(this._ |= y._);
+    public static bitOrAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().bitOr(y));
     }
 
-    public bitAndAssign(y: I64): void {
-        checkOverflow(this._ &= y._);
+    public static bitAndAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().bitAnd(y));
     }
 
-    public bitXorAssign(y: I64): void {
-        checkOverflow(this._ ^= y._);
+    public static bitXorAssign(x: Mut<I64>, y: I64): void {
+		x.assign(x.toValue().bitXor(y));
     }
-
+ 
     public eq(y: I64): boolean {
         return this._ === y._;
     }

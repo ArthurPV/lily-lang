@@ -32,4 +32,8 @@ export class Mut<T> {
     public assign(v: T): void {
         this._ = v;
     }
+
+	public toValue(): T {
+		return this._;
+	}
 }
