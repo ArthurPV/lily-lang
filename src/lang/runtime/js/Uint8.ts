@@ -138,55 +138,7 @@ export class U8 {
     public static bitXorAssign(x: Mut<U8>, y: U8): void {
 		x.assign(x.toValue().bitXor(y));
     }
-
-    public assign(y: U8): void {
-        checkOverflow(this._ = y._);
-    }
-
-    public add_assign(y: U8): void {
-        checkOverflow(this._ += y._);
-    }
-
-    public sub_assign(y: U8): void {
-        checkOverflow(this._ -= y._);
-    }
-
-    public mul_assign(y: U8): void {
-        checkOverflow(this._ *= y._);
-    }
-
-    public div_assign(y: U8): void {
-        checkOverflow(this._ = Math.floor(this._ /= y._));
-    }
-
-    public mod_assign(y: U8): void {
-        checkOverflow(this._ %= y._);
-    }
-
-    public exp_assign(y: U8): void {
-        checkOverflow(this._ **= y._);
-    }
-
-    public l_shift_assign(y: U8): void {
-        checkOverflow(this._ <<= y._);
-    }
-
-    public r_shift_assign(y: U8): void {
-        checkOverflow(this._ >>= y._);
-    }
-
-    public bit_or_assign(y: U8): void {
-        checkOverflow(this._ |= y._);
-    }
-
-    public bit_and_assign(y: U8): void {
-        checkOverflow(this._ &= y._);
-    }
-
-    public bit_xor_assign(y: U8): void {
-        checkOverflow(this._ ^= y._);
-    }
-
+ 
     public eq(y: U8): boolean {
         return this._ === y._;
     }
