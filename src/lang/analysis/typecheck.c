@@ -4230,10 +4230,6 @@ infer_expression(struct Typecheck *self,
         return dt
 
     switch (expr->kind) {
-        case ExprKindUnaryOp:
-            TODO("infer unary op");
-        case ExprKindBinaryOp:
-            TODO("infer binary op");
         case ExprKindFunCall:
             TODO("infer fun call");
         case ExprKindRecordCall:
@@ -4242,6 +4238,8 @@ infer_expression(struct Typecheck *self,
             TODO("infer identifier");
         case ExprKindIdentifierAccess:
             TODO("infer identifier access");
+        case ExprKindGlobalAccess:
+            TODO("infer global access");
         case ExprKindArrayAccess:
             TODO("infer array access");
         case ExprKindTupleAccess:
@@ -4308,9 +4306,22 @@ infer_expression(struct Typecheck *self,
                 case LiteralKindUnit:
                     INFER(NEW(DataTypeSymbol, DataTypeKindUnit));
             }
+        case ExprKindGrouping:
+            return infer_expression(self,
+                                    fun,
+                                    expr->value.grouping,
+                                    local_value,
+                                    local_data_type,
+                                    defined_data_type,
+                                    is_return_type);
+        case ExprKindUnaryOp:
+        case ExprKindBinaryOp:
+            UNREACHABLE("data type is already analyzed");
         case ExprKindVariable:
             UNREACHABLE("cannot infer on variable");
     }
+
+    return NULL;
 }
 
 static struct ExprSymbol *
@@ -4332,6 +4343,14 @@ check_expression(struct Typecheck *self,
                                local_data_type,
                                NULL,
                                is_return_type);
+
+            right->data_type = infer_expression(self,
+                                                fun,
+                                                expr->value.unary_op.right,
+                                                local_value,
+                                                local_data_type,
+                                                defined_data_type,
+                                                is_return_type);
 
             switch (expr->value.unary_op.kind) {
                 case UnaryOpKindReference: {
@@ -4408,6 +4427,7 @@ check_expression(struct Typecheck *self,
                                local_data_type,
                                NULL,
                                is_return_type);
+
             struct ExprSymbol *right =
               check_expression(self,
                                fun,
@@ -4417,6 +4437,21 @@ check_expression(struct Typecheck *self,
                                NULL,
                                is_return_type);
             const Str op_str = to_str__BinaryOpKind(expr->value.binary_op.kind);
+
+            left->data_type = infer_expression(self,
+                                               fun,
+                                               expr->value.binary_op.left,
+                                               local_value,
+                                               local_data_type,
+                                               defined_data_type,
+                                               is_return_type);
+            right->data_type = infer_expression(self,
+                                                fun,
+                                                expr->value.binary_op.right,
+                                                local_value,
+                                                local_data_type,
+                                                defined_data_type,
+                                                is_return_type);
 
             switch (expr->value.binary_op.kind) {
                 case BinaryOpKindAdd:
@@ -4733,6 +4768,15 @@ check_await_stmt(struct Typecheck *self,
                  struct Vec *local_value,
                  struct Vec *local_data_type)
 {
+    return NEW(StmtSymbolAwait,
+               *stmt,
+               check_expression(self,
+                                fun,
+                                stmt->value.await,
+                                local_value,
+                                local_data_type,
+                                NULL,
+                                false));
 }
 
 static struct StmtSymbol
@@ -4742,6 +4786,15 @@ check_return_stmt(struct Typecheck *self,
                   struct Vec *local_value,
                   struct Vec *local_data_type)
 {
+    return NEW(StmtSymbolAwait,
+               *stmt,
+               check_expression(self,
+                                fun,
+                                stmt->value.return_,
+                                local_value,
+                                local_data_type,
+                                NULL,
+                                false));
 }
 
 static struct StmtSymbol

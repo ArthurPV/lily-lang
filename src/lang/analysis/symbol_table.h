@@ -282,7 +282,7 @@ __free__DataTypeSymbolAll(struct DataTypeSymbol *self);
 inline void
 __free__DataTypeSymbol(struct DataTypeSymbol *self)
 {
-	FREE(Scope, self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -483,11 +483,11 @@ __free__ConstantSymbol(struct ConstantSymbol *self);
 
 typedef struct ModuleSymbol
 {
-    struct String *name;      // struct String&
-    struct Vec *body;         // struct Vec<SymbolTable*>*
-    struct Scope *scope;      // struct Scope&
-    struct Decl *module_decl; // struct Decl&
-	struct Location *import_loc; // for `as` module
+    struct String *name;         // struct String&
+    struct Vec *body;            // struct Vec<SymbolTable*>*
+    struct Scope *scope;         // struct Scope&
+    struct Decl *module_decl;    // struct Decl&
+    struct Location *import_loc; // for `as` module
     enum Visibility visibility;
 } ModuleSymbol;
 
@@ -1172,8 +1172,7 @@ typedef struct UnaryOpSymbol
  * @brief Construct the UnaryOpSymbol type.
  */
 struct UnaryOpSymbol
-__new__UnaryOpSymbol(struct Expr unary_op,
-                     struct ExprSymbol *right);
+__new__UnaryOpSymbol(struct Expr unary_op, struct ExprSymbol *right);
 
 /**
  *
@@ -1232,9 +1231,7 @@ typedef struct FunCallSymbol
  * @brief Construct the FunCallSymbol type.
  */
 struct FunCallSymbol
-__new__FunCallSymbol(bool is_builtin,
-                     struct Scope *id,
-                     struct Vec *params);
+__new__FunCallSymbol(bool is_builtin, struct Scope *id, struct Vec *params);
 
 /**
  *
@@ -1332,7 +1329,7 @@ typedef struct ExprSymbol
 {
     enum ExprKind kind;
     struct Location loc;
-	struct DataTypeSymbol *data_type;
+    struct DataTypeSymbol *data_type;
 
     union
     {
@@ -1376,21 +1373,27 @@ __new__ExprSymbol(struct Expr *expr, struct DataTypeSymbol *data_type);
  * @brief Construct the ExprSymbol type (UnaryOp variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolUnaryOp(struct Expr expr, struct UnaryOpSymbol unary_op, struct DataTypeSymbol *data_type);
+__new__ExprSymbolUnaryOp(struct Expr expr,
+                         struct UnaryOpSymbol unary_op,
+                         struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (BinaryOp variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolBinaryOp(struct Expr expr, struct BinaryOpSymbol binary_op, struct DataTypeSymbol *data_type);
+__new__ExprSymbolBinaryOp(struct Expr expr,
+                          struct BinaryOpSymbol binary_op,
+                          struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (FunCall variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolFunCall(struct Expr expr, struct FunCallSymbol fun_call, struct DataTypeSymbol *data_type);
+__new__ExprSymbolFunCall(struct Expr expr,
+                         struct FunCallSymbol fun_call,
+                         struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1399,14 +1402,16 @@ __new__ExprSymbolFunCall(struct Expr expr, struct FunCallSymbol fun_call, struct
 struct ExprSymbol *
 __new__ExprSymbolRecordCall(struct Expr expr,
                             struct RecordCallSymbol record_call,
-							struct DataTypeSymbol *data_type);
+                            struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Identifier variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier, struct DataTypeSymbol *data_type);
+__new__ExprSymbolIdentifier(struct Expr expr,
+                            struct Scope *identifier,
+                            struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1415,14 +1420,16 @@ __new__ExprSymbolIdentifier(struct Expr expr, struct Scope *identifier, struct D
 struct ExprSymbol *
 __new__ExprSymbolIdentifierAccess(struct Expr expr,
                                   struct Scope *identifier_access,
-								  struct DataTypeSymbol *data_type);
+                                  struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (GlobalAccess variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access, struct DataTypeSymbol *data_type);
+__new__ExprSymbolGlobalAccess(struct Expr expr,
+                              struct Scope *global_access,
+                              struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1430,8 +1437,8 @@ __new__ExprSymbolGlobalAccess(struct Expr expr, struct Scope *global_access, str
  */
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-							 struct Scope *array_access,
-							 struct DataTypeSymbol *data_type);
+                             struct Scope *array_access,
+                             struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1440,70 +1447,88 @@ __new__ExprSymbolArrayAccess(struct Expr expr,
 struct ExprSymbol *
 __new__ExprSymbolTupleAccess(struct Expr expr,
                              struct Scope *tuple_access,
-							 struct DataTypeSymbol *data_type);
+                             struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Lambda variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolLambda(struct Expr expr, struct LambdaSymbol lambda, struct DataTypeSymbol *data_type);
+__new__ExprSymbolLambda(struct Expr expr,
+                        struct LambdaSymbol lambda,
+                        struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Tuple variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolTuple(struct Expr expr, struct Tuple *tuple, struct DataTypeSymbol *data_type);
+__new__ExprSymbolTuple(struct Expr expr,
+                       struct Tuple *tuple,
+                       struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Array variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolArray(struct Expr expr, struct Tuple *array, struct DataTypeSymbol *data_type);
+__new__ExprSymbolArray(struct Expr expr,
+                       struct Tuple *array,
+                       struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Variant variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolVariant(struct Expr expr, struct VariantSymbol variant, struct DataTypeSymbol *data_type);
+__new__ExprSymbolVariant(struct Expr expr,
+                         struct VariantSymbol variant,
+                         struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Try variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolTry(struct Expr expr, struct ExprSymbol *try, struct DataTypeSymbol *data_type);
+__new__ExprSymbolTry(struct Expr expr,
+                     struct ExprSymbol *try,
+                     struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Block variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolBlock(struct Expr expr, struct Vec *block, struct DataTypeSymbol *data_type);
+__new__ExprSymbolBlock(struct Expr expr,
+                       struct Vec *block,
+                       struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (QuestionMark variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolQuestionMark(struct Expr expr, struct Scope *question_mark, struct DataTypeSymbol *data_type);
+__new__ExprSymbolQuestionMark(struct Expr expr,
+                              struct Scope *question_mark,
+                              struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Dereference variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolDereference(struct Expr expr, struct Scope *dereference, struct DataTypeSymbol *data_type);
+__new__ExprSymbolDereference(struct Expr expr,
+                             struct Scope *dereference,
+                             struct DataTypeSymbol *data_type);
 
 /**
  *
  * @brief Construct the ExprSymbol type (Ref variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolRef(struct Expr expr, struct Scope *ref, struct DataTypeSymbol *data_type);
+__new__ExprSymbolRef(struct Expr expr,
+                     struct Scope *ref,
+                     struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1524,7 +1549,9 @@ __new__ExprSymbolVariable(struct Expr expr, struct VariableSymbol *variable);
  * @brief Construct the ExprSymbol type (Grouping variant).
  */
 struct ExprSymbol *
-__new__ExprSymbolGrouping(struct Expr expr, struct Tuple *grouping, struct DataTypeSymbol *data_type);
+__new__ExprSymbolGrouping(struct Expr expr,
+                          struct Tuple *grouping,
+                          struct DataTypeSymbol *data_type);
 
 /**
  *
@@ -1616,7 +1643,7 @@ __free__ExprSymbolGlobalAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 {
-	FREE(Scope, self->value.array_access);
+    FREE(Scope, self->value.array_access);
     free(self);
 }
 
@@ -1627,7 +1654,7 @@ __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolTupleAccess(struct ExprSymbol *self)
 {
-	FREE(Scope, self->value.tuple_access);
+    FREE(Scope, self->value.tuple_access);
     free(self);
 }
 
@@ -2087,8 +2114,8 @@ enum SymbolTableKind
     SymbolTableKindStmt,
     SymbolTableKindVariant,
     SymbolTableKindField,
-	SymbolTableKindProperty,
-	SymbolTableKindMethod
+    SymbolTableKindProperty,
+    SymbolTableKindMethod
 };
 
 typedef struct SymbolTable
@@ -2112,8 +2139,8 @@ typedef struct SymbolTable
         struct StmtSymbol stmt;
         struct VariantEnumSymbol *variant;
         struct FieldRecordSymbol *field;
-		struct PropertySymbol *property;
-		struct MethodSymbol *method;
+        struct PropertySymbol *property;
+        struct MethodSymbol *method;
     } value;
 } SymbolTable;
 

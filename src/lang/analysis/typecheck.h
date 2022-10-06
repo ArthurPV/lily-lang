@@ -33,8 +33,9 @@ typedef struct Typecheck
     struct Decl *decl;
     struct Vec *buffers;       // struct Vec<struct Typecheck*>*
     struct Vec *builtins;      // struct Vec<struct Builtin*>*
-    struct Vec *import_values; // struct Vec<struct Tuple<struct SymbolTable*>, int*, Str>*
-							   // the int* value represents if the SymbolTable* is free
+    struct Vec *import_values; // struct Vec<struct Tuple<struct SymbolTable*>,
+                               // int*, Str>* the int* value represents if the
+                               // SymbolTable* is free
     struct Vec *funs;          // struct Vec<struct FunSymbol*>*
     struct Vec *consts;        // struct Vec<struct ConstantSymbol*>*
     struct Vec *modules;       // struct Vec<struct ModuleSymbol*>*
