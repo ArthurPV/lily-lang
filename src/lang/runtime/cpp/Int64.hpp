@@ -34,6 +34,13 @@ class I64
 {
     int64_t _;
 
+    auto checkOverflow(int64_t y, int64_t res) const -> I64
+    {
+        return (_ != 0 && y != 0 && res == 0)
+                 ? throw std::overflow_error("Int64 overflow")
+                 : I64(res);
+    }
+
   public:
     static const int64_t MIN = -0x8000000000000000;
     static const int64_t MAX = 0x7FFFFFFFFFFFFFFF;
@@ -43,29 +50,11 @@ class I64
     {
     }
 
-    auto add(I64 y) const -> I64
-    {
-        auto res = _ + y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I64(res);
-    }
+    auto add(I64 y) const -> I64 { return checkOverflow(y._, _ + y._); }
 
-    auto sub(I64 y) const -> I64
-    {
-        auto res = _ - y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I64(res);
-    }
+    auto sub(I64 y) const -> I64 { return checkOverflow(y._, _ - y._); }
 
-    auto mul(I64 y) const -> I64
-    {
-        auto res = _ * y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I64(res);
-    }
+    auto mul(I64 y) const -> I64 { return checkOverflow(y._, _ * y._); }
 
     auto div(I64 y) const noexcept -> I64 { return I64(_ / y._); }
 
@@ -73,23 +62,20 @@ class I64
 
     auto exp(I64 y) const -> I64
     {
-        auto res = std::pow(_, y._);
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I64(res);
+        return checkOverflow(y._, std::pow(_, y._));
     }
 
-    auto lShift(I64 y) const noexcept -> I64 { return I64(_ << y._); }
+    auto lShift(I64 y) const -> I64 { return checkOverflow(y._, _ << y._); }
 
-    auto rShift(I64 y) const noexcept -> I64 { return I64(_ >> y._); }
+    auto rShift(I64 y) const -> I64 { return checkOverflow(y._, _ >> y._); }
 
-    auto bitOr(I64 y) const noexcept -> I64 { return I64(_ | y._); }
+    auto bitOr(I64 y) const -> I64 { return checkOverflow(y._, _ | y._); }
 
-    auto bitAnd(I64 y) const noexcept -> I64 { return I64(_ & y._); }
+    auto bitAnd(I64 y) const -> I64 { return checkOverflow(y._, _ & y._); }
 
-    auto bitXor(I64 y) const noexcept -> I64 { return I64(_ ^ y._); }
+    auto bitXor(I64 y) const -> I64 { return checkOverflow(y._, _ ^ y._); }
 
-    auto bitNot() const noexcept -> I64 { return I64(~_); }
+    auto bitNot() const -> I64 { return checkOverflow(0, ~_); }
 
     static auto assign(Mut<I64> x, I64 y) noexcept -> void { x = y; }
 
@@ -108,12 +94,12 @@ class I64
         x = x.getValue().mul(y);
     }
 
-    static auto divAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto divAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().div(y);
     }
 
-    static auto modAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto modAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().mod(y);
     }
@@ -123,44 +109,44 @@ class I64
         x = x.getValue().exp(y);
     }
 
-    static auto lShiftAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto lShiftAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().lShift(y);
     }
 
-    static auto rShiftAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto rShiftAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().rShift(y);
     }
 
-    static auto bitOrAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto bitOrAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().bitOr(y);
     }
 
-    static auto bitAndAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto bitAndAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().bitAnd(y);
     }
 
-    static auto bitXorAssign(Mut<I64> x, I64 y) noexcept -> void
+    static auto bitXorAssign(Mut<I64> x, I64 y) -> void
     {
         x = x.getValue().bitXor(y);
     }
 
-    auto eq(I64 y) noexcept -> bool { return _ == y._; }
+    auto eq(I64 y) const noexcept -> bool { return _ == y._; }
 
-    auto ne(I64 y) noexcept -> bool { return _ != y._; }
+    auto ne(I64 y) const noexcept -> bool { return _ != y._; }
 
-    auto lt(I64 y) noexcept -> bool { return _ < y._; }
+    auto lt(I64 y) const noexcept -> bool { return _ < y._; }
 
-    auto gt(I64 y) noexcept -> bool { return _ > y._; }
+    auto gt(I64 y) const noexcept -> bool { return _ > y._; }
 
-    auto le(I64 y) noexcept -> bool { return _ <= y._; }
+    auto le(I64 y) const noexcept -> bool { return _ <= y._; }
 
-    auto ge(I64 y) noexcept -> bool { return _ >= y._; }
+    auto ge(I64 y) const noexcept -> bool { return _ >= y._; }
 
-    auto toValue() noexcept -> uint8_t { return _; }
+    auto toValue() const noexcept -> uint8_t { return _; }
 };
 
 #endif // LILY_RUNTIME_INT64_HPP

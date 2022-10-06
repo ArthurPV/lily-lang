@@ -34,6 +34,13 @@ class I8
 {
     int8_t _;
 
+    auto checkOverflow(int8_t y, int8_t res) const -> I8
+    {
+        return (_ != 0 && y != 0 && res == 0)
+                 ? throw std::overflow_error("Int8 overflow")
+                 : I8(res);
+    }
+
   public:
     static const int8_t MIN = -0x80;
     static const int8_t MAX = 0x7F;
@@ -43,53 +50,29 @@ class I8
     {
     }
 
-    auto add(I8 y) const -> I8
-    {
-        auto res = _ + y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I8(res);
-    }
+    auto add(I8 y) const -> I8 { return checkOverflow(y._, _ + y._); }
 
-    auto sub(I8 y) const -> I8
-    {
-        auto res = _ - y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I8(res);
-    }
+    auto sub(I8 y) const -> I8 { return checkOverflow(y._, _ - y._); }
 
-    auto mul(I8 y) const -> I8
-    {
-        auto res = _ * y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I8(res);
-    }
+    auto mul(I8 y) const -> I8 { return checkOverflow(y._, _ * y._); }
 
     auto div(I8 y) const noexcept -> I8 { return I8(_ / y._); }
 
     auto mod(I8 y) const noexcept -> I8 { return I8(_ % y._); }
 
-    auto exp(I8 y) const -> I8
-    {
-        auto res = std::pow(_, y._);
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I8(res);
-    }
+    auto exp(I8 y) const -> I8 { return checkOverflow(y._, std::pow(_, y._)); }
 
-    auto lShift(I8 y) const noexcept -> I8 { return I8(_ << y._); }
+    auto lShift(I8 y) const -> I8 { return checkOverflow(y._, _ << y._); }
 
-    auto rShift(I8 y) const noexcept -> I8 { return I8(_ >> y._); }
+    auto rShift(I8 y) const -> I8 { return checkOverflow(y._, _ >> y._); }
 
-    auto bitOr(I8 y) const noexcept -> I8 { return I8(_ | y._); }
+    auto bitOr(I8 y) const -> I8 { return checkOverflow(y._, _ | y._); }
 
-    auto bitAnd(I8 y) const noexcept -> I8 { return I8(_ & y._); }
+    auto bitAnd(I8 y) const -> I8 { return checkOverflow(y._, _ & y._); }
 
-    auto bitXor(I8 y) const noexcept -> I8 { return I8(_ ^ y._); }
+    auto bitXor(I8 y) const -> I8 { return checkOverflow(y._, _ ^ y._); }
 
-    auto bitNot() const noexcept -> I8 { return I8(~_); }
+    auto bitNot() const -> I8 { return checkOverflow(0, ~_); }
 
     static auto assign(Mut<I8> x, I8 y) noexcept -> void { x = y; }
 
@@ -99,56 +82,50 @@ class I8
 
     static auto mulAssign(Mut<I8> x, I8 y) -> void { x = x.getValue().mul(y); }
 
-    static auto divAssign(Mut<I8> x, I8 y) noexcept -> void
-    {
-        x = x.getValue().div(y);
-    }
+    static auto divAssign(Mut<I8> x, I8 y) -> void { x = x.getValue().div(y); }
 
-    static auto modAssign(Mut<I8> x, I8 y) noexcept -> void
-    {
-        x = x.getValue().mod(y);
-    }
+    static auto modAssign(Mut<I8> x, I8 y) -> void { x = x.getValue().mod(y); }
 
     static auto expAssign(Mut<I8> x, I8 y) -> void { x = x.getValue().exp(y); }
 
-    static auto lShiftAssign(Mut<I8> x, I8 y) noexcept -> void
+    static auto lShiftAssign(Mut<I8> x, I8 y) -> void
     {
         x = x.getValue().lShift(y);
     }
 
-    static auto rShiftAssign(Mut<I8> x, I8 y) noexcept -> void
+    static auto rShiftAssign(Mut<I8> x, I8 y) -> void
     {
         x = x.getValue().rShift(y);
     }
 
-    static auto bitOrAssign(Mut<I8> x, I8 y) noexcept -> void
+    static auto bitOrAssign(Mut<I8> x, I8 y) -> void
     {
         x = x.getValue().bitOr(y);
     }
 
-    static auto bitAndAssign(Mut<I8> x, I8 y) noexcept -> void
+    static auto bitAndAssign(Mut<I8> x, I8 y) -> void
     {
         x = x.getValue().bitAnd(y);
     }
 
-    static auto bitXorAssign(Mut<I8> x, I8 y) noexcept -> void
+    static auto bitXorAssign(Mut<I8> x, I8 y) -> void
     {
         x = x.getValue().bitXor(y);
     }
 
-    auto eq(I8 y) noexcept -> bool { return _ == y._; }
+    auto eq(I8 y) const noexcept -> bool { return _ == y._; }
 
-    auto ne(I8 y) noexcept -> bool { return _ != y._; }
+    auto ne(I8 y) const noexcept -> bool { return _ != y._; }
 
-    auto lt(I8 y) noexcept -> bool { return _ < y._; }
+    auto lt(I8 y) const noexcept -> bool { return _ < y._; }
 
-    auto gt(I8 y) noexcept -> bool { return _ > y._; }
+    auto gt(I8 y) const noexcept -> bool { return _ > y._; }
 
-    auto le(I8 y) noexcept -> bool { return _ <= y._; }
+    auto le(I8 y) const noexcept -> bool { return _ <= y._; }
 
-    auto ge(I8 y) noexcept -> bool { return _ >= y._; }
+    auto ge(I8 y) const noexcept -> bool { return _ >= y._; }
 
-    auto toValue() noexcept -> uint8_t { return _; }
+    auto toValue() const noexcept -> uint8_t { return _; }
 };
 
 #endif // LILY_RUNTIME_INT8_HPP

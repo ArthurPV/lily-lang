@@ -34,6 +34,13 @@ class U64
 {
     uint64_t _;
 
+    auto checkOverflow(uint64_t y, uint64_t res) const -> U64
+    {
+        return (_ != 0 && y != 0 && res == 0)
+                 ? throw std::overflow_error("Uint64 overflow")
+                 : U64(res);
+    }
+
   public:
     static const uint64_t MIN = 0;
     static const uint64_t MAX = 0xFFFFFFFFFFFFFFFF;
@@ -43,29 +50,11 @@ class U64
     {
     }
 
-    auto add(U64 y) const -> U64
-    {
-        auto res = _ + y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U64(res);
-    }
+    auto add(U64 y) const -> U64 { return checkOverflow(y._, _ + y._); }
 
-    auto sub(U64 y) const -> U64
-    {
-        auto res = _ - y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U64(res);
-    }
+    auto sub(U64 y) const -> U64 { return checkOverflow(y._, _ - y._); }
 
-    auto mul(U64 y) const -> U64
-    {
-        auto res = _ * y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U64(res);
-    }
+    auto mul(U64 y) const -> U64 { return checkOverflow(y._, _ * y._); }
 
     auto div(U64 y) const noexcept -> U64 { return U64(_ / y._); }
 
@@ -73,23 +62,20 @@ class U64
 
     auto exp(U64 y) const -> U64
     {
-        auto res = std::pow(_, y._);
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U64(res);
+        return checkOverflow(y._, std::pow(_, y._));
     }
 
-    auto lShift(U64 y) const noexcept -> U64 { return U64(_ << y._); }
+    auto lShift(U64 y) const -> U64 { return checkOverflow(y._, _ << y._); }
 
-    auto rShift(U64 y) const noexcept -> U64 { return U64(_ >> y._); }
+    auto rShift(U64 y) const -> U64 { return checkOverflow(y._, _ >> y._); }
 
-    auto bitOr(U64 y) const noexcept -> U64 { return U64(_ | y._); }
+    auto bitOr(U64 y) const -> U64 { return checkOverflow(y._, _ | y._); }
 
-    auto bitAnd(U64 y) const noexcept -> U64 { return U64(_ & y._); }
+    auto bitAnd(U64 y) const -> U64 { return checkOverflow(y._, _ & y._); }
 
-    auto bitXor(U64 y) const noexcept -> U64 { return U64(_ ^ y._); }
+    auto bitXor(U64 y) const -> U64 { return checkOverflow(y._, _ ^ y._); }
 
-    auto bitNot() const noexcept -> U64 { return U64(~_); }
+    auto bitNot() const -> U64 { return checkOverflow(0, ~_); }
 
     static auto assign(Mut<U64> x, U64 y) noexcept -> void { x = y; }
 
@@ -148,19 +134,19 @@ class U64
         x = x.getValue().bitXor(y);
     }
 
-    auto eq(U64 y) noexcept -> bool { return _ == y._; }
+    auto eq(U64 y) const noexcept -> bool { return _ == y._; }
 
-    auto ne(U64 y) noexcept -> bool { return _ != y._; }
+    auto ne(U64 y) const noexcept -> bool { return _ != y._; }
 
-    auto lt(U64 y) noexcept -> bool { return _ < y._; }
+    auto lt(U64 y) const noexcept -> bool { return _ < y._; }
 
-    auto gt(U64 y) noexcept -> bool { return _ > y._; }
+    auto gt(U64 y) const noexcept -> bool { return _ > y._; }
 
-    auto le(U64 y) noexcept -> bool { return _ <= y._; }
+    auto le(U64 y) const noexcept -> bool { return _ <= y._; }
 
-    auto ge(U64 y) noexcept -> bool { return _ >= y._; }
+    auto ge(U64 y) const noexcept -> bool { return _ >= y._; }
 
-    auto toValue() noexcept -> uint64_t { return _; }
+    auto toValue() const noexcept -> uint64_t { return _; }
 };
 
 #endif // LILY_RUNTIME_UINT64_HPP

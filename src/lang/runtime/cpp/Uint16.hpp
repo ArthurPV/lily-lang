@@ -34,6 +34,13 @@ class U16
 {
     uint16_t _;
 
+    auto checkOverflow(uint16_t y, uint16_t res) const -> U16
+    {
+        return (_ != 0 && y != 0 && res == 0)
+                 ? throw std::overflow_error("Uint16 overflow")
+                 : U16(res);
+    }
+
   public:
     static const uint16_t MIN = 0;
     static const uint16_t MAX = 0xFFFF;
@@ -43,29 +50,11 @@ class U16
     {
     }
 
-    auto add(U16 y) const -> U16
-    {
-        auto res = _ + y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U16(res);
-    }
+    auto add(U16 y) const -> U16 { return checkOverflow(y._, _ + y._); }
 
-    auto sub(U16 y) const -> U16
-    {
-        auto res = _ - y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U16(res);
-    }
+    auto sub(U16 y) const -> U16 { return checkOverflow(y._, _ - y._); }
 
-    auto mul(U16 y) const -> U16
-    {
-        auto res = _ * y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U16(res);
-    }
+    auto mul(U16 y) const -> U16 { return checkOverflow(y._, _ * y._); }
 
     auto div(U16 y) const noexcept -> U16 { return U16(_ / y._); }
 
@@ -73,23 +62,20 @@ class U16
 
     auto exp(U16 y) const -> U16
     {
-        auto res = std::pow(_, y._);
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : U16(res);
+        return checkOverflow(y._, std::pow(_, y._));
     }
 
-    auto lShift(U16 y) const noexcept -> U16 { return U16(_ << y._); }
+    auto lShift(U16 y) const -> U16 { return checkOverflow(y._, _ << y._); }
 
-    auto rShift(U16 y) const noexcept -> U16 { return U16(_ >> y._); }
+    auto rShift(U16 y) const -> U16 { return checkOverflow(y._, _ >> y._); }
 
-    auto bitOr(U16 y) const noexcept -> U16 { return U16(_ | y._); }
+    auto bitOr(U16 y) const -> U16 { return checkOverflow(y._, _ | y._); }
 
-    auto bitAnd(U16 y) const noexcept -> U16 { return U16(_ & y._); }
+    auto bitAnd(U16 y) const -> U16 { return checkOverflow(y._, _ & y._); }
 
-    auto bitXor(U16 y) const noexcept -> U16 { return U16(_ ^ y._); }
+    auto bitXor(U16 y) const -> U16 { return checkOverflow(y._, _ ^ y._); }
 
-    auto bitNot() const noexcept -> U16 { return U16(~_); }
+    auto bitNot() const -> U16 { return checkOverflow(0, ~_); }
 
     static auto assign(Mut<U16> x, U16 y) noexcept -> void { x = y; }
 
@@ -108,12 +94,12 @@ class U16
         x = x.getValue().mul(y);
     }
 
-    static auto divAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto divAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().div(y);
     }
 
-    static auto modAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto modAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().mod(y);
     }
@@ -123,44 +109,44 @@ class U16
         x = x.getValue().exp(y);
     }
 
-    static auto lShiftAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto lShiftAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().lShift(y);
     }
 
-    static auto rShiftAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto rShiftAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().rShift(y);
     }
 
-    static auto bitOrAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto bitOrAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().bitOr(y);
     }
 
-    static auto bitAndAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto bitAndAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().bitAnd(y);
     }
 
-    static auto bitXorAssign(Mut<U16> x, U16 y) noexcept -> void
+    static auto bitXorAssign(Mut<U16> x, U16 y) -> void
     {
         x = x.getValue().bitXor(y);
     }
 
-    auto eq(U16 y) noexcept -> bool { return _ == y._; }
+    auto eq(U16 y) const noexcept -> bool { return _ == y._; }
 
-    auto ne(U16 y) noexcept -> bool { return _ != y._; }
+    auto ne(U16 y) const noexcept -> bool { return _ != y._; }
 
-    auto lt(U16 y) noexcept -> bool { return _ < y._; }
+    auto lt(U16 y) const noexcept -> bool { return _ < y._; }
 
-    auto gt(U16 y) noexcept -> bool { return _ > y._; }
+    auto gt(U16 y) const noexcept -> bool { return _ > y._; }
 
-    auto le(U16 y) noexcept -> bool { return _ <= y._; }
+    auto le(U16 y) const noexcept -> bool { return _ <= y._; }
 
-    auto ge(U16 y) noexcept -> bool { return _ >= y._; }
+    auto ge(U16 y) const noexcept -> bool { return _ >= y._; }
 
-    auto toValue() noexcept -> uint16_t { return _; }
+    auto toValue() const noexcept -> uint16_t { return _; }
 };
 
 #endif // LILY_RUNTIME_UINT16_HPP

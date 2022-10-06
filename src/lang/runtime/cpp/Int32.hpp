@@ -34,6 +34,13 @@ class I32
 {
     int32_t _;
 
+    auto checkOverflow(int32_t y, int32_t res) const -> I32
+    {
+        return (_ != 0 && y != 0 && res == 0)
+                 ? throw std::overflow_error("Int32 overflow")
+                 : I32(res);
+    }
+
   public:
     static const int32_t MIN = -0x80000000;
     static const int32_t MAX = 0x7FFFFFFF;
@@ -43,29 +50,11 @@ class I32
     {
     }
 
-    auto add(I32 y) const -> I32
-    {
-        auto res = _ + y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I32(res);
-    }
+    auto add(I32 y) const -> I32 { return checkOverflow(y._, _ + y._); }
 
-    auto sub(I32 y) const -> I32
-    {
-        auto res = _ - y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I32(res);
-    }
+    auto sub(I32 y) const -> I32 { return checkOverflow(y._, _ - y._); }
 
-    auto mul(I32 y) const -> I32
-    {
-        auto res = _ * y._;
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I32(res);
-    }
+    auto mul(I32 y) const -> I32 { return checkOverflow(y._, _ * y._); }
 
     auto div(I32 y) const noexcept -> I32 { return I32(_ / y._); }
 
@@ -73,23 +62,20 @@ class I32
 
     auto exp(I32 y) const -> I32
     {
-        auto res = std::pow(_, y._);
-        return (_ != 0 && y._ != 0 && res == 0)
-                 ? throw std::overflow_error("Uint8 overflow")
-                 : I32(res);
+        return checkOverflow(y._, std::pow(_, y._));
     }
 
-    auto lShift(I32 y) const noexcept -> I32 { return I32(_ << y._); }
+    auto lShift(I32 y) const -> I32 { return checkOverflow(y._, _ << y._); }
 
-    auto rShift(I32 y) const noexcept -> I32 { return I32(_ >> y._); }
+    auto rShift(I32 y) const -> I32 { return checkOverflow(y._, _ >> y._); }
 
-    auto bitOr(I32 y) const noexcept -> I32 { return I32(_ | y._); }
+    auto bitOr(I32 y) const -> I32 { return checkOverflow(y._, _ | y._); }
 
-    auto bitAnd(I32 y) const noexcept -> I32 { return I32(_ & y._); }
+    auto bitAnd(I32 y) const -> I32 { return checkOverflow(y._, _ & y._); }
 
-    auto bitXor(I32 y) const noexcept -> I32 { return I32(_ ^ y._); }
+    auto bitXor(I32 y) const -> I32 { return checkOverflow(y._, _ ^ y._); }
 
-    auto bitNot() const noexcept -> I32 { return I32(~_); }
+    auto bitNot() const -> I32 { return checkOverflow(0, ~_); }
 
     static auto assign(Mut<I32> x, I32 y) noexcept -> void { x = y; }
 
@@ -108,12 +94,12 @@ class I32
         x = x.getValue().mul(y);
     }
 
-    static auto divAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto divAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().div(y);
     }
 
-    static auto modAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto modAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().mod(y);
     }
@@ -123,44 +109,44 @@ class I32
         x = x.getValue().exp(y);
     }
 
-    static auto lShiftAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto lShiftAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().lShift(y);
     }
 
-    static auto rShiftAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto rShiftAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().rShift(y);
     }
 
-    static auto bitOrAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto bitOrAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().bitOr(y);
     }
 
-    static auto bitAndAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto bitAndAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().bitAnd(y);
     }
 
-    static auto bitXorAssign(Mut<I32> x, I32 y) noexcept -> void
+    static auto bitXorAssign(Mut<I32> x, I32 y) -> void
     {
         x = x.getValue().bitXor(y);
     }
 
-    auto eq(I32 y) noexcept -> bool { return _ == y._; }
+    auto eq(I32 y) const noexcept -> bool { return _ == y._; }
 
-    auto ne(I32 y) noexcept -> bool { return _ != y._; }
+    auto ne(I32 y) const noexcept -> bool { return _ != y._; }
 
-    auto lt(I32 y) noexcept -> bool { return _ < y._; }
+    auto lt(I32 y) const noexcept -> bool { return _ < y._; }
 
-    auto gt(I32 y) noexcept -> bool { return _ > y._; }
+    auto gt(I32 y) const noexcept -> bool { return _ > y._; }
 
-    auto le(I32 y) noexcept -> bool { return _ <= y._; }
+    auto le(I32 y) const noexcept -> bool { return _ <= y._; }
 
-    auto ge(I32 y) noexcept -> bool { return _ >= y._; }
+    auto ge(I32 y) const noexcept -> bool { return _ >= y._; }
 
-    auto toValue() noexcept -> uint8_t { return _; }
+    auto toValue() const noexcept -> uint8_t { return _; }
 };
 
 #endif // LILY_RUNTIME_INT32_HPP
