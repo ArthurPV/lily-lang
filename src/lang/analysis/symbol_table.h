@@ -837,7 +837,7 @@ __free__TraitSymbol(struct TraitSymbol *self);
 
 enum LiteralSymbolKind
 {
-    LiteralSymbolKindBool,
+    LiteralSymbolKindBool = 1,
     LiteralSymbolKindChar,
     LiteralSymbolKindBitChar,
     LiteralSymbolKindInt8,
@@ -1796,6 +1796,7 @@ __free__VariableSymbol(struct VariableSymbol *self)
 {
     FREE(DataTypeSymbol, self->data_type);
     FREE(ExprSymbolAll, self->expr);
+	FREE(Scope, self->scope);
     free(self);
 }
 

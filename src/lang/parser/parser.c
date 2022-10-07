@@ -3398,11 +3398,20 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             else if (!strcmp(identifier_str, "Char"))
                 data_type = NEW(DataType, DataTypeKindChar);
 
+            else if (!strcmp(identifier_str, "BitChar"))
+                data_type = NEW(DataType, DataTypeKindBitChar);
+
             else if (!strcmp(identifier_str, "Str"))
                 data_type = NEW(DataType, DataTypeKindStr);
 
+            else if (!strcmp(identifier_str, "BitStr"))
+                data_type = NEW(DataType, DataTypeKindBitStr);
+
             else if (!strcmp(identifier_str, "Any"))
                 data_type = NEW(DataType, DataTypeKindAny);
+
+			else if (!strcmp(identifier_str, "Never"))
+				data_type = NEW(DataType, DataTypeKindNever);
 
             else if (!strcmp(identifier_str, "Unit"))
                 data_type = NEW(DataType, DataTypeKindUnit);
@@ -3977,9 +3986,8 @@ parse_variable(struct Parser self,
         return NEW(
           ExprVariable, NEW(VariableDecl, name, NULL, expr, is_mut), loc);
     else
-        return NEW(ExprVariable,
-                   NEW(VariableDecl, name, data_type, expr, is_mut),
-                   loc);
+        return NEW(
+          ExprVariable, NEW(VariableDecl, name, data_type, expr, is_mut), loc);
 }
 
 static struct Token *

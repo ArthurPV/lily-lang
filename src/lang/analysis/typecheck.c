@@ -26,6 +26,8 @@
 #include <base/macros.h>
 #include <base/platform.h>
 #include <base/string.h>
+#include <base/types.h>
+#include <base/vec.h>
 #include <lang/analysis/symbol_table.h>
 #include <lang/analysis/typecheck.h>
 #include <lang/builtin/builtin.h>
@@ -33,6 +35,7 @@
 #include <lang/diagnostic/diagnostic.h>
 #include <lang/diagnostic/summary.h>
 #include <lang/parser/ast.h>
+#include <math.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -74,6 +77,12 @@ static const Int128 MinInt64 = -0x8000000000000000;
 static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 #define MinInt128 -(1 << 127)
 #define MaxInt128 (1 << 127) - 1
+
+static const Float32 MinPosFloat32 = 1.175494351e-38F;
+static const Float32 MaxFloat32 = 3.402823466e+38F;
+
+static const Float64 MinPosFloat64 = 2.2250738585072014e-308;
+static const Float64 MaxFloat64 = 1.7976931348623158e+308;
 
 static const Str BuiltinFirstLayer[] = {
     "Int8",   "Int16",  "Int32",   "Int64",    "Int128",  "Uint8",   "Uint16",
@@ -329,6 +338,8 @@ infer_expression(struct Typecheck *self,
                  struct Vec *local_data_type,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type);
+static enum DataTypeKind
+get_data_type_kind_from_literal_symbol(enum LiteralSymbolKind kind);
 static struct ExprSymbol *
 check_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
@@ -382,6 +393,7 @@ check_while_stmt(struct Typecheck *self,
 static void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
+               struct Vec *fun_body,
                struct Vec *local_value,
                struct Vec *local_data_type);
 
@@ -2697,9 +2709,9 @@ check_fun(struct Typecheck *self,
                          previous);
 
         struct FunDecl *fun_decl = fun->fun_decl->value.fun;
-        struct Vec *local_data_type = NULL;
-        struct Vec *local_value = NULL;
-        struct Vec *local_decl = NULL;
+        struct Vec *local_data_type = NULL; // struct Vec<struct Scope*>*
+        struct Vec *local_value = NULL; // struct Vec<struct Scope*>*
+        struct Vec *local_decl = NULL; // struct Vec<struct Scope*>*
         struct Vec *tagged_type = NULL;
         struct Vec *generic_params = NULL;
         struct Vec *params = NULL;
@@ -2874,7 +2886,10 @@ check_fun(struct Typecheck *self,
         }
 
         if (fun_decl->body) {
-            TODO("body");
+			local_value = NEW(Vec, sizeof(struct Scope));
+            body = NEW(Vec, sizeof(struct SymbolTable));
+
+            check_fun_body(self, fun, body, local_value, local_data_type);
         }
 
         fun->tagged_type = tagged_type;
@@ -2886,13 +2901,15 @@ check_fun(struct Typecheck *self,
         if (!previous)
             ++count_fun_id;
 
-        if (local_data_type)
+        if (local_data_type) {
             for (Usize i = len__Vec(*local_data_type); i--;)
                 FREE(LocalDataType, get__Vec(*local_data_type, i));
 
+			FREE(Vec, local_data_type);
+		}
+
         if (local_value)
-            for (Usize i = len__Vec(*local_value); i--;)
-                FREE(Scope, get__Vec(*local_value, i));
+			FREE(Vec, local_value);
     }
 }
 
@@ -3532,7 +3549,8 @@ check_data_type(
                           // function search by default in global
   struct SearchContext ctx)
 {
-    if (ctx.search_object) {
+    if (ctx.search_object || ctx.search_type || ctx.search_class ||
+        ctx.search_trait) {
         switch (data_type->kind) {
             case DataTypeKindCustom: {
             custom_data_type : {
@@ -3783,8 +3801,12 @@ check_data_type(
                                            ctx));
             case DataTypeKindStr:
                 return NEW(DataTypeSymbol, DataTypeKindStr);
+            case DataTypeKindBitStr:
+                return NEW(DataTypeSymbol, DataTypeKindBitStr);
             case DataTypeKindChar:
                 return NEW(DataTypeSymbol, DataTypeKindChar);
+            case DataTypeKindBitChar:
+                return NEW(DataTypeSymbol, DataTypeKindBitChar);
             case DataTypeKindI8:
                 return NEW(DataTypeSymbol, DataTypeKindI8);
             case DataTypeKindI16:
@@ -3817,6 +3839,8 @@ check_data_type(
                 return NEW(DataTypeSymbol, DataTypeKindUsize);
             case DataTypeKindAny:
                 return NEW(DataTypeSymbol, DataTypeKindAny);
+            case DataTypeKindNever:
+                return NEW(DataTypeSymbol, DataTypeKindNever);
             case DataTypeKindOptional:
                 return NEW(DataTypeSymbolOptional,
                            check_data_type(self,
@@ -4324,6 +4348,34 @@ infer_expression(struct Typecheck *self,
     return NULL;
 }
 
+enum DataTypeKind
+  data_type_kind_from_literal_symbol_kind[LiteralSymbolKindUnit + 1] = {
+      [LiteralSymbolKindBool] = DataTypeKindBool,
+      [LiteralSymbolKindChar] = DataTypeKindChar,
+      [LiteralSymbolKindBitChar] = DataTypeKindBitChar,
+      [LiteralSymbolKindInt8] = DataTypeKindI8,
+      [LiteralSymbolKindInt16] = DataTypeKindI16,
+      [LiteralSymbolKindInt32] = DataTypeKindI32,
+      [LiteralSymbolKindInt64] = DataTypeKindI64,
+      [LiteralSymbolKindInt128] = DataTypeKindI128,
+      [LiteralSymbolKindUint8] = DataTypeKindU8,
+      [LiteralSymbolKindUint16] = DataTypeKindU16,
+      [LiteralSymbolKindUint32] = DataTypeKindU32,
+      [LiteralSymbolKindUint64] = DataTypeKindU64,
+      [LiteralSymbolKindUint128] = DataTypeKindU128,
+      [LiteralSymbolKindFloat32] = DataTypeKindF32,
+      [LiteralSymbolKindFloat64] = DataTypeKindF64,
+      [LiteralSymbolKindStr] = DataTypeKindStr,
+      [LiteralSymbolKindBitStr] = DataTypeKindBitStr,
+      [LiteralSymbolKindUnit] = DataTypeKindUnit
+  };
+
+static enum DataTypeKind
+get_data_type_kind_from_literal_symbol(enum LiteralSymbolKind kind)
+{
+    return data_type_kind_from_literal_symbol_kind[(int)kind];
+}
+
 static struct ExprSymbol *
 check_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
@@ -4703,8 +4755,295 @@ check_expression(struct Typecheck *self,
             TODO("check nil");
         case ExprKindWildcard:
             TODO("check wildcard");
-        case ExprKindLiteral:
+        case ExprKindLiteral: {
+            int *kind = NULL; // int* = LiteralSymbolKind*
+
+            switch (expr->value.literal.kind) {
+                case LiteralKindBool:
+                    kind = (int *)LiteralSymbolKindBool;
+                    break;
+                case LiteralKindChar:
+                    kind = (int *)LiteralSymbolKindChar;
+                    break;
+                case LiteralKindBitChar:
+                    kind = (int *)LiteralSymbolKindBitChar;
+                    break;
+                case LiteralKindInt32:
+                    if (defined_data_type) {
+                        switch (defined_data_type->kind) {
+                            case DataTypeKindI8:
+                                kind = (int *)LiteralSymbolKindInt8;
+                                break;
+                            case DataTypeKindI16:
+                                kind = (int *)LiteralSymbolKindInt16;
+                                break;
+                            case DataTypeKindI32:
+                                kind = (int *)LiteralSymbolKindInt32;
+                                break;
+                            case DataTypeKindI64:
+                                kind = (int *)LiteralSymbolKindInt64;
+                                break;
+                            case DataTypeKindI128:
+                                kind = (int *)LiteralSymbolKindInt128;
+                                break;
+                            case DataTypeKindU8:
+                                kind = (int *)LiteralSymbolKindUint8;
+                                break;
+                            case DataTypeKindU16:
+                                kind = (int *)LiteralSymbolKindUint16;
+                                break;
+                            case DataTypeKindU32:
+                                kind = (int *)LiteralSymbolKindUint32;
+                                break;
+                            case DataTypeKindU64:
+                                kind = (int *)LiteralSymbolKindUint64;
+                                break;
+                            case DataTypeKindU128:
+                                kind = (int *)LiteralSymbolKindUint128;
+                                break;
+                            default:
+                                kind = (int *)LiteralSymbolKindInt32;
+                                assert(0 &&
+                                       "error: expected integer data type");
+                        }
+                    } else
+                        kind = (int *)LiteralSymbolKindInt32;
+
+                    break;
+                case LiteralKindInt64:
+                    if (defined_data_type) {
+                        switch (defined_data_type->kind) {
+                            case DataTypeKindI64:
+                                kind = (int *)LiteralSymbolKindInt64;
+                                break;
+                            case DataTypeKindI128:
+                                kind = (int *)LiteralSymbolKindInt128;
+                                break;
+                            case DataTypeKindU64:
+                                kind = (int *)LiteralSymbolKindUint64;
+                                break;
+                            case DataTypeKindU128:
+                                kind = (int *)LiteralSymbolKindUint128;
+                                break;
+                            case DataTypeKindI8:
+                            case DataTypeKindI16:
+                            case DataTypeKindI32:
+                            case DataTypeKindU8:
+                            case DataTypeKindU16:
+                            case DataTypeKindU32:
+                                kind = (int *)LiteralSymbolKindInt64;
+                                assert(0 && "error: the interger is too large "
+                                            "for I8, I16, I32, U8, U16 or U32");
+                            default:
+                                kind = (int *)LiteralSymbolKindInt64;
+                                assert(0 &&
+                                       "error: expected integer data type");
+                        }
+                    } else
+                        kind = (int *)LiteralSymbolKindInt64;
+
+                    break;
+                case LiteralKindInt128:
+                    if (defined_data_type) {
+                        switch (defined_data_type->kind) {
+                            case DataTypeKindI128:
+                                kind = (int *)LiteralSymbolKindInt128;
+                                break;
+                            case DataTypeKindU128:
+                                kind = (int *)LiteralSymbolKindUint128;
+                            case DataTypeKindI8:
+                            case DataTypeKindI16:
+                            case DataTypeKindI32:
+                            case DataTypeKindI64:
+                            case DataTypeKindU8:
+                            case DataTypeKindU16:
+                            case DataTypeKindU32:
+                            case DataTypeKindU64:
+                                kind = (int *)LiteralSymbolKindInt128;
+                                assert(
+                                  0 &&
+                                  "error: the interger is too large for I8, "
+                                  "I16, I32, I64, U8, U16, U32 or U64");
+                            default:
+                                kind = (int *)LiteralSymbolKindInt128;
+                                assert(0 &&
+                                       "error: expected integer data type");
+                        }
+                    } else
+                        kind = (int *)LiteralSymbolKindInt128;
+
+                    break;
+                case LiteralKindFloat:
+                    if (defined_data_type) {
+                        switch (defined_data_type->kind) {
+                            case DataTypeKindF32:
+                                kind = (int *)LiteralSymbolKindFloat32;
+                                break;
+                            case DataTypeKindF64:
+                                kind = (int *)LiteralSymbolKindFloat64;
+                                break;
+                            default:
+                                assert(0 && "error: expected float data type");
+                        }
+                    } else
+                        kind = (int *)LiteralSymbolKindFloat64;
+
+                    break;
+                case LiteralKindBitStr:
+                    kind = (int *)LiteralSymbolKindBitStr;
+                    break;
+                case LiteralKindStr:
+                    kind = (int *)LiteralSymbolKindStr;
+                    break;
+                case LiteralKindUnit:
+                    kind = (int *)LiteralSymbolKindUnit;
+                    break;
+                default:
+                    UNREACHABLE("unknown LiteralKind");
+            }
+
+            // return NEW(DataTypeSymbol,
+            // get_data_type_kind_from_literal_symbol((enum
+            // LiteralSymbolKind)(UPtr)kind));
+            if (kind) {
+                struct LiteralSymbol ls;
+
+                switch ((enum LiteralSymbolKind)(UPtr)kind) {
+                    case LiteralSymbolKindBool:
+                        ls = NEW(LiteralSymbolBool,
+                                 expr->value.literal.value.bool_);
+                        break;
+                    case LiteralSymbolKindChar:
+                        ls = NEW(LiteralSymbolChar,
+                                 expr->value.literal.value.char_);
+                        break;
+                    case LiteralSymbolKindBitChar:
+                        ls = NEW(LiteralSymbolBitChar,
+                                 expr->value.literal.value.bit_char);
+                        break;
+                    case LiteralSymbolKindInt8:
+                        if (expr->value.literal.value.int32 >= MinInt8 &&
+                            expr->value.literal.value.int32 <= MaxInt8)
+                            ls = NEW(LiteralSymbolInt8,
+                                     (Int8)expr->value.literal.value.int32);
+                        else {
+                            assert(0 && "error: integer is too large for Int8");
+                        }
+                        break;
+                    case LiteralSymbolKindInt16:
+                        if (expr->value.literal.value.int32 >= MinInt16 &&
+                            expr->value.literal.value.int32 <= MaxInt16)
+                            ls = NEW(LiteralSymbolInt16,
+                                     (Int16)expr->value.literal.value.int32);
+                        else {
+                            assert(0 &&
+                                   "error: integer is too large for Int16");
+                        }
+                        break;
+                    case LiteralSymbolKindInt32:
+                        ls = NEW(LiteralSymbolInt32,
+                                 expr->value.literal.value.int32);
+                        break;
+                    case LiteralSymbolKindInt64:
+                        ls = NEW(LiteralSymbolInt64,
+                                 expr->value.literal.value.int64);
+                        break;
+                    case LiteralSymbolKindInt128:
+                        if (expr->value.literal.kind == LiteralKindInt64)
+                            ls = NEW(LiteralSymbolInt128,
+                                     (Int128)expr->value.literal.value.int64);
+                        else
+                            ls = NEW(LiteralSymbolInt128,
+                                     expr->value.literal.value.int128);
+                        break;
+                    case LiteralSymbolKindUint8:
+                        if (expr->value.literal.value.int32 >= 0 &&
+                            expr->value.literal.value.int32 <= MaxUInt8)
+                            ls = NEW(LiteralSymbolUint8,
+                                     (UInt8)expr->value.literal.value.int32);
+                        else {
+                            assert(0 &&
+                                   "error: integer is too large for Uint8");
+                        }
+                        break;
+                    case LiteralSymbolKindUint16:
+                        if (expr->value.literal.value.int32 >= 0 &&
+                            expr->value.literal.value.int32 <= MaxUInt16)
+                            ls = NEW(LiteralSymbolUint16,
+                                     (UInt16)expr->value.literal.value.int32);
+                        else {
+                            assert(0 &&
+                                   "error: integer is too large for Uint16");
+                        }
+                        break;
+                    case LiteralSymbolKindUint32:
+                        if (expr->value.literal.value.int32 >= 0)
+                            ls = NEW(LiteralSymbolUint32,
+                                     expr->value.literal.value.int32);
+                        else {
+                            assert(0 && "error: integer is less than 0");
+                        }
+                        break;
+                    case LiteralSymbolKindUint64:
+                        if (expr->value.literal.value.int64 >= 0)
+                            ls = NEW(LiteralSymbolUint64,
+                                     expr->value.literal.value.int64);
+                        else {
+                            assert(0 && "error: integer is less than 0");
+                        }
+                        break;
+                    case LiteralSymbolKindUint128:
+                        if (expr->value.literal.value.int128 >= 0)
+                            ls = NEW(LiteralSymbolUint128,
+                                     expr->value.literal.value.int128);
+                        else {
+                            assert(0 && "error: integer is less than 0");
+                        }
+                        break;
+                    case LiteralSymbolKindFloat32: {
+                        Float64 abs_value =
+                          fabs(expr->value.literal.value.float_);
+
+                        if (abs_value >= MinPosFloat32 &&
+                            abs_value <= MaxFloat32)
+                            ls = NEW(LiteralSymbolFloat32,
+                                     expr->value.literal.value.float_);
+                        else {
+                            assert(0 && "error: F32 is too large or too small");
+                        }
+                        break;
+                    }
+                    case LiteralSymbolKindFloat64: {
+                        Float64 abs_value =
+                          fabs(expr->value.literal.value.float_);
+
+                        if (abs_value >= MinPosFloat64 &&
+                            abs_value <= MaxFloat64)
+                            ls = NEW(LiteralSymbolFloat64,
+                                     expr->value.literal.value.float_);
+                        else {
+                            assert(0 && "error: F64 is too large or too small");
+                        }
+                        break;
+                    }
+                    case LiteralSymbolKindStr:
+                        ls =
+                          NEW(LiteralSymbolStr, expr->value.literal.value.str);
+                        break;
+                    case LiteralSymbolKindBitStr:
+                        ls = NEW(LiteralSymbolBitStr,
+                                 expr->value.literal.value.bit_str);
+                        break;
+                    case LiteralSymbolKindUnit:
+                        ls = NEW(LiteralSymbolUnit);
+                        break;
+                }
+
+                return NEW(ExprSymbolLiteral, *expr, ls);
+            }
+
             TODO("check literal");
+        }
         case ExprKindIf:
             TODO("check if");
         case ExprKindGrouping:
@@ -4716,21 +5055,43 @@ check_expression(struct Typecheck *self,
                                     defined_data_type,
                                     is_return_type);
         case ExprKindVariable: {
-            struct DataTypeSymbol *defined_data_type_expr_variable =
-              expr->value.variable.data_type
-                ? check_data_type(
-                    self,
-                    expr->loc,
-                    expr->value.variable.data_type,
-                    local_data_type,
-                    NULL,
-                    (struct SearchContext){ .search_type = true,
-                                            .search_value = false,
-                                            .search_class = true,
-                                            .search_fun = false,
-                                            .search_object = true,
-                                            .search_trait = false })
-                : NULL;
+            struct DataTypeSymbol *defined_data_type_expr_variable = NULL;
+
+            if (expr->value.variable.data_type) {
+                switch (expr->value.variable.data_type->kind) {
+                    case DataTypeKindCustom:
+                        defined_data_type_expr_variable = check_data_type(
+                          self,
+                          expr->loc,
+                          expr->value.variable.data_type,
+                          local_data_type,
+                          NULL,
+                          (struct SearchContext){ .search_type = true,
+                                                  .search_fun = false,
+                                                  .search_variant = false,
+                                                  .search_value = false,
+                                                  .search_trait = true,
+                                                  .search_class = true,
+                                                  .search_object = true });
+                        break;
+                    default:
+                        defined_data_type_expr_variable = check_data_type(
+                          self,
+                          expr->loc,
+                          expr->value.variable.data_type,
+                          local_data_type,
+                          NULL,
+                          (struct SearchContext){ .search_type = false,
+                                                  .search_fun = false,
+                                                  .search_variant = false,
+                                                  .search_value = false,
+                                                  .search_trait = false,
+                                                  .search_class = false,
+                                                  .search_object = false });
+                        break;
+                }
+            }
+
             struct ExprSymbol *expr_variable =
               check_expression(self,
                                fun,
@@ -4744,8 +5105,7 @@ check_expression(struct Typecheck *self,
                   *expr,
                   NEW(VariableSymbol, expr->value.variable, expr->loc));
 
-            res->value.variable->data_type =
-              copy__DataTypeSymbol(expr_variable->data_type);
+            res->value.variable->data_type = defined_data_type_expr_variable;
             res->value.variable->expr = expr_variable;
             res->value.variable->scope =
               NEW(Scope,
@@ -4755,6 +5115,8 @@ check_expression(struct Typecheck *self,
                   ScopeItemKindVariable,
                   ScopeKindLocal,
                   NULL);
+
+			push__Vec(local_value, res->value.variable->scope);
 
             return res;
         }
@@ -4845,6 +5207,7 @@ check_while_stmt(struct Typecheck *self,
 static void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
+               struct Vec *fun_body,
                struct Vec *local_value,
                struct Vec *local_data_type)
 {
@@ -4854,7 +5217,7 @@ check_fun_body(struct Typecheck *self,
             ->kind) {
             case FunBodyItemKindExpr:
                 push__Vec(
-                  fun->body,
+                  fun_body,
                   NEW(SymbolTableExpr,
                       check_expression(self,
                                        fun,
@@ -4875,7 +5238,7 @@ check_fun_body(struct Typecheck *self,
                 switch (stmt->kind) {
                     case StmtKindAwait:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_await_stmt(
@@ -4884,7 +5247,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindReturn:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_return_stmt(
@@ -4893,7 +5256,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindFor:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_for_stmt(
@@ -4902,7 +5265,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindIf:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_if_stmt(
@@ -4911,7 +5274,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindMatch:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_match_stmt(
@@ -4920,7 +5283,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindTry:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_try_stmt(
@@ -4929,7 +5292,7 @@ check_fun_body(struct Typecheck *self,
                         break;
                     case StmtKindWhile:
                         push__Vec(
-                          fun->body,
+                          fun_body,
                           NEW(
                             SymbolTableStmt,
                             check_while_stmt(
