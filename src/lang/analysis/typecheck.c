@@ -4239,18 +4239,15 @@ infer_expression(struct Typecheck *self,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type)
 {
-#define INFER(dt)                                                              \
-    if (defined_data_type)                                                     \
-        return copy__DataTypeSymbol(defined_data_type);                        \
-    else if (is_return_type && fun && dt)                                      \
-        if (fun->return_type)                                                  \
-            return copy__DataTypeSymbol(fun->return_type);                     \
-        else                                                                   \
-            return dt;                                                         \
-    else if (!dt)                                                              \
-        assert(0 && "error: cannot infer on nil or undef or other value with " \
-                    "no specified data type");                                 \
-    else                                                                       \
+#define INFER(dt)                                          \
+    if (defined_data_type)                                 \
+        return copy__DataTypeSymbol(defined_data_type);    \
+    else if (is_return_type && fun && dt)                  \
+        if (fun->return_type)                              \
+            return copy__DataTypeSymbol(fun->return_type); \
+        else                                               \
+            return dt;                                     \
+    else                                                   \
         return dt
 
     switch (expr->kind) {
@@ -4283,9 +4280,26 @@ infer_expression(struct Typecheck *self,
         case ExprKindBlock:
             TODO("infer block");
         case ExprKindQuestionMark:
-            TODO("infer question mark");
+            if (defined_data_type) {
+                if (defined_data_type->kind == DataTypeKindOptional)
+                    return copy__DataTypeSymbol(
+                      defined_data_type->value.optional);
+                else {
+                    assert(0 && "error: expected Optional data type");
+                }
+            } else {
+                TODO("find value and infer on data type");
+            }
         case ExprKindDereference:
-            TODO("infer dereference");
+            if (defined_data_type) {
+                if (defined_data_type->kind == DataTypeKindPtr)
+                    return copy__DataTypeSymbol(defined_data_type->value.ptr);
+                else {
+                    assert(0 && "error: expected Ptr data type");
+                }
+            } else {
+                TODO("find value and infer on data type");
+            }
         case ExprKindRef:
             INFER(NEW(DataTypeSymbolRef,
                       infer_expression(self,
@@ -4298,11 +4312,16 @@ infer_expression(struct Typecheck *self,
         case ExprKindSelf:
             TODO("infer self");
         case ExprKindUndef:
-            INFER(NULL);
+            INFER(NEW(DataTypeSymbolCompilerDefined,
+                      NEW(CompilerDefinedDataType, "T", false)));
         case ExprKindNil:
-            INFER(
-              NEW(DataTypeSymbolException,
-                  NEW(DataTypeSymbolCustom, NULL, from__String("T"), NULL)));
+            INFER(NEW(DataTypeSymbolPtr,
+                      NEW(DataTypeSymbolCompilerDefined,
+                          NEW(CompilerDefinedDataType, "T", false))));
+        case ExprKindNone:
+            INFER(NEW(DataTypeSymbolOptional,
+                      NEW(DataTypeSymbolCompilerDefined,
+                          NEW(CompilerDefinedDataType, "T", false))));
         case ExprKindWildcard:
             break;
         case ExprKindLiteral:
@@ -5106,7 +5125,7 @@ check_expression(struct Typecheck *self,
 
             if (defined_data_type_expr_variable)
                 if (!eq__DataTypeSymbol(defined_data_type_expr_variable,
-                                       expr_variable->data_type)) {
+                                        expr_variable->data_type)) {
                     assert(0 && "error: data type is not matched");
                 }
 

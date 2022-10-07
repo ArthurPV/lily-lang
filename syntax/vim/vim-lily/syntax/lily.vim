@@ -15,7 +15,7 @@ syn keyword lilyRepeat while for
 " syn keyword lilyModuleDefault
 
 syn keyword lilyConstant nil undef
-syn keyword lilyKeyword fun end or and not xor xor= not= in import class do self trait record enum return type alias error module try catch begin as tag impl
+syn keyword lilyKeyword fun end or and not xor xor= not= in import class do self trait record enum return type alias error module try catch begin as tag impl None
 syn keyword lilyType Bool Int8 Int16 Int32 Int64 Int128 Uint8 Uint16 Uint32 Uint64 Uint128 Float32 Float64 Str Char Unit Usize Isize Never
 
 syn keyword lilyBoolean true false
