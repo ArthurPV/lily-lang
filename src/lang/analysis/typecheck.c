@@ -5041,8 +5041,6 @@ check_expression(struct Typecheck *self,
 
                 return NEW(ExprSymbolLiteral, *expr, ls);
             }
-
-            TODO("check literal");
         }
         case ExprKindIf:
             TODO("check if");
@@ -5107,7 +5105,7 @@ check_expression(struct Typecheck *self,
                   NEW(VariableSymbol, expr->value.variable, expr->loc));
 
             if (defined_data_type_expr_variable)
-                if (eq__DataTypeSymbol(defined_data_type_expr_variable,
+                if (!eq__DataTypeSymbol(defined_data_type_expr_variable,
                                        expr_variable->data_type)) {
                     assert(0 && "error: data type is not matched");
                 }
