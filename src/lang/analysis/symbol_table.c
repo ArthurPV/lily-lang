@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "lang/parser/ast.h"
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 #include <string.h>
@@ -169,6 +170,129 @@ copy__DataTypeSymbol(struct DataTypeSymbol *self)
     memcpy(copy, self, sizeof(struct DataTypeSymbol));
 
     return copy;
+}
+
+bool
+eq__DataTypeSymbol(struct DataTypeSymbol *self, struct DataTypeSymbol *y)
+{
+    switch (self->kind) {
+        case DataTypeKindSelf:
+            return y->kind == DataTypeKindSelf ? true : false;
+        case DataTypeKindPtr:
+            return y->kind == DataTypeKindPtr
+                     ? eq__DataTypeSymbol(self->value.ptr, y->value.ptr)
+                     : false;
+        case DataTypeKindRef:
+            return y->kind == DataTypeKindRef
+                     ? eq__DataTypeSymbol(self->value.ref, y->value.ref)
+                     : false;
+        case DataTypeKindStr:
+            return y->kind == DataTypeKindStr ? true : false;
+        case DataTypeKindBitStr:
+            return y->kind == DataTypeKindBitStr ? true : false;
+        case DataTypeKindChar:
+            return y->kind == DataTypeKindChar ? true : false;
+        case DataTypeKindBitChar:
+            return y->kind == DataTypeKindBitChar ? true : false;
+        case DataTypeKindI8:
+            return y->kind == DataTypeKindI8 ? true : false;
+        case DataTypeKindI16:
+            return y->kind == DataTypeKindI16 ? true : false;
+        case DataTypeKindI32:
+            return y->kind == DataTypeKindI32 ? true : false;
+        case DataTypeKindI64:
+            return y->kind == DataTypeKindI64 ? true : false;
+        case DataTypeKindI128:
+            return y->kind == DataTypeKindI128 ? true : false;
+        case DataTypeKindU8:
+            return y->kind == DataTypeKindU8 ? true : false;
+        case DataTypeKindU16:
+            return y->kind == DataTypeKindU16 ? true : false;
+        case DataTypeKindU32:
+            return y->kind == DataTypeKindU32 ? true : false;
+        case DataTypeKindU64:
+            return y->kind == DataTypeKindU64 ? true : false;
+        case DataTypeKindU128:
+            return y->kind == DataTypeKindU128 ? true : false;
+        case DataTypeKindF32:
+            return y->kind == DataTypeKindF32 ? true : false;
+        case DataTypeKindF64:
+            return y->kind == DataTypeKindF64 ? true : false;
+        case DataTypeKindBool:
+            return y->kind == DataTypeKindBool ? true : false;
+        case DataTypeKindIsize:
+            return y->kind == DataTypeKindIsize ? true : false;
+        case DataTypeKindUsize:
+            return y->kind == DataTypeKindUsize ? true : false;
+        case DataTypeKindNever:
+            return y->kind == DataTypeKindNever ? true : false;
+        case DataTypeKindAny:
+            return y->kind == DataTypeKindAny ? true : false;
+        case DataTypeKindOptional:
+            return y->kind == DataTypeKindOptional
+                     ? eq__DataTypeSymbol(self->value.optional,
+                                          y->value.optional)
+                     : false;
+        case DataTypeKindUnit:
+            return y->kind == DataTypeKindUnit ? true : false;
+        case DataTypeKindException:
+            return y->kind == DataTypeKindException
+                     ? eq__DataTypeSymbol(self->value.exception,
+                                          y->value.exception)
+                     : false;
+        case DataTypeKindMut:
+            return y->kind == DataTypeKindMut
+                     ? eq__DataTypeSymbol(self->value.mut, y->value.mut)
+                     : false;
+        case DataTypeKindLambda: {
+            struct Vec *v_self = self->value.lambda->items[0];
+            struct Vec *v_y = y->value.lambda->items[0];
+
+            if (len__Vec(*v_self) == len__Vec(*v_y)) {
+                for (Usize i = len__Vec(*v_self); i--;) {
+                    if (!eq__DataTypeSymbol(get__Vec(*v_self, i),
+                                            get__Vec(*v_y, i)))
+                        return false;
+                }
+
+                return eq__DataTypeSymbol(self->value.lambda->items[1],
+                                          y->value.lambda->items[1]);
+            } else
+                return false;
+        }
+        case DataTypeKindArray:
+            return (Usize *)self->value.array->items[1] ==
+                         (Usize *)y->value.array->items[1] &&
+                       eq__DataTypeSymbol(self->value.array->items[0],
+                                          y->value.array->items[0])
+                     ? true
+                     : false;
+        case DataTypeKindTuple: {
+            struct Vec *v_self = self->value.tuple->items[0];
+            struct Vec *v_y = y->value.tuple->items[0];
+
+            for (Usize i = len__Vec(*v_self); i--;) {
+                if (!eq__DataTypeSymbol(get__Vec(*v_self, i),
+                                        get__Vec(*v_y, i)))
+                    return false;
+            }
+
+            return true;
+        }
+        case DataTypeKindCustom:
+            if (y->kind == DataTypeKindCustom) {
+                if (self->custom_name && y->custom_name)
+                    return eq__String(self->custom_name, y->custom_name, false);
+                else if (!self->custom_name && !y->custom_name)
+                    return eq__String(self->scope->name, y->scope->name, false);
+                else
+                    return false;
+            } else
+                return false;
+        default:
+            UNREACHABLE(
+              "impossible to define in input CompilerDefined data type");
+    }
 }
 
 void

@@ -3410,8 +3410,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             else if (!strcmp(identifier_str, "Any"))
                 data_type = NEW(DataType, DataTypeKindAny);
 
-			else if (!strcmp(identifier_str, "Never"))
-				data_type = NEW(DataType, DataTypeKindNever);
+            else if (!strcmp(identifier_str, "Never"))
+                data_type = NEW(DataType, DataTypeKindNever);
 
             else if (!strcmp(identifier_str, "Unit"))
                 data_type = NEW(DataType, DataTypeKindUnit);

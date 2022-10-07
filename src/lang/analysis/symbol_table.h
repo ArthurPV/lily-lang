@@ -26,6 +26,7 @@
 #define LILY_SYMBOL_TABLE_H
 
 #include <lang/parser/ast.h>
+#include <stdbool.h>
 
 enum ScopeItemKind
 {
@@ -176,7 +177,7 @@ typedef struct DataTypeSymbol
 
     union
     {
-        struct String *custom_name;
+        struct String *custom_name; // For generic param
     };
 } DataTypeSymbol;
 
@@ -267,6 +268,13 @@ __new__DataTypeSymbolCompilerDefined(
  */
 struct DataTypeSymbol *
 copy__DataTypeSymbol(struct DataTypeSymbol *self);
+
+/**
+ *
+ * @brief Verify if the DataTypeSymbol type are equal.
+ */
+bool
+eq__DataTypeSymbol(struct DataTypeSymbol *self, struct DataTypeSymbol *y);
 
 /**
  *

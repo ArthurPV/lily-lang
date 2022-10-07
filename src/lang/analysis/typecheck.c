@@ -2710,8 +2710,8 @@ check_fun(struct Typecheck *self,
 
         struct FunDecl *fun_decl = fun->fun_decl->value.fun;
         struct Vec *local_data_type = NULL; // struct Vec<struct Scope*>*
-        struct Vec *local_value = NULL; // struct Vec<struct Scope*>*
-        struct Vec *local_decl = NULL; // struct Vec<struct Scope*>*
+        struct Vec *local_value = NULL;     // struct Vec<struct Scope*>*
+        struct Vec *local_decl = NULL;      // struct Vec<struct Scope*>*
         struct Vec *tagged_type = NULL;
         struct Vec *generic_params = NULL;
         struct Vec *params = NULL;
@@ -2886,7 +2886,7 @@ check_fun(struct Typecheck *self,
         }
 
         if (fun_decl->body) {
-			local_value = NEW(Vec, sizeof(struct Scope));
+            local_value = NEW(Vec, sizeof(struct Scope));
             body = NEW(Vec, sizeof(struct SymbolTable));
 
             check_fun_body(self, fun, body, local_value, local_data_type);
@@ -2905,11 +2905,11 @@ check_fun(struct Typecheck *self,
             for (Usize i = len__Vec(*local_data_type); i--;)
                 FREE(LocalDataType, get__Vec(*local_data_type, i));
 
-			FREE(Vec, local_data_type);
-		}
+            FREE(Vec, local_data_type);
+        }
 
         if (local_value)
-			FREE(Vec, local_value);
+            FREE(Vec, local_value);
     }
 }
 
@@ -5100,10 +5100,17 @@ check_expression(struct Typecheck *self,
                                local_data_type,
                                defined_data_type_expr_variable,
                                is_return_type);
+
             struct ExprSymbol *res =
               NEW(ExprSymbolVariable,
                   *expr,
                   NEW(VariableSymbol, expr->value.variable, expr->loc));
+
+            if (defined_data_type_expr_variable)
+                if (eq__DataTypeSymbol(defined_data_type_expr_variable,
+                                       expr_variable->data_type)) {
+                    assert(0 && "error: data type is not matched");
+                }
 
             res->value.variable->data_type = defined_data_type_expr_variable;
             res->value.variable->expr = expr_variable;
@@ -5116,7 +5123,7 @@ check_expression(struct Typecheck *self,
                   ScopeKindLocal,
                   NULL);
 
-			push__Vec(local_value, res->value.variable->scope);
+            push__Vec(local_value, res->value.variable->scope);
 
             return res;
         }
