@@ -866,6 +866,7 @@ enum ExprKind
     ExprKindSelf,
     ExprKindUndef,
     ExprKindNil,
+	ExprKindNone,
     ExprKindWildcard,
     ExprKindLiteral,
     ExprKindVariable,

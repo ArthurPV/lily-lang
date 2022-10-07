@@ -4457,6 +4457,15 @@ exit_unary : {
 
             break;
 
+        case TokenKindNoneKw:
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
+
+            expr = NEW(Expr, ExprKindNone, loc);
+
+            break;
+
         case TokenKindIntLit:
         case TokenKindCharLit:
         case TokenKindFloatLit:

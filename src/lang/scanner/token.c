@@ -414,6 +414,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("not");
         case TokenKindNilKw:
             return from__String("nil");
+		case TokenKindNoneKw:
+			return from__String("None");
         case TokenKindUndefKw:
             return from__String("undef");
         case TokenKindObjectKw:

@@ -122,6 +122,7 @@ enum TokenKind
     TokenKindOrKw,
     TokenKindNotKw,
     TokenKindNilKw,
+	TokenKindNoneKw,
     TokenKindUndefKw,
     TokenKindObjectKw,
     TokenKindSelfKw,

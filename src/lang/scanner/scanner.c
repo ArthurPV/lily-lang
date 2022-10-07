@@ -430,6 +430,8 @@ get_keyword(const Str id)
         return TokenKindNotKw;
     if (!strcmp(id, "nil"))
         return TokenKindNilKw;
+	if (!strcmp(id, "None"))
+		return TokenKindNoneKw;
     if (!strcmp(id, "undef"))
         return TokenKindUndefKw;
     if (!strcmp(id, "object"))
