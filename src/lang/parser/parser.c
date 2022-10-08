@@ -4460,6 +4460,8 @@ exit_unary : {
 
             expr = NEW(Expr, ExprKindNil, loc);
 
+			next_token(parse_decl);
+
             break;
 
         case TokenKindNoneKw:
@@ -4468,6 +4470,8 @@ exit_unary : {
                           parse_decl->previous->loc->e_col);
 
             expr = NEW(Expr, ExprKindNone, loc);
+
+			next_token(parse_decl);
 
             break;
 
