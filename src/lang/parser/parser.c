@@ -2664,6 +2664,9 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
         case TokenKindIdentifier:
         case TokenKindComma:
         case TokenKindDot:
+        case TokenKindInterrogation:
+        case TokenKindStar:
+        case TokenKindAmpersand:
             return true;
 
         default: {
@@ -3586,19 +3589,21 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             PARSE_PAREN(parse_decl, {
                 push__Vec(data_types, parse_data_type(self, parse_decl));
 
-                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-                    struct Diagnostic *err =
-                      NEW(DiagnosticWithErrParser,
-                          &self.parse_block,
-                          NEW(LilyError, LilyErrorExpectedToken),
-                          *parse_decl->current->loc,
-                          format(""),
-                          None());
+                if (parse_decl->current->kind != TokenKindRParen) {
+                    EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrParser,
+                              &self.parse_block,
+                              NEW(LilyError, LilyErrorExpectedToken),
+                              *parse_decl->current->loc,
+                              format(""),
+                              None());
 
-                    err->err->s = from__String("`,`");
+                        err->err->s = from__String("`,`");
 
-                    emit__Diagnostic(err);
-                });
+                        emit__Diagnostic(err);
+                    });
+                }
             });
 
             data_type = NEW(DataTypeTuple, data_types);
