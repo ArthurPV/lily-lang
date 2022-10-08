@@ -4460,7 +4460,7 @@ exit_unary : {
 
             expr = NEW(Expr, ExprKindNil, loc);
 
-			next_token(parse_decl);
+            // next_token(parse_decl);
 
             break;
 
@@ -4471,7 +4471,7 @@ exit_unary : {
 
             expr = NEW(Expr, ExprKindNone, loc);
 
-			next_token(parse_decl);
+            // next_token(parse_decl);
 
             break;
 
@@ -5968,7 +5968,7 @@ parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
 
-    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
+    while (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
         PARSE_BODY(body);
     }
 
@@ -6023,7 +6023,7 @@ parse_fun_declaration(struct Parser *self,
 
         return_type = NEW(Tuple, 2, dt, copy__Location(&loc));
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
@@ -6077,7 +6077,7 @@ parse_enum_declaration(struct Parser *self,
 
         type_value = parse_data_type(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
@@ -6276,7 +6276,7 @@ parse_alias_declaration(struct Parser *self,
 
         data_type = parse_data_type(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
@@ -6650,7 +6650,7 @@ parse_method_declaration(struct Parser *self,
 
         return_type = parse_data_type(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
@@ -6707,7 +6707,7 @@ parse_constant_declaration(struct Parser *self,
 
         data_type = parse_data_type(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
@@ -6727,7 +6727,7 @@ parse_constant_declaration(struct Parser *self,
 
         expr = parse_expr(*self, &parse);
 
-        if (parse.pos != len__Vec(*parse.tokens)) {
+        if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self->parse_block,
