@@ -2811,7 +2811,103 @@ __new__FunDecl(struct String *name,
 struct String *
 to_String__FunDecl(struct FunDecl self)
 {
+    struct String *s = NEW(String);
 
+    if (self.is_pub && self.is_async)
+        push_str__String(s, "pub async fun");
+    else if (self.is_pub)
+        push_str__String(s, "pub fun");
+    else
+        push_str__String(s, "fun");
+
+    if (self.tags) {
+        push_str__String(s, " #(");
+
+        for (Usize i = 0; i < len__Vec(*self.tags) - 1; i++)
+            append__String(
+              s,
+              format(
+                "{Sr}, ",
+                to_String__DataType(
+                  *(struct DataType *)((struct Tuple *)get__Vec(*self.tags, i))
+                     ->items[0])),
+              true);
+
+        append__String(
+          s,
+          format("{Sr})",
+                 to_String__DataType(
+                   *(struct DataType *)((struct Tuple *)get__Vec(
+                                          *self.tags, len__Vec(*self.tags) - 1))
+                      ->items[0])),
+          true);
+    }
+
+    append__String(s, format("{S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    if (self.params) {
+        push_str__String(s, "(");
+
+        if (len__Vec(*self.params) > 0) {
+            for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
+                append__String(
+                  s,
+                  format("{Sr}, ",
+                         to_String__FunParam(
+                           *(struct FunParam *)get__Vec(*self.params, i))),
+                  true);
+
+            append__String(
+              s,
+              format("{Sr})",
+                     to_String__FunParam(*(struct FunParam *)get__Vec(
+                       *self.params, len__Vec(*self.params) - 1))),
+              true);
+        }
+    }
+
+    if (self.return_type)
+        append__String(
+          s,
+          format(" {Sr} =\n",
+                 to_String__DataType(
+                   *(struct DataType *)self.return_type->items[0])),
+          true);
+    else
+        push_str__String(s, " =\n");
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__FunBodyItem(
+                       *(struct FunBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void

@@ -3718,7 +3718,9 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 static struct Vec *
 parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *generic_params = NEW(Vec, sizeof(struct Generic));
+    struct Vec *generic_params = len__Vec(*parse_decl->tokens) > 0
+                                   ? NEW(Vec, sizeof(struct Generic))
+                                   : NULL;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         struct String *data_type = NULL;
@@ -5772,7 +5774,9 @@ parse_fun_params(struct Parser self,
                  struct ParseDecl *parse_decl,
                  bool is_method)
 {
-    struct Vec *params = NEW(Vec, sizeof(struct FunParam));
+    struct Vec *params = len__Vec(*parse_decl->tokens) > 0
+                           ? NEW(Vec, sizeof(struct FunParam))
+                           : NULL;
     bool has_self_param = false;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
