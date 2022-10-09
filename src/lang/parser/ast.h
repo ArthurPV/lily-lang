@@ -165,7 +165,7 @@ __new__DataTypeTuple(struct Vec *tuple);
  * @brief Convert DataType to string.
  */
 struct String *
-to_string__DataType(struct DataType self);
+to_String__DataType(struct DataType self);
 
 /**
  *
@@ -295,7 +295,7 @@ get_name__Generic(struct Generic *self);
  * @brief Convert Generic in String.
  */
 struct String *
-to_string__Generic(struct Generic self);
+to_String__Generic(struct Generic self);
 
 /**
  *
@@ -340,7 +340,7 @@ __new__VariableDecl(struct String *name,
                     bool is_mut);
 
 struct String *
-to_string__VariableDecl(struct VariableDecl self);
+to_String__VariableDecl(struct VariableDecl self);
 
 /**
  *
@@ -507,7 +507,7 @@ __new__LiteralUnit()
  * @brief Convert Literal to string.
  */
 struct String *
-to_string__Literal(struct Literal self);
+to_String__Literal(struct Literal self);
 
 /**
  *
@@ -570,7 +570,7 @@ __new__UnaryOp(enum UnaryOpKind kind, struct Expr *right, struct String *op)
  * @brief Convert UnaryOp to String.
  */
 struct String *
-to_string__UnaryOp(struct UnaryOp self);
+to_String__UnaryOp(struct UnaryOp self);
 
 /**
  *
@@ -665,7 +665,7 @@ __new__BinaryOp(enum BinaryOpKind kind,
  * @brief Convert BinaryOp to String.
  */
 struct String *
-to_string__BinaryOp(struct BinaryOp self);
+to_String__BinaryOp(struct BinaryOp self);
 
 /**
  *
@@ -693,7 +693,7 @@ __new__FunCall(struct Expr *id, struct Vec *params);
  * @brief Convert FunCall in String.
  */
 struct String *
-to_string__FunCall(struct FunCall self);
+to_String__FunCall(struct FunCall self);
 
 /**
  *
@@ -717,6 +717,13 @@ __new__FieldCall(struct String *name, struct Option *value);
 
 /**
  *
+ * @brief Convert FieldCall in String.
+ */
+struct String *
+to_String__FieldCall(struct FieldCall self);
+
+/**
+ *
  * @brief Free the FieldCall type.
  */
 void
@@ -730,10 +737,18 @@ typedef struct RecordCall
 } RecordCall;
 
 /**
+ *
  * @brief Construct the RecordCall type.
  */
 struct RecordCall
 __new__RecordCall(struct Expr *id, struct Vec *fields);
+
+/**
+ *
+ * @brief Convert RecordCall in String.
+ */
+struct String *
+to_String__RecordCall(struct RecordCall self);
 
 /**
  *
@@ -762,6 +777,13 @@ __new__ArrayAccess(struct Expr *id, struct Vec *access)
 
 /**
  *
+ * @brief Convert ArrayAccess in String.
+ */
+struct String *
+to_String__ArrayAccess(struct ArrayAccess self);
+
+/**
+ *
  * @brief Free the ArrayAccess type.
  */
 void
@@ -787,6 +809,13 @@ __new__TupleAccess(struct Expr *id, struct Vec *access)
 
 /**
  *
+ * @brief Convert TupleAccess in String.
+ */
+struct String *
+to_String__TupleAccess(struct TupleAccess self);
+
+/**
+ *
  * @brief Free the TupleAccess type.
  */
 void
@@ -809,6 +838,13 @@ __new__Lambda(struct Vec *params,
               struct Option *return_type,
               struct Vec *body,
               bool instantly_call);
+
+/**
+ *
+ * @brief Convert Lambda in String.
+ */
+struct String *
+to_String__Lambda(struct Lambda self);
 
 /**
  *
@@ -1080,7 +1116,7 @@ get_precedence__Expr(struct Expr *expr);
  * @brief Convert Expr in String.
  */
 struct String *
-to_string__Expr(struct Expr self);
+to_String__Expr(struct Expr self);
 
 /**
  *
@@ -1322,7 +1358,7 @@ __new__MatchStmt(struct Expr *matching, struct Vec *pattern);
  * @brief Convert MatchStmt in String.
  */
 struct String *
-to_string__MatchStmt(struct MatchStmt self);
+to_String__MatchStmt(struct MatchStmt self);
 
 /**
  *
@@ -1370,7 +1406,7 @@ __new__IfCond(struct IfBranch *if_, struct Option *elif, struct Option *else_);
  * @brief Convert IfCond type in String.
  */
 struct String *
-to_string__IfCond(struct IfCond self);
+to_String__IfCond(struct IfCond self);
 
 /**
  *
@@ -1401,7 +1437,7 @@ __new__TryStmt(struct Vec *try_body,
  * @brief Convert TryStmt in String.
  */
 struct String *
-to_string__TryStmt(struct TryStmt self);
+to_String__TryStmt(struct TryStmt self);
 
 /**
  *
@@ -1428,7 +1464,7 @@ __new__WhileStmt(struct Expr *cond, struct Vec *body);
  * @brief Convert WhileStmt in String.
  */
 struct String *
-to_string__WhileStmt(struct WhileStmt self);
+to_String__WhileStmt(struct WhileStmt self);
 
 /**
  *
@@ -1499,7 +1535,7 @@ __new__ForStmtExprTraditionalVar(struct ForStmtExprTraditional *traditional,
  * @brief Convert ForStmtExpr type in String.
  */
 struct String *
-to_string__ForStmtExpr(struct ForStmtExpr self);
+to_String__ForStmtExpr(struct ForStmtExpr self);
 
 /**
  *
@@ -1540,7 +1576,7 @@ __new__ForStmt(struct ForStmtExpr *expr, struct Vec *body);
  * @brief Convert ForStmt type in String.
  */
 struct String *
-to_string__ForStmt(struct ForStmt self);
+to_String__ForStmt(struct ForStmt self);
 
 /**
  *
@@ -1703,7 +1739,7 @@ __new__ImportStmt(struct Vec *import_value, bool is_pub, struct Option *as);
  * @brief Convert the ImportStmt type in String.
  */
 struct String *
-to_string__ImportStmt(struct ImportStmt self);
+to_String__ImportStmt(struct ImportStmt self);
 
 /**
  *
@@ -1812,7 +1848,7 @@ __new__StmtImport(struct Location loc, struct ImportStmt *import);
  * @brief Convert Stmt type in String.
  */
 struct String *
-to_string__Stmt(struct Stmt self);
+to_String__Stmt(struct Stmt self);
 
 /**
  *
@@ -1952,7 +1988,7 @@ __new__FunBodyItemStmt(struct Stmt *stmt);
  * @brief Convert FunBodyItem in String.
  */
 struct String *
-to_string__FunBodyItem(struct FunBodyItem self);
+to_String__FunBodyItem(struct FunBodyItem self);
 
 /**
  *
@@ -2020,7 +2056,7 @@ __new__FunParamCallDefault(struct Expr *value, struct String *name);
  * @brief Convert FunParamCall in String.
  */
 struct String *
-to_string__FunParamCall(struct FunParamCall self);
+to_String__FunParamCall(struct FunParamCall self);
 
 /**
  *
@@ -2100,7 +2136,7 @@ __new__FunParamSelf(struct Location loc);
  * @brief Convert FunParam in String.
  */
 struct String *
-to_string__FunParam(struct FunParam self);
+to_String__FunParam(struct FunParam self);
 
 /**
  *

@@ -9,17 +9,17 @@
 #include <string.h>
 
 static inline const Str
-diagnostic_kind_to_string(enum DiagnosticKind kind);
+diagnostic_kind_to_String(enum DiagnosticKind kind);
 static inline const Str
 apply_color(enum DiagnosticKind kind, const Str s);
 static struct String *
-detail_to_string(struct Detail self,
+detail_to_String(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc);
 static inline struct String *
-lily_error_to_string(struct LilyError err);
+lily_error_to_String(struct LilyError err);
 static inline struct String *
-lily_warning_to_string(struct LilyWarning warn);
+lily_warning_to_String(struct LilyWarning warn);
 static inline const Str
 get_code_of_lily_error(struct LilyError err);
 static inline const Str
@@ -27,10 +27,10 @@ get_code_of_lily_warning(struct LilyWarning warn);
 static struct String *
 get_line(struct Diagnostic self, Usize line_number);
 static struct String *
-diagnostic_to_string(struct Diagnostic self);
+diagnostic_to_String(struct Diagnostic self);
 
 static inline const Str
-diagnostic_kind_to_string(enum DiagnosticKind kind)
+diagnostic_kind_to_String(enum DiagnosticKind kind)
 {
     switch (kind) {
         case DiagnosticKindError:
@@ -69,7 +69,7 @@ __new__Detail(struct String *msg, struct Vec *lines)
 }
 
 static struct String *
-detail_to_string(struct Detail self,
+detail_to_String(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc)
 {
@@ -138,7 +138,7 @@ detail_to_string(struct Detail self,
 }
 
 static inline struct String *
-lily_error_to_string(struct LilyError err)
+lily_error_to_String(struct LilyError err)
 {
     switch (err.kind) {
         case LilyErrorUnclosedCommentMultiLine:
@@ -284,19 +284,19 @@ lily_error_to_string(struct LilyError err)
         case LilyErrorImportValueAccessIsNotFound:
             return from__String(
               "import value access is not found in the specified path");
-		case LilyErrorDuplicateGenericParam:
-			return from__String("duplicate generic param");
-		case LilyErrorNameMustStartByLowercaseCharacter:
-			return from__String("name must start by lowercase character");
-		case LilyErrorNameMustStartByUppercaseCharacter:
-			return from__String("name must start by uppercase character");
+        case LilyErrorDuplicateGenericParam:
+            return from__String("duplicate generic param");
+        case LilyErrorNameMustStartByLowercaseCharacter:
+            return from__String("name must start by lowercase character");
+        case LilyErrorNameMustStartByUppercaseCharacter:
+            return from__String("name must start by uppercase character");
         default:
             UNREACHABLE("unknown lily error kind");
     }
 }
 
 static inline struct String *
-lily_warning_to_string(struct LilyWarning warn)
+lily_warning_to_String(struct LilyWarning warn)
 {
     switch (warn.kind) {
         case LilyWarningUnusedParen:
@@ -460,12 +460,12 @@ get_code_of_lily_error(struct LilyError err)
             return "0071";
         case LilyErrorImportValueAccessIsNotFound:
             return "0072";
-		case LilyErrorDuplicateGenericParam:
-			return "0073";
-		case LilyErrorNameMustStartByLowercaseCharacter:
-			return "0074";
-		case LilyErrorNameMustStartByUppercaseCharacter:
-			return "0075";
+        case LilyErrorDuplicateGenericParam:
+            return "0073";
+        case LilyErrorNameMustStartByLowercaseCharacter:
+            return "0074";
+        case LilyErrorNameMustStartByUppercaseCharacter:
+            return "0075";
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -657,11 +657,11 @@ get_line(struct Diagnostic self, Usize line_number)
 }
 
 static struct String *
-diagnostic_to_string(struct Diagnostic self)
+diagnostic_to_String(struct Diagnostic self)
 {
-    Str diagnostic_kind_str = diagnostic_kind_to_string(self.kind);
+    Str diagnostic_kind_str = diagnostic_kind_to_String(self.kind);
     struct String *detail_string =
-      detail_to_string(*self.detail, self.kind, self.loc);
+      detail_to_String(*self.detail, self.kind, self.loc);
     struct String *help_str = NULL;
     struct String *msg = NULL;
     Str code = NULL;
@@ -685,10 +685,10 @@ diagnostic_to_string(struct Diagnostic self)
         help_str = (struct String *)get__Option(self.help);
 
     if (self.kind == DiagnosticKindError) {
-        msg = lily_error_to_string(*self.err);
+        msg = lily_error_to_String(*self.err);
         code = get_code_of_lily_error(*self.err);
     } else if (self.kind == DiagnosticKindWarning) {
-        msg = lily_warning_to_string(*self.warn);
+        msg = lily_warning_to_String(*self.warn);
         code = get_code_of_lily_warning(*self.warn);
     } else if (self.kind == DiagnosticKindNote) {
         msg = self.note;
@@ -743,7 +743,7 @@ diagnostic_to_string(struct Diagnostic self)
 void
 emit__Diagnostic(struct Diagnostic *self)
 {
-    struct String *s = diagnostic_to_string(*self);
+    struct String *s = diagnostic_to_String(*self);
 
     Println("{Sr}", s);
 

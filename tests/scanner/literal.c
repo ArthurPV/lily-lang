@@ -1,11 +1,13 @@
 #include "literal.h"
-#include <base/string.h>
 #include <base/new.h>
+#include <base/string.h>
 #include <base/test.h>
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
-int test_int() {
+int
+test_int()
+{
     struct File file = NEW(File, "./tests/scanner/int.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -32,7 +34,9 @@ int test_int() {
     return TEST_SUCCESS;
 }
 
-int test_float() {
+int
+test_float()
+{
     struct File file = NEW(File, "./tests/scanner/float.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -56,7 +60,9 @@ int test_float() {
     return TEST_SUCCESS;
 }
 
-int test_char() {
+int
+test_char()
+{
     struct File file = NEW(File, "./tests/scanner/char.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -77,7 +83,9 @@ int test_char() {
     return TEST_SUCCESS;
 }
 
-int test_string() {
+int
+test_string()
+{
     struct File file = NEW(File, "./tests/scanner/string.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -92,7 +100,9 @@ int test_string() {
     return TEST_SUCCESS;
 }
 
-int test_bit_char() {
+int
+test_bit_char()
+{
     struct File file = NEW(File, "./tests/scanner/bit_char.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -105,10 +115,11 @@ int test_bit_char() {
     FREE(Scanner, scanner);
 
     return TEST_SUCCESS;
-
 }
 
-int test_bit_string() {
+int
+test_bit_string()
+{
     struct File file = NEW(File, "./tests/scanner/bit_string.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);

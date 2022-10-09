@@ -285,7 +285,7 @@ search_in_custom_scope(struct Typecheck *self,
 static struct Vec *
 search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id);
 static struct Vec *
-identifier_access_to_string_vec(struct Expr *id);
+identifier_access_to_String_vec(struct Expr *id);
 static struct DataTypeSymbol *
 check_data_type(struct Typecheck *self,
                 struct Location data_type_loc,
@@ -1735,6 +1735,8 @@ check_constant(struct Typecheck *self,
               ScopeItemKindConstant,
               constant->visibility ? ScopeKindGlobal : ScopeKindLocal,
               previous);
+
+        TODO("check constant");
 
         if (!previous)
             ++count_const_id;
@@ -3398,7 +3400,7 @@ search_class_item_in_scope(struct Typecheck *self,
                            struct SymbolTable *scope)
 {
     for (Usize i = len__Vec(*scope->value.class->body); i--;) {
-        if (id->kind == TokenKindIdentifier) {
+        if (id->kind == ExprKindIdentifier) {
             if (eq__String(
                   id->value.identifier,
                   get_name__SymbolTable(get__Vec(*scope->value.class->body, i)),
@@ -3515,7 +3517,7 @@ search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
 }
 
 static struct Vec *
-identifier_access_to_string_vec(struct Expr *id)
+identifier_access_to_String_vec(struct Expr *id)
 {
     struct Vec *name = NEW(Vec, sizeof(struct String));
 
@@ -4239,17 +4241,6 @@ infer_expression(struct Typecheck *self,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type)
 {
-#define INFER(dt)                                          \
-    if (defined_data_type)                                 \
-        return copy__DataTypeSymbol(defined_data_type);    \
-    else if (is_return_type && fun && dt)                  \
-        if (fun->return_type)                              \
-            return copy__DataTypeSymbol(fun->return_type); \
-        else                                               \
-            return dt;                                     \
-    else                                                   \
-        return dt
-
     switch (expr->kind) {
         case ExprKindFunCall:
             TODO("infer fun call");
@@ -4267,8 +4258,25 @@ infer_expression(struct Typecheck *self,
             TODO("infer tuple access");
         case ExprKindLambda:
             TODO("infer lambda");
-        case ExprKindTuple:
-            TODO("infer tuple");
+        case ExprKindTuple: {
+            if (defined_data_type)
+                return copy__DataTypeSymbol(defined_data_type);
+            else {
+                struct Vec *dts = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+                for (Usize i = len__Vec(*expr->value.tuple); i--;)
+                    push__Vec(dts,
+                              check_expression(self,
+                                               fun,
+                                               get__Vec(*expr->value.tuple, i),
+                                               local_value,
+                                               local_data_type,
+                                               NULL,
+                                               is_return_type));
+
+                return NEW(DataTypeSymbolTuple, dts);
+            }
+        }
         case ExprKindArray:
             TODO("infer array");
         case ExprKindVariant:
@@ -4280,74 +4288,91 @@ infer_expression(struct Typecheck *self,
         case ExprKindBlock:
             TODO("infer block");
         case ExprKindQuestionMark:
-            if (defined_data_type) {
-                if (defined_data_type->kind == DataTypeKindOptional)
-                    return copy__DataTypeSymbol(
-                      defined_data_type->value.optional);
-                else {
-                    assert(0 && "error: expected Optional data type");
-                }
-            } else {
-                TODO("find value and infer on data type");
-            }
+            if (defined_data_type)
+                return NEW(DataTypeSymbolOptional,
+                           infer_expression(self,
+                                            fun,
+                                            expr->value.question_mark,
+                                            local_value,
+                                            local_data_type,
+                                            defined_data_type->value.optional,
+                                            is_return_type));
+            else
+                return NEW(DataTypeSymbolOptional,
+                           infer_expression(self,
+                                            fun,
+                                            expr->value.question_mark,
+                                            local_value,
+                                            local_data_type,
+                                            NULL,
+                                            is_return_type));
         case ExprKindDereference:
-            if (defined_data_type) {
-                if (defined_data_type->kind == DataTypeKindPtr)
-                    return copy__DataTypeSymbol(defined_data_type->value.ptr);
-                else {
-                    assert(0 && "error: expected Ptr data type");
-                }
-            } else {
-                TODO("find value and infer on data type");
-            }
+            if (defined_data_type)
+                return NEW(DataTypeSymbolPtr,
+                           infer_expression(self,
+                                            fun,
+                                            expr->value.dereference,
+                                            local_value,
+                                            local_data_type,
+                                            defined_data_type->value.ptr,
+                                            is_return_type));
+            else
+                return NEW(DataTypeSymbolPtr,
+                           infer_expression(self,
+                                            fun,
+                                            expr->value.dereference,
+                                            local_value,
+                                            local_data_type,
+                                            NULL,
+                                            is_return_type));
         case ExprKindRef:
-            INFER(NEW(DataTypeSymbolRef,
-                      infer_expression(self,
-                                       fun,
-                                       expr->value.ref,
-                                       local_value,
-                                       local_data_type,
-                                       defined_data_type,
-                                       is_return_type)));
+            return NEW(DataTypeSymbolRef,
+                       infer_expression(self,
+                                        fun,
+                                        expr->value.ref,
+                                        local_value,
+                                        local_data_type,
+                                        defined_data_type,
+                                        is_return_type));
         case ExprKindSelf:
             TODO("infer self");
         case ExprKindUndef:
-            INFER(NEW(DataTypeSymbolCompilerDefined,
-                      NEW(CompilerDefinedDataType, "T", false)));
+            return NEW(DataTypeSymbolCompilerDefined,
+                       NEW(CompilerDefinedDataType, "T", false));
         case ExprKindNil:
-            INFER(NEW(DataTypeSymbolPtr,
-                      NEW(DataTypeSymbolCompilerDefined,
-                          NEW(CompilerDefinedDataType, "T", false))));
+            return NEW(DataTypeSymbolPtr,
+                       NEW(DataTypeSymbolCompilerDefined,
+                           NEW(CompilerDefinedDataType, "T", false)));
         case ExprKindNone:
-            INFER(NEW(DataTypeSymbolOptional,
-                      NEW(DataTypeSymbolCompilerDefined,
-                          NEW(CompilerDefinedDataType, "T", false))));
+            return NEW(DataTypeSymbolOptional,
+                       NEW(DataTypeSymbolCompilerDefined,
+                           NEW(CompilerDefinedDataType, "T", false)));
         case ExprKindWildcard:
             break;
         case ExprKindLiteral:
             switch (expr->value.literal.kind) {
                 case LiteralKindBool:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindBool));
+                    return NEW(DataTypeSymbol, DataTypeKindBool);
                 case LiteralKindChar:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindChar));
+                    return NEW(DataTypeSymbol, DataTypeKindChar);
                 case LiteralKindBitChar:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindU8));
+                    return NEW(DataTypeSymbol, DataTypeKindU8);
                 case LiteralKindInt32:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindI32));
+                    return (NEW(DataTypeSymbol, DataTypeKindI32));
                 case LiteralKindInt64:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindI64));
+                    return (NEW(DataTypeSymbol, DataTypeKindI64));
                 case LiteralKindInt128:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindI128));
+                    return (NEW(DataTypeSymbol, DataTypeKindI128));
                 case LiteralKindFloat:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindF64));
+                    return (NEW(DataTypeSymbol, DataTypeKindF64));
                 case LiteralKindBitStr:
-                    INFER(NEW(DataTypeSymbolArray,
-                              NEW(DataTypeSymbol, DataTypeKindU8),
-                              NULL));
+                    return (NEW(DataTypeSymbolArray,
+                                NEW(DataTypeSymbol, DataTypeKindU8),
+                                NULL));
                 case LiteralKindStr:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindStr));
+                    return (NEW(DataTypeSymbol, DataTypeKindStr));
                 case LiteralKindUnit:
-                    INFER(NEW(DataTypeSymbol, DataTypeKindUnit));
+                    return (NEW(DataTypeSymbol, DataTypeKindUnit));
             }
         case ExprKindGrouping:
             return infer_expression(self,
@@ -4769,9 +4794,29 @@ check_expression(struct Typecheck *self,
         case ExprKindSelf:
             TODO("check self");
         case ExprKindUndef:
-            TODO("check undef");
+            if (defined_data_type)
+                return NEW(
+                  ExprSymbol, expr, copy__DataTypeSymbol(defined_data_type));
+            else
+                return NEW(ExprSymbol,
+                           expr,
+                           NEW(DataTypeSymbolCompilerDefined,
+                               NEW(CompilerDefinedDataType, "T", false)));
         case ExprKindNil:
-            TODO("check nil");
+            if (defined_data_type)
+                if (defined_data_type->kind == DataTypeKindOptional)
+                    return NEW(ExprSymbol,
+                               expr,
+                               copy__DataTypeSymbol(defined_data_type));
+                else {
+                    assert(0 && "error: expected Optional data type");
+                }
+            else
+                return NEW(ExprSymbol,
+                           expr,
+                           NEW(DataTypeSymbolOptional,
+                               NEW(DataTypeSymbolCompilerDefined,
+                                   NEW(CompilerDefinedDataType, "T", false))));
         case ExprKindWildcard:
             TODO("check wildcard");
         case ExprKindLiteral: {
@@ -5123,11 +5168,47 @@ check_expression(struct Typecheck *self,
                   *expr,
                   NEW(VariableSymbol, expr->value.variable, expr->loc));
 
-            if (defined_data_type_expr_variable)
-                if (!eq__DataTypeSymbol(defined_data_type_expr_variable,
-                                        expr_variable->data_type)) {
-                    assert(0 && "error: data type is not matched");
+            if (defined_data_type_expr_variable) {
+                switch (defined_data_type_expr_variable->kind) {
+                    case DataTypeKindOptional:
+                        if (!eq__DataTypeSymbol(
+                              defined_data_type_expr_variable->value.optional,
+                              expr_variable->data_type))
+                            goto error;
+
+                        break;
+                    case DataTypeKindPtr:
+                        if (!eq__DataTypeSymbol(
+                              defined_data_type_expr_variable->value.ptr,
+                              expr_variable->data_type))
+                            goto error;
+
+                        break;
+                    case DataTypeKindRef:
+                        if (!eq__DataTypeSymbol(
+                              defined_data_type_expr_variable->value.ref,
+                              expr_variable->data_type))
+                            goto error;
+
+                        break;
+                    case DataTypeKindException:
+                        if (!eq__DataTypeSymbol(
+                              defined_data_type_expr_variable->value.exception,
+                              expr_variable->data_type))
+                            goto error;
+
+                        break;
+                    default:
+                        if (!eq__DataTypeSymbol(defined_data_type_expr_variable,
+                                                expr_variable->data_type)) {
+                        error : {
+                            assert(0 && "error: data type is not matched");
+                        }
+                        }
+
+                        break;
                 }
+            }
 
             res->value.variable->data_type = defined_data_type_expr_variable;
             res->value.variable->expr = expr_variable;

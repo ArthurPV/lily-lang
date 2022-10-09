@@ -1,6 +1,6 @@
 #include "identifier.h"
-#include "literal.h"
 #include "keyword.h"
+#include "literal.h"
 #include "operator.h"
 #include "separator.h"
 #include <base/new.h>
@@ -10,7 +10,7 @@ int
 main()
 {
     struct Test *t = NEW(Test);
-    struct Suite *operator = NEW(Suite, "operator");
+    struct Suite *operator= NEW(Suite, "operator");
     struct Suite *separator = NEW(Suite, "separator");
     struct Suite *keyword = NEW(Suite, "keyword");
     struct Suite *identifier = NEW(Suite, "identifier");

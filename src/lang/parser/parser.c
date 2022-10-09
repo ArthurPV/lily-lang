@@ -96,7 +96,7 @@ This last step will just add the analyzer declarations into a vector (decls).
         format(""),                                  \
         Some(format("expected {s}, found `{Sr}`",    \
                     expected,                        \
-                    token_kind_to_string__Token(*parse_block->current))));
+                    token_kind_to_String__Token(*parse_block->current))));
 
 #define CLOSE_BLOCK_NOTE()                                   \
     NEW(DiagnosticWithNoteParser,                            \
@@ -326,6 +326,23 @@ This last step will just add the analyzer declarations into a vector (decls).
                       NEW(FunBodyItemExpr, parse_expr(self, parse_decl))); \
             break;                                                         \
     }
+
+#define VALID_TOKEN_FOR_DATA_TYPE \
+    TokenKindEof:                 \
+    case TokenKindLParen:         \
+    case TokenKindRParen:         \
+    case TokenKindLHook:          \
+    case TokenKindRHook:          \
+    case TokenKindComma:          \
+    case TokenKindInterrogation:  \
+    case TokenKindBang:           \
+    case TokenKindDot:            \
+    case TokenKindIdentifier:     \
+    case TokenKindGlobalKw:       \
+    case TokenKindMutKw:          \
+    case TokenKindBar:            \
+    case TokenKindArrow:          \
+    case TokenKindStar
 
 static Usize count_error = 0;
 static Usize count_warning = 0;
@@ -970,7 +987,7 @@ get_block(struct ParseBlock *self, bool in_module)
                            "`import`, `ID`, `error`, `!`"),
               None());
 
-            err->err->s = token_kind_to_string__Token(*self->current);
+            err->err->s = token_kind_to_String__Token(*self->current);
 
             emit__Diagnostic(err);
             skip_to_next_block(self);
@@ -1081,7 +1098,7 @@ get_type_name(struct ParseBlock *self)
               *self->current->loc,
               format(""),
               Some(format("add type's name, found `{Sr}`",
-                          token_kind_to_string__Token(*self->current))));
+                          token_kind_to_String__Token(*self->current))));
 
         emit__Diagnostic(err);
 
@@ -1163,7 +1180,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
                   *self->current->loc,
                   format(""),
                   Some(format("expected `enum` or `record`, found `{Sr}`",
-                              token_kind_to_string__Token(*self->current))));
+                              token_kind_to_String__Token(*self->current))));
 
             emit__Diagnostic(err);
             skip_to_next_block(self);
@@ -1188,7 +1205,7 @@ get_object_name(struct ParseBlock *self)
               *self->current->loc,
               format(""),
               Some(format("add object's name, found `{Sr}`",
-                          token_kind_to_string__Token(*self->current))));
+                          token_kind_to_String__Token(*self->current))));
 
         emit__Diagnostic(err);
 
@@ -1397,7 +1414,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
                   format(""),
                   Some(format(
                     "expected `class`, `trait, `enum` or `record`, found {Sr}",
-                    token_kind_to_string__Token(*self->current))));
+                    token_kind_to_String__Token(*self->current))));
 
             emit__Diagnostic(err);
             skip_to_next_block(self);
@@ -1637,9 +1654,9 @@ get_fun_parse_context(struct FunParseContext *self,
               *parse_block->current->loc,
               format("unexpected token after `#`, expected identifier or `(`"),
               Some(format("remove this token: `{Sr}`",
-                          token_kind_to_string__Token(*parse_block->current))));
+                          token_kind_to_String__Token(*parse_block->current))));
 
-            err->err->s = token_kind_to_string__Token(*parse_block->current);
+            err->err->s = token_kind_to_String__Token(*parse_block->current);
 
             emit__Diagnostic(err);
         }
@@ -1704,7 +1721,7 @@ get_fun_parse_context(struct FunParseContext *self,
               *parse_block->current->loc,
               format(""),
               Some(format("add function's name, found: `{Sr}`",
-                          token_kind_to_string__Token(*parse_block->current))));
+                          token_kind_to_String__Token(*parse_block->current))));
 
         emit__Diagnostic(err);
     }
@@ -1865,17 +1882,7 @@ valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
     switch (parse_block->current->kind) {
-        case TokenKindEof:
-        case TokenKindLParen:
-        case TokenKindRParen:
-        case TokenKindLHook:
-        case TokenKindRHook:
-        case TokenKindComma:
-        case TokenKindInterrogation:
-        case TokenKindBang:
-        case TokenKindDot:
-        case TokenKindIdentifier:
-        case TokenKindMutKw:
+        case VALID_TOKEN_FOR_DATA_TYPE:
             return true;
 
         default: {
@@ -1926,16 +1933,7 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
     switch (parse_block->current->kind) {
-        case TokenKindLParen:
-        case TokenKindRParen:
-        case TokenKindLHook:
-        case TokenKindRHook:
-        case TokenKindInterrogation:
-        case TokenKindBang:
-        case TokenKindComma:
-        case TokenKindIdentifier:
-        case TokenKindDot:
-        case TokenKindMutKw:
+        case VALID_TOKEN_FOR_DATA_TYPE:
             return true;
 
         default: {
@@ -2016,15 +2014,7 @@ valid_token_in_alias_data_type(struct ParseBlock *parse_block,
                                bool already_invalid)
 {
     switch (parse_block->current->kind) {
-        case TokenKindLHook:
-        case TokenKindRHook:
-        case TokenKindLParen:
-        case TokenKindRParen:
-        case TokenKindInterrogation:
-        case TokenKindBang:
-        case TokenKindComma:
-        case TokenKindIdentifier:
-        case TokenKindMutKw:
+        case VALID_TOKEN_FOR_DATA_TYPE:
             return true;
 
         default: {
@@ -2117,18 +2107,10 @@ static inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
-        case TokenKindLParen:
-        case TokenKindRParen:
-        case TokenKindLHook:
-        case TokenKindRHook:
-        case TokenKindArrow:
-        case TokenKindColonColon:
+        case VALID_TOKEN_FOR_DATA_TYPE:
         case TokenKindAt:
-        case TokenKindComma:
-        case TokenKindDot:
-        case TokenKindIdentifier:
         case TokenKindSelfKw:
-        case TokenKindMutKw:
+        case TokenKindColonColon:
             return true;
 
         default: {
@@ -2300,7 +2282,7 @@ get_class_parse_context(struct ClassParseContext *self,
               *parse_block->current->loc,
               format(""),
               Some(format("add name on property or method, found `{Sr}`",
-                          token_kind_to_string__Token(*parse_block->current))));
+                          token_kind_to_String__Token(*parse_block->current))));
 
             emit__Diagnostic(err);
         }
@@ -2657,16 +2639,7 @@ static inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
-        case TokenKindLHook:
-        case TokenKindRHook:
-        case TokenKindLParen:
-        case TokenKindRParen:
-        case TokenKindIdentifier:
-        case TokenKindComma:
-        case TokenKindDot:
-        case TokenKindInterrogation:
-        case TokenKindStar:
-        case TokenKindAmpersand:
+        case VALID_TOKEN_FOR_DATA_TYPE:
             return true;
 
         default: {
@@ -3533,7 +3506,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                               None());
 
                         err->err->s =
-                          token_kind_to_string__Token(*parse_decl->current);
+                          token_kind_to_String__Token(*parse_decl->current);
 
                         emit__Diagnostic(err);
 
@@ -3636,15 +3609,22 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             push__Vec(params, parse_data_type(self, parse_decl));
 
             while (parse_decl->current->kind != TokenKindBar) {
-                next_token(parse_decl);
-
                 push__Vec(params, parse_data_type(self, parse_decl));
+
+                if (parse_decl->current->kind == TokenKindArrow)
+                    next_token(parse_decl);
+                else if (parse_decl->current->kind == TokenKindBar) {
+                    next_token(parse_decl);
+
+                    break;
+                } else {
+                    assert(0 && "error");
+                }
             }
 
             struct DataType *return_type = pop__Vec(params);
 
             if (len__Vec(*params) == 0) {
-                assert(0 && "warning");
                 struct Diagnostic *warn =
                   NEW(DiagnosticWithWarnParser,
                       &self.parse_block,
@@ -3802,7 +3782,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
                       format(""),
                       None());
 
-                err->err->s = token_kind_to_string__Token(*parse_decl->current);
+                err->err->s = token_kind_to_String__Token(*parse_decl->current);
 
                 emit__Diagnostic(err);
 
@@ -3919,7 +3899,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 
         case TokenKindBitStringLit: {
             struct String bit_string = *parse_decl->previous->lit;
-            UInt8 **bit_str = malloc(sizeof(UInt8) * len__String(bit_string));
+            UInt8 **bit_str = malloc(sizeof(UInt8 *) * len__String(bit_string));
 
             for (Usize i = len__String(bit_string); i--;)
                 bit_str[i] = (UInt8 *)(UPtr)get__String(bit_string, i);
@@ -6033,7 +6013,7 @@ parse_fun_declaration(struct Parser *self,
                   None());
 
             err->err->s =
-              format("`{S}`", token_kind_to_string__Token(*parse.current));
+              format("`{S}`", token_kind_to_String__Token(*parse.current));
 
             emit__Diagnostic(err);
         }
@@ -6086,7 +6066,7 @@ parse_enum_declaration(struct Parser *self,
                   from__String(""),
                   None());
 
-            err->err->s = token_kind_to_string__Token(*parse.current);
+            err->err->s = token_kind_to_String__Token(*parse.current);
 
             emit__Diagnostic(err);
         }
@@ -6285,7 +6265,7 @@ parse_alias_declaration(struct Parser *self,
                   format(""),
                   None());
 
-            err->err->s = token_kind_to_string__Token(*parse.current);
+            err->err->s = token_kind_to_String__Token(*parse.current);
 
             emit__Diagnostic(err);
         }
@@ -6660,7 +6640,7 @@ parse_method_declaration(struct Parser *self,
                   None());
 
             err->err->s =
-              format("`{S}`", token_kind_to_string__Token(*parse.current));
+              format("`{S}`", token_kind_to_String__Token(*parse.current));
 
             emit__Diagnostic(err);
         }
@@ -6716,7 +6696,7 @@ parse_constant_declaration(struct Parser *self,
                   format(""),
                   None());
 
-            err->err->s = token_kind_to_string__Token(*parse.current);
+            err->err->s = token_kind_to_String__Token(*parse.current);
 
             emit__Diagnostic(err);
         }
@@ -6736,7 +6716,7 @@ parse_constant_declaration(struct Parser *self,
                   format(""),
                   None());
 
-            err->err->s = token_kind_to_string__Token(*parse.current);
+            err->err->s = token_kind_to_String__Token(*parse.current);
 
             emit__Diagnostic(err);
         }
@@ -6778,7 +6758,7 @@ parse_error_declaration(struct Parser *self,
                   format(""),
                   None());
 
-            err->err->s = token_kind_to_string__Token(*parse.current);
+            err->err->s = token_kind_to_String__Token(*parse.current);
 
             emit__Diagnostic(err);
         }

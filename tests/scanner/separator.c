@@ -1,12 +1,14 @@
 #include "separator.h"
 #include <base/file.h>
 #include <base/new.h>
-#include <base/test.h>
 #include <base/print.h>
+#include <base/test.h>
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
-int test_separator() {
+int
+test_separator()
+{
     struct File file = NEW(File, "./tests/scanner/separator.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);

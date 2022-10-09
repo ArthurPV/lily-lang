@@ -118,15 +118,15 @@ __new__DataTypeTuple(struct Vec *tuple)
 }
 
 struct String *
-to_string__DataType(struct DataType self)
+to_String__DataType(struct DataType self)
 {
     switch (self.kind) {
         case DataTypeKindSelf:
             return from__String("self");
         case DataTypeKindPtr:
-            return format("*{Sr}", to_string__DataType(*self.value.ptr));
+            return format("*{Sr}", to_String__DataType(*self.value.ptr));
         case DataTypeKindRef:
-            return format("&{Sr}", to_string__DataType(*self.value.ref));
+            return format("&{Sr}", to_String__DataType(*self.value.ref));
         case DataTypeKindStr:
             return from__String("Str");
         case DataTypeKindChar:
@@ -166,31 +166,31 @@ to_string__DataType(struct DataType self)
         case DataTypeKindAny:
             return from__String("Any");
         case DataTypeKindOptional:
-            return format("?{Sr}", to_string__DataType(*self.value.optional));
+            return format("?{Sr}", to_String__DataType(*self.value.optional));
         case DataTypeKindUnit:
             return from__String("Unit");
         case DataTypeKindException:
-            return format("!{Sr}", to_string__DataType(*self.value.exception));
+            return format("!{Sr}", to_String__DataType(*self.value.exception));
         case DataTypeKindLambda: {
             struct Vec *params = self.value.lambda->items[0];
             struct String *lambda_string = NEW(String);
 
             append__String(
               lambda_string,
-              to_string__DataType(*(struct DataType *)get__Vec(*params, 0)),
+              to_String__DataType(*(struct DataType *)get__Vec(*params, 0)),
               true);
 
             for (Usize i = 1; i < len__Vec(*params); i++) {
                 push_str__String(lambda_string, " -> ");
                 append__String(
                   lambda_string,
-                  to_string__DataType(*(struct DataType *)get__Vec(*params, i)),
+                  to_String__DataType(*(struct DataType *)get__Vec(*params, i)),
                   true);
             }
 
             push_str__String(lambda_string, " -> ");
             append__String(lambda_string,
-                           to_string__DataType(
+                           to_String__DataType(
                              *(struct DataType *)self.value.lambda->items[1]),
                            true);
 
@@ -212,7 +212,7 @@ to_string__DataType(struct DataType self)
                 struct DataType *data_type = get__Option(data_type_op);
 
                 append__String(
-                  array_string, to_string__DataType(*data_type), true);
+                  array_string, to_String__DataType(*data_type), true);
             }
 
             return array_string;
@@ -222,7 +222,7 @@ to_string__DataType(struct DataType self)
 
             push_str__String(tuple_string, "(");
             append__String(tuple_string,
-                           to_string__DataType(*(struct DataType *)get__Vec(
+                           to_String__DataType(*(struct DataType *)get__Vec(
                              *self.value.tuple, 0)),
                            true);
 
@@ -230,7 +230,7 @@ to_string__DataType(struct DataType self)
                 append__String(
                   tuple_string,
                   format(", {Sr}",
-                         to_string__DataType(
+                         to_String__DataType(
                            *(struct DataType *)get__Vec(*self.value.tuple, i))),
                   true);
 
@@ -250,7 +250,7 @@ to_string__DataType(struct DataType self)
 
                 push_str__String(custom_string, "[");
                 append__String(custom_string,
-                               to_string__DataType(
+                               to_String__DataType(
                                  *(struct DataType *)get__Vec(*generic, 0)),
                                true);
 
@@ -447,7 +447,7 @@ get_name__Generic(struct Generic *self)
 }
 
 struct String *
-to_string__Generic(struct Generic self)
+to_String__Generic(struct Generic self)
 {
     switch (self.kind) {
         case GenericKindDataType:
@@ -456,7 +456,7 @@ to_string__Generic(struct Generic self)
             return format(
               "{S}: {Sr}",
               self.value.restricted_data_type->items[0],
-              to_string__DataType(
+              to_String__DataType(
                 *(struct DataType *)((struct Tuple *)self.value
                                        .restricted_data_type->items[1])
                    ->items[0]));
@@ -507,9 +507,15 @@ __new__VariableDecl(struct String *name,
 }
 
 struct String *
-to_string__VariableDecl(struct VariableDecl self)
+to_String__VariableDecl(struct VariableDecl self)
 {
-    TODO("");
+    if (self.data_type)
+        return format("{S} :: {Sr} := {Sr}",
+                      self.name,
+                      to_String__DataType(*self.data_type),
+                      to_String__Expr(*self.expr));
+
+    return format("{S} := {Sr}", self.name, to_String__Expr(*self.expr));
 }
 
 void
@@ -522,13 +528,15 @@ __free__VariableDecl(struct VariableDecl self)
 }
 
 struct String *
-to_string__Literal(struct Literal self)
+to_String__Literal(struct Literal self)
 {
     switch (self.kind) {
         case LiteralKindBool:
             return format("{b}", self.value.bool_);
         case LiteralKindChar:
-            return format("{c}", self.value.char_);
+            return format("'{c}'", self.value.char_);
+        case LiteralKindBitChar:
+            return format("b'{c}'", (char)self.value.bit_char);
         case LiteralKindInt32:
             return format("{d}", self.value.int32);
         case LiteralKindInt64:
@@ -539,6 +547,15 @@ to_string__Literal(struct Literal self)
             return format("{f}", self.value.float_);
         case LiteralKindStr:
             return format("{s}", self.value.str);
+        case LiteralKindBitStr: {
+            struct String *s = NEW(String);
+
+            for (Usize i = 0; self.value.bit_str[i]; i++)
+                append__String(
+                  s, format("{c}", (char)(UPtr)self.value.bit_str[i]), true);
+
+            return format("{s}", self.value.bit_str);
+        }
         case LiteralKindUnit:
             return from__String("()");
     }
@@ -577,17 +594,19 @@ to_str__UnaryOpKind(enum UnaryOpKind kind)
 }
 
 struct String *
-to_string__UnaryOp(struct UnaryOp self)
+to_String__UnaryOp(struct UnaryOp self)
 {
     switch (self.kind) {
         case UnaryOpKindNegative:
-            return format("-{Sr}", to_string__Expr(*self.right));
+            return format("-{Sr}", to_String__Expr(*self.right));
         case UnaryOpKindNot:
-            return format("not {Sr}", to_string__Expr(*self.right));
+            return format("not {Sr}", to_String__Expr(*self.right));
         case UnaryOpKindReference:
-            return format("&{Sr}", to_string__Expr(*self.right));
+            return format("&{Sr}", to_String__Expr(*self.right));
         case UnaryOpKindBitNot:
-            return format("~{Sr}", to_string__Expr(*self.right));
+            return format("~{Sr}", to_String__Expr(*self.right));
+        case UnaryOpKindCustom:
+            return format("{S}{Sr}", self.op, to_String__Expr(*self.right));
     }
 }
 
@@ -773,169 +792,169 @@ __new__BinaryOp(enum BinaryOpKind kind,
 }
 
 struct String *
-to_string__BinaryOp(struct BinaryOp self)
+to_String__BinaryOp(struct BinaryOp self)
 {
     switch (self.kind) {
         case BinaryOpKindAdd:
             return format("{Sr} + {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindSub:
             return format("{Sr} - {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindMul:
             return format("{Sr} * {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindDiv:
             return format("{Sr} / {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindMod:
             return format("{Sr} % {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindRange:
             return format("{Sr} .. {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindLt:
             return format("{Sr} < {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindGt:
             return format("{Sr} > {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindLe:
             return format("{Sr} <= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindGe:
             return format("{Sr} >= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindEq:
             return format("{Sr} == {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindNe:
             return format("{Sr} not= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindAnd:
             return format("{Sr} and {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindOr:
             return format("{Sr} or {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindXor:
             return format("{Sr} xor {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindAssign:
             return format("{Sr} = {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindAddAssign:
             return format("{Sr} += {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindSubAssign:
             return format("{Sr} -= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindMulAssign:
             return format("{Sr} *= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindDivAssign:
             return format("{Sr} /= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindModAssign:
             return format("{Sr} %= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindConcatAssign:
             return format("{Sr} ^= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitLShiftAssign:
             return format("{Sr} <<= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitRShiftAssign:
             return format("{Sr} >>= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitOrAssign:
             return format("{Sr} |= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindXorAssign:
             return format("{Sr} xor= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitAndAssign:
             return format("{Sr} &= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindMergeAssign:
             return format("{Sr} ++= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindUnmergeAssign:
             return format("{Sr} --= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindExponentAssign:
             return format("{Sr} **= {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindChain:
             return format("{Sr} |> {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindMerge:
             return format("{Sr} ++ {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindUnmerge:
             return format("{Sr} -- {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindRepeat:
             return format("{Sr} $ {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindConcat:
             return format("{Sr} ^ {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitLShift:
             return format("{Sr} << {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitRShift:
             return format("{Sr} >> {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitOr:
             return format("{Sr} | {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindBitAnd:
             return format("{Sr} & {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         case BinaryOpKindExponent:
             return format("{Sr} ** {Sr}",
-                          to_string__Expr(*self.left),
-                          to_string__Expr(*self.right));
+                          to_String__Expr(*self.left),
+                          to_String__Expr(*self.right));
         default:
             UNREACHABLE("unknown binop kind");
     }
@@ -957,23 +976,25 @@ __new__FunCall(struct Expr *id, struct Vec *params)
 }
 
 struct String *
-to_string__FunCall(struct FunCall self)
+to_String__FunCall(struct FunCall self)
 {
-    // struct String *s = NEW(String);
+    struct String *s = NEW(String);
 
-    // append__String(s, format("{S}(", self.name), true);
+    append__String(s, format("{S}(", to_String__Expr(*self.id)), true);
 
-    // for (Usize i = 0; i < len__Vec(*self.params); i++)
-    //     append__String(
-    //       s,
-    //       format("{S}, ",
-    //              to_string__FunParamCall(
-    //                *((struct FunParamCall *)get__Vec(*self.params, i)))),
-    //       true);
+    for (Usize i = 0; i < len__Vec(*self.params); i++)
+        append__String(
+          s,
+          format(
+            "{S}, ",
+            to_String__FunParamCall(*(
+              (struct FunParamCall *)((struct Tuple *)get__Vec(*self.params, i))
+                ->items[0]))),
+          true);
 
-    // push_str__String(s, ")");
+    push_str__String(s, ")");
 
-    // return s;
+    return s;
 }
 
 void
@@ -1000,6 +1021,17 @@ __new__FieldCall(struct String *name, struct Option *value)
     return self;
 }
 
+struct String *
+to_String__FieldCall(struct FieldCall self)
+{
+    if (is_Some__Option(self.value))
+        return format("{S} = {Sr}",
+                      self.name,
+                      to_String__Expr(*(struct Expr *)get__Option(self.value)));
+    else
+        return format("{S}", self.name);
+}
+
 void
 __free__FieldCall(struct FieldCall *self)
 {
@@ -1017,6 +1049,34 @@ __new__RecordCall(struct Expr *id, struct Vec *fields)
     return self;
 }
 
+struct String *
+to_String__RecordCall(struct RecordCall self)
+{
+    struct String *s = NEW(String);
+
+    append__String(s, format("{Sr} {{", to_String__Expr(*self.id)), true);
+
+    for (Usize i = 0; i < len__Vec(*self.fields) - 1; i++)
+        append__String(s,
+                       format("{Sr}, ",
+                              to_String__FieldCall(
+                                *(struct FieldCall *)((struct Tuple *)get__Vec(
+                                                        *self.fields, i))
+                                   ->items[0])),
+                       true);
+
+    append__String(s,
+                   format("{Sr} }",
+                          to_String__FieldCall(
+                            *(struct FieldCall *)((struct Tuple *)get__Vec(
+                                                    *self.fields,
+                                                    len__Vec(*self.fields) - 1))
+                               ->items[0])),
+                   true);
+
+    return s;
+}
+
 void
 __free__RecordCall(struct RecordCall self)
 {
@@ -1031,6 +1091,23 @@ __free__RecordCall(struct RecordCall self)
     FREE(Vec, self.fields);
 }
 
+struct String *
+to_String__ArrayAccess(struct ArrayAccess self)
+{
+    struct String *s = NEW(String);
+
+    append__String(s, format("{Sr}", to_String__Expr(*self.id)), true);
+
+    for (Usize i = 0; i < len__Vec(*self.access); i++)
+        append__String(
+          s,
+          format("[{Sr}]",
+                 to_String__Expr(*(struct Expr *)get__Vec(*self.access, i))),
+          true);
+
+    return s;
+}
+
 void
 __free__ArrayAccess(struct ArrayAccess self)
 {
@@ -1040,6 +1117,23 @@ __free__ArrayAccess(struct ArrayAccess self)
         FREE(ExprAll, get__Vec(*self.access, i));
 
     FREE(Vec, self.access);
+}
+
+struct String *
+to_String__TupleAccess(struct TupleAccess self)
+{
+    struct String *s = NEW(String);
+
+    append__String(s, format("{Sr}", to_String__Expr(*self.id)), true);
+
+    for (Usize i = 0; i < len__Vec(*self.access); i++)
+        append__String(
+          s,
+          format("#{Sr}",
+                 to_String__Expr(*(struct Expr *)get__Vec(*self.access, i))),
+          true);
+
+    return s;
 }
 
 void
@@ -1065,6 +1159,16 @@ __new__Lambda(struct Vec *params,
                            .instantly_call = instantly_call };
 
     return self;
+}
+
+struct String *
+to_String__Lambda(struct Lambda self)
+{
+    struct String *s = NEW(String);
+
+    append__String(s, from__String("fun("), true);
+
+    return s;
 }
 
 void
@@ -1372,18 +1476,18 @@ get_precedence__Expr(struct Expr *expr)
 }
 
 struct String *
-to_string__Expr(struct Expr self)
+to_String__Expr(struct Expr self)
 {
     switch (self.kind) {
         case ExprKindUnaryOp:
-            return format("{S}", to_string__UnaryOp(self.value.unary_op));
+            return format("{S}", to_String__UnaryOp(self.value.unary_op));
         case ExprKindBinaryOp:
-            return format("{S}", to_string__BinaryOp(self.value.binary_op));
+            return format("{S}", to_String__BinaryOp(self.value.binary_op));
         case ExprKindLiteral:
-            return format("{S}", to_string__Literal(self.value.literal));
+            return format("{S}", to_String__Literal(self.value.literal));
         case ExprKindGrouping:
             assert(self.value.grouping);
-            return format("({S})", to_string__Expr(*self.value.grouping));
+            return format("({S})", to_String__Expr(*self.value.grouping));
         default:
             UNREACHABLE("unknown expr kind");
     }
@@ -1569,12 +1673,12 @@ __new__MatchStmt(struct Expr *matching, struct Vec *pattern)
 }
 
 struct String *
-to_string__MatchStmt(struct MatchStmt self)
+to_String__MatchStmt(struct MatchStmt self)
 {
     struct String *s = NEW(String);
 
     append__String(
-      s, format("Match: {S}\n", to_string__Expr(*self.matching)), true);
+      s, format("Match: {S}\n", to_String__Expr(*self.matching)), true);
 
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
         struct Expr *temp_expr =
@@ -1583,14 +1687,14 @@ to_string__MatchStmt(struct MatchStmt self)
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
 
         append__String(
-          s, format("Pattern: {S}\n", to_string__Expr(*temp_expr)), true);
+          s, format("Pattern: {S}\n", to_String__Expr(*temp_expr)), true);
         push_str__String(s, "Body:\n");
 
         for (Usize j = 0; j < len__Vec(*temp_body); j++)
             append__String(
               s,
               format("\t{Sr}s\n",
-                     to_string__Expr(*(struct Expr *)get__Vec(*temp_body, j))),
+                     to_String__Expr(*(struct Expr *)get__Vec(*temp_body, j))),
               true);
     }
 
@@ -1649,19 +1753,19 @@ __new__IfCond(struct IfBranch *if_, struct Option *elif, struct Option *else_)
 }
 
 struct String *
-to_string__IfCond(struct IfCond self)
+to_String__IfCond(struct IfCond self)
 {
     struct String *s = NEW(String);
 
     append__String(
-      s, format("If: {Sr}\n", to_string__Expr(*self.if_->cond)), true);
+      s, format("If: {Sr}\n", to_String__Expr(*self.if_->cond)), true);
     push_str__String(s, "Body:\n");
 
     for (Usize i = 0; i < len__Vec(*self.if_->body); i++)
         append__String(
           s,
           format("\t{Sr}\n",
-                 to_string__FunBodyItem(
+                 to_String__FunBodyItem(
                    *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
           true);
 
@@ -1672,7 +1776,7 @@ to_string__IfCond(struct IfCond self)
             append__String(
               s,
               format("Elif: {Sr}\n",
-                     to_string__Expr(
+                     to_String__Expr(
                        *((struct IfBranch *)get__Vec(*temp, i))->cond)),
               true);
 
@@ -1685,7 +1789,7 @@ to_string__IfCond(struct IfCond self)
                 append__String(
                   s,
                   format("\t{Sr}\n",
-                         to_string__FunBodyItem(
+                         to_String__FunBodyItem(
                            *(struct FunBodyItem *)get__Vec(*temp_body, j))),
                   true);
         }
@@ -1701,7 +1805,7 @@ to_string__IfCond(struct IfCond self)
         for (Usize i = 0; i < len__Vec(*temp); i++)
             append__String(s,
                            format("\t{Sr}\n",
-                                  to_string__FunBodyItem(
+                                  to_String__FunBodyItem(
                                     *(struct FunBodyItem *)get__Vec(*temp, i))),
                            true);
     }
@@ -1754,7 +1858,7 @@ __new__TryStmt(struct Vec *try_body,
 }
 
 struct String *
-to_string__TryStmt(struct TryStmt self)
+to_String__TryStmt(struct TryStmt self)
 {
     struct String *s = NEW(String);
 
@@ -1764,7 +1868,7 @@ to_string__TryStmt(struct TryStmt self)
         append__String(
           s,
           format("\t{Sr}\n",
-                 to_string__FunBodyItem(
+                 to_String__FunBodyItem(
                    *(struct FunBodyItem *)get__Vec(*self.try_body, i))),
           true);
 
@@ -1773,14 +1877,14 @@ to_string__TryStmt(struct TryStmt self)
         struct Vec *temp_body = get__Option(self.catch_body);
 
         append__String(
-          s, format("Catch {Sr}:\n", to_string__Expr(*temp_expr)), true);
+          s, format("Catch {Sr}:\n", to_String__Expr(*temp_expr)), true);
         push_str__String(s, "Body:\n");
 
         for (Usize i = 0; i < len__Vec(*temp_body); i++)
             append__String(
               s,
               format("\t{Sr}\n",
-                     to_string__FunBodyItem(
+                     to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*temp_body, i))),
               true);
     } else if ((is_Some__Option(self.catch_expr) == false ||
@@ -1828,18 +1932,18 @@ __new__WhileStmt(struct Expr *cond, struct Vec *body)
 }
 
 struct String *
-to_string__WhileStmt(struct WhileStmt self)
+to_String__WhileStmt(struct WhileStmt self)
 {
     struct String *s = NEW(String);
 
     append__String(
-      s, format("While: {Sr}\n", to_string__Expr(*self.cond)), true);
+      s, format("While: {Sr}\n", to_String__Expr(*self.cond)), true);
     push_str__String(s, "Body:\n");
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
         append__String(s,
                        format("\t{Sr}\n",
-                              to_string__FunBodyItem(*(
+                              to_String__FunBodyItem(*(
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
@@ -1917,14 +2021,14 @@ __new__ForStmtExprTraditionalVar(struct ForStmtExprTraditional *traditional,
 }
 
 struct String *
-to_string__ForStmtExpr(struct ForStmtExpr self)
+to_String__ForStmtExpr(struct ForStmtExpr self)
 {
     switch (self.kind) {
         case ForStmtExprKindRange:
             return format(
               "For: {S} in {Sr}\n",
               self.value.range->items[0],
-              to_string__Expr(*(struct Expr *)self.value.range->items[1]));
+              to_String__Expr(*(struct Expr *)self.value.range->items[1]));
         case ForStmtExprKindTraditional: {
             struct String *s = NEW(String);
 
@@ -1937,7 +2041,7 @@ to_string__ForStmtExpr(struct ForStmtExpr self)
                   s,
                   format("{S} := {Sr};",
                          temp->items[0],
-                         to_string__Expr(*(struct Expr *)temp->items[1])),
+                         to_String__Expr(*(struct Expr *)temp->items[1])),
                   true);
             } else
                 push_str__String(s, ";");
@@ -1946,14 +2050,14 @@ to_string__ForStmtExpr(struct ForStmtExpr self)
                 struct Expr *temp = get__Option(self.value.traditional->cond);
 
                 append__String(
-                  s, format("{Sr};", to_string__Expr(*temp)), true);
+                  s, format("{Sr};", to_String__Expr(*temp)), true);
             } else
                 push_str__String(s, ";");
 
             if (is_Some__Option(self.value.traditional->action)) {
                 struct Expr *temp = get__Option(self.value.traditional->action);
 
-                append__String(s, format("{Sr}", to_string__Expr(*temp)), true);
+                append__String(s, format("{Sr}", to_String__Expr(*temp)), true);
             }
 
             push_str__String(s, "\n");
@@ -2006,17 +2110,17 @@ __new__ForStmt(struct ForStmtExpr *expr, struct Vec *body)
 }
 
 struct String *
-to_string__ForStmt(struct ForStmt self)
+to_String__ForStmt(struct ForStmt self)
 {
     struct String *s = NEW(String);
 
-    append__String(s, to_string__ForStmtExpr(*self.expr), true);
+    append__String(s, to_String__ForStmtExpr(*self.expr), true);
     push_str__String(s, "Body:\n");
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
         append__String(s,
                        format("\t{Sr}\n",
-                              to_string__FunBodyItem(*(
+                              to_String__FunBodyItem(*(
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
@@ -2098,7 +2202,7 @@ __new__ImportStmt(struct Vec *import_value, bool is_pub, struct Option *as)
 }
 
 struct String *
-to_string__ImportStmt(struct ImportStmt self)
+to_String__ImportStmt(struct ImportStmt self)
 {}
 
 void
@@ -2206,23 +2310,23 @@ __new__StmtImport(struct Location loc, struct ImportStmt *import)
 }
 
 struct String *
-to_string__Stmt(struct Stmt self)
+to_String__Stmt(struct Stmt self)
 {
     switch (self.kind) {
         case StmtKindReturn:
-            return format("return {Sr}", to_string__Expr(*self.value.return_));
+            return format("return {Sr}", to_String__Expr(*self.value.return_));
         case StmtKindIf:
-            return to_string__IfCond(*self.value.if_);
+            return to_String__IfCond(*self.value.if_);
         case StmtKindAwait:
-            return format("await {Sr}", to_string__Expr(*self.value.await));
+            return format("await {Sr}", to_String__Expr(*self.value.await));
         case StmtKindTry:
-            return to_string__TryStmt(*self.value.try);
+            return to_String__TryStmt(*self.value.try);
         case StmtKindMatch:
-            return to_string__MatchStmt(*self.value.match);
+            return to_String__MatchStmt(*self.value.match);
         case StmtKindWhile:
-            return to_string__WhileStmt(*self.value.while_);
+            return to_String__WhileStmt(*self.value.while_);
         case StmtKindFor:
-            return to_string__ForStmt(*self.value.for_);
+            return to_String__ForStmt(*self.value.for_);
         case StmtKindNext:
             return from__String("next");
         case StmtKindBreak:
@@ -2288,11 +2392,11 @@ __new__FunBodyItemStmt(struct Stmt *stmt)
 }
 
 struct String *
-to_string__FunBodyItem(struct FunBodyItem self)
+to_String__FunBodyItem(struct FunBodyItem self)
 {
     switch (self.kind) {
         case FunBodyItemKindExpr:
-            return format("{S}", to_string__Expr(*self.expr));
+            return format("{S}", to_String__Expr(*self.expr));
         case FunBodyItemKindStmt:
             break;
         default:
@@ -2335,13 +2439,13 @@ __new__FunParamCallDefault(struct Expr *value, struct String *name)
 }
 
 struct String *
-to_string__FunParamCall(struct FunParamCall self)
+to_String__FunParamCall(struct FunParamCall self)
 {
     switch (self.kind) {
         case FunParamKindNormal:
-            return format("{S}", to_string__Expr(*self.value));
+            return format("{S}", to_String__Expr(*self.value));
         case FunParamKindDefault:
-            return format("{S} = {S}", self.name, to_string__Expr(*self.value));
+            return format("{S} = {S}", self.name, to_String__Expr(*self.value));
         default:
             UNREACHABLE("unknown fun param kind");
     }
@@ -2401,22 +2505,22 @@ __new__FunParamSelf(struct Location loc)
 }
 
 struct String *
-to_string__FunParam(struct FunParam self)
+to_String__FunParam(struct FunParam self)
 {
     // switch (self.kind) {
     //     case FunParamKindNormal:
     //         return format(
     //           "{S} {S}",
     //           self.name,
-    //           to_string__DataType(
+    //           to_String__DataType(
     //             *(struct DataType *)self.param_data_type->items[0]));
     //     case FunParamKindDefault:
     //         return format("{S} {S} := {S}",
     //                       self.name,
-    //                       to_string__DataType(
+    //                       to_String__DataType(
     //                         *(struct DataType
     //                         *)self.param_data_type->items[0]),
-    //                       to_string__Expr(*self.value.default_));
+    //                       to_String__Expr(*self.value.default_));
     //     default:
     //         UNREACHABLE("unknown fun param kind");
     // }

@@ -63,7 +63,7 @@ end__Location(struct Location *self, Usize line, Usize col)
 }
 
 struct String *
-to_string__Location(struct Location self)
+to_String__Location(struct Location self)
 {
     return format("{{ \n\t\ts_line: {d},\n\t\te_line: {d},\n\t\ts_col: "
                   "{d},\n\t\te_col: {d}\n\t}",
@@ -126,7 +126,7 @@ __new__DocPrototype(struct Vec *prot)
 }
 
 struct String *
-to_string__Doc(struct Doc self)
+to_String__Doc(struct Doc self)
 {
     switch (self.kind) {
         case DocKindAuthor:
@@ -225,7 +225,7 @@ __new__TokenDoc(struct Location *loc, struct Doc *doc)
 }
 
 struct String *
-token_kind_to_string__Token(struct Token self)
+token_kind_to_String__Token(struct Token self)
 {
     switch (self.kind) {
         case TokenKindDot:
@@ -414,8 +414,8 @@ token_kind_to_string__Token(struct Token self)
             return from__String("not");
         case TokenKindNilKw:
             return from__String("nil");
-		case TokenKindNoneKw:
-			return from__String("None");
+        case TokenKindNoneKw:
+            return from__String("None");
         case TokenKindUndefKw:
             return from__String("undef");
         case TokenKindObjectKw:
@@ -474,11 +474,11 @@ token_kind_to_string__Token(struct Token self)
 }
 
 struct String *
-to_string__Token(struct Token self)
+to_String__Token(struct Token self)
 {
     return format("{{ \n\tkind: {Sr},\n\tloc: {Sr}\n}",
-                  token_kind_to_string__Token(self),
-                  to_string__Location(*self.loc));
+                  token_kind_to_String__Token(self),
+                  to_String__Location(*self.loc));
 }
 
 struct Token *

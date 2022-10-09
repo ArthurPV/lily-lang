@@ -567,7 +567,7 @@ __new__ExprSymbolLambda(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolTuple(struct Expr expr,
-                       struct Tuple *tuple,
+                       struct Vec *tuple,
                        struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -580,7 +580,7 @@ __new__ExprSymbolTuple(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolArray(struct Expr expr,
-                       struct Tuple *array,
+                       struct Vec *array,
                        struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -732,12 +732,10 @@ void
 __free__ExprSymbolTuple(struct ExprSymbol *self)
 {
     for (Usize i = len__Vec(*(struct Vec *)self->value.tuple->items[0]); i--;)
-        FREE(ExprSymbolAll,
-             get__Vec(*(struct Vec *)self->value.tuple->items[0], i));
+        FREE(ExprSymbolAll, get__Vec(*self->value.tuple, i));
 
-    FREE(Vec, self->value.tuple->items[0]);
+    FREE(Vec, self->value.tuple);
     FREE(DataTypeSymbolAll, self->value.tuple->items[1]);
-    FREE(Tuple, self->value.tuple);
     FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }
@@ -745,13 +743,10 @@ __free__ExprSymbolTuple(struct ExprSymbol *self)
 void
 __free__ExprSymbolArray(struct ExprSymbol *self)
 {
-    for (Usize i = len__Vec(*(struct Vec *)self->value.array->items[0]); i--;)
-        FREE(ExprSymbolAll,
-             get__Vec(*(struct Vec *)self->value.array->items[0], i));
+    for (Usize i = len__Vec(*self->value.array); i--;)
+        FREE(ExprSymbolAll, get__Vec(*self->value.array, i));
 
-    FREE(Vec, self->value.array->items[0]);
-    FREE(DataTypeSymbolAll, self->value.array->items[1]);
-    FREE(Tuple, self->value.array);
+    FREE(Vec, self->value.array);
     FREE(DataTypeSymbolAll, self->data_type);
     free(self);
 }

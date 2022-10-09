@@ -122,7 +122,7 @@ enum TokenKind
     TokenKindOrKw,
     TokenKindNotKw,
     TokenKindNilKw,
-	TokenKindNoneKw,
+    TokenKindNoneKw,
     TokenKindUndefKw,
     TokenKindObjectKw,
     TokenKindSelfKw,
@@ -186,7 +186,7 @@ end__Location(struct Location *self, Usize line, Usize col);
  * @brief Convert Location type to String.
  */
 struct String *
-to_string__Location(struct Location self);
+to_String__Location(struct Location self);
 
 /**
  *
@@ -223,7 +223,7 @@ typedef struct Doc
     {
         struct String *s;
         struct Vec *contract; // struct Vec<struct Token*>*
-        struct Vec *generic; // struct Vec<struct Token*>*
+        struct Vec *generic;  // struct Vec<struct Token*>*
         struct Vec *prot;     // struct Vec<struct Token*>*
     };
 } Doc;
@@ -261,7 +261,7 @@ __new__DocPrototype(struct Vec *prot);
  * @brief Convert to doc to string.
  */
 struct String *
-to_string__Doc(struct Doc self);
+to_String__Doc(struct Doc self);
 
 /**
  *
@@ -335,14 +335,14 @@ __new__TokenDoc(struct Location *loc, struct Doc *doc);
  * @return token kind converted in String.
  */
 struct String *
-token_kind_to_string__Token(struct Token self);
+token_kind_to_String__Token(struct Token self);
 
 /**
  *
  * @brief Convert Token to String.
  */
 struct String *
-to_string__Token(struct Token self);
+to_String__Token(struct Token self);
 
 /**
  *

@@ -430,8 +430,8 @@ get_keyword(const Str id)
         return TokenKindNotKw;
     if (!strcmp(id, "nil"))
         return TokenKindNilKw;
-	if (!strcmp(id, "None"))
-		return TokenKindNoneKw;
+    if (!strcmp(id, "None"))
+        return TokenKindNoneKw;
     if (!strcmp(id, "undef"))
         return TokenKindUndefKw;
     if (!strcmp(id, "object"))
@@ -603,7 +603,7 @@ next_char_by_token(struct Scanner *self, struct Token tok)
             return;
 
         default: {
-            struct String *tok_string = token_kind_to_string__Token(tok);
+            struct String *tok_string = token_kind_to_String__Token(tok);
 
             jump(self, len__String(*tok_string));
 
@@ -2110,7 +2110,7 @@ run__Scanner(struct Scanner *self)
                     case TokenKindIdentifier:
                     case TokenKindIdentifierOp: {
                         struct String *token_string =
-                          token_kind_to_string__Token(*token_ok);
+                          token_kind_to_String__Token(*token_ok);
 
                         if (len__String(*token_string) == 1) {
                             FREE(String, token_string);
@@ -2181,7 +2181,7 @@ run__Scanner(struct Scanner *self)
 #ifdef DEBUG
     for (Usize i = 0; i < len__Vec(*self->tokens); i++)
         Println("{Sr}",
-                to_string__Token(*(struct Token *)get__Vec(*self->tokens, i)));
+                to_String__Token(*(struct Token *)get__Vec(*self->tokens, i)));
 #endif
 }
 

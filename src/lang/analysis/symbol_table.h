@@ -1351,10 +1351,8 @@ typedef struct ExprSymbol
         struct Scope *array_access;
         struct Scope *tuple_access;
         struct LambdaSymbol lambda;
-        struct Tuple *array; // struct Tuple<struct Vec<struct ExprSymbol*>*,
-                             // struct DataTypeSymbol*>*
-        struct Tuple *tuple; // struct Tuple<struct Vec<struct ExprSymbol*>*,
-                             // struct DataTypeSymbol*>*
+        struct Vec *array; // struct Vec<struct ExprSymbol*>*
+        struct Vec *tuple; // struct Vec<struct ExprSymbol*>*
         struct VariantSymbol variant;
         struct ExprSymbol *try;
         // struct IfCond
@@ -1472,7 +1470,7 @@ __new__ExprSymbolLambda(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolTuple(struct Expr expr,
-                       struct Tuple *tuple,
+                       struct Vec *tuple,
                        struct DataTypeSymbol *data_type);
 
 /**
@@ -1481,7 +1479,7 @@ __new__ExprSymbolTuple(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolArray(struct Expr expr,
-                       struct Tuple *array,
+                       struct Vec *array,
                        struct DataTypeSymbol *data_type);
 
 /**
@@ -1804,7 +1802,7 @@ __free__VariableSymbol(struct VariableSymbol *self)
 {
     FREE(DataTypeSymbol, self->data_type);
     FREE(ExprSymbolAll, self->expr);
-	FREE(Scope, self->scope);
+    FREE(Scope, self->scope);
     free(self);
 }
 

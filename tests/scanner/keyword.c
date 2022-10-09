@@ -5,7 +5,9 @@
 #include <lang/scanner/scanner.h>
 #include <lang/scanner/token.h>
 
-int test_keyword() {
+int
+test_keyword()
+{
     struct File file = NEW(File, "./tests/scanner/keyword.lily");
     struct Source src = NEW(Source, file);
     struct Scanner scanner = NEW(Scanner, &src);
@@ -36,7 +38,7 @@ int test_keyword() {
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 11))->kind,
                    TokenKindEnumKw);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 12))->kind,
-                    TokenKindMatchKw);
+                   TokenKindMatchKw);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 13))->kind,
                    TokenKindTrueKw);
     TEST_ASSERT_EQ(((struct Token *)get__Vec(*scanner.tokens, 14))->kind,

@@ -57,7 +57,7 @@ __new__Detail(struct String *msg, struct Vec *lines);
  * @brief Convert Detail to String.
  */
 struct String *
-to_string__Detail(struct Detail self,
+to_String__Detail(struct Detail self,
                   enum DiagnosticKind kind,
                   struct Location loc);
 
@@ -142,10 +142,10 @@ enum LilyErrorKind
     LilyErrorDependencyCycleOnImportValue,
     LilyErrorExpectedFinalAccessInImportValue,
     LilyErrorImportValueAccessIsNotFound,
-	LilyErrorExpectedFinalImportValue,
-	LilyErrorDuplicateGenericParam,
-	LilyErrorNameMustStartByLowercaseCharacter,
-	LilyErrorNameMustStartByUppercaseCharacter
+    LilyErrorExpectedFinalImportValue,
+    LilyErrorDuplicateGenericParam,
+    LilyErrorNameMustStartByLowercaseCharacter,
+    LilyErrorNameMustStartByUppercaseCharacter
 };
 
 typedef struct LilyError
