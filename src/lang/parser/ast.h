@@ -823,9 +823,9 @@ __free__TupleAccess(struct TupleAccess self);
 
 typedef struct Lambda
 {
-    struct Vec *params;         // struct Vec<struct FunParam*>*
-    struct Option *return_type; // struct Option<struct DataType*>*
-    struct Vec *body;           // struct Vec<struct FunBodyItem*>*
+    struct Vec *params;           // struct Vec<struct FunParam*>*
+    struct DataType *return_type; // struct Option<struct DataType*>*
+    struct Vec *body;             // struct Vec<struct FunBodyItem*>*
     bool instantly_call;
 } Lambda;
 
@@ -835,7 +835,7 @@ typedef struct Lambda
  */
 struct Lambda
 __new__Lambda(struct Vec *params,
-              struct Option *return_type,
+              struct DataType *return_type,
               struct Vec *body,
               bool instantly_call);
 
@@ -856,7 +856,7 @@ __free__Lambda(struct Lambda self);
 typedef struct Variant
 {
     struct Expr *id;
-    struct Option *value; // struct Option<struct Expr*>*
+    struct Expr *value;
 } Variant;
 
 /**
@@ -864,12 +864,19 @@ typedef struct Variant
  * @brief Construct the Variant type.
  */
 inline struct Variant
-__new__Variant(struct Expr *id, struct Option *value)
+__new__Variant(struct Expr *id, struct Expr *value)
 {
     struct Variant self = { .id = id, .value = value };
 
     return self;
 }
+
+/**
+ *
+ * @brief Convert Variant in String.
+ */
+struct String *
+to_String__Variant(struct Variant self);
 
 /**
  *
@@ -1390,8 +1397,8 @@ __free__IfBranch(struct IfBranch *self);
 typedef struct IfCond
 {
     struct IfBranch *if_;
-    struct Option *elif;  // struct Option<struct Vec<struct IfBranch*>*>*
-    struct Option *else_; // struct Option<struct Vec<struct FunBodyItem*>*>*
+    struct Vec *elif;  // struct Vec<struct IfBranch*>*
+    struct Vec *else_; // struct Vec<struct FunBodyItem*>*
 } IfCond;
 
 /**
@@ -1399,7 +1406,7 @@ typedef struct IfCond
  * @brief Construct the IfCond type.
  */
 struct IfCond *
-__new__IfCond(struct IfBranch *if_, struct Option *elif, struct Option *else_);
+__new__IfCond(struct IfBranch *if_, struct Vec *elif, struct Vec *else_);
 
 /**
  *
@@ -1417,10 +1424,9 @@ __free__IfCond(struct IfCond *self);
 
 typedef struct TryStmt
 {
-    struct Vec *try_body;      // struct Vec<struct FunBodyItem*>*
-    struct Option *catch_expr; // struct Option<struct Expr*>*
-    struct Option
-      *catch_body; // struct Option<struct Vec<struct FunBodyItem*>*>*
+    struct Vec *try_body; // struct Vec<struct FunBodyItem*>*
+    struct Expr *catch_expr;
+    struct Vec *catch_body; // struct Vec<struct FunBodyItem*>*
 } TryStmt;
 
 /**
@@ -1429,8 +1435,8 @@ typedef struct TryStmt
  */
 struct TryStmt *
 __new__TryStmt(struct Vec *try_body,
-               struct Option *catch_expr,
-               struct Option *catch_body);
+               struct Expr *catch_expr,
+               struct Vec *catch_body);
 
 /**
  *
@@ -1701,6 +1707,13 @@ __new__ImportStmtValueWildcard()
 
 /**
  *
+ * @brief Convert ImportStmtValue in String.
+ */
+struct String *
+to_String__ImportStmtValue(struct ImportStmtValue self);
+
+/**
+ *
  * @brief Free the ImportStmtValue type (Access variant).
  */
 void
@@ -1724,7 +1737,7 @@ typedef struct ImportStmt
 {
     struct Vec *import_value; // struct Vec<struct ImportStmtValue*>*
     bool is_pub;
-    struct Option *as; // struct Option<struct String*>*
+    struct String *as; // struct String*
 } ImportStmt;
 
 /**
@@ -1732,7 +1745,7 @@ typedef struct ImportStmt
  * @brief Construct the ImportStmt type.
  */
 struct ImportStmt *
-__new__ImportStmt(struct Vec *import_value, bool is_pub, struct Option *as);
+__new__ImportStmt(struct Vec *import_value, bool is_pub, struct String *as);
 
 /**
  *
@@ -2194,6 +2207,13 @@ __new__FunDecl(struct String *name,
                struct Vec *body,
                bool is_pub,
                bool is_async);
+
+/**
+ *
+ * @brief Convert FunDecl in String.
+ */
+struct String *
+to_String__FunDecl(struct FunDecl self);
 
 /**
  *

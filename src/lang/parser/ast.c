@@ -1149,7 +1149,7 @@ __free__TupleAccess(struct TupleAccess self)
 
 struct Lambda
 __new__Lambda(struct Vec *params,
-              struct Option *return_type,
+              struct DataType *return_type,
               struct Vec *body,
               bool instantly_call)
 {
@@ -1168,6 +1168,28 @@ to_String__Lambda(struct Lambda self)
 
     append__String(s, from__String("fun("), true);
 
+    // 1. Dump params
+    for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
+        append__String(s,
+                       format("{Sr}, ",
+                              to_String__FunParam(
+                                *(struct FunParam *)get__Vec(*self.params, i))),
+                       true);
+
+    append__String(s,
+                   format("{Sr})",
+                          to_String__FunParam(*(struct FunParam *)get__Vec(
+                            *self.params, len__Vec(*self.params) - 1))),
+                   true);
+
+    // 2. Dump return data type
+    if (self.return_type)
+        append__String(
+          s, format(" {Sr} = ", to_String__DataType(*self.return_type)), true);
+
+    // 3. Dump body
+    TODO("lambda to String");
+
     return s;
 }
 
@@ -1179,15 +1201,23 @@ __free__Lambda(struct Lambda self)
 
     FREE(Vec, self.params);
 
-    if (is_Some__Option(self.return_type))
-        FREE(DataTypeAll, get__Option(self.return_type));
-
-    FREE(Option, self.return_type);
+    if (self.return_type)
+        FREE(DataTypeAll, self.return_type);
 
     for (Usize i = len__Vec(*self.body); i--;)
         FREE(FunBodyItemAll, get__Vec(*self.body, i));
 
     FREE(Vec, self.body);
+}
+
+struct String *
+to_String__Variant(struct Variant self)
+{
+    if (self.value)
+        return format(
+          "{Sr}:{Sr}", to_String__Expr(*self.id), to_String__Expr(*self.value));
+
+    return format("{Sr}:$", to_String__Expr(*self.id));
 }
 
 void
@@ -1483,16 +1513,125 @@ to_String__Expr(struct Expr self)
             return format("{S}", to_String__UnaryOp(self.value.unary_op));
         case ExprKindBinaryOp:
             return format("{S}", to_String__BinaryOp(self.value.binary_op));
+        case ExprKindFunCall:
+            return to_String__FunCall(self.value.fun_call);
+        case ExprKindRecordCall:
+            return to_String__RecordCall(self.value.record_call);
+        case ExprKindIdentifier:
+            return format("{S}", self.value.identifier);
+        case ExprKindIdentifierAccess: {
+            struct String *s = NEW(String);
+
+            for (Usize i = 0; i < len__Vec(*self.value.identifier_access) - 1;
+                 i++)
+                append__String(s,
+                               format("{Sr}.",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.identifier_access, i))),
+                               true);
+
+            append__String(
+              s,
+              format("{Sr}",
+                     to_String__Expr(*(struct Expr *)get__Vec(
+                       *self.value.identifier_access,
+                       len__Vec(*self.value.identifier_access) - 1))),
+              true);
+
+            return s;
+        }
+        case ExprKindGlobalAccess: {
+            struct String *s = NEW(String);
+
+            append__String(s, from__String("global."), true);
+
+            for (Usize i = 0; i < len__Vec(*self.value.global_access) - 1; i++)
+                append__String(s,
+                               format("{Sr}.",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.global_access, i))),
+                               true);
+
+            append__String(s,
+                           format("{Sr}",
+                                  to_String__Expr(*(struct Expr *)get__Vec(
+                                    *self.value.global_access,
+                                    len__Vec(*self.value.global_access) - 1))),
+                           true);
+
+            return s;
+        }
+        case ExprKindArrayAccess:
+            return to_String__ArrayAccess(self.value.array_access);
+        case ExprKindTupleAccess:
+            return to_String__TupleAccess(self.value.tuple_access);
+        case ExprKindLambda:
+            return to_String__Lambda(self.value.lambda);
+        case ExprKindArray: {
+            struct String *s = NEW(String);
+
+            push_str__String(s, "[");
+
+            for (Usize i = 0; i < len__Vec(*self.value.array) - 1; i++)
+                append__String(s,
+                               format("{Sr}, ",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.array, i))),
+                               true);
+
+            append__String(
+              s,
+              format("{Sr}]",
+                     to_String__Expr(*(struct Expr *)get__Vec(
+                       *self.value.array, len__Vec(*self.value.array) - 1))),
+              true);
+
+            return s;
+        }
+        case ExprKindTuple: {
+            struct String *s = NEW(String);
+
+            push_str__String(s, "(");
+
+            for (Usize i = 0; i < len__Vec(*self.value.tuple) - 1; i++)
+                append__String(s,
+                               format("{Sr}, ",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.tuple, i))),
+                               true);
+
+            append__String(
+              s,
+              format("{Sr})",
+                     to_String__Expr(*(struct Expr *)get__Vec(
+                       *self.value.tuple, len__Vec(*self.value.tuple) - 1))),
+              true);
+
+            return s;
+        }
+        case ExprKindVariant:
+            return to_String__Variant(self.value.variant);
+        case ExprKindTry:
+            return format("try {Sr}", to_String__Expr(*self.value.try));
+        case ExprKindIf:
+            return to_String__IfCond(*self.value.if_);
+        case ExprKindBlock:
+            TODO("Block");
+        case ExprKindQuestionMark:
+            return format("{Sr}.?", to_String__Expr(*self.value.question_mark));
+        case ExprKindDereference:
+            return format("{Sr}.*", to_String__Expr(*self.value.dereference));
+        case ExprKindRef:
+            return format("&{Sr}", to_String__Expr(*self.value.ref));
         case ExprKindLiteral:
-            return format("{S}", to_String__Literal(self.value.literal));
+            return to_String__Literal(self.value.literal);
+        case ExprKindVariable:
+            return to_String__VariableDecl(self.value.variable);
         case ExprKindGrouping:
-            assert(self.value.grouping);
             return format("({S})", to_String__Expr(*self.value.grouping));
         default:
             UNREACHABLE("unknown expr kind");
     }
-
-    return from__String("unknown expr kind");
 }
 
 void
@@ -1678,7 +1817,7 @@ to_String__MatchStmt(struct MatchStmt self)
     struct String *s = NEW(String);
 
     append__String(
-      s, format("Match: {S}\n", to_String__Expr(*self.matching)), true);
+      s, format("match {S}\n", to_String__Expr(*self.matching)), true);
 
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
         struct Expr *temp_expr =
@@ -1687,8 +1826,7 @@ to_String__MatchStmt(struct MatchStmt self)
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
 
         append__String(
-          s, format("Pattern: {S}\n", to_String__Expr(*temp_expr)), true);
-        push_str__String(s, "Body:\n");
+          s, format("{S} =>\n", to_String__Expr(*temp_expr)), true);
 
         for (Usize j = 0; j < len__Vec(*temp_body); j++)
             append__String(
@@ -1698,7 +1836,7 @@ to_String__MatchStmt(struct MatchStmt self)
               true);
     }
 
-    push_str__String(s, "End");
+    push_str__String(s, "end");
 
     return s;
 }
@@ -1730,6 +1868,12 @@ __new__IfBranch(struct Expr *cond, struct Vec *body)
     return self;
 }
 
+struct String *
+to_String__IfBranch(struct IfBranch self)
+{
+    TODO("IfBranch");
+}
+
 void
 __free__IfBranch(struct IfBranch *self)
 {
@@ -1743,7 +1887,7 @@ __free__IfBranch(struct IfBranch *self)
 }
 
 struct IfCond *
-__new__IfCond(struct IfBranch *if_, struct Option *elif, struct Option *else_)
+__new__IfCond(struct IfBranch *if_, struct Vec *elif, struct Vec *else_)
 {
     struct IfCond *self = malloc(sizeof(struct IfCond));
     self->if_ = if_;
@@ -1758,8 +1902,7 @@ to_String__IfCond(struct IfCond self)
     struct String *s = NEW(String);
 
     append__String(
-      s, format("If: {Sr}\n", to_String__Expr(*self.if_->cond)), true);
-    push_str__String(s, "Body:\n");
+      s, format("if {Sr} do\n", to_String__Expr(*self.if_->cond)), true);
 
     for (Usize i = 0; i < len__Vec(*self.if_->body); i++)
         append__String(
@@ -1769,21 +1912,17 @@ to_String__IfCond(struct IfCond self)
                    *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
           true);
 
-    if (is_Some__Option(self.elif)) {
-        struct Vec *temp = get__Option(self.elif);
-
-        for (Usize i = 0; i < len__Vec(*temp); i++) {
+    if (self.elif) {
+        for (Usize i = 0; i < len__Vec(*self.elif); i++) {
             append__String(
               s,
-              format("Elif: {Sr}\n",
+              format("elif {Sr} do\n",
                      to_String__Expr(
-                       *((struct IfBranch *)get__Vec(*temp, i))->cond)),
+                       *((struct IfBranch *)get__Vec(*self.elif, i))->cond)),
               true);
 
-            push_str__String(s, "Body:\n");
-
             struct Vec *temp_body =
-              ((struct IfBranch *)get__Vec(*temp, i))->body;
+              ((struct IfBranch *)get__Vec(*self.elif, i))->body;
 
             for (Usize j = 0; j < len__Vec(*temp_body); j++)
                 append__String(
@@ -1795,22 +1934,19 @@ to_String__IfCond(struct IfCond self)
         }
     }
 
-    if (is_Some__Option(self.else_)) {
-        push_str__String(s, "Else:\n");
+    if (self.else_) {
+        push_str__String(s, "else\n");
 
-        struct Vec *temp = get__Option(self.else_);
-
-        push_str__String(s, "Body:\n");
-
-        for (Usize i = 0; i < len__Vec(*temp); i++)
-            append__String(s,
-                           format("\t{Sr}\n",
-                                  to_String__FunBodyItem(
-                                    *(struct FunBodyItem *)get__Vec(*temp, i))),
-                           true);
+        for (Usize i = 0; i < len__Vec(*self.else_); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__FunBodyItem(
+                       *(struct FunBodyItem *)get__Vec(*self.else_, i))),
+              true);
     }
 
-    push_str__String(s, "End");
+    push_str__String(s, "end");
 
     return s;
 }
@@ -1820,35 +1956,27 @@ __free__IfCond(struct IfCond *self)
 {
     FREE(IfBranch, self->if_);
 
-    if (is_Some__Option(self->elif)) {
-        struct Vec *temp = get__Option(self->elif);
+    if (self->elif) {
+        for (Usize i = len__Vec(*self->elif); i--;)
+            FREE(IfBranch, get__Vec(*self->elif, i));
 
-        for (Usize i = len__Vec(*temp); i--;)
-            FREE(IfBranch, get__Vec(*temp, i));
-
-        FREE(Vec, temp);
+        FREE(Vec, self->elif);
     }
 
-    FREE(Option, self->elif);
+    if (self->else_) {
+        for (Usize i = len__Vec(*self->else_); i--;)
+            FREE(FunBodyItemAll, get__Vec(*self->else_, i));
 
-    if (is_Some__Option(self->else_)) {
-        struct Vec *temp = get__Option(self->else_);
-
-        for (Usize i = len__Vec(*temp); i--;)
-            FREE(FunBodyItemAll, get__Vec(*temp, i));
-
-        FREE(Vec, temp);
+        FREE(Vec, self->else_);
     }
-
-    FREE(Option, self->else_);
 
     free(self);
 }
 
 struct TryStmt *
 __new__TryStmt(struct Vec *try_body,
-               struct Option *catch_expr,
-               struct Option *catch_body)
+               struct Expr *catch_expr,
+               struct Vec *catch_body)
 {
     struct TryStmt *self = malloc(sizeof(struct TryStmt));
     self->try_body = try_body;
@@ -1862,7 +1990,7 @@ to_String__TryStmt(struct TryStmt self)
 {
     struct String *s = NEW(String);
 
-    push_str__String(s, "Body:\n");
+    push_str__String(s, "try do\n");
 
     for (Usize i = 0; i < len__Vec(*self.try_body); i++)
         append__String(
@@ -1872,28 +2000,24 @@ to_String__TryStmt(struct TryStmt self)
                    *(struct FunBodyItem *)get__Vec(*self.try_body, i))),
           true);
 
-    if (is_Some__Option(self.catch_expr) && is_Some__Option(self.catch_body)) {
-        struct Expr *temp_expr = get__Option(self.catch_expr);
-        struct Vec *temp_body = get__Option(self.catch_body);
-
+    if (self.catch_expr && self.catch_body) {
         append__String(
-          s, format("Catch {Sr}:\n", to_String__Expr(*temp_expr)), true);
-        push_str__String(s, "Body:\n");
+          s,
+          format("catch {Sr} do\n", to_String__Expr(*self.catch_expr)),
+          true);
 
-        for (Usize i = 0; i < len__Vec(*temp_body); i++)
+        for (Usize i = 0; i < len__Vec(*self.catch_body); i++)
             append__String(
               s,
               format("\t{Sr}\n",
                      to_String__FunBodyItem(
-                       *(struct FunBodyItem *)get__Vec(*temp_body, i))),
+                       *(struct FunBodyItem *)get__Vec(*self.catch_body, i))),
               true);
-    } else if ((is_Some__Option(self.catch_expr) == false ||
-                is_Some__Option(self.catch_body) == false) &&
-               (is_Some__Option(self.catch_expr) == true ||
-                is_Some__Option(self.catch_body) == true))
+    } else if ((!self.catch_expr || !self.catch_body) &&
+               (self.catch_expr || self.catch_body))
         UNREACHABLE("catch expr and catch body must equal to Some");
 
-    push_str__String(s, "End");
+    push_str__String(s, "end");
 
     return s;
 }
@@ -1906,19 +2030,13 @@ __free__TryStmt(struct TryStmt *self)
 
     FREE(Vec, self->try_body);
 
-    if (is_Some__Option(self->catch_expr))
-        FREE(ExprAll, get__Option(self->catch_expr));
+    if (self->catch_expr)
+        FREE(ExprAll, self->catch_expr);
 
-    FREE(Option, self->catch_expr);
+    if (self->catch_body)
+        for (Usize i = len__Vec(*self->catch_body); i--;)
+            FREE(FunBodyItemAll, get__Vec(*self->catch_body, i));
 
-    if (is_Some__Option(self->catch_body)) {
-        struct Vec *temp = get__Option(self->catch_body);
-
-        for (Usize i = len__Vec(*temp); i--;)
-            FREE(FunBodyItemAll, get__Vec(*temp, i));
-    }
-
-    FREE(Option, self->catch_body);
     free(self);
 }
 
@@ -1937,8 +2055,7 @@ to_String__WhileStmt(struct WhileStmt self)
     struct String *s = NEW(String);
 
     append__String(
-      s, format("While: {Sr}\n", to_String__Expr(*self.cond)), true);
-    push_str__String(s, "Body:\n");
+      s, format("while {Sr} do\n", to_String__Expr(*self.cond)), true);
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
         append__String(s,
@@ -1947,7 +2064,7 @@ to_String__WhileStmt(struct WhileStmt self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    push_str__String(s, "End");
+    push_str__String(s, "end");
 
     return s;
 }
@@ -2026,33 +2143,33 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
     switch (self.kind) {
         case ForStmtExprKindRange:
             return format(
-              "For: {S} in {Sr}\n",
+              "for {S} in {Sr} do\n",
               self.value.range->items[0],
               to_String__Expr(*(struct Expr *)self.value.range->items[1]));
         case ForStmtExprKindTraditional: {
             struct String *s = NEW(String);
 
-            push_str__String(s, "For: ");
+            push_str__String(s, "for ");
 
             if (is_Some__Option(self.value.traditional->id)) {
                 struct Tuple *temp = get__Option(self.value.traditional->id);
 
                 append__String(
                   s,
-                  format("{S} := {Sr};",
+                  format("{S} := {Sr},",
                          temp->items[0],
                          to_String__Expr(*(struct Expr *)temp->items[1])),
                   true);
             } else
-                push_str__String(s, ";");
+                push_str__String(s, ",");
 
             if (is_Some__Option(self.value.traditional->cond)) {
                 struct Expr *temp = get__Option(self.value.traditional->cond);
 
                 append__String(
-                  s, format("{Sr};", to_String__Expr(*temp)), true);
+                  s, format("{Sr},", to_String__Expr(*temp)), true);
             } else
-                push_str__String(s, ";");
+                push_str__String(s, ",");
 
             if (is_Some__Option(self.value.traditional->action)) {
                 struct Expr *temp = get__Option(self.value.traditional->action);
@@ -2060,7 +2177,7 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
                 append__String(s, format("{Sr}", to_String__Expr(*temp)), true);
             }
 
-            push_str__String(s, "\n");
+            push_str__String(s, " do\n");
 
             return s;
         }
@@ -2115,7 +2232,6 @@ to_String__ForStmt(struct ForStmt self)
     struct String *s = NEW(String);
 
     append__String(s, to_String__ForStmtExpr(*self.expr), true);
-    push_str__String(s, "Body:\n");
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
         append__String(s,
@@ -2124,7 +2240,7 @@ to_String__ForStmt(struct ForStmt self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    push_str__String(s, "End");
+    push_str__String(s, "end");
 
     return s;
 }
@@ -2157,6 +2273,50 @@ __new__ImportStmtValueSelector(struct Vec *selector)
     self->kind = ImportStmtValueKindSelector;
     self->value.selector = selector;
     return self;
+}
+
+struct String *
+to_String__ImportStmtValue(struct ImportStmtValue self)
+{
+    switch (self.kind) {
+        case ImportStmtValueKindStd:
+            return from__String("@std");
+        case ImportStmtValueKindCore:
+            return from__String("@core");
+        case ImportStmtValueKindBuiltin:
+            return from__String("@builtin");
+        case ImportStmtValueKindFile:
+            return format("@file({S})", self.value.file);
+        case ImportStmtValueKindUrl:
+            return format("@url({S})", self.value.url);
+        case ImportStmtValueKindAccess:
+            return copy__String(self.value.access);
+        case ImportStmtValueKindSelector: {
+            struct String *s = NEW(String);
+
+            push_str__String(s, "{{");
+
+            for (Usize i = 0; i < len__Vec(*self.value.selector) - 1; i++)
+                append__String(s,
+                               format("{Sr}, ",
+                                      to_String__ImportStmtValue(
+                                        *(struct ImportStmtValue *)get__Vec(
+                                          *self.value.selector, i))),
+                               true);
+
+            append__String(
+              s,
+              format(
+                "{Sr}}}",
+                to_String__ImportStmtValue(*(struct ImportStmtValue *)get__Vec(
+                  *self.value.selector, len__Vec(*self.value.selector) - 1))),
+              true);
+
+            return s;
+        }
+        case ImportStmtValueKindWildcard:
+            return from__String("*");
+    }
 }
 
 void
@@ -2192,7 +2352,7 @@ __free__ImportStmtValueAll(struct ImportStmtValue *self)
 }
 
 struct ImportStmt *
-__new__ImportStmt(struct Vec *import_value, bool is_pub, struct Option *as)
+__new__ImportStmt(struct Vec *import_value, bool is_pub, struct String *as)
 {
     struct ImportStmt *self = malloc(sizeof(struct ImportStmt));
     self->import_value = import_value;
@@ -2203,7 +2363,34 @@ __new__ImportStmt(struct Vec *import_value, bool is_pub, struct Option *as)
 
 struct String *
 to_String__ImportStmt(struct ImportStmt self)
-{}
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        push_str__String(s, "pub import \"");
+    else
+        push_str__String(s, "import \"");
+
+    for (Usize i = 0; i < len__Vec(*self.import_value) - 1; i++)
+        append__String(
+          s,
+          format("{Sr}.",
+                 to_String__ImportStmtValue(
+                   *(struct ImportStmtValue *)get__Vec(*self.import_value, i))),
+          true);
+
+    append__String(
+      s,
+      format("{Sr}\"",
+             to_String__ImportStmtValue(*(struct ImportStmtValue *)get__Vec(
+               *self.import_value, len__Vec(*self.import_value) - 1))),
+      true);
+
+    if (self.as)
+        append__String(s, format(" as {S}", self.as), true);
+
+    return s;
+}
 
 void
 __free__ImportStmt(struct ImportStmt *self)
@@ -2213,10 +2400,9 @@ __free__ImportStmt(struct ImportStmt *self)
 
     FREE(Vec, self->import_value);
 
-    if (is_Some__Option(self->as))
-        FREE(String, get__Option(self->as));
+    if (self->as)
+        FREE(String, self->as);
 
-    FREE(Option, self->as);
     free(self);
 }
 
@@ -2331,9 +2517,8 @@ to_String__Stmt(struct Stmt self)
             return from__String("next");
         case StmtKindBreak:
             return from__String("break");
-        case StmtKindImport: {
-            break;
-        }
+        case StmtKindImport:
+            return to_String__ImportStmt(*self.value.import);
         default:
             UNREACHABLE("unknown stmt kind");
     }
@@ -2396,9 +2581,9 @@ to_String__FunBodyItem(struct FunBodyItem self)
 {
     switch (self.kind) {
         case FunBodyItemKindExpr:
-            return format("{S}", to_String__Expr(*self.expr));
+            return format("{Sr}\n", to_String__Expr(*self.expr));
         case FunBodyItemKindStmt:
-            break;
+            return format("{Sr}\n", to_String__Stmt(*self.stmt));
         default:
             UNREACHABLE("unknown fun body item kind");
     }
@@ -2446,6 +2631,8 @@ to_String__FunParamCall(struct FunParamCall self)
             return format("{S}", to_String__Expr(*self.value));
         case FunParamKindDefault:
             return format("{S} = {S}", self.name, to_String__Expr(*self.value));
+        case FunParamKindSelf:
+            return from__String("self");
         default:
             UNREACHABLE("unknown fun param kind");
     }
@@ -2507,23 +2694,47 @@ __new__FunParamSelf(struct Location loc)
 struct String *
 to_String__FunParam(struct FunParam self)
 {
-    // switch (self.kind) {
-    //     case FunParamKindNormal:
-    //         return format(
-    //           "{S} {S}",
-    //           self.name,
-    //           to_String__DataType(
-    //             *(struct DataType *)self.param_data_type->items[0]));
-    //     case FunParamKindDefault:
-    //         return format("{S} {S} := {S}",
-    //                       self.name,
-    //                       to_String__DataType(
-    //                         *(struct DataType
-    //                         *)self.param_data_type->items[0]),
-    //                       to_String__Expr(*self.value.default_));
-    //     default:
-    //         UNREACHABLE("unknown fun param kind");
-    // }
+    switch (self.kind) {
+        case FunParamKindDefault: {
+            struct String *s = NEW(String);
+
+            if (self.param_data_type)
+                append__String(
+                  s,
+                  format("{S} {Sr} = {Sr}",
+                         self.name,
+                         to_String__DataType(
+                           *(struct DataType *)self.param_data_type->items[0]),
+                         to_String__Expr(*self.value.default_)),
+                  true);
+            else
+                append__String(s,
+                               format("{S} = {Sr}",
+                                      self.name,
+                                      to_String__Expr(*self.value.default_)),
+                               true);
+
+            return s;
+        }
+        case FunParamKindNormal: {
+            struct String *s = NEW(String);
+
+            if (self.param_data_type)
+                append__String(
+                  s,
+                  format("{S} {Sr}",
+                         self.name,
+                         to_String__DataType(
+                           *(struct DataType *)self.param_data_type->items[0])),
+                  true);
+            else
+                append__String(s, copy__String(self.name), true);
+
+            return s;
+        }
+        case FunParamKindSelf:
+            return from__String("self");
+    }
 }
 
 void
@@ -2595,6 +2806,12 @@ __new__FunDecl(struct String *name,
     self->is_pub = is_pub;
     self->is_async = is_async;
     return self;
+}
+
+struct String *
+to_String__FunDecl(struct FunDecl self)
+{
+
 }
 
 void

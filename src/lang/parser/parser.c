@@ -4677,14 +4677,14 @@ parse_variant_expr(struct Parser self,
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
-        return NEW(ExprVariant, NEW(Variant, id, Some(expr)), loc);
+        return NEW(ExprVariant, NEW(Variant, id, expr), loc);
     } else { // anyone else token is unreachable
         next_token(parse_decl);
         end__Location(&loc,
                       parse_decl->current->loc->s_line,
                       parse_decl->current->loc->s_col);
 
-        return NEW(ExprVariant, NEW(Variant, id, None()), loc);
+        return NEW(ExprVariant, NEW(Variant, id, NULL), loc);
     }
 }
 
@@ -5088,16 +5088,15 @@ parse_if_stmt(struct Parser self,
                                   parse_decl->previous->loc->s_line,
                                   parse_decl->previous->loc->s_col);
 
-                    return NEW(IfCond,
-                               NEW(IfBranch, if_cond, if_body),
-                               Some(elif),
-                               None());
+                    return NEW(
+                      IfCond, NEW(IfBranch, if_cond, if_body), elif, NULL);
                 case TokenKindElifKw:
                     goto elif;
                 case TokenKindElseKw:
                     goto else_;
                 default:
-                    UNREACHABLE("");
+                    UNREACHABLE("expected TokenKindEndKw, TokenKindElifKw or "
+                                "TokenKindElseKw");
             }
         };
 
@@ -5117,15 +5116,11 @@ parse_if_stmt(struct Parser self,
                           parse_decl->previous->loc->s_col);
 
             if (!elif)
-                return NEW(IfCond,
-                           NEW(IfBranch, if_cond, if_body),
-                           None(),
-                           Some(else_body));
+                return NEW(
+                  IfCond, NEW(IfBranch, if_cond, if_body), NULL, else_body);
             else
-                return NEW(IfCond,
-                           NEW(IfBranch, if_cond, if_body),
-                           Some(elif),
-                           Some(else_body));
+                return NEW(
+                  IfCond, NEW(IfBranch, if_cond, if_body), elif, else_body);
         }
         }
         case TokenKindSemicolon:
@@ -5134,7 +5129,7 @@ parse_if_stmt(struct Parser self,
                           parse_decl->previous->loc->s_line,
                           parse_decl->previous->loc->s_col);
 
-            return NEW(IfCond, NEW(IfBranch, if_cond, if_body), None(), None());
+            return NEW(IfCond, NEW(IfBranch, if_cond, if_body), NULL, NULL);
         default:
             UNREACHABLE("");
     }
@@ -5161,8 +5156,8 @@ parse_try_stmt(struct Parser self,
     next_token(parse_decl);
 
     struct Vec *try_body = NEW(Vec, sizeof(struct FunBodyItem));
-    struct Option *catch_expr = NULL;
-    struct Option *catch_body = NULL;
+    struct Expr *catch_expr = NULL;
+    struct Vec *catch_body = NULL;
 
     while (parse_decl->current->kind != TokenKindEndKw &&
            parse_decl->current->kind != TokenKindCatchKw) {
@@ -5174,20 +5169,18 @@ parse_try_stmt(struct Parser self,
 
         struct Expr *expr = parse_expr(self, parse_decl);
 
-        if (expr->kind == ExprKindWildcard)
-            catch_expr = None();
+        if (expr->kind != ExprKindWildcard)
+            catch_expr = expr;
         else
-            catch_expr = Some(expr);
+            FREE(ExprAll, expr);
 
         next_token(parse_decl);
 
-        struct Vec *catch_body_vec = NEW(Vec, sizeof(struct FunBodyItem));
+        catch_body = NEW(Vec, sizeof(struct FunBodyItem));
 
         while (parse_decl->current->kind != TokenKindEndKw) {
-            PARSE_BODY(catch_body_vec);
+            PARSE_BODY(catch_body);
         }
-
-        catch_body = Some(catch_body_vec);
 
         next_token(parse_decl);
         end__Location(&loc,
@@ -5199,8 +5192,8 @@ parse_try_stmt(struct Parser self,
     } else {
         next_token(parse_decl);
 
-        catch_expr = None();
-        catch_body = None();
+        catch_expr = NULL;
+        catch_body = NULL;
 
         end__Location(&loc,
                       parse_decl->current->loc->s_line,
@@ -5603,9 +5596,9 @@ parse_import_value__parse_import_stmt(struct Parser self,
     }
 
     if (!as_value)
-        return NEW(ImportStmt, import_value, is_pub, None());
+        return NEW(ImportStmt, import_value, is_pub, NULL);
 
-    return NEW(ImportStmt, import_value, is_pub, Some(as_value));
+    return NEW(ImportStmt, import_value, is_pub, as_value);
 }
 
 static struct String *
