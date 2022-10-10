@@ -2242,6 +2242,13 @@ __new__ConstantDecl(struct String *name,
 
 /**
  *
+ * @brief Convert ConstantDecl in String.
+ */
+struct String *
+to_String__ConstantDecl(struct ConstantDecl self);
+
+/**
+ *
  * @brief Free the ConstantDecl type.
  */
 void
@@ -2278,6 +2285,13 @@ __new__ModuleBodyItemDecl(struct Decl *decl);
  */
 struct ModuleBodyItem *
 __new__ModuleBodyItemImport(struct Tuple *import);
+
+/**
+ *
+ * @brief Convert ModuleBodyItem in String.
+ */
+struct String *
+to_String__ModuleBodyItem(struct ModuleBodyItem self);
 
 /**
  *
@@ -2321,6 +2335,13 @@ __new__ModuleDecl(struct String *name, struct Vec *body, bool is_pub);
 
 /**
  *
+ * @brief Convert ModuleDecl in String.
+ */
+struct String *
+to_String__ModuleDecl(struct ModuleDecl self);
+
+/**
+ *
  * @brief Free the ModuleDecl type.
  */
 void
@@ -2343,6 +2364,13 @@ __new__AliasDecl(struct String *name,
                  struct Vec *generic_params,
                  struct DataType *data_type,
                  bool is_pub);
+
+/**
+ *
+ * @brief Convert AliasDecl in String.
+ */
+struct String *
+to_String__AliasDecl(struct AliasDecl self);
 
 /**
  *
@@ -2373,6 +2401,13 @@ __new__FieldRecord(struct String *name,
 
 /**
  *
+ * @brief Convert FieldRecord in String.
+ */
+struct String *
+to_String__FieldRecord(struct FieldRecord self);
+
+/**
+ *
  * @brief Free the FieldRecord type.
  */
 void
@@ -2400,6 +2435,13 @@ __new__RecordDecl(struct String *name,
 
 /**
  *
+ * @brief Convert RecordDecl in String.
+ */
+struct String *
+to_String__RecordDecl(struct RecordDecl self);
+
+/**
+ *
  * @brief Free the RecordDecl type.
  */
 void
@@ -2420,6 +2462,13 @@ struct VariantEnum *
 __new__VariantEnum(struct String *name,
                    struct DataType *data_type,
                    struct Location loc);
+
+/**
+ *
+ * @brief Convert VariantEnum in String.
+ */
+struct String *
+to_String__VariantEnum(struct VariantEnum self);
 
 /**
  *
@@ -2451,6 +2500,9 @@ __new__EnumDecl(struct String *name,
                 bool is_pub,
                 bool is_object,
                 bool is_error);
+
+struct String *
+to_String__EnumDecl(struct EnumDecl self);
 
 /**
  *

@@ -2968,6 +2968,25 @@ __new__ConstantDecl(struct String *name,
     return self;
 }
 
+struct String *
+to_String__ConstantDecl(struct ConstantDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        append__String(s, format("pub {S}", self.name), true);
+    else
+        append__String(s, format("{S}", self.name), true);
+
+    if (self.data_type)
+        append__String(
+          s, format(":: {Sr}", to_String__DataType(*self.data_type)), true);
+
+    append__String(s, format(" := {Sr};", to_String__Expr(*self.expr)), true);
+
+    return s;
+}
+
 void
 __free__ConstantDecl(struct ConstantDecl *self)
 {
@@ -2994,6 +3013,24 @@ __new__ModuleBodyItemImport(struct Tuple *import)
     self->kind = ModuleBodyItemKindImport;
     self->value.import = import;
     return self;
+}
+
+struct String *
+to_String__ModuleBodyItem(struct ModuleBodyItem self)
+{
+    struct String *s = NEW(String);
+
+    switch (self.kind) {
+        case ModuleBodyItemKindDecl:
+            TODO("decl");
+        case ModuleBodyItemKindImport:
+            return to_String__ImportStmt(
+              *(struct ImportStmt *)self.value.import->items[0]);
+        case ModuleBodyItemKindInclude:
+            TODO("include");
+    }
+
+    return s;
 }
 
 void
@@ -3028,6 +3065,31 @@ __new__ModuleDecl(struct String *name, struct Vec *body, bool is_pub)
     return self;
 }
 
+struct String *
+to_String__ModuleDecl(struct ModuleDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        append__String(s, format("pub module {S} =\n", self.name), true);
+    else
+        append__String(s, format("module {S} =\n", self.name), true);
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("{Sr}\n",
+                     to_String__ModuleBodyItem(
+                       *(struct ModuleBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
+}
+
 void
 __free__ModuleDecl(struct ModuleDecl *self)
 {
@@ -3053,6 +3115,41 @@ __new__AliasDecl(struct String *name,
     self->data_type = data_type;
     self->is_pub = is_pub;
     return self;
+}
+
+struct String *
+to_String__AliasDecl(struct AliasDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        append__String(s, format("pub type {S}", self.name), true);
+    else
+        append__String(s, format("type {S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    append__String(
+      s, format(": alias = {Sr};", to_String__DataType(*self.data_type)), true);
+
+    return s;
 }
 
 void
@@ -3085,6 +3182,30 @@ __new__FieldRecord(struct String *name,
     return self;
 }
 
+struct String *
+to_String__FieldRecord(struct FieldRecord self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        append__String(s,
+                       format("pub {S} {Sr}",
+                              self.name,
+                              to_String__DataType(*self.data_type)),
+                       true);
+    else
+        append__String(
+          s,
+          format("{S} {Sr}", self.name, to_String__DataType(*self.data_type)),
+          true);
+
+    if (self.value)
+        append__String(
+          s, format(" := {Sr}", to_String__Expr(*self.value)), true);
+
+    return s;
+}
+
 void
 __free__FieldRecord(struct FieldRecord *self)
 {
@@ -3110,6 +3231,64 @@ __new__RecordDecl(struct String *name,
     self->is_pub = is_pub;
     self->is_object = is_object;
     return self;
+}
+
+struct String *
+to_String__RecordDecl(struct RecordDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        push_str__String(s, "pub ");
+
+    if (self.is_object)
+        push_str__String(s, "object");
+    else
+        push_str__String(s, "type");
+
+    append__String(s, format("{S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    push_str__String(s, ": record =\n");
+
+    if (self.fields) {
+        for (Usize i = 0; i < len__Vec(*self.fields) - 1; i++)
+            append__String(
+              s,
+              format("{Sr},\n",
+                     to_String__FieldRecord(
+                       *(struct FieldRecord *)get__Vec(*self.fields, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}\n",
+                 to_String__FieldRecord(*(struct FieldRecord *)get__Vec(
+                   *self.fields, len__Vec(*self.fields) - 1))),
+          true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void
@@ -3144,6 +3323,12 @@ __new__VariantEnum(struct String *name,
     return self;
 }
 
+struct String *
+to_String__VariantEnum(struct VariantEnum self)
+{
+	return format("{S} {Sr}", self.name, to_String__DataType(*self.data_type));
+}
+
 void
 __free__VariantEnum(struct VariantEnum *self)
 {
@@ -3171,6 +3356,64 @@ __new__EnumDecl(struct String *name,
     self->is_object = is_object;
     self->is_error = is_error;
     return self;
+}
+
+struct String *
+to_String__EnumDecl(struct EnumDecl self)
+{
+	struct String *s = NEW(String);
+
+	if (self.is_pub)
+		push_str__String(s, "pub ");
+
+	if (self.is_object)
+		push_str__String(s, "object ");
+	else
+		push_str__String(s, "type ");
+
+	append__String(s, self.name, false);
+
+	if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+	}
+
+	push_str__String(s, ": enum =\n");
+
+	if (self.variants) {
+        for (Usize i = 0; i < len__Vec(*self.variants) - 1; i++)
+            append__String(
+              s,
+              format("{Sr},\n",
+                     to_String__VariantEnum(
+                       *(struct VariantEnum *)get__Vec(*self.variants, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}\n",
+                 to_String__VariantEnum(*(struct VariantEnum *)get__Vec(
+                   *self.variants, len__Vec(*self.variants) - 1))),
+          true);
+	}
+
+	push_str__String(s, "end");
+
+	return s;
 }
 
 void
