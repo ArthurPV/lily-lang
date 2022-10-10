@@ -8,6 +8,7 @@ build:
 
 test:
 	@./build/scanner_test
+	@./build/parser_test
 	@cd tests/runtime/js && npm run-script vitest
 
 check_leaks:
@@ -37,3 +38,5 @@ format:
 	@clang-format -i src/lang/scanner/*.h
 	@clang-format -i tests/scanner/*.c
 	@clang-format -i tests/scanner/*.h
+	@clang-format -i tests/parser/*.c
+	@clang-format -i tests/parser/*.h
