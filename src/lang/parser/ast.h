@@ -2304,13 +2304,8 @@ __free__ModuleBodyItemDecl(struct ModuleBodyItem *self);
  *
  * @brief Free the ModuleBodyItem type (Import variant).
  */
-inline void
-__free__ModuleBodyItemImport(struct ModuleBodyItem *self)
-{
-    FREE(ImportStmt, self->value.import->items[0]);
-    FREE(Tuple, self->value.import);
-    free(self);
-}
+void
+__free__ModuleBodyItemImport(struct ModuleBodyItem *self);
 
 /**
  *
@@ -2501,6 +2496,10 @@ __new__EnumDecl(struct String *name,
                 bool is_object,
                 bool is_error);
 
+/**
+ *
+ * @brief Convert EnumDecl in String.
+ */
 struct String *
 to_String__EnumDecl(struct EnumDecl self);
 
@@ -2528,6 +2527,13 @@ __new__ErrorDecl(struct String *name,
                  struct Vec *generic_params,
                  struct DataType *data_type,
                  bool is_pub);
+
+/**
+ *
+ * @brief Convert ErrorDecl in String.
+ */
+struct String *
+to_String__ErrorDecl(struct ErrorDecl self);
 
 /**
  *
@@ -2561,6 +2567,13 @@ __new__PropertyDecl(struct String *name,
 
 /**
  *
+ * @brief Convert PropertyDecl in String.
+ */
+struct String *
+to_String__PropertyDecl(struct PropertyDecl self);
+
+/**
+ *
  * @brief Free the PropertyDecl type.
  */
 void
@@ -2591,6 +2604,13 @@ __new__MethodDecl(struct String *name,
                   bool has_first_self_param,
                   bool is_async,
                   bool is_pub);
+
+/**
+ *
+ * @brief Convert MethodDecl in String.
+ */
+struct String *
+to_String__MethodDecl(struct MethodDecl self);
 
 /**
  *
@@ -2640,6 +2660,13 @@ __new__ClassBodyItemImport(struct ImportStmt *import, struct Location loc);
  */
 struct String *
 get_name__ClassBodyItem(struct ClassBodyItem *self);
+
+/**
+ *
+ * @brief Convert ClassBodyItem in String.
+ */
+struct String *
+to_String__ClassBodyItem(struct ClassBodyItem self);
 
 /**
  *
@@ -2707,6 +2734,13 @@ __new__ClassDecl(struct String *name,
 
 /**
  *
+ * @brief Convert ClassDecl in String.
+ */
+struct String *
+to_String__ClassDecl(struct ClassDecl self);
+
+/**
+ *
  * @brief Free the ClassDecl type.
  */
 void
@@ -2740,6 +2774,13 @@ __new__Prototype(struct String *name,
 
 /**
  *
+ * @brief Convert Prototype in String.
+ */
+struct String *
+to_String__Prototype(struct Prototype self);
+
+/**
+ *
  * @brief Free the Prototype type.
  */
 void
@@ -2770,6 +2811,13 @@ __new__TraitBodyItemPrototype(struct Location loc, struct Prototype *prototype);
  */
 struct TraitBodyItem *
 __new__TraitBodyItemImport(struct Location loc, struct ImportStmt *import);
+
+/**
+ *
+ * @brief Convert TraitBodyItem in String.
+ */
+struct String *
+to_String__TraitBodyItem(struct TraitBodyItem self);
 
 /**
  *
@@ -2823,6 +2871,13 @@ __new__TraitDecl(struct String *name,
 
 /**
  *
+ * @brief Convert TraitDecl in String.
+ */
+struct String *
+to_String__TraitDecl(struct TraitDecl self);
+
+/**
+ *
  * @brief Free the TraitDecl type.
  */
 void
@@ -2843,6 +2898,13 @@ struct TagDecl *
 __new__TagDecl(struct String *name,
                struct Vec *generic_params,
                struct Vec *body);
+
+/**
+ *
+ * @brief Convert TagDecl in String.
+ */
+struct String *
+to_String__TagDecl(struct TagDecl self);
 
 /**
  *
@@ -2971,6 +3033,13 @@ __new__DeclImport(struct Location loc, struct ImportStmt *import);
  */
 struct String *
 get_name__Decl(struct Decl *decl);
+
+/**
+ *
+ * @brief Convert Decl in String.
+ */
+struct String *
+to_String__Decl(struct Decl self);
 
 /**
  *

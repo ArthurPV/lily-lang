@@ -1225,10 +1225,8 @@ __free__Variant(struct Variant self)
 {
     FREE(ExprAll, self.id);
 
-    if (is_Some__Option(self.value))
-        FREE(ExprAll, get__Option(self.value));
-
-    FREE(Option, self.value);
+    if (self.value)
+        FREE(ExprAll, self.value);
 }
 
 struct Expr *
@@ -1502,6 +1500,9 @@ get_precedence__Expr(struct Expr *expr)
         case ExprKindVariable:
         case ExprKindLambda:
             return 18;
+		
+		default:
+			return -1;
     }
 }
 
@@ -2817,6 +2818,8 @@ to_String__FunDecl(struct FunDecl self)
         push_str__String(s, "pub async fun");
     else if (self.is_pub)
         push_str__String(s, "pub fun");
+    else if (self.is_async)
+        push_str__String(s, "async fun");
     else
         push_str__String(s, "fun");
 
@@ -3022,7 +3025,7 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
 
     switch (self.kind) {
         case ModuleBodyItemKindDecl:
-            TODO("decl");
+			return to_String__Decl(*self.value.decl);
         case ModuleBodyItemKindImport:
             return to_String__ImportStmt(
               *(struct ImportStmt *)self.value.import->items[0]);
@@ -3037,6 +3040,14 @@ void
 __free__ModuleBodyItemDecl(struct ModuleBodyItem *self)
 {
     FREE(DeclAll, self->value.decl);
+    free(self);
+}
+
+void
+__free__ModuleBodyItemImport(struct ModuleBodyItem *self)
+{
+    FREE(ImportStmt, self->value.import->items[0]);
+    FREE(Tuple, self->value.import);
     free(self);
 }
 
@@ -3326,7 +3337,7 @@ __new__VariantEnum(struct String *name,
 struct String *
 to_String__VariantEnum(struct VariantEnum self)
 {
-	return format("{S} {Sr}", self.name, to_String__DataType(*self.data_type));
+    return format("{S} {Sr}", self.name, to_String__DataType(*self.data_type));
 }
 
 void
@@ -3361,19 +3372,19 @@ __new__EnumDecl(struct String *name,
 struct String *
 to_String__EnumDecl(struct EnumDecl self)
 {
-	struct String *s = NEW(String);
+    struct String *s = NEW(String);
 
-	if (self.is_pub)
-		push_str__String(s, "pub ");
+    if (self.is_pub)
+        push_str__String(s, "pub ");
 
-	if (self.is_object)
-		push_str__String(s, "object ");
-	else
-		push_str__String(s, "type ");
+    if (self.is_object)
+        push_str__String(s, "object ");
+    else
+        push_str__String(s, "type ");
 
-	append__String(s, self.name, false);
+    append__String(s, self.name, false);
 
-	if (self.generic_params) {
+    if (self.generic_params) {
         push_str__String(s, "[");
 
         for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
@@ -3390,11 +3401,19 @@ to_String__EnumDecl(struct EnumDecl self)
                  to_String__Generic(*(struct Generic *)get__Vec(
                    *self.generic_params, len__Vec(*self.generic_params) - 1))),
           true);
-	}
+    }
 
-	push_str__String(s, ": enum =\n");
+    if (self.type_value) {
+        append__String(
+          s,
+          format(": enum({Sr}) =\n", to_String__DataType(*self.type_value)),
+          true);
+    } else if (self.is_error)
+        push_str__String(s, ": enum(error) =\n");
+    else
+        push_str__String(s, ": enum =\n");
 
-	if (self.variants) {
+    if (self.variants) {
         for (Usize i = 0; i < len__Vec(*self.variants) - 1; i++)
             append__String(
               s,
@@ -3409,11 +3428,11 @@ to_String__EnumDecl(struct EnumDecl self)
                  to_String__VariantEnum(*(struct VariantEnum *)get__Vec(
                    *self.variants, len__Vec(*self.variants) - 1))),
           true);
-	}
+    }
 
-	push_str__String(s, "end");
+    push_str__String(s, "end");
 
-	return s;
+    return s;
 }
 
 void
@@ -3453,6 +3472,43 @@ __new__ErrorDecl(struct String *name,
     return self;
 }
 
+struct String *
+to_String__ErrorDecl(struct ErrorDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        push_str__String(s, "pub error ");
+    else
+        push_str__String(s, "error ");
+
+    append__String(s, self.name, false);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    append__String(
+      s, format(" {Sr};", to_String__DataType(*self.data_type)), true);
+
+    return s;
+}
+
 void
 __free__ErrorDecl(struct ErrorDecl *self)
 {
@@ -3479,6 +3535,22 @@ __new__PropertyDecl(struct String *name,
     self->data_type = data_type;
     self->is_pub = is_pub;
     return self;
+}
+
+struct String *
+to_String__PropertyDecl(struct PropertyDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        push_str__String(s, "pub ");
+
+    append__String(
+      s,
+      format("@{S} {Sr};", self.name, to_String__DataType(*self.data_type)),
+      true);
+
+    return s;
 }
 
 void
@@ -3508,6 +3580,81 @@ __new__MethodDecl(struct String *name,
     self->is_async = is_async;
     self->is_pub = is_pub;
     return self;
+}
+
+struct String *
+to_String__MethodDecl(struct MethodDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub && self.is_async)
+        push_str__String(s, "pub async");
+    else if (self.is_pub)
+        push_str__String(s, "pub");
+    else if (self.is_async)
+        push_str__String(s, "async");
+
+    append__String(s, format(" @{S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    if (self.params) {
+        push_str__String(s, "(");
+
+        if (len__Vec(*self.params) > 0) {
+            for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
+                append__String(
+                  s,
+                  format("{Sr}, ",
+                         to_String__FunParam(
+                           *(struct FunParam *)get__Vec(*self.params, i))),
+                  true);
+
+            append__String(
+              s,
+              format("{Sr})",
+                     to_String__FunParam(*(struct FunParam *)get__Vec(
+                       *self.params, len__Vec(*self.params) - 1))),
+              true);
+        }
+    }
+
+    if (self.return_type)
+        append__String(
+          s, format(" {Sr} =\n", to_String__DataType(*self.return_type)), true);
+    else
+        push_str__String(s, " =\n");
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__FunBodyItem(
+                       *(struct FunBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void
@@ -3583,6 +3730,19 @@ get_name__ClassBodyItem(struct ClassBodyItem *self)
     }
 }
 
+struct String *
+to_String__ClassBodyItem(struct ClassBodyItem self)
+{
+    switch (self.kind) {
+        case ClassBodyItemKindMethod:
+            return to_String__MethodDecl(*self.value.method);
+        case ClassBodyItemKindProperty:
+            return to_String__PropertyDecl(*self.value.property);
+        case ClassBodyItemKindImport:
+            return to_String__ImportStmt(*self.value.import);
+    }
+}
+
 void
 __free__ClassBodyItemAll(struct ClassBodyItem *self)
 {
@@ -3617,6 +3777,100 @@ __new__ClassDecl(struct String *name,
     self->body = body;
     self->is_pub = is_pub;
     return self;
+}
+
+struct String *
+to_String__ClassDecl(struct ClassDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        push_str__String(s, "pub object");
+    else
+        push_str__String(s, "object");
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    if (self.inheritance) {
+        push_str__String(s, " => [");
+
+        for (Usize i = 0; i < len__Vec(*self.inheritance) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__DataType(
+                       *(struct DataType *)((struct Tuple *)get__Vec(
+                                              *self.inheritance, i))
+                          ->items[0])),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__DataType(
+                   *(struct DataType *)((struct Tuple *)get__Vec(
+                                          *self.inheritance,
+                                          len__Vec(*self.inheritance) - 1))
+                      ->items[0])),
+          true);
+    }
+
+    if (self.impl) {
+        push_str__String(s, "impl ");
+
+        for (Usize i = 0; i < len__Vec(*self.inheritance) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__DataType(
+                       *(struct DataType *)((struct Tuple *)get__Vec(
+                                              *self.inheritance, i))
+                          ->items[0])),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__DataType(
+                   *(struct DataType *)((struct Tuple *)get__Vec(
+                                          *self.inheritance,
+                                          len__Vec(*self.inheritance) - 1))
+                      ->items[0])),
+          true);
+    }
+
+    push_str__String(s, ": class =\n");
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__ClassBodyItem(
+                       *(struct ClassBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void
@@ -3677,6 +3931,31 @@ __new__Prototype(struct String *name,
     return self;
 }
 
+struct String *
+to_String__Prototype(struct Prototype self)
+{
+    assert((self.return_type && self.params_type) && "UNREACHABLE");
+
+    struct String *s = NEW(String);
+
+    if (self.is_async)
+        push_str__String(s, "async ");
+
+    append__String(s, format("@{S} ::", self.name), true);
+
+    for (Usize i = 0; i < len__Vec(*self.params_type); i++)
+        append__String(s,
+                       format("{Sr} ->",
+                              to_String__DataType(*(struct DataType *)get__Vec(
+                                *self.params_type, i))),
+                       true);
+
+    append__String(
+      s, format("{Sr}", to_String__DataType(*self.return_type)), true);
+
+    return s;
+}
+
 void
 __free__Prototype(struct Prototype *self)
 {
@@ -3708,6 +3987,17 @@ __new__TraitBodyItemImport(struct Location loc, struct ImportStmt *import)
     return self;
 }
 
+struct String *
+to_String__TraitBodyItem(struct TraitBodyItem self)
+{
+    switch (self.kind) {
+        case TraitBodyItemKindImport:
+            return to_String__ImportStmt(*self.value.import);
+        case TraitBodyItemKindPrototype:
+            return to_String__Prototype(*self.value.prototype);
+    }
+}
+
 void
 __free__TraitBodyItemAll(struct TraitBodyItem *self)
 {
@@ -3737,6 +4027,52 @@ __new__TraitDecl(struct String *name,
     self->body = body;
     self->is_pub = is_pub;
     return self;
+}
+
+struct String *
+to_String__TraitDecl(struct TraitDecl self)
+{
+    struct String *s = NEW(String);
+
+    if (self.is_pub)
+        append__String(s, format("pub object {S}", self.name), true);
+    else
+        append__String(s, format("object {S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    push_str__String(s, ": trait =\n");
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__TraitBodyItem(
+                       *(struct TraitBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void
@@ -3780,6 +4116,49 @@ __new__TagDecl(struct String *name,
     self->generic_params = generic_params;
     self->body = body;
     return self;
+}
+
+struct String *
+to_String__TagDecl(struct TagDecl self)
+{
+    struct String *s = NEW(String);
+
+    append__String(s, format("tag {S}", self.name), true);
+
+    if (self.generic_params) {
+        push_str__String(s, "[");
+
+        for (Usize i = 0; i < len__Vec(*self.generic_params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__Generic(
+                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+              true);
+
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__Generic(*(struct Generic *)get__Vec(
+                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
+          true);
+    }
+
+    push_str__String(s, " =\n");
+
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            append__String(
+              s,
+              format("\t{Sr}\n",
+                     to_String__ModuleBodyItem(
+                       *(struct ModuleBodyItem *)get__Vec(*self.body, i))),
+              true);
+    }
+
+    push_str__String(s, "end");
+
+    return s;
 }
 
 void
@@ -3936,6 +4315,35 @@ get_name__Decl(struct Decl *decl)
         case DeclKindImport:
             return NULL;
     }
+}
+
+struct String *
+to_String__Decl(struct Decl self)
+{
+	switch (self.kind) {
+		case DeclKindFun:
+			return to_String__FunDecl(*self.value.fun);
+		case DeclKindConstant:
+			return to_String__ConstantDecl(*self.value.constant);
+		case DeclKindModule:
+			return to_String__ModuleDecl(*self.value.module);
+		case DeclKindAlias:
+			return to_String__AliasDecl(*self.value.alias);
+		case DeclKindRecord:
+			return to_String__RecordDecl(*self.value.record);
+		case DeclKindEnum:
+			return to_String__EnumDecl(*self.value.enum_);
+		case DeclKindError:
+			return to_String__ErrorDecl(*self.value.error);
+		case DeclKindClass:
+			return to_String__ClassDecl(*self.value.class);
+		case DeclKindTrait:
+			return to_String__TraitDecl(*self.value.trait);
+		case DeclKindTag:
+			return to_String__TagDecl(*self.value.tag);
+		case DeclKindImport:
+			return to_String__ImportStmt(*self.value.import);
+	}
 }
 
 void
