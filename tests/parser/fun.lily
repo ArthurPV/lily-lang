@@ -1,0 +1,9 @@
+fun add(x, y) = x+y;
+
+fun sub(x, y) = x-y;
+
+fun mul(x, y) = x*y;
+
+fun div(x, y) = x/y;
+
+fun add2[T](x T) = x;
