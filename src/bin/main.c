@@ -90,17 +90,8 @@ main(int argc, char **argv)
                 struct File file = NEW(File, argv[2]);
                 struct Source src = NEW(Source, file);
                 struct Scanner scanner = NEW(Scanner, &src);
-
-                run__Scanner(&scanner);
-
                 struct ParseBlock parse_block = NEW(ParseBlock, scanner);
-
-                run__ParseBlock(&parse_block);
-
                 struct Parser parser = NEW(Parser, parse_block);
-
-                run__Parser(&parser);
-
                 struct Typecheck tc = NEW(Typecheck, parser);
 
                 run__Typecheck(&tc, NULL);
