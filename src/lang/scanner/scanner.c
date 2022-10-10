@@ -575,7 +575,7 @@ next_char_by_token(struct Scanner *self, struct Token tok)
         case TokenKindOrKw:
         case TokenKindNotKw:
         case TokenKindNilKw:
-		case TokenKindNoneKw:
+        case TokenKindNoneKw:
         case TokenKindUndefKw:
         case TokenKindObjectKw:
         case TokenKindSelfKw:
