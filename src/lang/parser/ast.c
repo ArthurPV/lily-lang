@@ -239,14 +239,26 @@ to_String__DataType(struct DataType self)
             return tuple_string;
         }
         case DataTypeKindCustom: {
-            struct String *name = self.value.custom->items[0];
-            struct Option *generic_op = self.value.custom->items[1];
             struct String *custom_string = NEW(String);
 
-            append__String(custom_string, name, false);
+            if (self.value.custom->items[0]) {
+                struct Vec *names = self.value.custom->items[0];
 
-            if (is_Some__Option(generic_op)) {
-                struct Vec *generic = get__Option(generic_op);
+                for (Usize i = 0; i < len__Vec(*names) - 1; i++)
+                    append__String(
+                      custom_string,
+                      format("{Sr}.", (struct String *)get__Vec(*names, i)),
+                      true);
+
+                append__String(custom_string,
+                               format("{Sr}",
+                                      (struct String *)get__Vec(
+                                        *names, len__Vec(*names) - 1)),
+                               true);
+            }
+
+            if (self.value.custom->items[1]) {
+                struct Vec *generic = self.value.custom->items[1];
 
                 push_str__String(custom_string, "[");
                 append__String(custom_string,
@@ -1500,9 +1512,9 @@ get_precedence__Expr(struct Expr *expr)
         case ExprKindVariable:
         case ExprKindLambda:
             return 18;
-		
-		default:
-			return -1;
+
+        default:
+            return -1;
     }
 }
 
@@ -2729,7 +2741,7 @@ to_String__FunParam(struct FunParam self)
                            *(struct DataType *)self.param_data_type->items[0])),
                   true);
             else
-                append__String(s, copy__String(self.name), true);
+                append__String(s, self.name, false);
 
             return s;
         }
@@ -2846,7 +2858,7 @@ to_String__FunDecl(struct FunDecl self)
           true);
     }
 
-    append__String(s, format("{S}", self.name), true);
+    append__String(s, format(" {S}", self.name), false);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -2899,13 +2911,20 @@ to_String__FunDecl(struct FunDecl self)
         push_str__String(s, " =\n");
 
     if (self.body) {
-        for (Usize i = 0; i < len__Vec(*self.body); i++)
+        for (Usize i = 0; i < len__Vec(*self.body) - 1; i++)
             append__String(
               s,
               format("\t{Sr}\n",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.body, i))),
               true);
+
+        append__String(
+          s,
+          format("\t{Sr}",
+                 to_String__FunBodyItem(*(struct FunBodyItem *)get__Vec(
+                   *self.body, len__Vec(*self.body) - 1))),
+          true);
     }
 
     push_str__String(s, "end");
@@ -3025,7 +3044,7 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
 
     switch (self.kind) {
         case ModuleBodyItemKindDecl:
-			return to_String__Decl(*self.value.decl);
+            return to_String__Decl(*self.value.decl);
         case ModuleBodyItemKindImport:
             return to_String__ImportStmt(
               *(struct ImportStmt *)self.value.import->items[0]);
@@ -4320,30 +4339,30 @@ get_name__Decl(struct Decl *decl)
 struct String *
 to_String__Decl(struct Decl self)
 {
-	switch (self.kind) {
-		case DeclKindFun:
-			return to_String__FunDecl(*self.value.fun);
-		case DeclKindConstant:
-			return to_String__ConstantDecl(*self.value.constant);
-		case DeclKindModule:
-			return to_String__ModuleDecl(*self.value.module);
-		case DeclKindAlias:
-			return to_String__AliasDecl(*self.value.alias);
-		case DeclKindRecord:
-			return to_String__RecordDecl(*self.value.record);
-		case DeclKindEnum:
-			return to_String__EnumDecl(*self.value.enum_);
-		case DeclKindError:
-			return to_String__ErrorDecl(*self.value.error);
-		case DeclKindClass:
-			return to_String__ClassDecl(*self.value.class);
-		case DeclKindTrait:
-			return to_String__TraitDecl(*self.value.trait);
-		case DeclKindTag:
-			return to_String__TagDecl(*self.value.tag);
-		case DeclKindImport:
-			return to_String__ImportStmt(*self.value.import);
-	}
+    switch (self.kind) {
+        case DeclKindFun:
+            return to_String__FunDecl(*self.value.fun);
+        case DeclKindConstant:
+            return to_String__ConstantDecl(*self.value.constant);
+        case DeclKindModule:
+            return to_String__ModuleDecl(*self.value.module);
+        case DeclKindAlias:
+            return to_String__AliasDecl(*self.value.alias);
+        case DeclKindRecord:
+            return to_String__RecordDecl(*self.value.record);
+        case DeclKindEnum:
+            return to_String__EnumDecl(*self.value.enum_);
+        case DeclKindError:
+            return to_String__ErrorDecl(*self.value.error);
+        case DeclKindClass:
+            return to_String__ClassDecl(*self.value.class);
+        case DeclKindTrait:
+            return to_String__TraitDecl(*self.value.trait);
+        case DeclKindTag:
+            return to_String__TagDecl(*self.value.tag);
+        case DeclKindImport:
+            return to_String__ImportStmt(*self.value.import);
+    }
 }
 
 void

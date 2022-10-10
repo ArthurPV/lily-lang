@@ -626,10 +626,11 @@ parse_module_declaration(struct Parser *self,
 static void
 parse_declaration(struct Parser *self);
 
-#include <base/print.h>
 struct ParseBlock
 __new__ParseBlock(struct Scanner scanner)
 {
+    run__Scanner(&scanner);
+
     struct ParseBlock self = { .scanner = scanner,
                                .blocks =
                                  NEW(Vec, sizeof(struct ParseContext *)),
@@ -3242,6 +3243,8 @@ __free__ParseContextAll(struct ParseContext *self)
 struct Parser
 __new__Parser(struct ParseBlock parse_block)
 {
+    run__ParseBlock(&parse_block);
+
     struct Parser self = { .parse_block = parse_block,
                            .pos = 0,
                            .decls = NEW(Vec, sizeof(struct Decl)) };
@@ -3659,7 +3662,8 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 static struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *tags = NEW(Vec, sizeof(struct Tuple));
+    struct Vec *tags =
+      parse_decl->pos > 0 ? NEW(Vec, sizeof(struct Tuple)) : NULL;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         struct Location loc = NEW(Location);
@@ -5867,7 +5871,8 @@ parse_fun_params(struct Parser self,
                 next_token(parse_decl);
             }
 
-            if (is_data_type(parse_decl)) {
+            if (is_data_type(parse_decl) &&
+                parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
                 start__Location(&loc_data_type,
                                 parse_decl->current->loc->s_line,
                                 parse_decl->current->loc->s_col);
@@ -5899,19 +5904,21 @@ parse_fun_params(struct Parser self,
                               parse_decl->current->loc->s_line,
                               parse_decl->current->loc->s_col);
 
-            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      &self.parse_block,
-                      NEW(LilyError, LilyErrorExpectedToken),
-                      *parse_decl->current->loc,
-                      format(""),
-                      None());
+            if (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
 
-                err->err->s = from__String("`,` or `:=`");
+                    err->err->s = from__String("`,` or `:=`");
 
-                emit__Diagnostic(err);
-            });
+                    emit__Diagnostic(err);
+                });
+            }
 
             if (!default_value && !data_type)
                 push__Vec(params, NEW(FunParamNormal, name, NULL, loc));
