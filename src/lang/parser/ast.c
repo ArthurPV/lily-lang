@@ -558,7 +558,7 @@ to_String__Literal(struct Literal self)
         case LiteralKindFloat:
             return format("{f}", self.value.float_);
         case LiteralKindStr:
-            return format("{s}", self.value.str);
+            return format("\"{s}\"", self.value.str);
         case LiteralKindBitStr: {
             struct String *s = NEW(String);
 
@@ -566,7 +566,7 @@ to_String__Literal(struct Literal self)
                 append__String(
                   s, format("{c}", (char)(UPtr)self.value.bit_str[i]), true);
 
-            return format("{s}", self.value.bit_str);
+            return format("b\"{s}\"", self.value.bit_str);
         }
         case LiteralKindUnit:
             return from__String("()");
@@ -3002,7 +3002,7 @@ to_String__ConstantDecl(struct ConstantDecl self)
 
     if (self.data_type)
         append__String(
-          s, format(":: {Sr}", to_String__DataType(*self.data_type)), true);
+          s, format(" :: {Sr}", to_String__DataType(*self.data_type)), true);
 
     append__String(s, format(" := {Sr};", to_String__Expr(*self.expr)), true);
 

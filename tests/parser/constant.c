@@ -15,77 +15,71 @@ test_constant()
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "A :: Int32 := 3;"));
+        TEST_ASSERT(!strcmp(output_str, "A :: Int32 := 3;"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "B :: Int64 := 10;"));
+        TEST_ASSERT(!strcmp(output_str, "B :: Int64 := 10;"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 2));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "C :: Str := \"hello\";"));
+        TEST_ASSERT(!strcmp(output_str, "C :: Str := \"hello\";"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 3));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "D := true;"));
+        TEST_ASSERT(!strcmp(output_str, "D := true;"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 4));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "E := \'c\';"));
+        TEST_ASSERT(!strcmp(output_str, "E := \'c\';"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 5));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str,
-                            "F := b\'c\';"));
+        TEST_ASSERT(!strcmp(output_str, "F := b\'c\';"));
 
         FREE(String, output);
         free(output_str);
-	}
+    }
 
     FREE(Parser, parser);
 
