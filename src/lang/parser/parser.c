@@ -5940,7 +5940,7 @@ parse_fun_params(struct Parser self,
                     emit__Diagnostic(err);
                 });
             } else
-				break;
+                break;
         }
     }
 
@@ -5951,7 +5951,9 @@ parse_fun_params(struct Parser self,
 static struct Vec *
 parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *body = len__Vec(*parse_decl->tokens) > 0 ? NEW(Vec, sizeof(struct FunBodyItem)) : NULL;
+    struct Vec *body = len__Vec(*parse_decl->tokens) > 0
+                         ? NEW(Vec, sizeof(struct FunBodyItem))
+                         : NULL;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         PARSE_BODY(body);
