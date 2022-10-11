@@ -1,0 +1,2 @@
+type MyInteger: alias = Int32;
+type Option[T]: alias = ?T;

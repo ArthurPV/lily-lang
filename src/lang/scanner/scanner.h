@@ -29,7 +29,9 @@
 #include <base/vec.h>
 #include <lang/scanner/token.h>
 
+#ifndef LILY_FORMAT_FILE      // Tool to format lily file
 #define HIDDEN_UNUSED_COMMENT // CommentOne and CommentMulti
+#endif
 
 typedef struct File
 {

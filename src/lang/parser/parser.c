@@ -353,9 +353,9 @@ void
 valid_name(struct ParseBlock *self,
            struct String *name,
            bool start_by_uppercase);
-inline void
+static inline void
 next_token_pb(struct ParseBlock *self);
-inline void
+static inline void
 skip_to_next_block(struct ParseBlock *self);
 struct String *
 get_type_name(struct ParseBlock *self);
@@ -367,7 +367,7 @@ struct ParseContext *
 get_object_context(struct ParseBlock *self, bool is_pub);
 struct Vec *
 get_generic_params(struct ParseBlock *self);
-inline bool
+static inline bool
 valid_body_item(struct ParseBlock *parse_block,
                 bool already_invalid,
                 bool is_fun);
@@ -378,35 +378,35 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun);
 void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid);
 void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid);
 void
 get_record_parse_context(struct RecordParseContext *self,
                          struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_token_in_alias_data_type(struct ParseBlock *parse_block,
                                bool already_invalid);
 void
 get_alias_parse_context(struct AliasParseContext *self,
                         struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_trait_parse_context(struct TraitParseContext *self,
                         struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_tag_parse_context(struct TagParseContext *self,
@@ -420,9 +420,9 @@ get_property_parse_context(struct PropertyParseContext *self,
 void
 get_import_parse_context(struct ImportParseContext *self,
                          struct ParseBlock *parse_block);
-inline bool
+static inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid);
-inline bool
+static inline bool
 valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_constant_parse_context(struct ConstantParseContext *self,
@@ -433,19 +433,19 @@ get_error_parse_context(struct ErrorParseContext *self,
 void
 get_module_parse_context(struct ModuleParseContext *self,
                          struct ParseBlock *parse_block);
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
                                struct String *detail_msg,
                                struct Option *help);
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -453,7 +453,7 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct Option *help);
 static inline void
 next_token(struct ParseDecl *self);
-inline bool
+static inline bool
 is_data_type(struct ParseDecl *self);
 struct DataType *
 parse_data_type(struct Parser self, struct ParseDecl *parse_decl);
@@ -482,9 +482,9 @@ parse_expr_binary_op(struct Parser self,
                      Usize prec);
 struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
-inline int *
+static inline int *
 parse_unary_op(enum TokenKind kind);
-inline int *
+static inline int *
 parse_binary_op(enum TokenKind kind);
 struct Expr *
 parse_variant_expr(struct Parser self,
@@ -1054,7 +1054,7 @@ run__ParseBlock(struct ParseBlock *self)
     }
 }
 
-inline void
+static inline void
 next_token_pb(struct ParseBlock *self)
 {
     if (self->current->kind != TokenKindEof) {
@@ -1064,7 +1064,7 @@ next_token_pb(struct ParseBlock *self)
     }
 }
 
-inline void
+static inline void
 skip_to_next_block(struct ParseBlock *self)
 {
     while (self->current->kind != TokenKindFunKw &&
@@ -1878,7 +1878,7 @@ get_enum_parse_context(struct EnumParseContext *self,
     VERIFY_EOF(parse_block, bad_token, "`end`");
 }
 
-inline bool
+static inline bool
 valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
@@ -1929,7 +1929,7 @@ __new__RecordParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
@@ -2010,7 +2010,7 @@ __new__AliasParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_token_in_alias_data_type(struct ParseBlock *parse_block,
                                bool already_invalid)
 {
@@ -2104,7 +2104,7 @@ __new__TraitParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2191,7 +2191,7 @@ __new__ClassParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     bool is_valid = valid_body_item(parse_block, already_invalid, false);
@@ -2425,7 +2425,7 @@ __new__TagParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     if (valid_body_item(parse_block, true, false))
@@ -2636,7 +2636,7 @@ __new__ConstantParseContext()
     return self;
 }
 
-inline bool
+static inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2662,7 +2662,7 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
-inline bool
+static inline bool
 valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2925,7 +2925,7 @@ __free__ModuleParseContext(struct ModuleParseContext self)
     FREE(Vec, self.body);
 }
 
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
@@ -2937,7 +2937,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
       DiagnosticWithErr, err, loc, self->scanner.src->file, detail_msg, help);
 }
 
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
@@ -2949,7 +2949,7 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
       DiagnosticWithWarn, warn, loc, self->scanner.src->file, detail_msg, help);
 }
 
-inline struct Diagnostic *
+static inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -3295,7 +3295,7 @@ next_token(struct ParseDecl *self)
         self->previous = self->current;
 }
 
-inline bool
+static inline bool
 is_data_type(struct ParseDecl *self)
 {
     switch (self->current->kind) {
@@ -4513,7 +4513,7 @@ exit_unary : {
     return expr;
 }
 
-inline int *
+static inline int *
 parse_unary_op(enum TokenKind kind)
 {
     switch (kind) {
@@ -4537,7 +4537,7 @@ parse_unary_op(enum TokenKind kind)
     }
 }
 
-inline int *
+static inline int *
 parse_binary_op(enum TokenKind kind)
 {
     switch (kind) {

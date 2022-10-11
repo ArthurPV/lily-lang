@@ -78,7 +78,7 @@ add_case__Suite(struct Suite *self, struct Case *case_)
 }
 
 void
-run__Suite(struct Suite *self)
+run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite)
 {
     int failed = 0;
     clock_t start, end;
@@ -88,7 +88,8 @@ run__Suite(struct Suite *self)
     for (Usize i = 0; i < len__Vec(*self->cases); i++) {
         if (run__Case(get__Vec(*self->cases, i)) == 1) {
             failed = 1;
-        }
+        } else
+            *passed_test += 1;
     }
 
     end = clock();
@@ -96,12 +97,16 @@ run__Suite(struct Suite *self)
 
     if (failed) {
         Str failed_str = RED("failed");
-        println("suite %s ... %s", self->name, failed_str);
+        println("suite %s ... %s\n", self->name, failed_str);
 
         free(failed_str);
 
+#ifdef FATAL_TEST // An option for stop test when it's failed
         exit(1);
+#endif
     } else {
+        *passed_suite += 1;
+
         Str ok = GREEN("ok");
 
         if (len__Vec(*self->cases) > 1) {
@@ -152,20 +157,38 @@ run__Test(struct Test *self)
 {
     clock_t start, end;
     start = clock();
+    Usize count_test = 0;
+    Usize count_suite = len__Vec(*self->suites);
+    Usize count_passed_test = 0;
+    Usize count_passed_suite = 0;
 
     for (Usize i = 0; i < len__Vec(*self->suites); i++) {
-        run__Suite(get__Vec(*self->suites, i));
+        struct Suite *suite = get__Vec(*self->suites, i);
+
+        run__Suite(suite, &count_passed_test, &count_passed_suite);
+
+        count_test += len__Vec(*suite->cases);
     }
 
     end = clock();
     self->time = ((double)end - start) / CLOCKS_PER_SEC;
 
-    if (len__Vec(*self->suites) > 1) {
-        println(
-          "%zu suites run in %.2fs.", len__Vec(*self->suites), self->time);
-    } else {
-        println("%zu suite run in %.2fs.", len__Vec(*self->suites), self->time);
-    }
+    // Print the test summary
+    Println("\x1b[1mSuites: {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+            count_passed_suite,
+            GREEN("passed"),
+            count_suite - count_passed_suite,
+            RED("failed"),
+            count_suite);
+    Println("\x1b[1mTests: {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+            count_passed_test,
+            GREEN("passed"),
+            count_test - count_passed_test,
+            RED("failed"),
+            count_test);
+
+    // Print the time of execution
+	printf("\x1b[1mTime: %.2fs\x1b[0m\n", self->time);
 }
 
 void

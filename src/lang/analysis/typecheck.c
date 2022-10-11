@@ -312,7 +312,7 @@ void
 verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
                            Usize param_count,
                            ...);
-inline struct DataTypeSymbol *
+static inline struct DataTypeSymbol *
 get_return_type_of_fun_builtin(struct Typecheck *self,
                                const Str module_name,
                                const Str fun_name,
@@ -4168,7 +4168,7 @@ verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
     va_end(vl);
 }
 
-inline struct DataTypeSymbol *
+static inline struct DataTypeSymbol *
 get_return_type_of_fun_builtin(struct Typecheck *self,
                                const Str module_name,
                                const Str fun_name,

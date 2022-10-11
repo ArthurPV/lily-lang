@@ -1,4 +1,3 @@
-#include "fun.h"
 #include <base/file.h>
 #include <base/new.h>
 #include <base/print.h>
@@ -8,7 +7,9 @@
 #include <lang/scanner/token.h>
 #include <string.h>
 
-int
+#pragma GCC diagnostic ignored "-Wunused-function"
+
+static int
 test_fun()
 {
     struct Source src = NEW(Source, NEW(File, "./tests/parser/fun.lily"));

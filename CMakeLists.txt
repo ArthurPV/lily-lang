@@ -69,10 +69,12 @@ add_executable(parser_test
 	tests/parser/constant.c
 	tests/parser/enum.c
 	tests/parser/error.c
+	tests/parser/expr.c
 	tests/parser/fun.c
 	tests/parser/import.c
 	tests/parser/module.c
 	tests/parser/record.c
+	tests/parser/stmt.c
 	tests/parser/tag.c
 	tests/parser/test.c
 	tests/parser/trait.c)

@@ -109,7 +109,7 @@ add_case__Suite(struct Suite *self, struct Case *case_);
  * @brief Run a single suite.
  */
 void
-run__Suite(struct Suite *self);
+run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite);
 
 /**
  *

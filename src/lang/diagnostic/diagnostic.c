@@ -8,28 +8,28 @@
 #include <lang/scanner/token.h>
 #include <string.h>
 
-inline const Str
+static inline const Str
 diagnostic_kind_to_String(enum DiagnosticKind kind);
-inline const Str
+static inline const Str
 apply_color(enum DiagnosticKind kind, const Str s);
 struct String *
 detail_to_String(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc);
-inline struct String *
+static inline struct String *
 lily_error_to_String(struct LilyError err);
-inline struct String *
+static inline struct String *
 lily_warning_to_String(struct LilyWarning warn);
-inline const Str
+static inline const Str
 get_code_of_lily_error(struct LilyError err);
-inline const Str
+static inline const Str
 get_code_of_lily_warning(struct LilyWarning warn);
 struct String *
 get_line(struct Diagnostic self, Usize line_number);
 struct String *
 diagnostic_to_String(struct Diagnostic self);
 
-inline const Str
+static inline const Str
 diagnostic_kind_to_String(enum DiagnosticKind kind)
 {
     switch (kind) {
@@ -44,7 +44,7 @@ diagnostic_kind_to_String(enum DiagnosticKind kind)
     }
 }
 
-inline const Str
+static inline const Str
 apply_color(enum DiagnosticKind kind, const Str s)
 {
     switch (kind) {
@@ -137,7 +137,7 @@ detail_to_String(struct Detail self,
     return s;
 }
 
-inline struct String *
+static inline struct String *
 lily_error_to_String(struct LilyError err)
 {
     switch (err.kind) {
@@ -295,7 +295,7 @@ lily_error_to_String(struct LilyError err)
     }
 }
 
-inline struct String *
+static inline struct String *
 lily_warning_to_String(struct LilyWarning warn)
 {
     switch (warn.kind) {
@@ -312,7 +312,7 @@ lily_warning_to_String(struct LilyWarning warn)
     }
 }
 
-inline const Str
+static inline const Str
 get_code_of_lily_error(struct LilyError err)
 {
     switch (err.kind) {
@@ -471,7 +471,7 @@ get_code_of_lily_error(struct LilyError err)
     }
 }
 
-inline const Str
+static inline const Str
 get_code_of_lily_warning(struct LilyWarning warn)
 {
     switch (warn.kind) {

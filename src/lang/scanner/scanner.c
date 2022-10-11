@@ -161,14 +161,14 @@ enum TokenKind
 get_keyword(const Str id);
 
 // Advance one position in the file content.
-inline void
+static inline void
 next_char(struct Scanner *self);
 
-inline void
+static inline void
 skip_space(struct Scanner *self);
 
 // next_char n times
-inline void
+static inline void
 jump(struct Scanner *self, Usize n);
 
 // Back one position in the file content.
@@ -248,7 +248,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
 
 // Emits an error if the expected char doesn't match to the current char.
 // Not used for the moment.
-inline void
+void
 expected_char(struct Scanner *self,
               struct Scanner *scan_doc,
               struct Diagnostic *dgn,
@@ -467,7 +467,7 @@ get_keyword(const Str id)
     return TokenKindIdentifier;
 }
 
-inline void
+static inline void
 next_char(struct Scanner *self)
 {
     if (self->src->pos < len__String(*self->src->file.content) - 1) {
@@ -481,7 +481,7 @@ next_char(struct Scanner *self)
     }
 }
 
-inline void
+static inline void
 skip_space(struct Scanner *self)
 {
     while ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
@@ -490,7 +490,7 @@ skip_space(struct Scanner *self)
         next_char(self);
 }
 
-inline void
+static inline void
 jump(struct Scanner *self, Usize n)
 {
     for (; n--;)
@@ -699,7 +699,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
       DiagnosticWithNote, note, loc, self->src->file, detail_msg, help);
 }
 
-inline void
+void
 expected_char(struct Scanner *self,
               struct Scanner *scan_doc,
               struct Diagnostic *dgn,
@@ -1285,6 +1285,7 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
 
                 int *doc_kind = NULL;
 
+                // 1. Get DocKind declaration
                 if (!strcmp(id_str, "")) {
                     assert(0 && "error");
                 } else if (!strcmp(id_str, "author"))
@@ -1345,6 +1346,7 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
                 }
 
                 if (doc_kind) {
+                    // 2. Get doc values
                     switch ((int)(UPtr)doc_kind) {
                         case DocKindAuthor: {
                             struct Doc *author = scan_doc_author(scan_doc);

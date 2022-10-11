@@ -1,0 +1,6 @@
+module Calc =
+	pub fun add(x, y) = x+y;
+	pub fun sub(x, y) = x-y;
+	pub fun mul(x, y) = x*y;
+	pub fun div(x, y) = x/y;
+end
