@@ -2836,7 +2836,7 @@ to_String__FunDecl(struct FunDecl self)
         push_str__String(s, "fun");
 
     if (self.tags) {
-        push_str__String(s, " #(");
+        push_str__String(s, "#(");
 
         for (Usize i = 0; i < len__Vec(*self.tags) - 1; i++)
             append__String(

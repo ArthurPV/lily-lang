@@ -7,3 +7,5 @@ fun mul(x, y) = x*y;
 fun div(x, y) = x/y;
 
 fun add2[T](x T) = x;
+
+fun#Name add(x) = x;

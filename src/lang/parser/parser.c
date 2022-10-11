@@ -3663,7 +3663,7 @@ static struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *tags =
-      parse_decl->pos > 0 ? NEW(Vec, sizeof(struct Tuple)) : NULL;
+      len__Vec(*parse_decl->tokens) > 0 ? NEW(Vec, sizeof(struct Tuple)) : NULL;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         struct Location loc = NEW(Location);
@@ -5972,7 +5972,7 @@ parse_fun_declaration(struct Parser *self,
     struct Tuple *return_type = NULL;
     struct Vec *body = NULL;
 
-    if (fun_parse_context.has_tags) {
+    if (fun_parse_context.has_tags || fun_parse_context.has_tag) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.tags);
 
         tags = parse_tags(*self, &parse);
