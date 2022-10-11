@@ -1,5 +1,5 @@
---- ../../../CMakeLists.txt	2022-10-10 22:13:13.016680122 -0400
-+++ CMakeLists.txt	2022-10-10 22:14:00.390698133 -0400
+--- ../../../CMakeLists.txt	2022-10-10 22:47:23.250377430 -0400
++++ CMakeLists.txt	2022-10-10 22:47:51.174117577 -0400
 @@ -1,7 +1,7 @@
  cmake_minimum_required(VERSION 3.11)
  project(lily C)

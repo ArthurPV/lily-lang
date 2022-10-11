@@ -64,9 +64,18 @@ target_include_directories(scanner_test PRIVATE src)
 add_test(NAME scanner_test COMMAND scanner_test)
 
 add_executable(parser_test
+	tests/parser/alias.c
+	tests/parser/class.c
 	tests/parser/constant.c
+	tests/parser/enum.c
+	tests/parser/error.c
 	tests/parser/fun.c
-	tests/parser/test.c)
+	tests/parser/import.c
+	tests/parser/module.c
+	tests/parser/record.c
+	tests/parser/tag.c
+	tests/parser/test.c
+	tests/parser/trait.c)
 target_link_libraries(parser_test lily_base lily_lang)
 target_include_directories(parser_test PRIVATE src)
 
