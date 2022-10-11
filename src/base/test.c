@@ -188,7 +188,7 @@ run__Test(struct Test *self)
             count_test);
 
     // Print the time of execution
-	printf("\x1b[1mTime: %.2fs\x1b[0m\n", self->time);
+    printf("\x1b[1mTime: %.2fs\x1b[0m\n", self->time);
 }
 
 void

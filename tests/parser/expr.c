@@ -130,8 +130,9 @@ test_expr_self()
 }
 
 static int
-test_expr_undef() {
-	return TEST_FAILED;
+test_expr_undef()
+{
+    return TEST_FAILED;
 }
 
 static int
