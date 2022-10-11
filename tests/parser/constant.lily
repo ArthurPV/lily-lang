@@ -1,0 +1,7 @@
+A :: Int32 := 3;
+B :: Int64 := 10;
+C :: Str := "hello";
+
+D := true;
+E := 'c';
+F := b'c';
