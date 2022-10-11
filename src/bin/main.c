@@ -92,6 +92,7 @@ main(int argc, char **argv)
                 struct Scanner scanner = NEW(Scanner, &src);
                 struct ParseBlock parse_block = NEW(ParseBlock, scanner);
                 struct Parser parser = NEW(Parser, parse_block);
+
                 struct Typecheck tc = NEW(Typecheck, parser);
 
                 run__Typecheck(&tc, NULL);

@@ -29,6 +29,62 @@ test_fun()
         free(output_str);
     }
 
+	{
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun sub(x, y) =\n"
+                            "\tx - y\n"
+                            "end"));
+
+        FREE(String, output);
+        free(output_str);
+	}
+
+	{
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 2));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun mul(x, y) =\n"
+                            "\tx * y\n"
+                            "end"));
+
+        FREE(String, output);
+        free(output_str);
+	}
+
+	{
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 3));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun div(x, y) =\n"
+                            "\tx / y\n"
+                            "end"));
+
+        FREE(String, output);
+        free(output_str);
+	}
+
+	{
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 4));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun add2[T](x T) =\n"
+                            "\tx\n"
+                            "end"));
+
+        FREE(String, output);
+        free(output_str);
+	}
+
     FREE(Parser, parser);
 
     return TEST_SUCCESS;

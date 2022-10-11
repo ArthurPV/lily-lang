@@ -251,7 +251,7 @@ to_String__DataType(struct DataType self)
                       true);
 
                 append__String(custom_string,
-                               format("{Sr}",
+                               format("{S}",
                                       (struct String *)get__Vec(
                                         *names, len__Vec(*names) - 1)),
                                true);
@@ -1523,9 +1523,9 @@ to_String__Expr(struct Expr self)
 {
     switch (self.kind) {
         case ExprKindUnaryOp:
-            return format("{S}", to_String__UnaryOp(self.value.unary_op));
+            return format("{Sr}", to_String__UnaryOp(self.value.unary_op));
         case ExprKindBinaryOp:
-            return format("{S}", to_String__BinaryOp(self.value.binary_op));
+            return format("{Sr}", to_String__BinaryOp(self.value.binary_op));
         case ExprKindFunCall:
             return to_String__FunCall(self.value.fun_call);
         case ExprKindRecordCall:
@@ -1538,14 +1538,14 @@ to_String__Expr(struct Expr self)
             for (Usize i = 0; i < len__Vec(*self.value.identifier_access) - 1;
                  i++)
                 append__String(s,
-                               format("{Sr}.",
+                               format("{S}.",
                                       to_String__Expr(*(struct Expr *)get__Vec(
                                         *self.value.identifier_access, i))),
                                true);
 
             append__String(
               s,
-              format("{Sr}",
+              format("{S}",
                      to_String__Expr(*(struct Expr *)get__Vec(
                        *self.value.identifier_access,
                        len__Vec(*self.value.identifier_access) - 1))),
@@ -2858,7 +2858,7 @@ to_String__FunDecl(struct FunDecl self)
           true);
     }
 
-    append__String(s, format(" {S}", self.name), false);
+    append__String(s, format(" {S}", self.name), true);
 
     if (self.generic_params) {
         push_str__String(s, "[");

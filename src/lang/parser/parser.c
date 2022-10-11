@@ -5872,7 +5872,7 @@ parse_fun_params(struct Parser self,
             }
 
             if (is_data_type(parse_decl) &&
-                parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
+                parse_decl->pos < len__Vec(*parse_decl->tokens)) {
                 start__Location(&loc_data_type,
                                 parse_decl->current->loc->s_line,
                                 parse_decl->current->loc->s_col);
@@ -5904,22 +5904,6 @@ parse_fun_params(struct Parser self,
                               parse_decl->current->loc->s_line,
                               parse_decl->current->loc->s_col);
 
-            if (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
-                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-                    struct Diagnostic *err =
-                      NEW(DiagnosticWithErrParser,
-                          &self.parse_block,
-                          NEW(LilyError, LilyErrorExpectedToken),
-                          *parse_decl->current->loc,
-                          format(""),
-                          None());
-
-                    err->err->s = from__String("`,` or `:=`");
-
-                    emit__Diagnostic(err);
-                });
-            }
-
             if (!default_value && !data_type)
                 push__Vec(params, NEW(FunParamNormal, name, NULL, loc));
             else if (!default_value)
@@ -5940,6 +5924,23 @@ parse_fun_params(struct Parser self,
                       NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc,
                       default_value));
+
+            if (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
+
+                    err->err->s = from__String("`,` or `:=`");
+
+                    emit__Diagnostic(err);
+                });
+            } else
+				break;
         }
     }
 
@@ -5950,9 +5951,9 @@ parse_fun_params(struct Parser self,
 static struct Vec *
 parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
+    struct Vec *body = len__Vec(*parse_decl->tokens) > 0 ? NEW(Vec, sizeof(struct FunBodyItem)) : NULL;
 
-    while (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
+    while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         PARSE_BODY(body);
     }
 
