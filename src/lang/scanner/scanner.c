@@ -157,73 +157,73 @@ Output: no errors
       : case 'V' : case 'W' : case 'X' : case 'Y' : case 'Z' : case '_'
 
 // Convert Str id in TokenKind.
-static enum TokenKind
+enum TokenKind
 get_keyword(const Str id);
 
 // Advance one position in the file content.
-static inline void
+inline void
 next_char(struct Scanner *self);
 
-static inline void
+inline void
 skip_space(struct Scanner *self);
 
 // next_char n times
-static inline void
+inline void
 jump(struct Scanner *self, Usize n);
 
 // Back one position in the file content.
-static inline void
+inline void
 previous_char(struct Scanner *self);
 
 // Assign start_line (s_line) and start_column (s_col) to the current line and
 // column.
-static inline void
+inline void
 start_token(struct Scanner *self);
 
 // Assign end_line (e_line) and end_column (e_col) to the current line and
 // column.
-static inline void
+inline void
 end_token(struct Scanner *self);
 
 // Peek to the next n char.
-static inline char *
+inline char *
 peek_char(struct Scanner self, Usize n);
 
 // Advance in the file content according to the Token.
-static void
+void
 next_char_by_token(struct Scanner *self, struct Token tok);
 
 // Push token in self->tokens.
-static inline void
+inline void
 push_token(struct Scanner *self, struct Token *tok);
 
 // Valid if the current char corresponds to a digit.
-static inline bool
+inline bool
 is_digit(struct Scanner self);
 
 // Valid if the current char corresponds to an identifier.
-static inline bool
+inline bool
 is_ident(struct Scanner self);
 
 // Valid if the current char corresponds to a hexadecimal integer syntax.
-static inline bool
+inline bool
 is_hex(struct Scanner self);
 
 // Valid if the current char corresponds to an octal integer syntax.
-static inline bool
+inline bool
 is_oct(struct Scanner self);
 
 // Valid if the current char corresponds to a binary integer syntax.
-static inline bool
+inline bool
 is_bin(struct Scanner self);
 
 // Valid if the current char corresponds to a number (float or other integer)
 // syntax.
-static inline bool
+inline bool
 is_num(struct Scanner self);
 
 // Constructs error Diagnostic for the scanner phase.
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct LilyError *err,
                                 struct Location loc,
@@ -231,7 +231,7 @@ __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct Option *help);
 
 // Constructs warning Diagnostic for the scanner phase.
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct LilyWarning *warn,
                                  struct Location loc,
@@ -239,7 +239,7 @@ __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct Option *help);
 
 // Constructs note Diagnostic for the scanner phase.
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct String *note,
                                  struct Location loc,
@@ -248,71 +248,71 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
 
 // Emits an error if the expected char doesn't match to the current char.
 // Not used for the moment.
-static inline void
+inline void
 expected_char(struct Scanner *self,
               struct Scanner *scan_doc,
               struct Diagnostic *dgn,
               char *expected);
 
 // Get escape in char or string literal
-static struct Result *
+struct Result *
 get_escape(struct Scanner *self, char *previous);
 
-static enum TokenKind
+enum TokenKind
 scan_comment_one(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_comment_multi(struct Scanner *self);
-static struct String *
+struct String *
 scan_comment_doc(struct Scanner *self);
-static struct String *
+struct String *
 scan_identifier(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_char(struct Scanner *self, bool is_bit);
-static struct Result *
+struct Result *
 scan_string(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_hex(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_oct(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_bin(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_num(struct Scanner *self);
 
-static void
+void
 align_location(struct Scanner *self);
 
-static struct Doc *
+struct Doc *
 scan_doc_author(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_doc_contract(struct Scanner *self);
-static struct Doc *
+struct Doc *
 scan_doc_description(struct Scanner *self);
-static struct Doc *
+struct Doc *
 scan_doc_file(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_doc_generic(struct Scanner *self);
-static struct Result *
+struct Result *
 scan_doc_prototype(struct Scanner *self);
-static struct Doc *
+struct Doc *
 scan_doc_see(struct Scanner *self);
-static struct Doc *
+struct Doc *
 scan_doc_version(struct Scanner *self);
-static void
+void
 get_doc(struct Scanner *self, struct Scanner *scan_doc);
 
 // Scan all numbers (integer or float literal).
-static struct Result *
+struct Result *
 get_all_nums(struct Scanner *self);
 
 // Verify if the targeted char match to the current char and skips (skip:
 // call next_char) if is different.
-static inline bool
+inline bool
 skip_and_verify(struct Scanner *self, const char *target);
 
-static struct Result *
+struct Result *
 get_closing(struct Scanner *self, char *target);
-static struct Result *
+struct Result *
 get_token(struct Scanner *self);
 
 struct File
@@ -365,7 +365,7 @@ __new__Scanner(struct Source *src)
     return self;
 }
 
-static enum TokenKind
+enum TokenKind
 get_keyword(const Str id)
 {
     if (!strcmp(id, "fun"))
@@ -467,7 +467,7 @@ get_keyword(const Str id)
     return TokenKindIdentifier;
 }
 
-static inline void
+inline void
 next_char(struct Scanner *self)
 {
     if (self->src->pos < len__String(*self->src->file.content) - 1) {
@@ -481,7 +481,7 @@ next_char(struct Scanner *self)
     }
 }
 
-static inline void
+inline void
 skip_space(struct Scanner *self)
 {
     while ((self->src->c == (char *)'\n' || self->src->c == (char *)'\t' ||
@@ -490,14 +490,14 @@ skip_space(struct Scanner *self)
         next_char(self);
 }
 
-static inline void
+inline void
 jump(struct Scanner *self, Usize n)
 {
     for (; n--;)
         next_char(self);
 }
 
-static inline void
+inline void
 previous_char(struct Scanner *self)
 {
     self->col--;
@@ -505,21 +505,21 @@ previous_char(struct Scanner *self)
     self->src->c = get__String(*self->src->file.content, self->src->pos);
 }
 
-static inline void
+inline void
 start_token(struct Scanner *self)
 {
     self->loc.s_line = self->line;
     self->loc.s_col = self->col;
 }
 
-static inline void
+inline void
 end_token(struct Scanner *self)
 {
     self->loc.e_line = self->line;
     self->loc.e_col = self->col;
 }
 
-static inline char *
+inline char *
 peek_char(struct Scanner self, Usize n)
 {
     if (self.src->pos + n < len__String(*self.src->file.content) - 1)
@@ -528,7 +528,7 @@ peek_char(struct Scanner self, Usize n)
     return NULL;
 }
 
-static void
+void
 next_char_by_token(struct Scanner *self, struct Token tok)
 {
     switch (tok.kind) {
@@ -615,20 +615,20 @@ next_char_by_token(struct Scanner *self, struct Token tok)
     }
 }
 
-static inline void
+inline void
 push_token(struct Scanner *self, struct Token *tok)
 {
     push__Vec(self->tokens, tok);
 }
 
-static inline bool
+inline bool
 is_digit(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'9') ||
            self.src->c == (char *)'_';
 }
 
-static inline bool
+inline bool
 is_ident(struct Scanner self)
 {
     return (self.src->c >= (char *)'a' && self.src->c <= (char *)'z') ||
@@ -636,7 +636,7 @@ is_ident(struct Scanner self)
            self.src->c == (char *)'_' || is_digit(self);
 }
 
-static inline bool
+inline bool
 is_hex(struct Scanner self)
 {
     return is_digit(self) ||
@@ -644,21 +644,21 @@ is_hex(struct Scanner self)
            (self.src->c >= (char *)'A' && self.src->c <= (char *)'F');
 }
 
-static inline bool
+inline bool
 is_oct(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'7') ||
            self.src->c == (char *)'_';
 }
 
-static inline bool
+inline bool
 is_bin(struct Scanner self)
 {
     return (self.src->c >= (char *)'0' && self.src->c <= (char *)'1') ||
            self.src->c == (char *)'_';
 }
 
-static inline bool
+inline bool
 is_num(struct Scanner self)
 {
     return is_digit(self) ||
@@ -666,7 +666,7 @@ is_num(struct Scanner self)
            self.src->c == (char *)'e' || self.src->c == (char *)'E';
 }
 
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithErrScanner(struct Scanner *self,
                                 struct LilyError *err,
                                 struct Location loc,
@@ -677,7 +677,7 @@ __new__DiagnosticWithErrScanner(struct Scanner *self,
     return NEW(DiagnosticWithErr, err, loc, self->src->file, detail_msg, help);
 }
 
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithWarnScanner(struct Scanner *self,
                                  struct LilyWarning *warn,
                                  struct Location loc,
@@ -688,7 +688,7 @@ __new__DiagnosticWithWarnScanner(struct Scanner *self,
       DiagnosticWithWarn, warn, loc, self->src->file, detail_msg, help);
 }
 
-static struct Diagnostic *
+struct Diagnostic *
 __new__DiagnosticWithNoteScanner(struct Scanner *self,
                                  struct String *note,
                                  struct Location loc,
@@ -699,7 +699,7 @@ __new__DiagnosticWithNoteScanner(struct Scanner *self,
       DiagnosticWithNote, note, loc, self->src->file, detail_msg, help);
 }
 
-static inline void
+inline void
 expected_char(struct Scanner *self,
               struct Scanner *scan_doc,
               struct Diagnostic *dgn,
@@ -721,7 +721,7 @@ expected_char(struct Scanner *self,
     }
 }
 
-static struct Result *
+struct Result *
 get_escape(struct Scanner *self, char *previous)
 {
     struct Result *res = NULL;
@@ -773,7 +773,7 @@ get_escape(struct Scanner *self, char *previous)
     return res;
 }
 
-static enum TokenKind
+enum TokenKind
 scan_comment_one(struct Scanner *self)
 {
     while (self->src->c != (char *)'\n') {
@@ -783,7 +783,7 @@ scan_comment_one(struct Scanner *self)
     return TokenKindOneComment;
 }
 
-static struct Result *
+struct Result *
 scan_comment_multi(struct Scanner *self)
 {
     struct Location loc_error = NEW(Location);
@@ -809,7 +809,7 @@ scan_comment_multi(struct Scanner *self)
     return Ok((int *)TokenKindMultiComment);
 }
 
-static struct String *
+struct String *
 scan_comment_doc(struct Scanner *self)
 {
     struct String *doc = NEW(String);
@@ -830,7 +830,7 @@ scan_comment_doc(struct Scanner *self)
     return doc;
 }
 
-static struct String *
+struct String *
 scan_identifier(struct Scanner *self)
 {
     struct String *id = NEW(String);
@@ -846,7 +846,7 @@ scan_identifier(struct Scanner *self)
     return id;
 }
 
-static struct Result *
+struct Result *
 scan_char(struct Scanner *self, bool is_bit)
 {
     struct Location loc_error = NEW(Location);
@@ -898,7 +898,7 @@ scan_char(struct Scanner *self, bool is_bit)
     }
 }
 
-static struct Result *
+struct Result *
 scan_string(struct Scanner *self)
 {
     struct Location location_error = NEW(Location);
@@ -936,7 +936,7 @@ scan_string(struct Scanner *self)
     return Ok(s);
 }
 
-static struct Result *
+struct Result *
 scan_hex(struct Scanner *self)
 {
     struct Location loc_error = NEW(Location);
@@ -975,7 +975,7 @@ scan_hex(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, hex));
 }
 
-static struct Result *
+struct Result *
 scan_oct(struct Scanner *self)
 {
     struct Location loc_error = NEW(Location);
@@ -1014,7 +1014,7 @@ scan_oct(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, oct));
 }
 
-static struct Result *
+struct Result *
 scan_bin(struct Scanner *self)
 {
 
@@ -1054,7 +1054,7 @@ scan_bin(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, bin));
 }
 
-static struct Result *
+struct Result *
 scan_num(struct Scanner *self)
 {
     struct Location num_location = NEW(Location);
@@ -1128,7 +1128,7 @@ scan_num(struct Scanner *self)
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, num));
 }
 
-static void
+void
 align_location(struct Scanner *self)
 {
     self->loc.s_col += 3;
@@ -1188,7 +1188,7 @@ align_location(struct Scanner *self)
         next_char(self);                                                 \
     }
 
-static struct Doc *
+struct Doc *
 scan_doc_author(struct Scanner *self)
 {
     struct String *author = NEW(String);
@@ -1198,7 +1198,7 @@ scan_doc_author(struct Scanner *self)
     return NEW(DocWithString, DocKindAuthor, author);
 }
 
-static struct Result *
+struct Result *
 scan_doc_contract(struct Scanner *self)
 {
     GET_TOKENS();
@@ -1206,7 +1206,7 @@ scan_doc_contract(struct Scanner *self)
     return Ok(NEW(DocContract, tokens));
 }
 
-static struct Doc *
+struct Doc *
 scan_doc_description(struct Scanner *self)
 {
     struct String *desc = NEW(String);
@@ -1216,7 +1216,7 @@ scan_doc_description(struct Scanner *self)
     return NEW(DocWithString, DocKindDescription, desc);
 }
 
-static struct Doc *
+struct Doc *
 scan_doc_file(struct Scanner *self)
 {
     struct String *file = NEW(String);
@@ -1226,7 +1226,7 @@ scan_doc_file(struct Scanner *self)
     return NEW(DocWithString, DocKindFile, file);
 }
 
-static struct Result *
+struct Result *
 scan_doc_generic(struct Scanner *self)
 {
     GET_TOKENS();
@@ -1234,7 +1234,7 @@ scan_doc_generic(struct Scanner *self)
     return Ok(NEW(DocGeneric, tokens));
 }
 
-static struct Result *
+struct Result *
 scan_doc_prototype(struct Scanner *self)
 {
     GET_TOKENS();
@@ -1242,7 +1242,7 @@ scan_doc_prototype(struct Scanner *self)
     return Ok(NEW(DocPrototype, tokens));
 }
 
-static struct Doc *
+struct Doc *
 scan_doc_see(struct Scanner *self)
 {
     struct String *see = NEW(String);
@@ -1252,7 +1252,7 @@ scan_doc_see(struct Scanner *self)
     return NEW(DocWithString, DocKindSee, see);
 }
 
-static struct Doc *
+struct Doc *
 scan_doc_version(struct Scanner *self)
 {
     struct String *version = NEW(String);
@@ -1262,7 +1262,7 @@ scan_doc_version(struct Scanner *self)
     return NEW(DocWithString, DocKindVersion, version);
 }
 
-static void
+void
 get_doc(struct Scanner *self, struct Scanner *scan_doc)
 {
     for (Usize i = 0; i < len__String(*scan_doc->src->file.content) - 2; i++) {
@@ -1503,7 +1503,7 @@ get_doc(struct Scanner *self, struct Scanner *scan_doc)
     }
 }
 
-static struct Result *
+struct Result *
 get_all_nums(struct Scanner *self)
 {
     struct Result *res = NULL;
@@ -1520,14 +1520,14 @@ get_all_nums(struct Scanner *self)
     return res;
 }
 
-static inline bool
+inline bool
 skip_and_verify(struct Scanner *self, const char *target)
 {
     skip_space(self);
     return self->src->c != target;
 }
 
-static struct Result *
+struct Result *
 get_closing(struct Scanner *self, char *target)
 {
     skip_space(self);
@@ -1583,7 +1583,7 @@ get_closing(struct Scanner *self, char *target)
     }
 }
 
-static struct Result *
+struct Result *
 get_token(struct Scanner *self)
 {
     char *c2 = peek_char(*self, 1);

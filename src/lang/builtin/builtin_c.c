@@ -29,59 +29,59 @@
 #include <lang/builtin/builtin_c.h>
 #include <stdarg.h>
 
-static struct Builtin *
+struct Builtin *
 Load_Int8_module();
-static struct Builtin *
+struct Builtin *
 Load_Int16_module();
-static struct Builtin *
+struct Builtin *
 Load_Int32_module();
-static struct Builtin *
+struct Builtin *
 Load_Int64_module();
-static struct Builtin *
+struct Builtin *
 Load_Int128_module();
-static struct Builtin *
+struct Builtin *
 Load_Uint8_module();
-static struct Builtin *
+struct Builtin *
 Load_Uint16_module();
-static struct Builtin *
+struct Builtin *
 Load_Uint32_module();
-static struct Builtin *
+struct Builtin *
 Load_Uint64_module();
-static struct Builtin *
+struct Builtin *
 Load_Uint128_module();
-static struct Builtin *
+struct Builtin *
 Load_Bool_module();
-static struct Builtin *
+struct Builtin *
 Load_Float32_module();
-static struct Builtin *
+struct Builtin *
 Load_Float64_module();
-static struct Builtin *
+struct Builtin *
 Load_Char_module();
-static struct Builtin *
+struct Builtin *
 Load_Str_module();
-static struct Builtin *
+struct Builtin *
 Load_Isize_module();
-static struct Builtin *
+struct Builtin *
 Load_Usize_module();
-static struct Builtin *
+struct Builtin *
 Load_Optional_module();
-static struct Builtin *
+struct Builtin *
 Load_Ptr_module();
-static struct Builtin *
+struct Builtin *
 Load_Tuple_module();
-static struct Builtin *
+struct Builtin *
 Load_Array_module();
-static struct Builtin *
+struct Builtin *
 Load_Fun_module();
-static struct Builtin *
+struct Builtin *
 Load_Ref_module();
-static struct Builtin *
+struct Builtin *
 Load_Custom_module();
-static struct Builtin *
+struct Builtin *
 Load_Mem_module();
-static struct Builtin *
+struct Builtin *
 Load_Io_module();
-static struct Builtin *
+struct Builtin *
 Load_Never_module();
 static inline void
 __params__(struct Vec *params, Usize count, ...);
@@ -100,7 +100,7 @@ __params__(struct Vec *params, Usize count, ...)
 
 #define PARAMS(count, ...) __params__(params, count, __VA_ARGS__)
 
-static struct Builtin *
+struct Builtin *
 Load_Int8_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -447,7 +447,7 @@ Load_Int8_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Int8", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Int16_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -794,7 +794,7 @@ Load_Int16_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Int16", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Int32_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -1141,7 +1141,7 @@ Load_Int32_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Int32", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Int64_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -1488,7 +1488,7 @@ Load_Int64_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Int64", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Int128_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -1835,7 +1835,7 @@ Load_Int128_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Int128", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Uint8_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -2182,7 +2182,7 @@ Load_Uint8_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Uint8", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Uint16_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -2529,7 +2529,7 @@ Load_Uint16_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Uint16", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Uint32_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -2876,7 +2876,7 @@ Load_Uint32_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Uint32", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Uint64_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -3223,7 +3223,7 @@ Load_Uint64_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Uint64", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Uint128_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -3570,7 +3570,7 @@ Load_Uint128_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Uint128", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Bool_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -3798,7 +3798,7 @@ Load_Bool_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Bool", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Float32_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -4343,7 +4343,7 @@ Load_Float32_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Float32", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Float64_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -4888,7 +4888,7 @@ Load_Float64_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Float64", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Char_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5015,7 +5015,7 @@ Load_Char_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Char", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Str_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5067,7 +5067,7 @@ Load_Str_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Str", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Isize_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5414,7 +5414,7 @@ Load_Isize_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Isize", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Usize_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5761,7 +5761,7 @@ Load_Usize_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Usize", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Optional_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5799,7 +5799,7 @@ Load_Optional_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Optional", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Ptr_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5837,7 +5837,7 @@ Load_Ptr_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ptr", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Tuple_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5883,7 +5883,7 @@ Load_Tuple_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Tuple", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Array_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5925,7 +5925,7 @@ Load_Array_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Array", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Fun_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5933,7 +5933,7 @@ Load_Fun_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Fun", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Ref_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5954,7 +5954,7 @@ Load_Ref_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Ref", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Custom_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5976,7 +5976,7 @@ Load_Custom_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Custom", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Mem_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -5996,7 +5996,7 @@ Load_Mem_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Mem", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Io_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));
@@ -6029,7 +6029,7 @@ Load_Io_module()
     return NEW(BuiltinModuleVar, NEW(BuiltinModule, "Io", items));
 }
 
-static struct Builtin *
+struct Builtin *
 Load_Never_module()
 {
     struct Vec *items = NEW(Vec, sizeof(struct Builtin));

@@ -61,37 +61,37 @@ static Usize count_trait_id = 0;
 static Usize count_record_obj_id = 0;
 static Usize count_enum_obj_id = 0;
 
-static const Int128 MaxUInt8 = 0xFF;
-static const Int128 MaxUInt16 = 0xFFFF;
-static const Int128 MaxUInt32 = 0xFFFFFFFF;
-static const Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
+const Int128 MaxUInt8 = 0xFF;
+const Int128 MaxUInt16 = 0xFFFF;
+const Int128 MaxUInt32 = 0xFFFFFFFF;
+const Int128 MaxUInt64 = 0xFFFFFFFFFFFFFFFF;
 #define MaxUInt128 (1 << 128) - 1
 
-static const Int128 MinInt8 = -0x80;
-static const Int128 MaxInt8 = 0x7F;
-static const Int128 MinInt16 = -0x8000;
-static const Int128 MaxInt16 = 0x7FFF;
-static const Int128 MinInt32 = -0x80000000;
-static const Int128 MaxInt32 = 0x7FFFFFFF;
-static const Int128 MinInt64 = -0x8000000000000000;
-static const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
+const Int128 MinInt8 = -0x80;
+const Int128 MaxInt8 = 0x7F;
+const Int128 MinInt16 = -0x8000;
+const Int128 MaxInt16 = 0x7FFF;
+const Int128 MinInt32 = -0x80000000;
+const Int128 MaxInt32 = 0x7FFFFFFF;
+const Int128 MinInt64 = -0x8000000000000000;
+const Int128 MaxInt64 = 0x7FFFFFFFFFFFFFFF;
 #define MinInt128 -(1 << 127)
 #define MaxInt128 (1 << 127) - 1
 
-static const Float32 MinPosFloat32 = 1.175494351e-38F;
-static const Float32 MaxFloat32 = 3.402823466e+38F;
+const Float32 MinPosFloat32 = 1.175494351e-38F;
+const Float32 MaxFloat32 = 3.402823466e+38F;
 
-static const Float64 MinPosFloat64 = 2.2250738585072014e-308;
-static const Float64 MaxFloat64 = 1.7976931348623158e+308;
+const Float64 MinPosFloat64 = 2.2250738585072014e-308;
+const Float64 MaxFloat64 = 1.7976931348623158e+308;
 
-static const Str BuiltinFirstLayer[] = {
+const Str BuiltinFirstLayer[] = {
     "Int8",   "Int16",  "Int32",   "Int64",    "Int128",  "Uint8",   "Uint16",
     "Uint32", "Uint64", "Uint128", "Bool",     "Float32", "Float64", "Char",
     "Str",    "Isize",  "Usize",   "Optional", "Ptr",     "Tuple",   "Array",
     "Fun",    "Ref",    "Custom",  "Mem",      "Io",      "Never"
 };
 
-static struct SearchContext
+struct SearchContext
 {
     bool search_type;
     bool search_fun;
@@ -102,35 +102,34 @@ static struct SearchContext
     bool search_object; // Enum and Record object
 } SearchContext;
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithErrTypecheck(struct Typecheck *self,
                                   struct LilyError *err,
                                   struct Location loc,
                                   struct String *detail_msg,
                                   struct Option *help);
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithWarnTypecheck(struct Typecheck *self,
                                    struct LilyWarning *warn,
                                    struct Location loc,
                                    struct String *detail_msg,
                                    struct Option *help);
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                                    struct String *note,
                                    struct Location loc,
                                    struct String *detail_msg,
                                    struct Option *help);
-static void
+void
 resolve_global_import(struct Typecheck *self);
-static void
-  * // when the import_value pos == 1 it return struct Tuple<struct Decl&,
-    // void&>* and when import_value pos > 1 it return struct SymbolTable&
-  search_access_from_buffer(struct Typecheck *self,
-                            struct SymbolTable *symb,
-                            struct Typecheck *buffer,
-                            struct String *access,
-                            struct Location loc);
-static void
+void * // when the import_value pos == 1 it return struct Tuple<struct Decl&,
+       // void&>* and when import_value pos > 1 it return struct SymbolTable&
+search_access_from_buffer(struct Typecheck *self,
+                          struct SymbolTable *symb,
+                          struct Typecheck *buffer,
+                          struct String *access,
+                          struct Location loc);
+void
 resolve_import_value(struct Typecheck *self,
                      struct Typecheck *tc,
                      struct Location import_loc,
@@ -140,197 +139,197 @@ resolve_import_value(struct Typecheck *self,
                      struct SymbolTable *current_symb,
                      bool is_selector,
                      bool is_pub);
-static struct Vec *
+struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
                struct ImportStmt *import_stmt);
-static void
+void
 verify_if_decl_is_duplicate(struct Typecheck self);
-static void
+void
 verify_if_decl_is_duplicate_in_module(struct Typecheck self,
                                       struct Decl *module);
-static void
+void
 verify_if_decl_is_duplicate_in_enum(struct Typecheck self, struct Decl *enum_);
-static void
+void
 verify_if_decl_is_duplicate_in_record(struct Typecheck self,
                                       struct Decl *record);
-static void
+void
 verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class);
-static void
+void
 verify_if_decl_is_duplicate_in_tag(struct Typecheck self, struct Decl *tag);
-static void
+void
 verify_if_decl_is_duplicate_in_trait(struct Typecheck self, struct Decl *trait);
-static void
+void
 push_all_symbols(struct Typecheck *self);
-static struct Vec *
+struct Vec *
 get_local_decl(struct Typecheck *self, struct Scope *scope);
-static void
+void
 check_constant(struct Typecheck *self,
                struct ConstantSymbol *constant,
                Usize id,
                struct Scope *previous);
-static void
+void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
              Usize id,
              struct Scope *previous);
-static void
+void
 check_alias(struct Typecheck *self,
             struct AliasSymbol *alias,
             Usize id,
             struct Scope *previous);
-static void
+void
 check_enum(struct Typecheck *self,
            struct EnumSymbol *enum_,
            Usize id,
            struct Scope *previous);
-static void
+void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
              Usize id,
              struct Scope *previous);
-static void
+void
 check_error(struct Typecheck *self,
             struct ErrorSymbol *error,
             Usize id,
             struct Scope *previous);
-static void
+void
 check_enum_obj(struct Typecheck *self,
                struct EnumObjSymbol *enum_obj,
                Usize id,
                struct Scope *previous);
-static void
+void
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
                  Usize id,
                  struct Scope *previous);
-static void
+void
 check_class(struct Typecheck *self,
             struct ClassSymbol *class,
             Usize id,
             struct Scope *previous);
-static void
+void
 check_trait(struct Typecheck *self,
             struct TraitSymbol *trait,
             Usize id,
             struct Scope *previous);
-static void
+void
 check_fun(struct Typecheck *self,
           struct FunSymbol *fun,
           Usize id,
           struct Scope *previous);
-static void
+void
 check_symbols(struct Typecheck *self);
-static struct ModuleSymbol *
+struct ModuleSymbol *
 entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx);
-static struct Scope *
+struct Scope *
 search_from_access(struct Typecheck *self,
                    struct Expr *id,
                    struct Vec *name,
                    struct SearchContext search_module_context);
-static struct Scope *
+struct Scope *
 search_with_search_module_context(struct Typecheck *self,
                                   struct Vec *name,
                                   struct SearchContext search_module_context);
-static struct ConstantSymbol *
+struct ConstantSymbol *
 search_in_consts_from_name(struct Typecheck *self, struct String *name);
-static struct ModuleSymbol *
+struct ModuleSymbol *
 search_in_modules_from_name(struct Typecheck *self, struct String *name);
-static struct FunSymbol *
+struct FunSymbol *
 search_in_funs_from_name(struct Typecheck *self, struct String *name);
-static struct AliasSymbol *
+struct AliasSymbol *
 search_in_aliases_from_name(struct Typecheck *self, struct String *name);
-static struct EnumSymbol *
+struct EnumSymbol *
 search_in_enums_from_name(struct Typecheck *self, struct String *name);
-static struct RecordSymbol *
+struct RecordSymbol *
 search_in_records_from_name(struct Typecheck *self, struct String *name);
-static struct EnumObjSymbol *
+struct EnumObjSymbol *
 search_in_enums_obj_from_name(struct Typecheck *self, struct String *name);
-static struct RecordObjSymbol *
+struct RecordObjSymbol *
 search_in_records_obj_from_name(struct Typecheck *self, struct String *name);
-static struct ClassSymbol *
+struct ClassSymbol *
 search_in_classes_from_name(struct Typecheck *self, struct String *name);
-static struct TraitSymbol *
+struct TraitSymbol *
 search_in_traits_from_name(struct Typecheck *self, struct String *name);
-static struct ErrorSymbol *
+struct ErrorSymbol *
 search_in_errors_from_name(struct Typecheck *self, struct String *name);
-static struct SymbolTable *
+struct SymbolTable *
 search_module_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
                             struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_enum_item_in_scope(struct Typecheck *self,
                           struct Expr *id,
                           struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_record_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
                             struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_enum_obj_item_in_scope(struct Typecheck *self,
                               struct Expr *id,
                               struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_record_obj_item_in_scope(struct Typecheck *self,
                                 struct Expr *id,
                                 struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_class_item_in_scope(struct Typecheck *self,
                            struct Expr *id,
                            struct SymbolTable *scope);
-static struct SymbolTable *
+struct SymbolTable *
 search_in_custom_scope(struct Typecheck *self,
                        struct Expr *id,
                        struct SymbolTable *scope);
-static struct Vec *
+struct Vec *
 search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id);
-static struct Vec *
+struct Vec *
 identifier_access_to_String_vec(struct Expr *id);
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 check_data_type(struct Typecheck *self,
                 struct Location data_type_loc,
                 struct DataType *data_type,
                 struct Vec *local_data_type,
                 struct Vec *local_decl,
                 struct SearchContext ctx);
-static struct StmtSymbol
+struct StmtSymbol
 check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
            bool is_return_type);
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 get_data_type_of_expression(struct Typecheck *self,
                             struct ExprSymbol *expr,
                             struct Vec *local_value);
-static const Str
+const Str
 get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt);
-static struct BuiltinFun *
+struct BuiltinFun *
 search_fun_builtin(struct Typecheck *self,
                    const Str module_name,
                    const Str fun_name,
                    Usize param_count);
-static void
+void
 verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
                            Usize param_count,
                            ...);
-static inline struct DataTypeSymbol *
+inline struct DataTypeSymbol *
 get_return_type_of_fun_builtin(struct Typecheck *self,
                                const Str module_name,
                                const Str fun_name,
                                Usize param_count);
-static struct Scope *
+struct Scope *
 search_in_fun_local_value(struct Vec *local_value, struct String *id);
-static struct Scope *
+struct Scope *
 search_value_in_function(struct Typecheck *self,
                          struct Vec *local_value,
                          struct String *id,
                          struct Vec *id_access);
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 check_if_defined_data_type_is_equal_to_infered_data_type(
   struct Typecheck *self,
   struct DataTypeSymbol *defined_data_type,
   struct DataTypeSymbol *infered_data_type);
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 infer_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Expr *expr,
@@ -338,9 +337,9 @@ infer_expression(struct Typecheck *self,
                  struct Vec *local_data_type,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type);
-static enum DataTypeKind
+enum DataTypeKind
 get_data_type_kind_from_literal_symbol(enum LiteralSymbolKind kind);
-static struct ExprSymbol *
+struct ExprSymbol *
 check_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Expr *expr,
@@ -348,49 +347,49 @@ check_expression(struct Typecheck *self,
                  struct Vec *local_data_type,
                  struct DataTypeSymbol *defined_data_type,
                  bool is_return_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_await_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
                  struct Vec *local_value,
                  struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_return_stmt(struct Typecheck *self,
                   struct FunSymbol *fun,
                   struct Stmt *stmt,
                   struct Vec *local_value,
                   struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_for_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
                struct Vec *local_value,
                struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_if_stmt(struct Typecheck *self,
               struct FunSymbol *fun,
               struct Stmt *stmt,
               struct Vec *local_value,
               struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_match_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
                  struct Vec *local_value,
                  struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_try_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
                struct Vec *local_value,
                struct Vec *local_data_type);
-static struct StmtSymbol
+struct StmtSymbol
 check_while_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
                  struct Vec *local_value,
                  struct Vec *local_data_type);
-static void
+void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Vec *fun_body,
@@ -400,6 +399,8 @@ check_fun_body(struct Typecheck *self,
 struct Typecheck
 __new__Typecheck(struct Parser parser)
 {
+    run__Parser(&parser);
+
     struct Typecheck self = {
         .parser = parser,
         .decl =
@@ -541,7 +542,7 @@ __free__Typecheck(struct Typecheck self)
     FREE(Parser, self.parser);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithErrTypecheck(struct Typecheck *self,
                                   struct LilyError *err,
                                   struct Location loc,
@@ -557,7 +558,7 @@ __new__DiagnosticWithErrTypecheck(struct Typecheck *self,
                help);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithWarnTypecheck(struct Typecheck *self,
                                    struct LilyWarning *warn,
                                    struct Location loc,
@@ -573,7 +574,7 @@ __new__DiagnosticWithWarnTypecheck(struct Typecheck *self,
                help);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                                    struct String *note,
                                    struct Location loc,
@@ -588,7 +589,7 @@ __new__DiagnosticWithNoteTypecheck(struct Typecheck *self,
                help);
 }
 
-static void
+void
 resolve_global_import(struct Typecheck *self)
 {
     struct Vec *imports = NEW(Vec, sizeof(struct Decl));
@@ -639,7 +640,7 @@ resolve_global_import(struct Typecheck *self)
         FREE(Vec, imports);
 }
 
-static void *
+void *
 search_access_from_buffer(struct Typecheck *self,
                           struct SymbolTable *symb,
                           struct Typecheck *buffer,
@@ -831,7 +832,7 @@ search_access_from_buffer(struct Typecheck *self,
         UNREACHABLE("symb and buffer dont't be equal to NULL in the same time");
 }
 
-static void
+void
 resolve_import_value(struct Typecheck *self,
                      struct Typecheck *tc,
                      struct Location import_loc,
@@ -1039,7 +1040,7 @@ exit : {
 }
 }
 
-static struct Vec *
+struct Vec *
 resolve_import(struct Typecheck *self,
                struct Location import_loc,
                struct ImportStmt *import_stmt)
@@ -1192,7 +1193,7 @@ exit : {
 }
 }
 
-static void
+void
 verify_if_decl_is_duplicate(struct Typecheck self)
 {
     for (Usize i = 0; i < len__Vec(*self.parser.decls); i++) {
@@ -1296,7 +1297,7 @@ verify_if_decl_is_duplicate(struct Typecheck self)
     }
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_module(struct Typecheck self,
                                       struct Decl *module)
 {
@@ -1442,7 +1443,7 @@ verify_if_decl_is_duplicate_in_module(struct Typecheck self,
     }
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_enum(struct Typecheck self, struct Decl *enum_)
 {
     if (enum_->value.enum_->variants) {
@@ -1475,7 +1476,7 @@ verify_if_decl_is_duplicate_in_enum(struct Typecheck self, struct Decl *enum_)
     }
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_record(struct Typecheck self,
                                       struct Decl *record)
 {
@@ -1509,7 +1510,7 @@ verify_if_decl_is_duplicate_in_record(struct Typecheck self,
     }
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class)
 {
     if (class->value.class->body) {
@@ -1568,14 +1569,14 @@ verify_if_decl_is_duplicate_in_class(struct Typecheck self, struct Decl *class)
     }
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_tag(struct Typecheck self, struct Decl *tag)
 {
     if (tag->value.tag->body)
         verify_if_decl_is_duplicate_in_module(self, tag);
 }
 
-static void
+void
 verify_if_decl_is_duplicate_in_trait(struct Typecheck self, struct Decl *trait)
 {
     if (trait->value.trait->body) {
@@ -1632,7 +1633,7 @@ verify_if_decl_is_duplicate_in_trait(struct Typecheck self, struct Decl *trait)
     if (!self->traits) \
     self->traits = NEW(Vec, sizeof(struct TraitSymbol))
 
-static void
+void
 push_all_symbols(struct Typecheck *self)
 {
     while (pos < len__Vec(*self->parser.decls)) {
@@ -1700,7 +1701,7 @@ push_all_symbols(struct Typecheck *self)
     pos = 0;
 }
 
-static struct Vec *
+struct Vec *
 get_local_decl(struct Typecheck *self, struct Scope *scope)
 {
     struct Vec *local = NULL;
@@ -1720,7 +1721,7 @@ get_local_decl(struct Typecheck *self, struct Scope *scope)
     return local;
 }
 
-static void
+void
 check_constant(struct Typecheck *self,
                struct ConstantSymbol *constant,
                Usize id,
@@ -1743,7 +1744,7 @@ check_constant(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_module(struct Typecheck *self,
              struct ModuleSymbol *module,
              Usize id,
@@ -1977,7 +1978,7 @@ check_module(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_alias(struct Typecheck *self,
             struct AliasSymbol *alias,
             Usize id,
@@ -2057,7 +2058,7 @@ check_alias(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_enum(struct Typecheck *self,
            struct EnumSymbol *enum_,
            Usize id,
@@ -2176,7 +2177,7 @@ check_enum(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_record(struct Typecheck *self,
              struct RecordSymbol *record,
              Usize id,
@@ -2302,7 +2303,7 @@ check_record(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_error(struct Typecheck *self,
             struct ErrorSymbol *error,
             Usize id,
@@ -2384,7 +2385,7 @@ check_error(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_enum_obj(struct Typecheck *self,
                struct EnumObjSymbol *enum_obj,
                Usize id,
@@ -2471,7 +2472,7 @@ check_enum_obj(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_record_obj(struct Typecheck *self,
                  struct RecordObjSymbol *record_obj,
                  Usize id,
@@ -2549,7 +2550,7 @@ check_record_obj(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_class(struct Typecheck *self,
             struct ClassSymbol *class,
             Usize id,
@@ -2664,7 +2665,7 @@ check_class(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_trait(struct Typecheck *self,
             struct TraitSymbol *trait,
             Usize id,
@@ -2695,7 +2696,7 @@ check_trait(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_fun(struct Typecheck *self,
           struct FunSymbol *fun,
           Usize id,
@@ -2915,7 +2916,7 @@ check_fun(struct Typecheck *self,
     }
 }
 
-static void
+void
 check_symbols(struct Typecheck *self)
 {
     while (pos < len__Vec(*self->parser.decls)) {
@@ -3009,7 +3010,7 @@ check_symbols(struct Typecheck *self)
     }
 }
 
-static struct ModuleSymbol *
+struct ModuleSymbol *
 entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx)
 {
     if (!self->modules)
@@ -3030,7 +3031,7 @@ entry_in_module(struct Typecheck *self, struct Vec *id, Usize end_idx)
     return current_module;
 }
 
-static struct Scope *
+struct Scope *
 search_from_access(struct Typecheck *self,
                    struct Expr *id,
                    struct Vec *name,
@@ -3046,7 +3047,7 @@ search_from_access(struct Typecheck *self,
     }
 }
 
-static struct ConstantSymbol *
+struct ConstantSymbol *
 search_in_consts_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->consts)
@@ -3066,7 +3067,7 @@ search_in_consts_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct ModuleSymbol *
+struct ModuleSymbol *
 search_in_modules_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->modules)
@@ -3086,7 +3087,7 @@ search_in_modules_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct FunSymbol *
+struct FunSymbol *
 search_in_funs_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->modules)
@@ -3105,7 +3106,7 @@ search_in_funs_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct AliasSymbol *
+struct AliasSymbol *
 search_in_aliases_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->aliases)
@@ -3125,7 +3126,7 @@ search_in_aliases_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct EnumSymbol *
+struct EnumSymbol *
 search_in_enums_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->enums)
@@ -3144,7 +3145,7 @@ search_in_enums_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct RecordSymbol *
+struct RecordSymbol *
 search_in_records_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->records)
@@ -3164,7 +3165,7 @@ search_in_records_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct EnumObjSymbol *
+struct EnumObjSymbol *
 search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->enums_obj)
@@ -3184,7 +3185,7 @@ search_in_enums_obj_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct RecordObjSymbol *
+struct RecordObjSymbol *
 search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->records_obj)
@@ -3204,7 +3205,7 @@ search_in_records_obj_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct ClassSymbol *
+struct ClassSymbol *
 search_in_classes_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->classes)
@@ -3224,7 +3225,7 @@ search_in_classes_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct TraitSymbol *
+struct TraitSymbol *
 search_in_traits_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->traits)
@@ -3243,7 +3244,7 @@ search_in_traits_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct ErrorSymbol *
+struct ErrorSymbol *
 search_in_errors_from_name(struct Typecheck *self, struct String *name)
 {
     if (!self->errors)
@@ -3262,7 +3263,7 @@ search_in_errors_from_name(struct Typecheck *self, struct String *name)
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_module_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
                             struct SymbolTable *scope)
@@ -3284,7 +3285,7 @@ search_module_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_enum_item_in_scope(struct Typecheck *self,
                           struct Expr *id,
                           struct SymbolTable *scope)
@@ -3306,7 +3307,7 @@ search_enum_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_record_item_in_scope(struct Typecheck *self,
                             struct Expr *id,
                             struct SymbolTable *scope)
@@ -3328,7 +3329,7 @@ search_record_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_enum_obj_item_in_scope(struct Typecheck *self,
                               struct Expr *id,
                               struct SymbolTable *scope)
@@ -3361,7 +3362,7 @@ search_enum_obj_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_record_obj_item_in_scope(struct Typecheck *self,
                                 struct Expr *id,
                                 struct SymbolTable *scope)
@@ -3394,7 +3395,7 @@ search_record_obj_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_class_item_in_scope(struct Typecheck *self,
                            struct Expr *id,
                            struct SymbolTable *scope)
@@ -3415,7 +3416,7 @@ search_class_item_in_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct SymbolTable *
+struct SymbolTable *
 search_in_custom_scope(struct Typecheck *self,
                        struct Expr *id,
                        struct SymbolTable *scope)
@@ -3494,7 +3495,7 @@ search_in_custom_scope(struct Typecheck *self,
     return NULL;
 }
 
-static struct Vec *
+struct Vec *
 search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
 {
     if (id->kind == ExprKindIdentifier) {
@@ -3516,7 +3517,7 @@ search_in_funs_from_fun_call(struct Typecheck *self, struct Expr *id)
         assert(0 && "error");
 }
 
-static struct Vec *
+struct Vec *
 identifier_access_to_String_vec(struct Expr *id)
 {
     struct Vec *name = NEW(Vec, sizeof(struct String));
@@ -3541,7 +3542,7 @@ identifier_access_to_String_vec(struct Expr *id)
         UNREACHABLE("expected identifier or identifier access");
 }
 
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 check_data_type(
   struct Typecheck *self,
   struct Location data_type_loc,
@@ -3929,7 +3930,7 @@ check_data_type(
     return NULL;
 }
 
-static struct StmtSymbol
+struct StmtSymbol
 check_stmt(struct Typecheck *self,
            struct Stmt *stmt,
            struct Vec *local_value,
@@ -3949,7 +3950,7 @@ check_stmt(struct Typecheck *self,
     }
 }
 
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 get_data_type_of_expression(struct Typecheck *self,
                             struct ExprSymbol *expr,
                             struct Vec *local_value)
@@ -4011,7 +4012,7 @@ get_data_type_of_expression(struct Typecheck *self,
     }
 }
 
-static const Str
+const Str
 get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt)
 {
     switch (dt->kind) {
@@ -4064,7 +4065,7 @@ get_builtin_module_name_from_data_type(struct DataTypeSymbol *dt)
     }
 }
 
-static struct BuiltinFun *
+struct BuiltinFun *
 search_fun_builtin(struct Typecheck *self,
                    const Str module_name,
                    const Str fun_name,
@@ -4093,7 +4094,7 @@ search_fun_builtin(struct Typecheck *self,
     assert(0 && "fun is not found");
 }
 
-static void
+void
 verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
                            Usize param_count,
                            ...)
@@ -4167,7 +4168,7 @@ verify_type_of_fun_builtin(struct BuiltinFun *fun_builtin,
     va_end(vl);
 }
 
-static inline struct DataTypeSymbol *
+inline struct DataTypeSymbol *
 get_return_type_of_fun_builtin(struct Typecheck *self,
                                const Str module_name,
                                const Str fun_name,
@@ -4183,7 +4184,7 @@ get_return_type_of_fun_builtin(struct Typecheck *self,
     return dt;
 }
 
-static struct Scope *
+struct Scope *
 search_in_fun_local_value(struct Vec *local_value, struct String *id)
 {
     struct Scope *value = NULL;
@@ -4197,7 +4198,7 @@ search_in_fun_local_value(struct Vec *local_value, struct String *id)
     return value;
 }
 
-static struct Scope *
+struct Scope *
 search_value_in_function(struct Typecheck *self,
                          struct Vec *local_value,
                          struct String *id,
@@ -4217,7 +4218,7 @@ search_value_in_function(struct Typecheck *self,
     return NULL;
 }
 
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 check_if_defined_data_type_is_equal_to_infered_data_type(
   struct Typecheck *self,
   struct DataTypeSymbol *defined_data_type,
@@ -4232,7 +4233,7 @@ check_if_defined_data_type_is_equal_to_infered_data_type(
     return infered_data_type;
 }
 
-static struct DataTypeSymbol *
+struct DataTypeSymbol *
 infer_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Expr *expr,
@@ -4414,13 +4415,13 @@ enum DataTypeKind
       [LiteralSymbolKindUnit] = DataTypeKindUnit
   };
 
-static enum DataTypeKind
+enum DataTypeKind
 get_data_type_kind_from_literal_symbol(enum LiteralSymbolKind kind)
 {
     return data_type_kind_from_literal_symbol_kind[(int)kind];
 }
 
-static struct ExprSymbol *
+struct ExprSymbol *
 check_expression(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Expr *expr,
@@ -5228,7 +5229,7 @@ check_expression(struct Typecheck *self,
     }
 }
 
-static struct StmtSymbol
+struct StmtSymbol
 check_await_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
@@ -5246,7 +5247,7 @@ check_await_stmt(struct Typecheck *self,
                                 false));
 }
 
-static struct StmtSymbol
+struct StmtSymbol
 check_return_stmt(struct Typecheck *self,
                   struct FunSymbol *fun,
                   struct Stmt *stmt,
@@ -5264,52 +5265,47 @@ check_return_stmt(struct Typecheck *self,
                                 false));
 }
 
-static struct StmtSymbol
+struct StmtSymbol
 check_for_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
                struct Vec *local_value,
                struct Vec *local_data_type)
-{
-}
+{}
 
-static struct StmtSymbol
+struct StmtSymbol
 check_if_stmt(struct Typecheck *self,
               struct FunSymbol *fun,
               struct Stmt *stmt,
               struct Vec *local_value,
               struct Vec *local_data_type)
-{
-}
+{}
 
-static struct StmtSymbol
+struct StmtSymbol
 check_match_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
                  struct Vec *local_value,
                  struct Vec *local_data_type)
-{
-}
+{}
 
-static struct StmtSymbol
+struct StmtSymbol
 check_try_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
                struct Vec *local_value,
                struct Vec *local_data_type)
-{
-}
+{}
 
-static struct StmtSymbol
+struct StmtSymbol
 check_while_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
                  struct Vec *local_value,
                  struct Vec *local_data_type)
-{
-}
+{}
 
-static void
+void
 check_fun_body(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Vec *fun_body,

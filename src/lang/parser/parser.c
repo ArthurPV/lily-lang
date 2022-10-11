@@ -344,108 +344,108 @@ This last step will just add the analyzer declarations into a vector (decls).
     case TokenKindArrow:          \
     case TokenKindStar
 
-static Usize count_error = 0;
-static Usize count_warning = 0;
+Usize count_error = 0;
+Usize count_warning = 0;
 
-static struct ParseContext *
+struct ParseContext *
 get_block(struct ParseBlock *self, bool in_module);
-static void
+void
 valid_name(struct ParseBlock *self,
            struct String *name,
            bool start_by_uppercase);
-static inline void
+inline void
 next_token_pb(struct ParseBlock *self);
-static inline void
+inline void
 skip_to_next_block(struct ParseBlock *self);
-static struct String *
+struct String *
 get_type_name(struct ParseBlock *self);
-static struct ParseContext *
+struct ParseContext *
 get_type_context(struct ParseBlock *self, bool is_pub);
-static struct String *
+struct String *
 get_object_name(struct ParseBlock *self);
-static struct ParseContext *
+struct ParseContext *
 get_object_context(struct ParseBlock *self, bool is_pub);
-static struct Vec *
+struct Vec *
 get_generic_params(struct ParseBlock *self);
-static inline bool
+inline bool
 valid_body_item(struct ParseBlock *parse_block,
                 bool already_invalid,
                 bool is_fun);
-static void
+void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun);
-static void
+void
 get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun);
-static void
+void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid);
-static void
+void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid);
-static void
+void
 get_record_parse_context(struct RecordParseContext *self,
                          struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_token_in_alias_data_type(struct ParseBlock *parse_block,
                                bool already_invalid);
-static void
+void
 get_alias_parse_context(struct AliasParseContext *self,
                         struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid);
-static void
+void
 get_trait_parse_context(struct TraitParseContext *self,
                         struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
-static void
+void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
-static void
+void
 get_tag_parse_context(struct TagParseContext *self,
                       struct ParseBlock *parse_block);
-static void
+void
 get_method_parse_context(struct MethodParseContext *self,
                          struct ParseBlock *parse_block);
-static void
+void
 get_property_parse_context(struct PropertyParseContext *self,
                            struct ParseBlock *parse_block);
-static void
+void
 get_import_parse_context(struct ImportParseContext *self,
                          struct ParseBlock *parse_block);
-static inline bool
+inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid);
-static inline bool
+inline bool
 valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid);
-static void
+void
 get_constant_parse_context(struct ConstantParseContext *self,
                            struct ParseBlock *parse_block);
-static void
+void
 get_error_parse_context(struct ErrorParseContext *self,
                         struct ParseBlock *parse_block);
-static void
+void
 get_module_parse_context(struct ModuleParseContext *self,
                          struct ParseBlock *parse_block);
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
                                struct String *detail_msg,
                                struct Option *help);
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
                                 struct String *detail_msg,
                                 struct Option *help);
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -453,177 +453,177 @@ __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct Option *help);
 static inline void
 next_token(struct ParseDecl *self);
-static inline bool
+inline bool
 is_data_type(struct ParseDecl *self);
-static struct DataType *
+struct DataType *
 parse_data_type(struct Parser self, struct ParseDecl *parse_decl);
-static struct Vec *
+struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl);
-static struct Vec *
+struct Vec *
 parse_generic_params(struct Parser self, struct ParseDecl *parse_decl);
-static struct Expr *
+struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl);
-static struct Expr *
+struct Expr *
 parse_variable(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc,
                bool is_mut);
-static struct Token *
+struct Token *
 peek_token(struct ParseDecl parse_decl, Usize n);
-static void
+void
 skip_container(struct ParseDecl parse_decl, Usize *pos);
-static bool
+bool
 verify_if_has_comma(struct ParseDecl parse_decl, Usize add);
-static struct Expr *
+struct Expr *
 parse_expr_binary_op(struct Parser self,
                      struct ParseDecl *parse_decl,
                      struct Expr *left,
                      struct Location loc,
                      Usize prec);
-static struct Expr *
+struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl);
-static inline int *
+inline int *
 parse_unary_op(enum TokenKind kind);
-static inline int *
+inline int *
 parse_binary_op(enum TokenKind kind);
-static struct Expr *
+struct Expr *
 parse_variant_expr(struct Parser self,
                    struct ParseDecl *parse_decl,
                    struct Expr *id,
                    struct Location loc);
-static struct Expr *
+struct Expr *
 parse_fun_call_expr(struct Parser self,
                     struct ParseDecl *parse_decl,
                     struct Expr *id,
                     struct Location loc);
-static struct Expr *
+struct Expr *
 parse_record_call_expr(struct Parser self,
                        struct ParseDecl *parse_decl,
                        struct Expr *id,
                        struct Location loc);
-static struct Expr *
+struct Expr *
 parse_array_access_expr(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Expr *id,
                         struct Location loc);
-static struct Expr *
+struct Expr *
 parse_tuple_access_expr(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Expr *id,
                         struct Location loc);
-static struct Expr *
+struct Expr *
 parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Location loc,
                         struct Vec *ids);
-static struct Expr *
+struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl);
-static struct Stmt *
+struct Stmt *
 parse_return_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc);
-static struct IfCond *
+struct IfCond *
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
               struct Location *loc);
-static struct Stmt *
+struct Stmt *
 parse_await_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location loc);
-static struct Stmt *
+struct Stmt *
 parse_try_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc);
-static struct MatchStmt *
+struct MatchStmt *
 parse_match_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location *loc);
-static struct Stmt *
+struct Stmt *
 parse_while_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location loc);
-static struct Stmt *
+struct Stmt *
 parse_for_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc);
-static struct ImportStmt *
+struct ImportStmt *
 parse_import_value__parse_import_stmt(struct Parser self,
                                       struct String *buffer,
                                       struct String *as_value,
                                       struct Location buffer_loc,
                                       bool is_pub);
-static struct String *
+struct String *
 get_value__parse_import_stmt(struct String buffer, Usize *pos);
-static struct String *
+struct String *
 get_name__parse_import_stmt(struct Parser self,
                             struct String buffer,
                             struct Location buffer_loc,
                             Usize *pos);
-static struct Vec *
+struct Vec *
 get_value_in_selector__parse_import_stmt(struct Parser self,
                                          struct String buffer,
                                          struct Location buffer_loc,
                                          Usize *pos);
-static struct Vec *
+struct Vec *
 get_selector__parse_import_stmt(struct Parser self,
                                 struct String buffer,
                                 struct Location buffer_loc,
                                 Usize *pos);
-static void
+void
 next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos);
-static struct Stmt *
+struct Stmt *
 parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc);
-static struct Vec *
+struct Vec *
 parse_fun_body(struct Parser self, struct ParseDecl *parse_decl);
-static struct Vec *
+struct Vec *
 parse_fun_params(struct Parser self,
                  struct ParseDecl *parse_decl,
                  bool is_method);
-static struct FunDecl *
+struct FunDecl *
 parse_fun_declaration(struct Parser *self,
                       struct FunParseContext fun_parse_context);
-static struct EnumDecl *
+struct EnumDecl *
 parse_enum_declaration(struct Parser *self,
                        struct EnumParseContext enum_parse_context,
                        bool is_object);
-static struct RecordDecl *
+struct RecordDecl *
 parse_record_declaration(struct Parser *self,
                          struct RecordParseContext record_parse_context,
                          bool is_object);
-static struct AliasDecl *
+struct AliasDecl *
 parse_alias_declaration(struct Parser *self,
                         struct AliasParseContext alias_parse_context);
-static struct Vec *
+struct Vec *
 parse_inheritance(struct Parser self, struct ParseDecl *parse_decl);
-static struct TraitDecl *
+struct TraitDecl *
 parse_trait_declaration(struct Parser *self,
                         struct TraitParseContext trait_parse_context);
-static struct Vec *
+struct Vec *
 parse_impl(struct Parser self, struct ParseDecl *parse_decl);
-static struct ClassDecl *
+struct ClassDecl *
 parse_class_declaration(struct Parser *self,
                         struct ClassParseContext class_parse_context);
-static struct PropertyDecl *
+struct PropertyDecl *
 parse_property_declaration(struct Parser *self,
                            struct ParseClassBody *parse_class);
-static struct MethodDecl *
+struct MethodDecl *
 parse_method_declaration(struct Parser *self,
                          struct ParseClassBody *parse_class);
-static struct ImportStmt *
+struct ImportStmt *
 parse_import_declaration(struct Parser *self,
                          struct ImportParseContext import_parse_context);
-static struct ConstantDecl *
+struct ConstantDecl *
 parse_constant_declaration(struct Parser *self,
                            struct ConstantParseContext constant_parse_context);
-static struct ErrorDecl *
+struct ErrorDecl *
 parse_error_declaration(struct Parser *self,
                         struct ErrorParseContext error_parse_context);
-static struct ModuleDecl *
+struct ModuleDecl *
 parse_module_declaration(struct Parser *self,
                          struct ModuleParseContext module_parse_context);
-static void
+void
 parse_declaration(struct Parser *self);
 
 struct ParseBlock
@@ -642,7 +642,7 @@ __new__ParseBlock(struct Scanner scanner)
     return self;
 }
 
-static struct ParseContext *
+struct ParseContext *
 get_block(struct ParseBlock *self, bool in_module)
 {
     struct Location loc = NEW(Location);
@@ -1000,7 +1000,7 @@ get_block(struct ParseBlock *self, bool in_module)
     return NULL;
 }
 
-static void
+void
 valid_name(struct ParseBlock *self,
            struct String *name,
            bool start_by_uppercase)
@@ -1054,7 +1054,7 @@ run__ParseBlock(struct ParseBlock *self)
     }
 }
 
-static inline void
+inline void
 next_token_pb(struct ParseBlock *self)
 {
     if (self->current->kind != TokenKindEof) {
@@ -1064,7 +1064,7 @@ next_token_pb(struct ParseBlock *self)
     }
 }
 
-static inline void
+inline void
 skip_to_next_block(struct ParseBlock *self)
 {
     while (self->current->kind != TokenKindFunKw &&
@@ -1086,7 +1086,7 @@ skip_to_next_block(struct ParseBlock *self)
         next_token_pb(self);
 }
 
-static struct String *
+struct String *
 get_type_name(struct ParseBlock *self)
 {
     next_token_pb(self);
@@ -1111,7 +1111,7 @@ get_type_name(struct ParseBlock *self)
     return self->current->lit;
 }
 
-static struct ParseContext *
+struct ParseContext *
 get_type_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_type_name(self);
@@ -1193,7 +1193,7 @@ get_type_context(struct ParseBlock *self, bool is_pub)
     }
 }
 
-static struct String *
+struct String *
 get_object_name(struct ParseBlock *self)
 {
     next_token_pb(self);
@@ -1218,7 +1218,7 @@ get_object_name(struct ParseBlock *self)
     return self->current->lit;
 }
 
-static struct ParseContext *
+struct ParseContext *
 get_object_context(struct ParseBlock *self, bool is_pub)
 {
     struct String *name = get_object_name(self);
@@ -1429,7 +1429,7 @@ get_object_context(struct ParseBlock *self, bool is_pub)
     }
 }
 
-static struct Vec *
+struct Vec *
 get_generic_params(struct ParseBlock *self)
 {
     struct Vec *generic_params = NEW(Vec, sizeof(struct Token));
@@ -1482,7 +1482,7 @@ __new__FunParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_body_item(struct ParseBlock *parse_block,
                 bool already_invalid,
                 bool is_fun)
@@ -1541,7 +1541,7 @@ valid_body_item(struct ParseBlock *parse_block,
         push__Vec(((struct MethodParseContext *)self)->body, \
                   parse_block->current);
 
-static void
+void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
     if (parse_block->current->kind == TokenKindDoKw ||
@@ -1598,7 +1598,7 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
         return;
 }
 
-static void
+void
 get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
 {
     Usize start_line = parse_block->current->loc->s_line;
@@ -1635,7 +1635,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
     VERIFY_CLOSING_BODY(parse_block);
 }
 
-static void
+void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block)
 {
@@ -1816,7 +1816,7 @@ __new__EnumParseContext()
     return self;
 }
 
-static void
+void
 get_enum_parse_context(struct EnumParseContext *self,
                        struct ParseBlock *parse_block)
 {
@@ -1878,7 +1878,7 @@ get_enum_parse_context(struct EnumParseContext *self,
     VERIFY_EOF(parse_block, bad_token, "`end`");
 }
 
-static inline bool
+inline bool
 valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
@@ -1929,7 +1929,7 @@ __new__RecordParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_token_in_record_fields(struct ParseBlock *parse_block,
                              bool already_invalid)
 {
@@ -1959,7 +1959,7 @@ valid_token_in_record_fields(struct ParseBlock *parse_block,
     }
 }
 
-static void
+void
 get_record_parse_context(struct RecordParseContext *self,
                          struct ParseBlock *parse_block)
 {
@@ -2010,7 +2010,7 @@ __new__AliasParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_token_in_alias_data_type(struct ParseBlock *parse_block,
                                bool already_invalid)
 {
@@ -2040,7 +2040,7 @@ valid_token_in_alias_data_type(struct ParseBlock *parse_block,
     }
 }
 
-static void
+void
 get_alias_parse_context(struct AliasParseContext *self,
                         struct ParseBlock *parse_block)
 {
@@ -2104,7 +2104,7 @@ __new__TraitParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2137,7 +2137,7 @@ valid_token_in_trait_body(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
-static void
+void
 get_trait_parse_context(struct TraitParseContext *self,
                         struct ParseBlock *parse_block)
 {
@@ -2191,7 +2191,7 @@ __new__ClassParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     bool is_valid = valid_body_item(parse_block, already_invalid, false);
@@ -2202,7 +2202,7 @@ valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
         return false;
 }
 
-static void
+void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block)
 {
@@ -2425,7 +2425,7 @@ __new__TagParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 {
     if (valid_body_item(parse_block, true, false))
@@ -2450,7 +2450,7 @@ valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
-static void
+void
 get_tag_parse_context(struct TagParseContext *self,
                       struct ParseBlock *parse_block)
 {
@@ -2503,7 +2503,7 @@ __new__MethodParseContext()
     return self;
 }
 
-static void
+void
 get_method_parse_context(struct MethodParseContext *self,
                          struct ParseBlock *parse_block)
 {
@@ -2551,7 +2551,7 @@ __new__PropertyParseContext()
     return self;
 }
 
-static void
+void
 get_property_parse_context(struct PropertyParseContext *self,
                            struct ParseBlock *parse_block)
 {
@@ -2583,7 +2583,7 @@ __new__ImportParseContext()
     return self;
 }
 
-static void
+void
 get_import_parse_context(struct ImportParseContext *self,
                          struct ParseBlock *parse_block)
 {
@@ -2636,7 +2636,7 @@ __new__ConstantParseContext()
     return self;
 }
 
-static inline bool
+inline bool
 valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2662,7 +2662,7 @@ valid_constant_data_type(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
-static inline bool
+inline bool
 valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
@@ -2703,7 +2703,7 @@ valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid)
     }
 }
 
-static void
+void
 get_constant_parse_context(struct ConstantParseContext *self,
                            struct ParseBlock *parse_block)
 {
@@ -2783,7 +2783,7 @@ __new__ErrorParseContext()
     return self;
 }
 
-static void
+void
 get_error_parse_context(struct ErrorParseContext *self,
                         struct ParseBlock *parse_block)
 {
@@ -2869,7 +2869,7 @@ __new__ModuleParseContext()
     return self;
 }
 
-static void
+void
 get_module_parse_context(struct ModuleParseContext *self,
                          struct ParseBlock *parse_block)
 {
@@ -2925,7 +2925,7 @@ __free__ModuleParseContext(struct ModuleParseContext self)
     FREE(Vec, self.body);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithErrParser(struct ParseBlock *self,
                                struct LilyError *err,
                                struct Location loc,
@@ -2937,7 +2937,7 @@ __new__DiagnosticWithErrParser(struct ParseBlock *self,
       DiagnosticWithErr, err, loc, self->scanner.src->file, detail_msg, help);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithWarnParser(struct ParseBlock *self,
                                 struct LilyWarning *warn,
                                 struct Location loc,
@@ -2949,7 +2949,7 @@ __new__DiagnosticWithWarnParser(struct ParseBlock *self,
       DiagnosticWithWarn, warn, loc, self->scanner.src->file, detail_msg, help);
 }
 
-static inline struct Diagnostic *
+inline struct Diagnostic *
 __new__DiagnosticWithNoteParser(struct ParseBlock *self,
                                 struct String *note,
                                 struct Location loc,
@@ -3295,7 +3295,7 @@ next_token(struct ParseDecl *self)
         self->previous = self->current;
 }
 
-static inline bool
+inline bool
 is_data_type(struct ParseDecl *self)
 {
     switch (self->current->kind) {
@@ -3314,7 +3314,7 @@ is_data_type(struct ParseDecl *self)
     }
 }
 
-static struct DataType *
+struct DataType *
 parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 {
     next_token(parse_decl);
@@ -3659,7 +3659,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
     return data_type;
 }
 
-static struct Vec *
+struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *tags =
@@ -3719,7 +3719,7 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 }
 
 // struct Vec<struct Generic*>*
-static struct Vec *
+struct Vec *
 parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *generic_params = len__Vec(*parse_decl->tokens) > 0
@@ -3816,14 +3816,14 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
     return generic_params;
 }
 
-static const Int128 Int32Min = -2147483648;
-static const Int128 Int32Max = 2147483647;
-static const Int128 Int64Min = -0x8000000000000000;
-static const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
-// static const Int128 Int128Min = -0x80000000000000000000000000000000;
-// static const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+const Int128 Int32Min = -2147483648;
+const Int128 Int32Max = 2147483647;
+const Int128 Int64Min = -0x8000000000000000;
+const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
+//  const Int128 Int128Min = -0x80000000000000000000000000000000;
+//  const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-static struct Expr *
+struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Location loc = NEW(Location);
@@ -3936,7 +3936,7 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
     return NEW(ExprLiteral, literal, loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_variable(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc,
@@ -3981,7 +3981,7 @@ parse_variable(struct Parser self,
           ExprVariable, NEW(VariableDecl, name, data_type, expr, is_mut), loc);
 }
 
-static struct Token *
+struct Token *
 peek_token(struct ParseDecl parse_decl, Usize n)
 {
     if (parse_decl.pos + n < len__Vec(*parse_decl.tokens))
@@ -3990,7 +3990,7 @@ peek_token(struct ParseDecl parse_decl, Usize n)
         return NULL;
 }
 
-static void
+void
 skip_container(struct ParseDecl parse_decl, Usize *pos)
 {
     while (1) {
@@ -4007,7 +4007,7 @@ skip_container(struct ParseDecl parse_decl, Usize *pos)
     }
 }
 
-static bool
+bool
 verify_if_has_comma(struct ParseDecl parse_decl, Usize add)
 {
     Usize pos = 1 + add;
@@ -4039,7 +4039,7 @@ verify_if_has_comma(struct ParseDecl parse_decl, Usize add)
     return false;
 }
 
-static struct Expr *
+struct Expr *
 parse_expr_binary_op(struct Parser self,
                      struct ParseDecl *parse_decl,
                      struct Expr *left,
@@ -4081,7 +4081,7 @@ parse_expr_binary_op(struct Parser self,
     return left;
 }
 
-static struct Expr *
+struct Expr *
 parse_primary_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Expr *expr = NULL;
@@ -4513,7 +4513,7 @@ exit_unary : {
     return expr;
 }
 
-static inline int *
+inline int *
 parse_unary_op(enum TokenKind kind)
 {
     switch (kind) {
@@ -4537,7 +4537,7 @@ parse_unary_op(enum TokenKind kind)
     }
 }
 
-static inline int *
+inline int *
 parse_binary_op(enum TokenKind kind)
 {
     switch (kind) {
@@ -4669,7 +4669,7 @@ parse_binary_op(enum TokenKind kind)
     }
 }
 
-static struct Expr *
+struct Expr *
 parse_variant_expr(struct Parser self,
                    struct ParseDecl *parse_decl,
                    struct Expr *id,
@@ -4694,7 +4694,7 @@ parse_variant_expr(struct Parser self,
     }
 }
 
-static struct Expr *
+struct Expr *
 parse_fun_call_expr(struct Parser self,
                     struct ParseDecl *parse_decl,
                     struct Expr *id,
@@ -4779,7 +4779,7 @@ parse_fun_call_expr(struct Parser self,
     return NEW(ExprFunCall, NEW(FunCall, id, params_call), loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_record_call_expr(struct Parser self,
                        struct ParseDecl *parse_decl,
                        struct Expr *id,
@@ -4862,7 +4862,7 @@ parse_record_call_expr(struct Parser self,
     return NEW(ExprRecordCall, NEW(RecordCall, id, fields), loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_array_access_expr(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Expr *id,
@@ -4894,7 +4894,7 @@ parse_array_access_expr(struct Parser self,
     return NEW(ExprArrayAccess, NEW(ArrayAccess, id, access), loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_tuple_access_expr(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Expr *id,
@@ -4913,7 +4913,7 @@ parse_tuple_access_expr(struct Parser self,
     return NEW(ExprTupleAccess, NEW(TupleAccess, id, access), loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_identifier_access(struct Parser self,
                         struct ParseDecl *parse_decl,
                         struct Location loc,
@@ -4993,7 +4993,7 @@ parse_identifier_access(struct Parser self,
     return NEW(ExprIdentifierAccess, ids, loc);
 }
 
-static struct Expr *
+struct Expr *
 parse_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Location loc = NEW(Location);
@@ -5009,7 +5009,7 @@ parse_expr(struct Parser self, struct ParseDecl *parse_decl)
     return expr;
 }
 
-static struct Stmt *
+struct Stmt *
 parse_return_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc)
@@ -5022,7 +5022,7 @@ parse_return_stmt(struct Parser self,
     return NEW(StmtReturn, loc, expr);
 }
 
-static struct IfCond *
+struct IfCond *
 parse_if_stmt(struct Parser self,
               struct ParseDecl *parse_decl,
               struct Location *loc)
@@ -5141,7 +5141,7 @@ parse_if_stmt(struct Parser self,
     }
 }
 
-static struct Stmt *
+struct Stmt *
 parse_await_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location loc)
@@ -5154,7 +5154,7 @@ parse_await_stmt(struct Parser self,
     return NEW(StmtAwait, loc, expr);
 }
 
-static struct Stmt *
+struct Stmt *
 parse_try_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc)
@@ -5210,7 +5210,7 @@ parse_try_stmt(struct Parser self,
     }
 }
 
-static struct MatchStmt *
+struct MatchStmt *
 parse_match_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location *loc)
@@ -5254,7 +5254,7 @@ parse_match_stmt(struct Parser self,
     return NEW(MatchStmt, matching, patterns);
 }
 
-static struct Stmt *
+struct Stmt *
 parse_while_stmt(struct Parser self,
                  struct ParseDecl *parse_decl,
                  struct Location loc)
@@ -5275,14 +5275,13 @@ parse_while_stmt(struct Parser self,
     return NEW(StmtWhile, loc, NEW(WhileStmt, while_expr, while_body));
 }
 
-static struct Stmt *
+struct Stmt *
 parse_for_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc)
-{
-}
+{}
 
-static struct Stmt *
+struct Stmt *
 parse_import_stmt(struct Parser self,
                   struct ParseDecl *parse_decl,
                   struct Location loc)
@@ -5340,7 +5339,7 @@ parse_import_stmt(struct Parser self,
 #define UPDATE_CURRENT() \
     current = i < len__String(*buffer) ? get__String(*buffer, i) : NULL;
 
-static struct ImportStmt *
+struct ImportStmt *
 parse_import_value__parse_import_stmt(struct Parser self,
                                       struct String *buffer,
                                       struct String *as_value,
@@ -5607,7 +5606,7 @@ parse_import_value__parse_import_stmt(struct Parser self,
     return NEW(ImportStmt, import_value, is_pub, as_value);
 }
 
-static struct String *
+struct String *
 get_value__parse_import_stmt(struct String buffer, Usize *pos)
 {
     struct String *s = NEW(String);
@@ -5621,7 +5620,7 @@ get_value__parse_import_stmt(struct String buffer, Usize *pos)
     return s;
 }
 
-static struct String *
+struct String *
 get_name__parse_import_stmt(struct Parser self,
                             struct String buffer,
                             struct Location buffer_loc,
@@ -5665,7 +5664,7 @@ exit : {
     return s;
 }
 
-static struct Vec *
+struct Vec *
 get_value_in_selector__parse_import_stmt(struct Parser self,
                                          struct String buffer,
                                          struct Location buffer_loc,
@@ -5728,7 +5727,7 @@ exit : {
     return value;
 }
 
-static struct Vec *
+struct Vec *
 get_selector__parse_import_stmt(struct Parser self,
                                 struct String buffer,
                                 struct Location buffer_loc,
@@ -5762,7 +5761,7 @@ get_selector__parse_import_stmt(struct Parser self,
     return selector;
 }
 
-static void
+void
 next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos)
 {
     if (*pos + 1 < len__String(buffer)) {
@@ -5773,7 +5772,7 @@ next_char__parse_import_stmt(struct String buffer, char **current, Usize *pos)
 }
 
 // struct Vec<struct FunParam*>*
-static struct Vec *
+struct Vec *
 parse_fun_params(struct Parser self,
                  struct ParseDecl *parse_decl,
                  bool is_method)
@@ -5948,7 +5947,7 @@ parse_fun_params(struct Parser self,
 }
 
 // struct Vec<struct FunBodyItem*>*
-static struct Vec *
+struct Vec *
 parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *body = len__Vec(*parse_decl->tokens) > 0
@@ -5962,7 +5961,7 @@ parse_fun_body(struct Parser self, struct ParseDecl *parse_decl)
     return body;
 }
 
-static struct FunDecl *
+struct FunDecl *
 parse_fun_declaration(struct Parser *self,
                       struct FunParseContext fun_parse_context)
 {
@@ -6043,7 +6042,7 @@ parse_fun_declaration(struct Parser *self,
                fun_parse_context.is_async);
 }
 
-static struct EnumDecl *
+struct EnumDecl *
 parse_enum_declaration(struct Parser *self,
                        struct EnumParseContext enum_parse_context,
                        bool is_object)
@@ -6145,7 +6144,7 @@ parse_enum_declaration(struct Parser *self,
                enum_parse_context.is_error);
 }
 
-static struct RecordDecl *
+struct RecordDecl *
 parse_record_declaration(struct Parser *self,
                          struct RecordParseContext record_parse_context,
                          bool is_object)
@@ -6244,7 +6243,7 @@ parse_record_declaration(struct Parser *self,
                is_object);
 }
 
-static struct AliasDecl *
+struct AliasDecl *
 parse_alias_declaration(struct Parser *self,
                         struct AliasParseContext alias_parse_context)
 {
@@ -6285,7 +6284,7 @@ parse_alias_declaration(struct Parser *self,
                alias_parse_context.is_pub);
 }
 
-static struct Vec *
+struct Vec *
 parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
 {
     struct Vec *inh = NEW(Vec, sizeof(struct Tuple));
@@ -6337,7 +6336,7 @@ parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
     return inh;
 }
 
-static struct TraitDecl *
+struct TraitDecl *
 parse_trait_declaration(struct Parser *self,
                         struct TraitParseContext trait_parse_context)
 {
@@ -6492,7 +6491,7 @@ parse_trait_declaration(struct Parser *self,
                trait_parse_context.is_pub);
 }
 
-static struct Vec *
+struct Vec *
 parse_impl(struct Parser self, struct ParseDecl *parse_decl)
 {
     return parse_inheritance(self, parse_decl);
@@ -6505,7 +6504,7 @@ parse_impl(struct Parser self, struct ParseDecl *parse_decl)
         ? ((struct ParseContext *)get__Vec(*parse.blocks, parse.pos)) \
         : NULL
 
-static struct ClassDecl *
+struct ClassDecl *
 parse_class_declaration(struct Parser *self,
                         struct ClassParseContext class_parse_context)
 {
@@ -6580,7 +6579,7 @@ parse_class_declaration(struct Parser *self,
                class_parse_context.is_pub);
 }
 
-static struct PropertyDecl *
+struct PropertyDecl *
 parse_property_declaration(struct Parser *self,
                            struct ParseClassBody *parse_class)
 {
@@ -6601,7 +6600,7 @@ parse_property_declaration(struct Parser *self,
                property_parse_context.is_pub);
 }
 
-static struct MethodDecl *
+struct MethodDecl *
 parse_method_declaration(struct Parser *self,
                          struct ParseClassBody *parse_class)
 {
@@ -6670,7 +6669,7 @@ parse_method_declaration(struct Parser *self,
                method_parse_context.is_pub);
 }
 
-static struct ImportStmt *
+struct ImportStmt *
 parse_import_declaration(struct Parser *self,
                          struct ImportParseContext import_parse_context)
 {
@@ -6681,7 +6680,7 @@ parse_import_declaration(struct Parser *self,
                                                  import_parse_context.is_pub);
 }
 
-static struct ConstantDecl *
+struct ConstantDecl *
 parse_constant_declaration(struct Parser *self,
                            struct ConstantParseContext constant_parse_context)
 {
@@ -6737,7 +6736,7 @@ parse_constant_declaration(struct Parser *self,
                constant_parse_context.is_pub);
 }
 
-static struct ErrorDecl *
+struct ErrorDecl *
 parse_error_declaration(struct Parser *self,
                         struct ErrorParseContext error_parse_context)
 {
@@ -6778,7 +6777,7 @@ parse_error_declaration(struct Parser *self,
                error_parse_context.is_pub);
 }
 
-static struct ModuleDecl *
+struct ModuleDecl *
 parse_module_declaration(struct Parser *self,
                          struct ModuleParseContext module_parse_context)
 {
@@ -6906,7 +6905,7 @@ parse_module_declaration(struct Parser *self,
       ModuleDecl, module_parse_context.name, body, module_parse_context.is_pub);
 }
 
-static void
+void
 parse_declaration(struct Parser *self)
 {
     switch (self->current->kind) {

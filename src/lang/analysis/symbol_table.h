@@ -67,23 +67,13 @@ typedef struct Scope
  *
  * @brief Construct the Scope type.
  */
-inline struct Scope *
+struct Scope *
 __new__Scope(const Str filename,
              struct String *name,
              Usize id,
              enum ScopeItemKind item_kind,
              enum ScopeKind kind,
-             struct Scope *previous)
-{
-    struct Scope *self = malloc(sizeof(struct Scope));
-    self->filename = filename;
-    self->name = name;
-    self->id = id;
-    self->item_kind = item_kind;
-    self->kind = kind;
-    self->previous = previous;
-    return self;
-}
+             struct Scope *previous);
 
 /**
  *

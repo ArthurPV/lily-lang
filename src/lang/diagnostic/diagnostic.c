@@ -8,28 +8,28 @@
 #include <lang/scanner/token.h>
 #include <string.h>
 
-static inline const Str
+inline const Str
 diagnostic_kind_to_String(enum DiagnosticKind kind);
-static inline const Str
+inline const Str
 apply_color(enum DiagnosticKind kind, const Str s);
-static struct String *
+struct String *
 detail_to_String(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc);
-static inline struct String *
+inline struct String *
 lily_error_to_String(struct LilyError err);
-static inline struct String *
+inline struct String *
 lily_warning_to_String(struct LilyWarning warn);
-static inline const Str
+inline const Str
 get_code_of_lily_error(struct LilyError err);
-static inline const Str
+inline const Str
 get_code_of_lily_warning(struct LilyWarning warn);
-static struct String *
+struct String *
 get_line(struct Diagnostic self, Usize line_number);
-static struct String *
+struct String *
 diagnostic_to_String(struct Diagnostic self);
 
-static inline const Str
+inline const Str
 diagnostic_kind_to_String(enum DiagnosticKind kind)
 {
     switch (kind) {
@@ -44,7 +44,7 @@ diagnostic_kind_to_String(enum DiagnosticKind kind)
     }
 }
 
-static inline const Str
+inline const Str
 apply_color(enum DiagnosticKind kind, const Str s)
 {
     switch (kind) {
@@ -68,7 +68,7 @@ __new__Detail(struct String *msg, struct Vec *lines)
     return self;
 }
 
-static struct String *
+struct String *
 detail_to_String(struct Detail self,
                  enum DiagnosticKind kind,
                  struct Location loc)
@@ -137,7 +137,7 @@ detail_to_String(struct Detail self,
     return s;
 }
 
-static inline struct String *
+inline struct String *
 lily_error_to_String(struct LilyError err)
 {
     switch (err.kind) {
@@ -295,7 +295,7 @@ lily_error_to_String(struct LilyError err)
     }
 }
 
-static inline struct String *
+inline struct String *
 lily_warning_to_String(struct LilyWarning warn)
 {
     switch (warn.kind) {
@@ -312,7 +312,7 @@ lily_warning_to_String(struct LilyWarning warn)
     }
 }
 
-static inline const Str
+inline const Str
 get_code_of_lily_error(struct LilyError err)
 {
     switch (err.kind) {
@@ -471,7 +471,7 @@ get_code_of_lily_error(struct LilyError err)
     }
 }
 
-static inline const Str
+inline const Str
 get_code_of_lily_warning(struct LilyWarning warn)
 {
     switch (warn.kind) {
@@ -640,7 +640,7 @@ __new__DiagnosticWithNote(struct String *note,
     return self;
 }
 
-static struct String *
+struct String *
 get_line(struct Diagnostic self, Usize line_number)
 {
     struct Vec *splitted_content = split__String(*self.file.content, '\n');
@@ -656,7 +656,7 @@ get_line(struct Diagnostic self, Usize line_number)
     return line;
 }
 
-static struct String *
+struct String *
 diagnostic_to_String(struct Diagnostic self)
 {
     Str diagnostic_kind_str = diagnostic_kind_to_String(self.kind);
