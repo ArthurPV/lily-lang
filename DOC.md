@@ -180,7 +180,34 @@ fun main =
 	mut a := 3 // Int32
 
 	a = 30 // Ok
-	// now the a variable's value is equal to 30
+	// now the variable's value is equal to 30
+end
+```
+
+</section>
+
+<section id="integers">
+
+### Integers
+
+```lily
+fun main =
+	a := 33I8 // Cast Int8
+	b := 10I16 // Cast Int16
+	c := 300I32 // Cast Int32
+	d := 200I64 // Cast Int64
+	e := 10000I128 // Cast Int128
+
+	f := 33U8 // Cast Uint8
+	g := 10U16 // Cast Uint16
+	h := 300U32 // Cast Uint32
+	i := 400U64 // Cast Uint64
+	j := 500000U128 // Cast Uint128
+
+	k := 1_000_000 // Int32
+	l := 0xFF_FF_FF // Int32
+	m := 0b111_111 // Int32
+	n := 0o123_123 // Int32
 end
 ```
 
