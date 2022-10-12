@@ -28,6 +28,9 @@
 #include <lang/parser/ast.h>
 #include <string.h>
 
+// It's only used when to_String* (dump AST) function is used.
+static Usize current_tab_size = 0;
+
 struct DataType *
 __new__DataType(enum DataTypeKind kind)
 {
@@ -2594,9 +2597,13 @@ to_String__FunBodyItem(struct FunBodyItem self)
 {
     switch (self.kind) {
         case FunBodyItemKindExpr:
-            return format("{Sr}\n", to_String__Expr(*self.expr));
+            return format("{Sr}{Sr}\n",
+                          repeat__String("\t", current_tab_size),
+                          to_String__Expr(*self.expr));
         case FunBodyItemKindStmt:
-            return format("{Sr}\n", to_String__Stmt(*self.stmt));
+            return format("{Sr}{Sr}\n",
+                          repeat__String("\t", current_tab_size),
+                          to_String__Stmt(*self.stmt));
         default:
             UNREACHABLE("unknown fun body item kind");
     }
@@ -2826,6 +2833,8 @@ to_String__FunDecl(struct FunDecl self)
 {
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub && self.is_async)
         push_str__String(s, "pub async fun");
     else if (self.is_pub)
@@ -2911,23 +2920,28 @@ to_String__FunDecl(struct FunDecl self)
         push_str__String(s, " =\n");
 
     if (self.body) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.body) - 1; i++)
             append__String(
               s,
-              format("\t{Sr}\n",
+              format("{Sr}\n",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.body, i))),
               true);
 
         append__String(
           s,
-          format("\t{Sr}",
+          format("{Sr}",
                  to_String__FunBodyItem(*(struct FunBodyItem *)get__Vec(
                    *self.body, len__Vec(*self.body) - 1))),
           true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2996,9 +3010,16 @@ to_String__ConstantDecl(struct ConstantDecl self)
     struct String *s = NEW(String);
 
     if (self.is_pub)
-        append__String(s, format("pub {S}", self.name), true);
+        append__String(s,
+                       format("{Sr}pub {S}",
+                              repeat__String("\t", current_tab_size),
+                              self.name),
+                       true);
     else
-        append__String(s, format("{S}", self.name), true);
+        append__String(
+          s,
+          format("{Sr}{S}", repeat__String("\t", current_tab_size), self.name),
+          true);
 
     if (self.data_type)
         append__String(
@@ -3044,10 +3065,11 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
 
     switch (self.kind) {
         case ModuleBodyItemKindDecl:
-            return to_String__Decl(*self.value.decl);
+            return format("{Sr}\n", to_String__Decl(*self.value.decl));
         case ModuleBodyItemKindImport:
-            return to_String__ImportStmt(
-              *(struct ImportStmt *)self.value.import->items[0]);
+            return format("{Sr}\n",
+                          to_String__ImportStmt(
+                            *(struct ImportStmt *)self.value.import->items[0]));
         case ModuleBodyItemKindInclude:
             TODO("include");
     }
@@ -3101,21 +3123,33 @@ to_String__ModuleDecl(struct ModuleDecl self)
     struct String *s = NEW(String);
 
     if (self.is_pub)
-        append__String(s, format("pub module {S} =\n", self.name), true);
+        append__String(s,
+                       format("{Sr}pub module {S} =\n",
+                              repeat__String("\t", current_tab_size),
+                              self.name),
+                       true);
     else
-        append__String(s, format("module {S} =\n", self.name), true);
+        append__String(s,
+                       format("{Sr}module {S} =\n",
+                              repeat__String("\t", current_tab_size),
+                              self.name),
+                       true);
 
     if (self.body) {
-        for (Usize i = 0; i < len__Vec(*self.body); i++)
-            append__String(
-              s,
-              format("{Sr}\n",
-                     to_String__ModuleBodyItem(
-                       *(struct ModuleBodyItem *)get__Vec(*self.body, i))),
-              true);
+        ++current_tab_size;
+
+        for (Usize i = 0; i < len__Vec(*self.body); i++) {
+            append__String(s,
+                           to_String__ModuleBodyItem(
+                             *(struct ModuleBodyItem *)get__Vec(*self.body, i)),
+                           true);
+        }
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -3153,9 +3187,17 @@ to_String__AliasDecl(struct AliasDecl self)
     struct String *s = NEW(String);
 
     if (self.is_pub)
-        append__String(s, format("pub type {S}", self.name), true);
+        append__String(s,
+                       format("{Sr}pub type {S}",
+                              repeat__String("\t", current_tab_size),
+                              self.name),
+                       true);
     else
-        append__String(s, format("type {S}", self.name), true);
+        append__String(s,
+                       format("{Sr}type {S}",
+                              repeat__String("\t", current_tab_size),
+                              self.name),
+                       true);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -3219,15 +3261,18 @@ to_String__FieldRecord(struct FieldRecord self)
 
     if (self.is_pub)
         append__String(s,
-                       format("pub {S} {Sr}",
+                       format("{Sr}pub {S} {Sr}",
+                              repeat__String("\t", current_tab_size),
                               self.name,
                               to_String__DataType(*self.data_type)),
                        true);
     else
-        append__String(
-          s,
-          format("{S} {Sr}", self.name, to_String__DataType(*self.data_type)),
-          true);
+        append__String(s,
+                       format("{Sr}{S} {Sr}",
+                              repeat__String("\t", current_tab_size),
+                              self.name,
+                              to_String__DataType(*self.data_type)),
+                       true);
 
     if (self.value)
         append__String(
@@ -3268,15 +3313,18 @@ to_String__RecordDecl(struct RecordDecl self)
 {
     struct String *s = NEW(String);
 
-    if (self.is_pub)
-        push_str__String(s, "pub ");
+    append__String(s, repeat__String("\t", current_tab_size), true);
 
-    if (self.is_object)
+    if (self.is_pub && self.is_object)
+        push_str__String(s, "pub object");
+    else if (!self.is_pub && self.is_object)
         push_str__String(s, "object");
+    else if (self.is_pub && !self.is_object)
+        push_str__String(s, "pub type");
     else
         push_str__String(s, "type");
 
-    append__String(s, format("{S}", self.name), true);
+    append__String(s, self.name, false);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -3300,6 +3348,8 @@ to_String__RecordDecl(struct RecordDecl self)
     push_str__String(s, ": record =\n");
 
     if (self.fields) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.fields) - 1; i++)
             append__String(
               s,
@@ -3314,9 +3364,12 @@ to_String__RecordDecl(struct RecordDecl self)
                  to_String__FieldRecord(*(struct FieldRecord *)get__Vec(
                    *self.fields, len__Vec(*self.fields) - 1))),
           true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -3356,7 +3409,10 @@ __new__VariantEnum(struct String *name,
 struct String *
 to_String__VariantEnum(struct VariantEnum self)
 {
-    return format("{S} {Sr}", self.name, to_String__DataType(*self.data_type));
+    return format("{Sr}{S} {Sr}",
+                  repeat__String("\t", current_tab_size),
+                  self.name,
+                  to_String__DataType(*self.data_type));
 }
 
 void
@@ -3393,13 +3449,16 @@ to_String__EnumDecl(struct EnumDecl self)
 {
     struct String *s = NEW(String);
 
-    if (self.is_pub)
-        push_str__String(s, "pub ");
+    append__String(s, repeat__String("\t", current_tab_size), true);
 
-    if (self.is_object)
-        push_str__String(s, "object ");
+    if (self.is_pub && self.is_object)
+        push_str__String(s, "pub object");
+    else if (!self.is_pub && self.is_object)
+        push_str__String(s, "object");
+    else if (self.is_pub && !self.is_object)
+        push_str__String(s, "pub type");
     else
-        push_str__String(s, "type ");
+        push_str__String(s, "type");
 
     append__String(s, self.name, false);
 
@@ -3433,6 +3492,8 @@ to_String__EnumDecl(struct EnumDecl self)
         push_str__String(s, ": enum =\n");
 
     if (self.variants) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.variants) - 1; i++)
             append__String(
               s,
@@ -3447,9 +3508,12 @@ to_String__EnumDecl(struct EnumDecl self)
                  to_String__VariantEnum(*(struct VariantEnum *)get__Vec(
                    *self.variants, len__Vec(*self.variants) - 1))),
           true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -3495,6 +3559,8 @@ struct String *
 to_String__ErrorDecl(struct ErrorDecl self)
 {
     struct String *s = NEW(String);
+
+    append__String(s, repeat__String("\t", current_tab_size), true);
 
     if (self.is_pub)
         push_str__String(s, "pub error ");
@@ -3561,6 +3627,8 @@ to_String__PropertyDecl(struct PropertyDecl self)
 {
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub)
         push_str__String(s, "pub ");
 
@@ -3606,6 +3674,8 @@ to_String__MethodDecl(struct MethodDecl self)
 {
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub && self.is_async)
         push_str__String(s, "pub async");
     else if (self.is_pub)
@@ -3613,7 +3683,10 @@ to_String__MethodDecl(struct MethodDecl self)
     else if (self.is_async)
         push_str__String(s, "async");
 
-    append__String(s, format(" @{S}", self.name), true);
+    if (!self.is_pub && !self.is_async)
+        append__String(s, format("@{S}", self.name), true);
+    else
+        append__String(s, format(" @{S}", self.name), true);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -3662,6 +3735,8 @@ to_String__MethodDecl(struct MethodDecl self)
         push_str__String(s, " =\n");
 
     if (self.body) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.body); i++)
             append__String(
               s,
@@ -3669,9 +3744,12 @@ to_String__MethodDecl(struct MethodDecl self)
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.body, i))),
               true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -3803,10 +3881,14 @@ to_String__ClassDecl(struct ClassDecl self)
 {
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub)
         push_str__String(s, "pub object");
     else
         push_str__String(s, "object");
+
+    append__String(s, format(" {S}", self.name), true);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -3878,13 +3960,17 @@ to_String__ClassDecl(struct ClassDecl self)
     push_str__String(s, ": class =\n");
 
     if (self.body) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.body); i++)
             append__String(
               s,
-              format("\t{Sr}\n",
+              format("{Sr}\n",
                      to_String__ClassBodyItem(
                        *(struct ClassBodyItem *)get__Vec(*self.body, i))),
               true);
+
+        --current_tab_size;
     }
 
     push_str__String(s, "end");
@@ -3957,6 +4043,8 @@ to_String__Prototype(struct Prototype self)
 
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_async)
         push_str__String(s, "async ");
 
@@ -4011,9 +4099,10 @@ to_String__TraitBodyItem(struct TraitBodyItem self)
 {
     switch (self.kind) {
         case TraitBodyItemKindImport:
-            return to_String__ImportStmt(*self.value.import);
+            return format("{Sr}\n", to_String__ImportStmt(*self.value.import));
         case TraitBodyItemKindPrototype:
-            return to_String__Prototype(*self.value.prototype);
+            return format("{Sr}\n",
+                          to_String__Prototype(*self.value.prototype));
     }
 }
 
@@ -4053,6 +4142,8 @@ to_String__TraitDecl(struct TraitDecl self)
 {
     struct String *s = NEW(String);
 
+    append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub)
         append__String(s, format("pub object {S}", self.name), true);
     else
@@ -4080,16 +4171,19 @@ to_String__TraitDecl(struct TraitDecl self)
     push_str__String(s, ": trait =\n");
 
     if (self.body) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.body); i++)
-            append__String(
-              s,
-              format("\t{Sr}\n",
-                     to_String__TraitBodyItem(
-                       *(struct TraitBodyItem *)get__Vec(*self.body, i))),
-              true);
+            append__String(s,
+                           to_String__TraitBodyItem(
+                             *(struct TraitBodyItem *)get__Vec(*self.body, i)),
+                           true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -4142,7 +4236,10 @@ to_String__TagDecl(struct TagDecl self)
 {
     struct String *s = NEW(String);
 
-    append__String(s, format("tag {S}", self.name), true);
+    append__String(
+      s,
+      format("{Sr}tag {S}", repeat__String("\t", current_tab_size), self.name),
+      true);
 
     if (self.generic_params) {
         push_str__String(s, "[");
@@ -4166,16 +4263,19 @@ to_String__TagDecl(struct TagDecl self)
     push_str__String(s, " =\n");
 
     if (self.body) {
+        ++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.body); i++)
-            append__String(
-              s,
-              format("\t{Sr}\n",
-                     to_String__ModuleBodyItem(
-                       *(struct ModuleBodyItem *)get__Vec(*self.body, i))),
-              true);
+            append__String(s,
+                           to_String__ModuleBodyItem(
+                             *(struct ModuleBodyItem *)get__Vec(*self.body, i)),
+                           true);
+
+        --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }

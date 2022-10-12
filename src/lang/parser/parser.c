@@ -6896,7 +6896,7 @@ parse_module_declaration(struct Parser *self,
 
             pos += 1;
             current = pos < len__Vec(*module_parse_context.body)
-                        ? get__Vec(*module_parse_context.body, 1)
+                        ? get__Vec(*module_parse_context.body, pos)
                         : NULL;
         }
     }

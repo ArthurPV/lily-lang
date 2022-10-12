@@ -8,6 +8,7 @@
 #include "import.c"
 #include "module.c"
 #include "record.c"
+#include "stmt.c"
 #include "tag.c"
 #include "trait.c"
 #include <base/new.h>
@@ -29,6 +30,7 @@ main()
     struct Suite *record = NEW(Suite, "record");
     struct Suite *trait = NEW(Suite, "trait");
     struct Suite *expr = NEW(Suite, "expr");
+    struct Suite *stmt = NEW(Suite, "stmt");
 
     CASE(fun, simple, test_fun);
     CASE(constant, simple, test_constant);
@@ -62,7 +64,7 @@ main()
     CASE(expr, array, test_expr_array);
     CASE(expr, variant, test_expr_variant);
     CASE(expr, try, test_expr_try);
-    CASE(expr, if_, test_expr_if);
+    CASE(expr, if, test_expr_if);
     CASE(expr, block, test_expr_block);
     CASE(expr, question mark, test_expr_question_mark);
     CASE(expr, dereference, test_expr_dereference);
@@ -76,6 +78,17 @@ main()
     CASE(expr, variable, test_expr_variable);
     CASE(expr, grouping, test_expr_grouping);
 
+    CASE(stmt, return, test_stmt_return);
+    CASE(stmt, if, test_stmt_if);
+    CASE(stmt, await, test_stmt_await);
+    CASE(stmt, try, test_stmt_try);
+    CASE(stmt, match, test_stmt_match);
+    CASE(stmt, for, test_stmt_for);
+    CASE(stmt, next, test_stmt_next);
+    CASE(stmt, break, test_stmt_break);
+    CASE(stmt, import, test_stmt_import);
+    CASE(stmt, simple, test_stmt);
+
     SUITE(t, fun);
     SUITE(t, constant);
     SUITE(t, module);
@@ -88,6 +101,7 @@ main()
     SUITE(t, record);
     SUITE(t, trait);
     SUITE(t, expr);
+    SUITE(t, stmt);
 
     RUN_TEST(t);
 }
