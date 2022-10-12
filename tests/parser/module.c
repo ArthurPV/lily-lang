@@ -41,5 +41,7 @@ test_module()
         free(output_str);
     }
 
+	FREE(Parser, parser);
+
     return TEST_SUCCESS;
 }

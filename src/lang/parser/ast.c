@@ -2382,6 +2382,8 @@ to_String__ImportStmt(struct ImportStmt self)
 {
     struct String *s = NEW(String);
 
+	append__String(s, repeat__String("\t", current_tab_size), true);
+
     if (self.is_pub)
         push_str__String(s, "pub import \"");
     else
@@ -3061,8 +3063,6 @@ __new__ModuleBodyItemImport(struct Tuple *import)
 struct String *
 to_String__ModuleBodyItem(struct ModuleBodyItem self)
 {
-    struct String *s = NEW(String);
-
     switch (self.kind) {
         case ModuleBodyItemKindDecl:
             return format("{Sr}\n", to_String__Decl(*self.value.decl));
@@ -3073,8 +3073,6 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
         case ModuleBodyItemKindInclude:
             TODO("include");
     }
-
-    return s;
 }
 
 void
