@@ -240,6 +240,29 @@ eq__String(struct String *self, struct String *self2, bool drop)
     return is_equal;
 }
 
+void
+swap(char *x, char *y)
+{
+    char *temp = x;
+    x = y;
+    y = temp;
+}
+
+void
+reverse__String(struct String *self)
+{
+    Usize i = 0;
+    Usize j = len__String(*self) - 1;
+
+    while (i < j) {
+        char *x = get__String(*self, i);
+        char *y = get__String(*self, j);
+
+        replace__String(self, y, i++);
+        replace__String(self, x, j--);
+    }
+}
+
 struct String *
 copy__String(struct String *self)
 {

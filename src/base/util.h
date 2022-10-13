@@ -48,4 +48,18 @@ atoi_i128(const Str s);
 UInt64
 atoi_u64(const Str s);
 
+/**
+ *
+ * @brief Convert Str in UInt128.
+ */
+UInt128
+atoi_u128(const Str s);
+
+/**
+ *
+ * @brief Convert UInt128 to String.
+ */
+struct String *
+itoa_u128(UInt128 value, int base);
+
 #endif // LILY_UTIL_H

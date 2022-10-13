@@ -4938,36 +4938,36 @@ check_expression(struct Typecheck *self,
                         kind = (int *)LiteralSymbolKindInt128;
 
                     break;
-				case LiteralKindInt8:
-					kind = (int *)LiteralSymbolKindInt8;
-					break;
-				case LiteralKindInt16:
-					kind = (int *)LiteralSymbolKindInt16;
-					break;
-				case LiteralKindInt32:
-					kind = (int *)LiteralSymbolKindInt32;
-					break;
-				case LiteralKindInt64:
-					kind = (int *)LiteralSymbolKindInt64;
-					break;
-				case LiteralKindInt128:
-					kind = (int *)LiteralSymbolKindInt128;
-					break;
-				case LiteralKindUint8:
-					kind = (int *)LiteralSymbolKindUint8;
-					break;
-				case LiteralKindUint16:
-					kind = (int *)LiteralSymbolKindUint16;
-					break;
-				case LiteralKindUint32:
-					kind = (int *)LiteralSymbolKindUint32;
-					break;
-				case LiteralKindUint64:
-					kind = (int*)LiteralSymbolKindUint64;
-					break;
-				case LiteralKindUint128:
-					kind = (int*)LiteralSymbolKindUint128;
-					break;
+                case LiteralKindInt8:
+                    kind = (int *)LiteralSymbolKindInt8;
+                    break;
+                case LiteralKindInt16:
+                    kind = (int *)LiteralSymbolKindInt16;
+                    break;
+                case LiteralKindInt32:
+                    kind = (int *)LiteralSymbolKindInt32;
+                    break;
+                case LiteralKindInt64:
+                    kind = (int *)LiteralSymbolKindInt64;
+                    break;
+                case LiteralKindInt128:
+                    kind = (int *)LiteralSymbolKindInt128;
+                    break;
+                case LiteralKindUint8:
+                    kind = (int *)LiteralSymbolKindUint8;
+                    break;
+                case LiteralKindUint16:
+                    kind = (int *)LiteralSymbolKindUint16;
+                    break;
+                case LiteralKindUint32:
+                    kind = (int *)LiteralSymbolKindUint32;
+                    break;
+                case LiteralKindUint64:
+                    kind = (int *)LiteralSymbolKindUint64;
+                    break;
+                case LiteralKindUint128:
+                    kind = (int *)LiteralSymbolKindUint128;
+                    break;
                 case LiteralKindFloat:
                     if (defined_data_type) {
                         switch (defined_data_type->kind) {
@@ -4984,12 +4984,12 @@ check_expression(struct Typecheck *self,
                         kind = (int *)LiteralSymbolKindFloat64;
 
                     break;
-				case LiteralKindFloat32:
-					kind = (int *)LiteralSymbolKindFloat32;
-					break;
-				case LiteralKindFloat64:
-					kind = (int *)LiteralSymbolKindFloat64;
-					break;
+                case LiteralKindFloat32:
+                    kind = (int *)LiteralSymbolKindFloat32;
+                    break;
+                case LiteralKindFloat64:
+                    kind = (int *)LiteralSymbolKindFloat64;
+                    break;
                 case LiteralKindBitStr:
                     kind = (int *)LiteralSymbolKindBitStr;
                     break;

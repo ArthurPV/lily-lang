@@ -27,6 +27,7 @@
 
 #include <base/platform.h>
 #include <base/print.h>
+#include <base/util.h>
 #include <command/command.h>
 #include <command/help.h>
 #include <lang/analysis/typecheck.h>

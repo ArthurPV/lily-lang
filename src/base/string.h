@@ -173,6 +173,13 @@ copy__String(struct String *self);
 
 /**
  *
+ * @brief Reverse the String content.
+ */
+void
+reverse__String(struct String *self);
+
+/**
+ *
  * @return the len of String.
  */
 Usize

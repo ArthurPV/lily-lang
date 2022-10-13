@@ -3862,6 +3862,19 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
         assert(0 && "error: literal out of range");             \
     }
 
+// Check overflow and underflow for Uint128
+#define CHECK_UINT64(n)                                         \
+    struct String *s = format("{Lu}", n);                       \
+    if (strlen(int_str) == len__String(*s)) {                   \
+        for (Usize i = 0; i < len__String(*s); i++) {           \
+            if ((char)(UPtr)get__String(*s, i) != int_str[i]) { \
+                assert(0 && "error: literal out of range");     \
+            }                                                   \
+        }                                                       \
+    } else {                                                    \
+        assert(0 && "error: literal out of range");             \
+    }
+
 struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
@@ -3926,7 +3939,14 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
         }
 
         case TokenKindInt128Lit: {
-            TODO("Int128");
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int64 res = atoi_i128(int_str);
+
+            // CHECK_INT128(res);
+
+            literal = NEW(LiteralInt128, res);
+
+            free(int_str);
 
             break;
         }
@@ -3984,7 +4004,14 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
         }
 
         case TokenKindUint128Lit: {
-            TODO("Uint128");
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            UInt64 res = atoi_u128(int_str);
+
+            // CHECK_UINT128(res);
+
+            literal = NEW(LiteralUint128, res);
+
+            free(int_str);
 
             break;
         }
@@ -4447,6 +4474,26 @@ exit_unary : {
             struct Vec *ids = NEW(Vec, sizeof(struct Expr));
 
             expr = parse_identifier_access(self, parse_decl, loc, ids);
+            expr->kind = ExprKindGlobalAccess;
+
+            struct Vec *temp = expr->value.identifier_access;
+
+            expr->value.identifier_access = NULL;
+            expr->value.global_access = temp;
+
+            break;
+        }
+
+        case TokenKindAt: {
+            struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+            expr = parse_identifier_access(self, parse_decl, loc, ids);
+            expr->kind = ExprKindPropertyAccessInit;
+
+            struct Vec *temp = expr->value.identifier_access;
+
+            expr->value.identifier_access = NULL;
+            expr->value.property_access_init = temp;
 
             break;
         }
@@ -5973,6 +6020,7 @@ parse_fun_params(struct Parser self,
         struct Location loc = NEW(Location);
         struct Location loc_data_type = NEW(Location);
         struct String *name = NULL;
+        struct String *super_tag_name = NULL;
         struct DataType *data_type = NULL;
         struct Expr *default_value = NULL;
 
@@ -6057,6 +6105,22 @@ parse_fun_params(struct Parser self,
                 next_token(parse_decl);
             }
 
+            if (parse_decl->current->kind == TokenKindHashtag && is_method) {
+                next_token(parse_decl);
+
+                if (parse_decl->current->kind == TokenKindIdentifier) {
+                    super_tag_name = parse_decl->current->lit;
+                    next_token(parse_decl);
+                } else {
+                    assert(0 && "error: expected identifier");
+                }
+            } else if (parse_decl->current->kind == TokenKindHashtag &&
+                       !is_method) {
+                assert(
+                  0 &&
+                  "error: impossible to have super tag name outside of class");
+            }
+
             if (is_data_type(parse_decl) &&
                 parse_decl->pos < len__Vec(*parse_decl->tokens)) {
                 start__Location(&loc_data_type,
@@ -6091,22 +6155,30 @@ parse_fun_params(struct Parser self,
                               parse_decl->current->loc->s_col);
 
             if (!default_value && !data_type)
-                push__Vec(params, NEW(FunParamNormal, name, NULL, loc));
+                push__Vec(params,
+                          NEW(FunParamNormal, name, super_tag_name, NULL, loc));
             else if (!default_value)
                 push__Vec(
                   params,
                   NEW(FunParamNormal,
                       name,
+                      super_tag_name,
                       NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc));
             else if (default_value && !data_type)
                 push__Vec(params,
-                          NEW(FunParamDefault, name, NULL, loc, default_value));
+                          NEW(FunParamDefault,
+                              name,
+                              super_tag_name,
+                              NULL,
+                              loc,
+                              default_value));
             else
                 push__Vec(
                   params,
                   NEW(FunParamDefault,
                       name,
+                      super_tag_name,
                       NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
                       loc,
                       default_value));

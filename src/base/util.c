@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <base/new.h>
+#include <base/string.h>
 #include <base/util.h>
 #include <stdbool.h>
 #include <string.h>
@@ -81,4 +83,43 @@ atoi_u64(const Str s)
     }
 
     return i;
+}
+
+UInt128
+atoi_u128(const Str s)
+{
+    UInt128 i = 0;
+    Usize pos = 0;
+
+    while (s[pos] >= '0' && s[pos] <= '9') {
+        i = (10 * i) + (s[pos++] - '0');
+    }
+
+    return i;
+}
+
+struct String *
+itoa_u128(UInt128 value, int base)
+{
+    struct String *s = NEW(String);
+
+    if (base < 2 || base > 32)
+        return s;
+
+    UInt128 n = value;
+
+    while (n) {
+        UInt128 r = n % base;
+
+        if (r >= 10)
+            push__String(s, (char *)(UPtr)(65 + (r - 10)));
+        else
+            push__String(s, (char *)(UPtr)(48 + r));
+
+        n = n / base;
+    }
+
+    reverse__String(s);
+
+    return s;
 }

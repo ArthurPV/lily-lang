@@ -25,6 +25,7 @@
 #include <base/format.h>
 #include <base/macros.h>
 #include <base/str.h>
+#include <base/util.h>
 #include <lang/parser/ast.h>
 #include <string.h>
 
@@ -554,11 +555,11 @@ to_String__Literal(struct Literal self)
             return format("'{c}'", self.value.char_);
         case LiteralKindBitChar:
             return format("b'{c}'", (char)self.value.bit_char);
-		case LiteralKindInt32WithoutSuffix:
+        case LiteralKindInt32WithoutSuffix:
             return format("{d}", self.value.int32_ws);
-		case LiteralKindInt64WithoutSuffix:
+        case LiteralKindInt64WithoutSuffix:
             return format("{L}", self.value.int64_ws);
-		case LiteralKindInt128WithoutSuffix:
+        case LiteralKindInt128WithoutSuffix:
             return from__String("I128");
         case LiteralKindInt8:
             return format("{d}", self.value.int8);
@@ -579,7 +580,7 @@ to_String__Literal(struct Literal self)
         case LiteralKindUint64:
             return format("{Lu}", self.value.uint64);
         case LiteralKindUint128:
-            return from__String("U128");
+            return itoa_u128(self.value.uint128, 10);
         case LiteralKindFloat32:
             return format("{f}", self.value.float32);
         case LiteralKindFloat64:
@@ -1360,6 +1361,17 @@ __new__ExprGlobalAccess(struct Vec *global_access, struct Location loc)
 }
 
 struct Expr *
+__new__ExprPropertyAccessInit(struct Vec *property_access_init,
+                              struct Location loc)
+{
+    struct Expr *self = malloc(sizeof(struct Expr));
+    self->kind = ExprKindPropertyAccessInit;
+    self->loc = loc;
+    self->value.property_access_init = property_access_init;
+    return self;
+}
+
+struct Expr *
 __new__ExprArrayAccess(struct ArrayAccess array_access, struct Location loc)
 {
     struct Expr *self = malloc(sizeof(struct Expr));
@@ -1613,6 +1625,30 @@ to_String__Expr(struct Expr self)
 
             return s;
         }
+        case ExprKindPropertyAccessInit: {
+            struct String *s = NEW(String);
+
+            append__String(s, from__String("@."), true);
+
+            for (Usize i = 0;
+                 i < len__Vec(*self.value.property_access_init) - 1;
+                 i++)
+                append__String(s,
+                               format("{Sr}.",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.property_access_init, i))),
+                               true);
+
+            append__String(
+              s,
+              format("{Sr}",
+                     to_String__Expr(*(struct Expr *)get__Vec(
+                       *self.value.property_access_init,
+                       len__Vec(*self.value.property_access_init) - 1))),
+              true);
+
+            return s;
+        }
         case ExprKindArrayAccess:
             return to_String__ArrayAccess(self.value.array_access);
         case ExprKindTupleAccess:
@@ -1703,6 +1739,16 @@ __free__ExprGlobalAccess(struct Expr *self)
         FREE(ExprAll, get__Vec(*self->value.global_access, i));
 
     FREE(Vec, self->value.global_access);
+    free(self);
+}
+
+void
+__free__ExprPropertyAccessInit(struct Expr *self)
+{
+    for (Usize i = len__Vec(*self->value.property_access_init); i--;)
+        FREE(ExprAll, get__Vec(*self->value.property_access_init, i));
+
+    FREE(Vec, self->value.property_access_init);
     free(self);
 }
 
@@ -1802,6 +1848,9 @@ __free__ExprAll(struct Expr *self)
             break;
         case ExprKindGlobalAccess:
             FREE(ExprGlobalAccess, self);
+            break;
+        case ExprKindPropertyAccessInit:
+            FREE(ExprPropertyAccessInit, self);
             break;
         case ExprKindArrayAccess:
             FREE(ExprArrayAccess, self);
@@ -2715,6 +2764,7 @@ __free__FunParamCallAll(struct FunParamCall *self)
 
 struct FunParam *
 __new__FunParamDefault(struct String *name,
+                       struct String *super_tag_name,
                        struct Tuple *param_data_type,
                        struct Location loc,
                        struct Expr *default_)
@@ -2722,6 +2772,7 @@ __new__FunParamDefault(struct String *name,
     struct FunParam *self = malloc(sizeof(struct FunParam));
     self->kind = FunParamKindDefault;
     self->name = name;
+    self->super_tag.name = super_tag_name;
     self->param_data_type = param_data_type;
     self->loc = loc;
     self->value.default_ = default_;
@@ -2730,12 +2781,14 @@ __new__FunParamDefault(struct String *name,
 
 struct FunParam *
 __new__FunParamNormal(struct String *name,
+                      struct String *super_tag_name,
                       struct Tuple *param_data_type,
                       struct Location loc)
 {
     struct FunParam *self = malloc(sizeof(struct FunParam));
     self->kind = FunParamKindNormal;
     self->name = name;
+    self->super_tag.name = super_tag_name;
     self->param_data_type = param_data_type;
     self->loc = loc;
     return self;
@@ -2759,17 +2812,37 @@ to_String__FunParam(struct FunParam self)
             struct String *s = NEW(String);
 
             if (self.param_data_type)
-                append__String(
-                  s,
-                  format("{S} {Sr} = {Sr}",
-                         self.name,
-                         to_String__DataType(
-                           *(struct DataType *)self.param_data_type->items[0]),
-                         to_String__Expr(*self.value.default_)),
-                  true);
+                if (self.super_tag.name)
+                    append__String(
+                      s,
+                      format(
+                        "{S}#{S} {Sr} := {Sr}",
+                        self.name,
+                        self.super_tag.name,
+                        to_String__DataType(
+                          *(struct DataType *)self.param_data_type->items[0]),
+                        to_String__Expr(*self.value.default_)),
+                      true);
+                else
+                    append__String(
+                      s,
+                      format(
+                        "{S} {Sr} := {Sr}",
+                        self.name,
+                        to_String__DataType(
+                          *(struct DataType *)self.param_data_type->items[0]),
+                        to_String__Expr(*self.value.default_)),
+                      true);
+            else if (self.super_tag.name)
+                append__String(s,
+                               format("{S}#{S} := {Sr}",
+                                      self.name,
+                                      self.super_tag.name,
+                                      to_String__Expr(*self.value.default_)),
+                               true);
             else
                 append__String(s,
-                               format("{S} = {Sr}",
+                               format("{S} := {Sr}",
                                       self.name,
                                       to_String__Expr(*self.value.default_)),
                                true);
@@ -2780,13 +2853,28 @@ to_String__FunParam(struct FunParam self)
             struct String *s = NEW(String);
 
             if (self.param_data_type)
+                if (self.super_tag.name)
+                    append__String(
+                      s,
+                      format(
+                        "{S}#{S} {Sr}",
+                        self.name,
+                        self.super_tag.name,
+                        to_String__DataType(
+                          *(struct DataType *)self.param_data_type->items[0])),
+                      true);
+                else
+                    append__String(
+                      s,
+                      format(
+                        "{S} {Sr}",
+                        self.name,
+                        to_String__DataType(
+                          *(struct DataType *)self.param_data_type->items[0])),
+                      true);
+            else if (self.super_tag.name)
                 append__String(
-                  s,
-                  format("{S} {Sr}",
-                         self.name,
-                         to_String__DataType(
-                           *(struct DataType *)self.param_data_type->items[0])),
-                  true);
+                  s, format("{S}#{S}", self.name, self.super_tag.name), true);
             else
                 append__String(s, self.name, false);
 
@@ -3783,7 +3871,7 @@ to_String__MethodDecl(struct MethodDecl self)
         for (Usize i = 0; i < len__Vec(*self.body); i++)
             append__String(
               s,
-              format("\t{Sr}\n",
+              format("{Sr}",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.body, i))),
               true);

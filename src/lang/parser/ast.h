@@ -354,9 +354,9 @@ enum LiteralKind
     LiteralKindBool,
     LiteralKindChar,
     LiteralKindBitChar,
-	LiteralKindInt32WithoutSuffix,
-	LiteralKindInt64WithoutSuffix,
-	LiteralKindInt128WithoutSuffix,
+    LiteralKindInt32WithoutSuffix,
+    LiteralKindInt64WithoutSuffix,
+    LiteralKindInt128WithoutSuffix,
     LiteralKindInt8,
     LiteralKindInt16,
     LiteralKindInt32,
@@ -383,9 +383,9 @@ typedef struct Literal
         bool bool_;
         char char_;
         UInt8 bit_char;
-		Int32 int32_ws;
-		Int64 int64_ws;
-		Int128 int128_ws;
+        Int32 int32_ws;
+        Int64 int64_ws;
+        Int128 int128_ws;
         Int8 int8;
         Int16 int16;
         Int32 int32;
@@ -448,7 +448,8 @@ __new__LiteralBitChar(UInt8 bit_char)
 inline struct Literal
 __new__LiteralInt32WithoutSuffix(Int32 int32_ws)
 {
-    struct Literal self = { .kind = LiteralKindInt32WithoutSuffix, .value.int32_ws = int32_ws };
+    struct Literal self = { .kind = LiteralKindInt32WithoutSuffix,
+                            .value.int32_ws = int32_ws };
 
     return self;
 }
@@ -460,7 +461,8 @@ __new__LiteralInt32WithoutSuffix(Int32 int32_ws)
 inline struct Literal
 __new__LiteralInt64WithoutSuffix(Int64 int64_ws)
 {
-    struct Literal self = { .kind = LiteralKindInt64WithoutSuffix, .value.int64_ws = int64_ws };
+    struct Literal self = { .kind = LiteralKindInt64WithoutSuffix,
+                            .value.int64_ws = int64_ws };
 
     return self;
 }
@@ -472,7 +474,8 @@ __new__LiteralInt64WithoutSuffix(Int64 int64_ws)
 inline struct Literal
 __new__LiteralInt128WithoutSuffix(Int128 int128_ws)
 {
-    struct Literal self = { .kind = LiteralKindInt128WithoutSuffix, .value.int128_ws = int128_ws };
+    struct Literal self = { .kind = LiteralKindInt128WithoutSuffix,
+                            .value.int128_ws = int128_ws };
 
     return self;
 }
@@ -1066,6 +1069,7 @@ enum ExprKind
     ExprKindIdentifierAccess,
     ExprKindGlobalAccess,
     ExprKindArrayAccess,
+    ExprKindPropertyAccessInit,
     ExprKindTupleAccess,
     ExprKindLambda,
     ExprKindTuple,
@@ -1098,9 +1102,10 @@ typedef struct Expr
         struct BinaryOp binary_op;
         struct FunCall fun_call;
         struct RecordCall record_call;
-        struct String *identifier;     // struct String&
-        struct Vec *identifier_access; // struct Vec<struct Expr*>*
-        struct Vec *global_access;     // struct Vec<struct Expr*>*
+        struct String *identifier;        // struct String&
+        struct Vec *identifier_access;    // struct Vec<struct Expr*>*
+        struct Vec *global_access;        // struct Vec<struct Expr*>*
+        struct Vec *property_access_init; // struct Vec<struct Expr*>*
         struct ArrayAccess array_access;
         struct TupleAccess tuple_access;
         struct Lambda lambda;
@@ -1162,16 +1167,26 @@ struct Expr *
 __new__ExprIdentifier(struct String *identifier, struct Location loc);
 
 /**
+ *
  * @brief Construct the Expr type (IdentifierAccess variant).
  */
 struct Expr *
 __new__ExprIdentifierAccess(struct Vec *identifier_access, struct Location loc);
 
 /**
+ *
  * @brief Construct the Expr type (GlobalAccess variant).
  */
 struct Expr *
 __new__ExprGlobalAccess(struct Vec *global_access, struct Location loc);
+
+/**
+ *
+ * @brief Construct the Expr type (PropertyAccessInit variant).
+ */
+struct Expr *
+__new__ExprPropertyAccessInit(struct Vec *property_access_init,
+                              struct Location loc);
 
 /**
  *
@@ -1238,7 +1253,6 @@ __new__ExprBlock(struct Vec *block, struct Location loc);
 
 /**
  *
- *
  * @brief Construct the Expr type (QuestionMark variant).
  */
 struct Expr *
@@ -1246,14 +1260,12 @@ __new__ExprQuestionMark(struct Expr *question_mark, struct Location loc);
 
 /**
  *
- *
  * @brief Construct the Expr type (Dereference variant).
  */
 struct Expr *
 __new__ExprDereference(struct Expr *dereference, struct Location loc);
 
 /**
- *
  *
  * @brief Construct the Expr type (Ref variant).
  */
@@ -1366,10 +1378,10 @@ __free__ExprGlobalAccess(struct Expr *self);
 
 /**
  *
- * @brief Free the Expr type (SelfAccess variant).
+ * @brief Free the Expr type (PropertyAccessInit variant).
  */
 void
-__free__ExprSelfAccess(struct Expr *self);
+__free__ExprPropertyAccessInit(struct Expr *self);
 
 /**
  *
@@ -2286,6 +2298,12 @@ typedef struct FunParam
 
     union
     {
+        // It's only used in class constructor
+        struct String *name; // struct String&
+    } super_tag;
+
+    union
+    {
         struct Expr *default_;
     } value;
 } FunParam;
@@ -2296,6 +2314,7 @@ typedef struct FunParam
  */
 struct FunParam *
 __new__FunParamDefault(struct String *name,
+                       struct String *super_tag_name,
                        struct Tuple *param_data_type,
                        struct Location loc,
                        struct Expr *default_);
@@ -2306,6 +2325,7 @@ __new__FunParamDefault(struct String *name,
  */
 struct FunParam *
 __new__FunParamNormal(struct String *name,
+                      struct String *super_tag_name,
                       struct Tuple *param_data_type,
                       struct Location loc);
 

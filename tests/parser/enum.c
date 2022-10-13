@@ -1,3 +1,4 @@
+#include "base/vec.h"
 #include <base/file.h>
 #include <base/new.h>
 #include <base/print.h>
@@ -30,6 +31,8 @@ test_enum()
         FREE(String, output);
         free(output_str);
     }
+
+    FREE(Parser, parser);
 
     return TEST_SUCCESS;
 }
