@@ -354,6 +354,9 @@ enum LiteralKind
     LiteralKindBool,
     LiteralKindChar,
     LiteralKindBitChar,
+	LiteralKindInt32WithoutSuffix,
+	LiteralKindInt64WithoutSuffix,
+	LiteralKindInt128WithoutSuffix,
     LiteralKindInt8,
     LiteralKindInt16,
     LiteralKindInt32,
@@ -380,6 +383,9 @@ typedef struct Literal
         bool bool_;
         char char_;
         UInt8 bit_char;
+		Int32 int32_ws;
+		Int64 int64_ws;
+		Int128 int128_ws;
         Int8 int8;
         Int16 int16;
         Int32 int32;
@@ -431,6 +437,42 @@ __new__LiteralBitChar(UInt8 bit_char)
 {
     struct Literal self = { .kind = LiteralKindBitChar,
                             .value.bit_char = bit_char };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Int32WithoutSuffix variant).
+ */
+inline struct Literal
+__new__LiteralInt32WithoutSuffix(Int32 int32_ws)
+{
+    struct Literal self = { .kind = LiteralKindInt32WithoutSuffix, .value.int32_ws = int32_ws };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Int64WithoutSuffix variant).
+ */
+inline struct Literal
+__new__LiteralInt64WithoutSuffix(Int64 int64_ws)
+{
+    struct Literal self = { .kind = LiteralKindInt64WithoutSuffix, .value.int64_ws = int64_ws };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Int128WithoutSuffix variant).
+ */
+inline struct Literal
+__new__LiteralInt128WithoutSuffix(Int128 int128_ws)
+{
+    struct Literal self = { .kind = LiteralKindInt128WithoutSuffix, .value.int128_ws = int128_ws };
 
     return self;
 }

@@ -4833,7 +4833,7 @@ check_expression(struct Typecheck *self,
                 case LiteralKindBitChar:
                     kind = (int *)LiteralSymbolKindBitChar;
                     break;
-                case LiteralKindInt32:
+                case LiteralKindInt32WithoutSuffix:
                     if (defined_data_type) {
                         switch (defined_data_type->kind) {
                             case DataTypeKindI8:
@@ -4875,7 +4875,7 @@ check_expression(struct Typecheck *self,
                         kind = (int *)LiteralSymbolKindInt32;
 
                     break;
-                case LiteralKindInt64:
+                case LiteralKindInt64WithoutSuffix:
                     if (defined_data_type) {
                         switch (defined_data_type->kind) {
                             case DataTypeKindI64:
@@ -4908,7 +4908,7 @@ check_expression(struct Typecheck *self,
                         kind = (int *)LiteralSymbolKindInt64;
 
                     break;
-                case LiteralKindInt128:
+                case LiteralKindInt128WithoutSuffix:
                     if (defined_data_type) {
                         switch (defined_data_type->kind) {
                             case DataTypeKindI128:

@@ -554,6 +554,12 @@ to_String__Literal(struct Literal self)
             return format("'{c}'", self.value.char_);
         case LiteralKindBitChar:
             return format("b'{c}'", (char)self.value.bit_char);
+		case LiteralKindInt32WithoutSuffix:
+            return format("{d}", self.value.int32_ws);
+		case LiteralKindInt64WithoutSuffix:
+            return format("{L}", self.value.int64_ws);
+		case LiteralKindInt128WithoutSuffix:
+            return from__String("I128");
         case LiteralKindInt8:
             return format("{d}", self.value.int8);
         case LiteralKindInt16:
@@ -571,7 +577,7 @@ to_String__Literal(struct Literal self)
         case LiteralKindUint32:
             return format("{d}", self.value.uint32);
         case LiteralKindUint64:
-            return format("{L}", self.value.uint64);
+            return format("{Lu}", self.value.uint64);
         case LiteralKindUint128:
             return from__String("U128");
         case LiteralKindFloat32:

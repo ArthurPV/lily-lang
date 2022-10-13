@@ -3994,9 +3994,9 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             Int128 res = atoi_i128(int_str);
 
             if (res <= Int32Max && res >= Int32Min)
-                literal = NEW(LiteralInt32, (Int32)res);
+                literal = NEW(LiteralInt32WithoutSuffix, (Int32)res);
             else if (res <= Int64Max && res >= Int64Min)
-                literal = NEW(LiteralInt64, (Int64)res);
+                literal = NEW(LiteralInt64WithoutSuffix, (Int64)res);
             else if (1) {
                 TODO("Int128");
             } else {
