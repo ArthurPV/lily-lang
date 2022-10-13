@@ -456,7 +456,19 @@ token_kind_to_String__Token(struct Token self)
             return format("b\"{S}\"", self.lit);
         case TokenKindBitCharLit:
             return format("b'{S}'", self.lit);
+        case TokenKindFloat32Lit:
+        case TokenKindFloat64Lit:
         case TokenKindFloatLit:
+        case TokenKindInt8Lit:
+        case TokenKindInt16Lit:
+        case TokenKindInt32Lit:
+        case TokenKindInt64Lit:
+        case TokenKindInt128Lit:
+        case TokenKindUint8Lit:
+        case TokenKindUint16Lit:
+        case TokenKindUint32Lit:
+        case TokenKindUint64Lit:
+        case TokenKindUint128Lit:
         case TokenKindIntLit:
             return format("{S}", self.lit);
         case TokenKindOneComment:

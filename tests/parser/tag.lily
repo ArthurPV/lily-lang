@@ -1,0 +1,9 @@
+// object Person: record =
+// 	name Str,
+// 	age Uint8
+// end
+
+tag Person =
+	pub fun get_name(self) = self.name;
+	pub fun get_age(self) = self.age;
+end

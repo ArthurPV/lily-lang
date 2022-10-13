@@ -180,7 +180,7 @@ run__Test(struct Test *self)
             count_suite - count_passed_suite,
             RED("failed"),
             count_suite);
-    Println("\x1b[1mTests: {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+    Println("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} total\x1b[0m",
             count_passed_test,
             GREEN("passed"),
             count_test - count_passed_test,

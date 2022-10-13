@@ -1,0 +1,10 @@
+object Person: record =
+	name Str,
+	age Uint8
+end
+
+type ColorRGB: record =
+	red Uint8,
+	blue Uint8,
+	green Uint8
+end

@@ -156,6 +156,60 @@ Output: no errors
       : case 'U' \
       : case 'V' : case 'W' : case 'X' : case 'Y' : case 'Z' : case '_'
 
+#define SCAN_INT_SUFFIX(loc, lit)                                    \
+    if (peek_char(*self, 1) == (char *)'I') {                        \
+        if (peek_char(*self, 2) == (char *)'8')                      \
+            return Ok(NEW(TokenLit, TokenKindInt8Lit, loc, lit));    \
+        else if (peek_char(*self, 2) == (char *)'1' &&               \
+                 peek_char(*self, 3) == (char *)'6')                 \
+            return Ok(NEW(TokenLit, TokenKindInt16Lit, loc, lit));   \
+        else if (peek_char(*self, 2) == (char *)'3' &&               \
+                 peek_char(*self, 3) == (char *)'2')                 \
+            return Ok(NEW(TokenLit, TokenKindInt32Lit, loc, lit));   \
+        else if (peek_char(*self, 2) == (char *)'6' &&               \
+                 peek_char(*self, 3) == (char *)'4')                 \
+            return Ok(NEW(TokenLit, TokenKindInt64Lit, loc, lit));   \
+        else if (peek_char(*self, 2) == (char *)'1' &&               \
+                 peek_char(*self, 3) == (char *)'2' &&               \
+                 peek_char(*self, 4) == (char *)'8')                 \
+            return Ok(NEW(TokenLit, TokenKindInt128Lit, loc, lit));  \
+        else {                                                       \
+            assert(0 && "error: unknown suffix");                    \
+        }                                                            \
+    } else if (peek_char(*self, 1) == (char *)'U') {                 \
+        if (peek_char(*self, 2) == (char *)'8')                      \
+            return Ok(NEW(TokenLit, TokenKindUint8Lit, loc, lit));   \
+        else if (peek_char(*self, 2) == (char *)'1' &&               \
+                 peek_char(*self, 3) == (char *)'6')                 \
+            return Ok(NEW(TokenLit, TokenKindUint16Lit, loc, lit));  \
+        else if (peek_char(*self, 2) == (char *)'3' &&               \
+                 peek_char(*self, 3) == (char *)'2')                 \
+            return Ok(NEW(TokenLit, TokenKindUint32Lit, loc, lit));  \
+        else if (peek_char(*self, 2) == (char *)'6' &&               \
+                 peek_char(*self, 3) == (char *)'4')                 \
+            return Ok(NEW(TokenLit, TokenKindUint64Lit, loc, lit));  \
+        else if (peek_char(*self, 2) == (char *)'1' &&               \
+                 peek_char(*self, 3) == (char *)'2' &&               \
+                 peek_char(*self, 4) == (char *)'8')                 \
+            return Ok(NEW(TokenLit, TokenKindUint128Lit, loc, lit)); \
+        else {                                                       \
+            assert(0 && "error: unknown suffix");                    \
+        }                                                            \
+    }
+
+#define SCAN_FLOAT_SUFFIX(loc, lit)                                  \
+    if (peek_char(*self, 1) == (char *)'F') {                        \
+        if (peek_char(*self, 2) == (char *)'3' &&                    \
+            peek_char(*self, 3) == (char *)'2')                      \
+            return Ok(NEW(TokenLit, TokenKindFloat32Lit, loc, lit)); \
+        else if (peek_char(*self, 2) == (char *)'6' &&               \
+                 peek_char(*self, 3) == (char *)'4') {               \
+            return Ok(NEW(TokenLit, TokenKindFloat64Lit, loc, lit)); \
+        } else {                                                     \
+            assert(0 && "error: unknown suffix");                    \
+        }                                                            \
+    }
+
 // Convert Str id in TokenKind.
 enum TokenKind
 get_keyword(const Str id);
@@ -603,6 +657,27 @@ next_char_by_token(struct Scanner *self, struct Token tok)
             next_char(self);
             return;
 
+        case TokenKindInt8Lit:
+        case TokenKindUint8Lit:
+            jump(self, 3);
+            return;
+
+        case TokenKindInt16Lit:
+        case TokenKindInt32Lit:
+        case TokenKindInt64Lit:
+        case TokenKindUint16Lit:
+        case TokenKindUint32Lit:
+        case TokenKindUint64Lit:
+        case TokenKindFloat32Lit:
+        case TokenKindFloat64Lit:
+            jump(self, 4);
+            return;
+
+        case TokenKindInt128Lit:
+        case TokenKindUint128Lit:
+            jump(self, 5);
+            return;
+
         default: {
             struct String *tok_string = token_kind_to_String__Token(tok);
 
@@ -972,6 +1047,8 @@ scan_hex(struct Scanner *self)
 
     free(hex_str);
 
+    SCAN_INT_SUFFIX(NULL, hex);
+
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, hex));
 }
 
@@ -1010,6 +1087,8 @@ scan_oct(struct Scanner *self)
     previous_char(self);
 
     free(oct_str);
+
+    SCAN_INT_SUFFIX(NULL, oct);
 
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, oct));
 }
@@ -1050,6 +1129,8 @@ scan_bin(struct Scanner *self)
     previous_char(self);
 
     free(bin_str);
+
+    SCAN_INT_SUFFIX(NULL, bin);
 
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, bin));
 }
@@ -1122,8 +1203,12 @@ scan_num(struct Scanner *self)
               Some(format("add digit after `-` or `+` in scientific number"))));
         }
 
+        SCAN_FLOAT_SUFFIX(NULL, num);
+
         return Ok(NEW(TokenLit, TokenKindFloatLit, NULL, num));
     }
+
+    SCAN_INT_SUFFIX(NULL, num);
 
     return Ok(NEW(TokenLit, TokenKindIntLit, NULL, num));
 }

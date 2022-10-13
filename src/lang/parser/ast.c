@@ -459,6 +459,8 @@ get_name__Generic(struct Generic *self)
         case GenericKindRestrictedDataType:
             return self->value.restricted_data_type->items[0];
     }
+
+    return NULL;
 }
 
 struct String *
@@ -552,12 +554,30 @@ to_String__Literal(struct Literal self)
             return format("'{c}'", self.value.char_);
         case LiteralKindBitChar:
             return format("b'{c}'", (char)self.value.bit_char);
+        case LiteralKindInt8:
+            return format("{d}", self.value.int8);
+        case LiteralKindInt16:
+            return format("{d}", self.value.int16);
         case LiteralKindInt32:
             return format("{d}", self.value.int32);
         case LiteralKindInt64:
             return format("{L}", self.value.int64);
         case LiteralKindInt128:
             return from__String("I128");
+        case LiteralKindUint8:
+            return format("{d}", self.value.uint8);
+        case LiteralKindUint16:
+            return format("{d}", self.value.uint16);
+        case LiteralKindUint32:
+            return format("{d}", self.value.uint32);
+        case LiteralKindUint64:
+            return format("{L}", self.value.uint64);
+        case LiteralKindUint128:
+            return from__String("U128");
+        case LiteralKindFloat32:
+            return format("{f}", self.value.float32);
+        case LiteralKindFloat64:
+            return format("{f}", self.value.float64);
         case LiteralKindFloat:
             return format("{f}", self.value.float_);
         case LiteralKindStr:
@@ -574,6 +594,8 @@ to_String__Literal(struct Literal self)
         case LiteralKindUnit:
             return from__String("()");
     }
+
+    return NULL;
 }
 
 void
@@ -606,6 +628,8 @@ to_str__UnaryOpKind(enum UnaryOpKind kind)
         case UnaryOpKindCustom:
             return "Custom";
     }
+
+    return "unknown";
 }
 
 struct String *
@@ -623,6 +647,8 @@ to_String__UnaryOp(struct UnaryOp self)
         case UnaryOpKindCustom:
             return format("{S}{Sr}", self.op, to_String__Expr(*self.right));
     }
+
+    return NULL;
 }
 
 void
@@ -702,6 +728,8 @@ get_precedence__BinaryOpKind(enum BinaryOpKind kind)
         case BinaryOpKindExponentAssign:
             return 16;
     }
+
+    return -1;
 }
 
 const Str
@@ -791,6 +819,8 @@ to_str__BinaryOpKind(enum BinaryOpKind kind)
         case BinaryOpKindCustom:
             return "Custom";
     }
+
+    return "unknown";
 }
 
 struct BinaryOp
@@ -2333,6 +2363,8 @@ to_String__ImportStmtValue(struct ImportStmtValue self)
         case ImportStmtValueKindWildcard:
             return from__String("*");
     }
+
+    return NULL;
 }
 
 void
@@ -2382,7 +2414,7 @@ to_String__ImportStmt(struct ImportStmt self)
 {
     struct String *s = NEW(String);
 
-	append__String(s, repeat__String("\t", current_tab_size), true);
+    append__String(s, repeat__String("\t", current_tab_size), true);
 
     if (self.is_pub)
         push_str__String(s, "pub import \"");
@@ -2757,6 +2789,8 @@ to_String__FunParam(struct FunParam self)
         case FunParamKindSelf:
             return from__String("self");
     }
+
+    return NULL;
 }
 
 void
@@ -3073,6 +3107,8 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
         case ModuleBodyItemKindInclude:
             TODO("include");
     }
+
+    return NULL;
 }
 
 void
@@ -3314,13 +3350,13 @@ to_String__RecordDecl(struct RecordDecl self)
     append__String(s, repeat__String("\t", current_tab_size), true);
 
     if (self.is_pub && self.is_object)
-        push_str__String(s, "pub object");
+        push_str__String(s, "pub object ");
     else if (!self.is_pub && self.is_object)
-        push_str__String(s, "object");
+        push_str__String(s, "object ");
     else if (self.is_pub && !self.is_object)
-        push_str__String(s, "pub type");
+        push_str__String(s, "pub type ");
     else
-        push_str__String(s, "type");
+        push_str__String(s, "type ");
 
     append__String(s, self.name, false);
 
@@ -3450,13 +3486,13 @@ to_String__EnumDecl(struct EnumDecl self)
     append__String(s, repeat__String("\t", current_tab_size), true);
 
     if (self.is_pub && self.is_object)
-        push_str__String(s, "pub object");
+        push_str__String(s, "pub object ");
     else if (!self.is_pub && self.is_object)
-        push_str__String(s, "object");
+        push_str__String(s, "object ");
     else if (self.is_pub && !self.is_object)
-        push_str__String(s, "pub type");
+        push_str__String(s, "pub type ");
     else
-        push_str__String(s, "type");
+        push_str__String(s, "type ");
 
     append__String(s, self.name, false);
 
@@ -3586,8 +3622,11 @@ to_String__ErrorDecl(struct ErrorDecl self)
           true);
     }
 
-    append__String(
-      s, format(" {Sr};", to_String__DataType(*self.data_type)), true);
+    if (self.data_type)
+        append__String(
+          s, format(" {Sr};", to_String__DataType(*self.data_type)), true);
+    else
+        push_str__String(s, ";");
 
     return s;
 }
@@ -3836,6 +3875,8 @@ to_String__ClassBodyItem(struct ClassBodyItem self)
         case ClassBodyItemKindImport:
             return to_String__ImportStmt(*self.value.import);
     }
+
+    return NULL;
 }
 
 void
@@ -4046,11 +4087,11 @@ to_String__Prototype(struct Prototype self)
     if (self.is_async)
         push_str__String(s, "async ");
 
-    append__String(s, format("@{S} ::", self.name), true);
+    append__String(s, format("@{S} :: ", self.name), true);
 
     for (Usize i = 0; i < len__Vec(*self.params_type); i++)
         append__String(s,
-                       format("{Sr} ->",
+                       format("{Sr} -> ",
                               to_String__DataType(*(struct DataType *)get__Vec(
                                 *self.params_type, i))),
                        true);
@@ -4102,6 +4143,8 @@ to_String__TraitBodyItem(struct TraitBodyItem self)
             return format("{Sr}\n",
                           to_String__Prototype(*self.value.prototype));
     }
+
+    return NULL;
 }
 
 void
@@ -4432,6 +4475,8 @@ get_name__Decl(struct Decl *decl)
         case DeclKindImport:
             return NULL;
     }
+
+    return NULL;
 }
 
 struct String *
@@ -4461,6 +4506,8 @@ to_String__Decl(struct Decl self)
         case DeclKindImport:
             return to_String__ImportStmt(*self.value.import);
     }
+
+    return NULL;
 }
 
 void

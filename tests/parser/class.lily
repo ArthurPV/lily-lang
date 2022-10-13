@@ -1,0 +1,21 @@
+object Person: class =
+	@name Str;
+	@age Uint8;
+
+	pub fun new(name, age) =
+		// `@.` it's only used to initialize property of class.
+		// otherwise `self` it's used in other class and `@.` is not allowed.
+		@.name = name
+		@.age = age
+	end
+end
+
+object Work => [Person]: class =
+	@name Str;
+	@salary Uint64;
+
+	pub fun new(name#Person, age#Person, name, salary) =
+		@.name = name
+		@.salary = salary
+	end
+end

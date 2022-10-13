@@ -1,0 +1,4 @@
+object Animal: trait =
+	@get_name :: self -> Str
+	@get_age :: self -> Uint8
+end

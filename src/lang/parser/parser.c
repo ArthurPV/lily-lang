@@ -3823,6 +3823,45 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
 //  const Int128 Int128Min = -0x80000000000000000000000000000000;
 //  const Int128 Int128Max = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
+// Check overflow and underflow for Uint8, Uint16, Uint32, Int8, Int16 and Int32
+#define CHECK_INT32(n)                                          \
+    struct String *s = format("{d}", n);                        \
+    if (strlen(int_str) == len__String(*s)) {                   \
+        for (Usize i = 0; i < len__String(*s); i++) {           \
+            if ((char)(UPtr)get__String(*s, i) != int_str[i]) { \
+                assert(0 && "error: literal out of range");     \
+            }                                                   \
+        }                                                       \
+    } else {                                                    \
+        assert(0 && "error: literal out of range");             \
+    }
+
+// Check overflow and underflow for Int64
+#define CHECK_INT64(n)                                          \
+    struct String *s = format("{L}", n);                        \
+    if (strlen(int_str) == len__String(*s)) {                   \
+        for (Usize i = 0; i < len__String(*s); i++) {           \
+            if ((char)(UPtr)get__String(*s, i) != int_str[i]) { \
+                assert(0 && "error: literal out of range");     \
+            }                                                   \
+        }                                                       \
+    } else {                                                    \
+        assert(0 && "error: literal out of range");             \
+    }
+
+// Check overflow and underflow for Uint64
+#define CHECK_UINT64(n)                                         \
+    struct String *s = format("{Lu}", n);                       \
+    if (strlen(int_str) == len__String(*s)) {                   \
+        for (Usize i = 0; i < len__String(*s); i++) {           \
+            if ((char)(UPtr)get__String(*s, i) != int_str[i]) { \
+                assert(0 && "error: literal out of range");     \
+            }                                                   \
+        }                                                       \
+    } else {                                                    \
+        assert(0 && "error: literal out of range");             \
+    }
+
 struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
 {
@@ -3834,6 +3873,122 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
                     parse_decl->previous->loc->s_col);
 
     switch (parse_decl->previous->kind) {
+        case TokenKindInt8Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int8 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralInt8, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindInt16Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int16 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralInt16, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindInt32Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int32 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralInt32, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindInt64Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            Int64 res = atoi_i64(int_str);
+
+            CHECK_INT64(res);
+
+            literal = NEW(LiteralInt64, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindInt128Lit: {
+            TODO("Int128");
+
+            break;
+        }
+
+        case TokenKindUint8Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            UInt8 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralUint8, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindUint16Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            UInt16 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralUint16, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindUint32Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            UInt32 res = atoi(int_str);
+
+            CHECK_INT32(res);
+
+            literal = NEW(LiteralUint32, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindUint64Lit: {
+            const Str int_str = to_Str__String(*parse_decl->previous->lit);
+            UInt64 res = atoi_u64(int_str);
+
+            CHECK_UINT64(res);
+
+            literal = NEW(LiteralUint64, res);
+
+            free(int_str);
+
+            break;
+        }
+
+        case TokenKindUint128Lit: {
+            TODO("Uint128");
+
+            break;
+        }
+
         case TokenKindIntLit: {
             const Str int_str = to_Str__String(*parse_decl->previous->lit);
             Int128 res = atoi_i128(int_str);
@@ -3871,6 +4026,26 @@ parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)
             literal = NEW(LiteralChar, char_str[0]);
 
             free(char_str);
+
+            break;
+        }
+
+        case TokenKindFloat32Lit: {
+            const Str float32_str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralFloat32, strtod(float32_str, NULL));
+
+            free(float32_str);
+
+            break;
+        }
+
+        case TokenKindFloat64Lit: {
+            const Str float64_str = to_Str__String(*parse_decl->previous->lit);
+
+            literal = NEW(LiteralFloat64, strtod(float64_str, NULL));
+
+            free(float64_str);
 
             break;
         }
@@ -4461,8 +4636,20 @@ exit_unary : {
 
             break;
 
+        case TokenKindInt8Lit:
+        case TokenKindInt16Lit:
+        case TokenKindInt32Lit:
+        case TokenKindInt64Lit:
+        case TokenKindInt128Lit:
+        case TokenKindUint8Lit:
+        case TokenKindUint16Lit:
+        case TokenKindUint32Lit:
+        case TokenKindUint64Lit:
+        case TokenKindUint128Lit:
         case TokenKindIntLit:
         case TokenKindCharLit:
+        case TokenKindFloat32Lit:
+        case TokenKindFloat64Lit:
         case TokenKindFloatLit:
         case TokenKindBitCharLit:
         case TokenKindStringLit:

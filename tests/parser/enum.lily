@@ -1,0 +1,4 @@
+type ColorRepr: enum =
+	Hex Uint64,
+	Rgb (Uint8, Uint8, Uint8)
+end

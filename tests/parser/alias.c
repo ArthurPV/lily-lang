@@ -38,7 +38,7 @@ test_alias()
         free(output_str);
     }
 
-	FREE(Parser, parser);
+    FREE(Parser, parser);
 
     return TEST_SUCCESS;
 }

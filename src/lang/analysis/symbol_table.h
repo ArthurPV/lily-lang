@@ -701,7 +701,9 @@ __new__ErrorSymbol(struct Decl *error_decl);
 inline void
 __free__ErrorSymbol(struct ErrorSymbol *self)
 {
-    FREE(DataTypeSymbolAll, self->data_type);
+    if (self->data_type)
+        FREE(DataTypeSymbolAll, self->data_type);
+
     FREE(Scope, self->scope);
     free(self);
 }

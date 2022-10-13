@@ -29,9 +29,23 @@
 
 /**
  *
+ * @brief Convert Str in Int64.
+ */
+Int64
+atoi_i64(const Str s);
+
+/**
+ *
  * @brief Convert Str in Int128.
  */
 Int128
 atoi_i128(const Str s);
+
+/**
+ *
+ * @brief Convert Str in UInt64.
+ */
+UInt64
+atoi_u64(const Str s);
 
 #endif // LILY_UTIL_H

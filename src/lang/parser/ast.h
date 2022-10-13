@@ -354,10 +354,19 @@ enum LiteralKind
     LiteralKindBool,
     LiteralKindChar,
     LiteralKindBitChar,
+    LiteralKindInt8,
+    LiteralKindInt16,
     LiteralKindInt32,
     LiteralKindInt64,
     LiteralKindInt128,
-    LiteralKindFloat,
+    LiteralKindUint8,
+    LiteralKindUint16,
+    LiteralKindUint32,
+    LiteralKindUint64,
+    LiteralKindUint128,
+    LiteralKindFloat32,
+    LiteralKindFloat64,
+    LiteralKindFloat, // Float64 without suffix
     LiteralKindBitStr,
     LiteralKindStr,
     LiteralKindUnit
@@ -371,9 +380,18 @@ typedef struct Literal
         bool bool_;
         char char_;
         UInt8 bit_char;
+        Int8 int8;
+        Int16 int16;
         Int32 int32;
         Int64 int64;
         Int128 int128;
+        UInt8 uint8;
+        UInt16 uint16;
+        UInt32 uint32;
+        UInt64 uint64;
+        UInt128 uint128;
+        Float32 float32;
+        Float64 float64;
         Float64 float_;
         Str str;
         UInt8 **bit_str;
@@ -419,6 +437,30 @@ __new__LiteralBitChar(UInt8 bit_char)
 
 /**
  *
+ * @brief Construct Literal (Int8 variant).
+ */
+inline struct Literal
+__new__LiteralInt8(Int8 int8)
+{
+    struct Literal self = { .kind = LiteralKindInt8, .value.int8 = int8 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Int16 variant).
+ */
+inline struct Literal
+__new__LiteralInt16(Int16 int16)
+{
+    struct Literal self = { .kind = LiteralKindInt16, .value.int16 = int16 };
+
+    return self;
+}
+
+/**
+ *
  * @brief Construct Literal (Int32 variant).
  */
 inline struct Literal
@@ -455,7 +497,94 @@ __new__LiteralInt128(Int128 int128)
 
 /**
  *
+ * @brief Construct Literal (Uint8 variant).
+ */
+inline struct Literal
+__new__LiteralUint8(UInt8 uint8)
+{
+    struct Literal self = { .kind = LiteralKindUint8, .value.uint8 = uint8 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Uint16 variant).
+ */
+inline struct Literal
+__new__LiteralUint16(UInt16 uint16)
+{
+    struct Literal self = { .kind = LiteralKindUint16, .value.uint16 = uint16 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Uint32 variant).
+ */
+inline struct Literal
+__new__LiteralUint32(UInt32 uint32)
+{
+    struct Literal self = { .kind = LiteralKindUint32, .value.uint32 = uint32 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Uint64 variant).
+ */
+inline struct Literal
+__new__LiteralUint64(UInt64 uint64)
+{
+    struct Literal self = { .kind = LiteralKindUint64, .value.uint64 = uint64 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Uint128 variant).
+ */
+inline struct Literal
+__new__LiteralUint128(UInt128 uint128)
+{
+    struct Literal self = { .kind = LiteralKindUint128,
+                            .value.uint128 = uint128 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Float32 variant).
+ */
+inline struct Literal
+__new__LiteralFloat32(Float32 float32)
+{
+    struct Literal self = { .kind = LiteralKindFloat32,
+                            .value.float32 = float32 };
+
+    return self;
+}
+
+/**
+ *
  * @brief Construct Literal (Float64 variant).
+ */
+inline struct Literal
+__new__LiteralFloat64(Float64 float64)
+{
+    struct Literal self = { .kind = LiteralKindFloat64,
+                            .value.float64 = float64 };
+
+    return self;
+}
+
+/**
+ *
+ * @brief Construct Literal (Float variant).
  */
 inline struct Literal
 __new__LiteralFloat(Float64 float_)

@@ -26,6 +26,28 @@
 #include <stdbool.h>
 #include <string.h>
 
+Int64
+atoi_i64(const Str s)
+{
+    Int64 i = 0;
+    Usize pos = 0;
+    bool neg = false;
+
+    if (s[pos] == '-') {
+        neg = true;
+        ++pos;
+    }
+
+    while (s[pos] >= '0' && s[pos] <= '9') {
+        if (neg)
+            i = (10 * i) - (s[pos++] - '0');
+        else
+            i = (10 * i) + (s[pos++] - '0');
+    }
+
+    return i;
+}
+
 Int128
 atoi_i128(const Str s)
 {
@@ -43,6 +65,19 @@ atoi_i128(const Str s)
             i = (10 * i) - (s[pos++] - '0');
         else
             i = (10 * i) + (s[pos++] - '0');
+    }
+
+    return i;
+}
+
+UInt64
+atoi_u64(const Str s)
+{
+    UInt64 i = 0;
+    Usize pos = 0;
+
+    while (s[pos] >= '0' && s[pos] <= '9') {
+        i = (10 * i) + (s[pos++] - '0');
     }
 
     return i;
