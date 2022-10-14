@@ -23,9 +23,9 @@
  */
 
 #include <base/color.h>
+#include <base/format.h>
 #include <base/print.h>
 #include <base/test.h>
-#include <base/format.h>
 #include <time.h>
 
 struct Case *
@@ -40,7 +40,7 @@ __new__Case(Str name, void(*f))
 int
 run__Case(struct Case *self)
 {
-	int res = self->f();
+    int res = self->f();
 
     if (res == TEST_FAILED) {
         Str failed = RED("failed");
@@ -201,25 +201,28 @@ run__Test(struct Test *self)
             RED("failed"),
             count_suite);
 
-	// Bug: Buffer overflow when print
-	/*
-	        Println("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d} total\x1b[0m",
-            count_passed_case,
-            GREEN("passed"),
-            count_case - (count_passed_case + count_skipped_case),
-            RED("failed"), count_skipped_case, YELLOW("skipped"), count_case);
-	*/
+    // Bug: Buffer overflow when print
+    /*
+            Println("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d}
+       total\x1b[0m", count_passed_case, GREEN("passed"), count_case -
+       (count_passed_case + count_skipped_case), RED("failed"),
+       count_skipped_case, YELLOW("skipped"), count_case);
+    */
 
-	// Bug fix: temporary fix
-	// TODO: try to find a solution to this bug.
-	// --------------
-	struct String *s = format("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d} total\x1b[0m",
-            count_passed_case,
-            GREEN("passed"),
-            count_case - (count_passed_case + count_skipped_case),
-            RED("failed"), count_skipped_case, YELLOW("skipped"), count_case);
-	Println("{Sr}", s);
-	// --------------
+    // Bug fix: temporary fix
+    // TODO: try to find a solution to this bug.
+    // --------------
+    struct String *s =
+      format("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+             count_passed_case,
+             GREEN("passed"),
+             count_case - (count_passed_case + count_skipped_case),
+             RED("failed"),
+             count_skipped_case,
+             YELLOW("skipped"),
+             count_case);
+    Println("{Sr}", s);
+    // --------------
 
     // Print the time of execution
     printf("\x1b[1mTime: %.2fs\x1b[0m\n", self->time);

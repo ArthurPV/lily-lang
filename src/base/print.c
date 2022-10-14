@@ -38,7 +38,7 @@ Print(const Str format_, ...)
     FREE(String, s);
     free(str);
 
-	return 0;
+    return 0;
 }
 
 int
@@ -47,5 +47,5 @@ Println(const Str format_, ...)
     Print(format_);
     printf("\n");
 
-	return 0;
+    return 0;
 }

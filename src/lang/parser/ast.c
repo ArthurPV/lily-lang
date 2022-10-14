@@ -341,14 +341,14 @@ __free__DataTypeMut(struct DataType *self)
 void
 __free__DataTypeLambda(struct DataType *self)
 {
-	if (self->value.lambda->items[0]) {
-		struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
+    if (self->value.lambda->items[0]) {
+        struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
 
-		for (Usize i = len__Vec(*temporary) - 1; i--;) 
-			FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));	
+        for (Usize i = len__Vec(*temporary) - 1; i--;)
+            FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));
 
-		FREE(Vec, temporary);
-	}
+        FREE(Vec, temporary);
+    }
 
     FREE(DataTypeAll, self->value.lambda->items[1]);
     FREE(Tuple, self->value.lambda);
@@ -1013,10 +1013,10 @@ to_String__BinaryOp(struct BinaryOp self)
             return format("{Sr} ** {Sr}",
                           to_String__Expr(*self.left),
                           to_String__Expr(*self.right));
-		case BinaryOpKindCustom:
+        case BinaryOpKindCustom:
             return format("{Sr} `{S}` {Sr}",
                           to_String__Expr(*self.left),
-						  self.op,
+                          self.op,
                           to_String__Expr(*self.right));
         default:
             UNREACHABLE("unknown binop kind");
@@ -1026,8 +1026,8 @@ to_String__BinaryOp(struct BinaryOp self)
 void
 __free__BinaryOp(struct BinaryOp self)
 {
-	if (self.kind == BinaryOpKindCustom)
-		FREE(String, self.op);
+    if (self.kind == BinaryOpKindCustom)
+        FREE(String, self.op);
 
     FREE(ExprAll, self.left);
     FREE(ExprAll, self.right);
@@ -1975,8 +1975,9 @@ __free__MatchStmt(struct MatchStmt *self)
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[0]);
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[2]);
 
-		if (((struct Tuple*)get__Vec(*self->pattern, i))->items[1])
-			FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
+        if (((struct Tuple *)get__Vec(*self->pattern, i))->items[1])
+            FREE(ExprAll,
+                 ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
 
         if ((struct Tuple *)get__Vec(*self->pattern, i))
             FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
@@ -2164,8 +2165,8 @@ __free__TryStmt(struct TryStmt *self)
         for (Usize i = len__Vec(*self->catch_body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->catch_body, i));
 
-		FREE(Vec, self->catch_body);
-	}
+        FREE(Vec, self->catch_body);
+    }
 
     free(self);
 }
