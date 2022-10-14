@@ -3798,11 +3798,7 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
             data_type = NEW(DataTypeRef, parse_data_type(self, parse_decl));
 
         case TokenKindBar: {
-            next_token(parse_decl);
-
             struct Vec *params = NEW(Vec, sizeof(struct Vec));
-
-            push__Vec(params, parse_data_type(self, parse_decl));
 
             while (parse_decl->current->kind != TokenKindBar) {
                 push__Vec(params, parse_data_type(self, parse_decl));
@@ -6090,9 +6086,8 @@ get_name__parse_import_stmt(struct Parser self,
     }
 
 exit : {
-}
-
     return s;
+}
 }
 
 struct Vec *

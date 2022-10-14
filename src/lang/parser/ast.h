@@ -1911,6 +1911,20 @@ __free__ImportStmtValueSelector(struct ImportStmtValue *self);
 
 /**
  *
+ * @brief Free the ImportStmtValue type (File variant).
+ */
+void
+__free__ImportStmtValueFile(struct ImportStmtValue *self);
+
+/**
+ *
+ * @brief Free the ImportStmtValue type (Url variant).
+ */
+void
+__free__ImportStmtValueUrl(struct ImportStmtValue *self);
+
+/**
+ *
  * @brief Free the ImportStmtValue type (all variants).
  */
 void

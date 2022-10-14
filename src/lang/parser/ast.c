@@ -179,6 +179,7 @@ to_String__DataType(struct DataType self)
             struct Vec *params = self.value.lambda->items[0];
             struct String *lambda_string = NEW(String);
 
+			push_str__String(lambda_string, "|");
             append__String(
               lambda_string,
               to_String__DataType(*(struct DataType *)get__Vec(*params, 0)),
@@ -197,6 +198,7 @@ to_String__DataType(struct DataType self)
                            to_String__DataType(
                              *(struct DataType *)self.value.lambda->items[1]),
                            true);
+			push_str__String(lambda_string, "|");
 
             return lambda_string;
         }
@@ -251,7 +253,7 @@ to_String__DataType(struct DataType self)
                 for (Usize i = 0; i < len__Vec(*names) - 1; i++)
                     append__String(
                       custom_string,
-                      format("{Sr}.", (struct String *)get__Vec(*names, i)),
+                      format("{S}.", (struct String *)get__Vec(*names, i)),
                       true);
 
                 append__String(custom_string,
@@ -344,7 +346,7 @@ __free__DataTypeLambda(struct DataType *self)
     if (self->value.lambda->items[0]) {
         struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
 
-        for (Usize i = len__Vec(*temporary) - 1; i--;)
+        for (Usize i = len__Vec(*temporary); i--;)
             FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));
 
         FREE(Vec, temporary);
@@ -1046,13 +1048,13 @@ to_String__FunCall(struct FunCall self)
 {
     struct String *s = NEW(String);
 
-    append__String(s, format("{S}(", to_String__Expr(*self.id)), true);
+    append__String(s, format("{Sr}(", to_String__Expr(*self.id)), true);
 
     for (Usize i = 0; i < len__Vec(*self.params); i++)
         append__String(
           s,
           format(
-            "{S}, ",
+            "{Sr}, ",
             to_String__FunParamCall(*(
               (struct FunParamCall *)((struct Tuple *)get__Vec(*self.params, i))
                 ->items[0]))),
@@ -1942,7 +1944,7 @@ to_String__MatchStmt(struct MatchStmt self)
     struct String *s = NEW(String);
 
     append__String(
-      s, format("match {S}\n", to_String__Expr(*self.matching)), true);
+      s, format("match {Sr}\n", to_String__Expr(*self.matching)), true);
 
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
         struct Expr *temp_matched =
@@ -2417,7 +2419,7 @@ to_String__ImportStmtValue(struct ImportStmtValue self)
         case ImportStmtValueKindUrl:
             return format("@url({S})", self.value.url);
         case ImportStmtValueKindAccess:
-            return copy__String(self.value.access);
+            return format("{S}", self.value.access);
         case ImportStmtValueKindSelector: {
             struct String *s = NEW(String);
 
@@ -2466,6 +2468,20 @@ __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 }
 
 void
+__free__ImportStmtValueFile(struct ImportStmtValue *self)
+{
+	FREE(String, self->value.file);
+	free(self);
+}
+
+void
+__free__ImportStmtValueUrl(struct ImportStmtValue *self)
+{
+	FREE(String, self->value.url);
+	free(self);
+}
+
+void
 __free__ImportStmtValueAll(struct ImportStmtValue *self)
 {
     switch (self->kind) {
@@ -2475,6 +2491,18 @@ __free__ImportStmtValueAll(struct ImportStmtValue *self)
         case ImportStmtValueKindSelector:
             FREE(ImportStmtValueSelector, self);
             break;
+		case ImportStmtValueKindCore:
+		case ImportStmtValueKindStd:
+		case ImportStmtValueKindBuiltin:
+		case ImportStmtValueKindWildcard:
+			free(self);
+			break;
+		case ImportStmtValueKindFile:
+			FREE(ImportStmtValueFile, self);
+			break;
+		case ImportStmtValueKindUrl:
+			FREE(ImportStmtValueUrl, self);
+			break;
         default:
             UNREACHABLE("unknown import stmt value");
     }
@@ -2760,9 +2788,9 @@ to_String__FunParamCall(struct FunParamCall self)
 {
     switch (self.kind) {
         case FunParamKindNormal:
-            return format("{S}", to_String__Expr(*self.value));
+            return format("{Sr}", to_String__Expr(*self.value));
         case FunParamKindDefault:
-            return format("{S} = {S}", self.name, to_String__Expr(*self.value));
+            return format("{S} = {Sr}", self.name, to_String__Expr(*self.value));
         case FunParamKindSelf:
             return from__String("self");
         default:
