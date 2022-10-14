@@ -1010,6 +1010,11 @@ to_String__BinaryOp(struct BinaryOp self)
             return format("{Sr} ** {Sr}",
                           to_String__Expr(*self.left),
                           to_String__Expr(*self.right));
+		case BinaryOpKindCustom:
+            return format("{Sr} `{S}` {Sr}",
+                          to_String__Expr(*self.left),
+						  self.op,
+                          to_String__Expr(*self.right));
         default:
             UNREACHABLE("unknown binop kind");
     }
@@ -1018,6 +1023,9 @@ to_String__BinaryOp(struct BinaryOp self)
 void
 __free__BinaryOp(struct BinaryOp self)
 {
+	if (self.op)
+		FREE(String, self.op);
+
     FREE(ExprAll, self.left);
     FREE(ExprAll, self.right);
 }
@@ -2021,7 +2029,7 @@ to_String__IfCond(struct IfCond self)
     for (Usize i = 0; i < len__Vec(*self.if_->body); i++)
         append__String(
           s,
-          format("\t{Sr}\n",
+          format("{Sr}",
                  to_String__FunBodyItem(
                    *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
           true);
@@ -2041,7 +2049,7 @@ to_String__IfCond(struct IfCond self)
             for (Usize j = 0; j < len__Vec(*temp_body); j++)
                 append__String(
                   s,
-                  format("\t{Sr}\n",
+                  format("{Sr}",
                          to_String__FunBodyItem(
                            *(struct FunBodyItem *)get__Vec(*temp_body, j))),
                   true);
@@ -2054,7 +2062,7 @@ to_String__IfCond(struct IfCond self)
         for (Usize i = 0; i < len__Vec(*self.else_); i++)
             append__String(
               s,
-              format("\t{Sr}\n",
+              format("{Sr}",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.else_, i))),
               true);
@@ -3068,7 +3076,7 @@ to_String__FunDecl(struct FunDecl self)
         for (Usize i = 0; i < len__Vec(*self.body) - 1; i++)
             append__String(
               s,
-              format("{Sr}\n",
+              format("{Sr}",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.body, i))),
               true);
