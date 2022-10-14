@@ -1945,20 +1945,16 @@ to_String__MatchStmt(struct MatchStmt self)
       s, format("match {S}\n", to_String__Expr(*self.matching)), true);
 
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
-        struct Expr *temp_expr =
+        struct Expr *temp_matched =
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[0];
-        struct Vec *temp_body =
+        struct Expr *temp_cond =
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
+		struct Expr *temp_expr = ((struct Tuple*)get__Vec(*self.pattern, i))->items[2];
 
-        append__String(
-          s, format("{S} =>\n", to_String__Expr(*temp_expr)), true);
-
-        for (Usize j = 0; j < len__Vec(*temp_body); j++)
-            append__String(
-              s,
-              format("\t{Sr}s\n",
-                     to_String__Expr(*(struct Expr *)get__Vec(*temp_body, j))),
-              true);
+		if (temp_cond)
+			append__String(s, format("{Sr} ? {Sr} => {Sr}", to_String__Expr(*temp_matched), to_String__Expr(*temp_cond), to_String__Expr(*temp_expr)), true);
+		else
+			append__String(s, format("{Sr} => {Sr}", to_String__Expr(*temp_matched), to_String__Expr(*temp_expr)), true);
     }
 
     push_str__String(s, "end");

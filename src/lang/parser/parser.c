@@ -7412,6 +7412,11 @@ run__Parser(struct Parser *self)
           count_error, count_warning, "the parser phase has been failed");
         exit(1);
     }
+
+#ifdef DEBUG
+	for (Usize i = 0; i < len__Vec(*self->decls); i++)
+		Println("{Sr}", to_String__Decl(*(struct Decl *)get__Vec(*self->decls, i)));
+#endif
 }
 
 void
