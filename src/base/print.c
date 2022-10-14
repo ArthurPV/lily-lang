@@ -33,10 +33,12 @@ Print(const Str format_, ...)
     struct String *s = format(format_);
     Str str = to_Str__String(*s);
 
-    print("%s", str);
+    printf("%s", str);
 
     FREE(String, s);
     free(str);
+
+	return 0;
 }
 
 int
@@ -44,4 +46,6 @@ Println(const Str format_, ...)
 {
     Print(format_);
     printf("\n");
+
+	return 0;
 }

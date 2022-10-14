@@ -25,6 +25,7 @@
 #include <base/color.h>
 #include <base/print.h>
 #include <base/test.h>
+#include <base/format.h>
 #include <time.h>
 
 struct Case *
@@ -39,16 +40,26 @@ __new__Case(Str name, void(*f))
 int
 run__Case(struct Case *self)
 {
-    if (self->f() == 1) {
+	int res = self->f();
+
+    if (res == TEST_FAILED) {
         Str failed = RED("failed");
-        println("test %s ... %s", self->name, failed);
+        println("case %s ... %s", self->name, failed);
 
         free(failed);
 
         return TEST_FAILED;
+    } else if (res == TEST_SKIPPED) {
+        Str skipped = YELLOW("skipped");
+        println("case %s ... %s", self->name, skipped);
+
+        free(skipped);
+
+        return TEST_SKIPPED;
     }
+
     Str ok = GREEN("ok");
-    println("test %s ... %s", self->name, ok);
+    println("case %s ... %s", self->name, ok);
 
     free(ok);
 
@@ -78,7 +89,10 @@ add_case__Suite(struct Suite *self, struct Case *case_)
 }
 
 void
-run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite)
+run__Suite(struct Suite *self,
+           Usize *passed_case,
+           Usize *skipped_case,
+           Usize *passed_suite)
 {
     int failed = 0;
     clock_t start, end;
@@ -86,10 +100,14 @@ run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite)
     start = clock();
 
     for (Usize i = 0; i < len__Vec(*self->cases); i++) {
-        if (run__Case(get__Vec(*self->cases, i)) == 1) {
-            failed = 1;
-        } else
-            *passed_test += 1;
+        int res = run__Case(get__Vec(*self->cases, i));
+
+        if (res == TEST_FAILED)
+            failed = TEST_FAILED;
+        else if (res == TEST_SKIPPED)
+            *skipped_case += 1;
+        else
+            *passed_case += 1;
     }
 
     end = clock();
@@ -101,7 +119,7 @@ run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite)
 
         free(failed_str);
 
-#ifdef FATAL_TEST // An option for stop test when it's failed
+#ifdef FATAL_TEST // An option for stop case when it's failed
         exit(1);
 #endif
     } else {
@@ -157,17 +175,19 @@ run__Test(struct Test *self)
 {
     clock_t start, end;
     start = clock();
-    Usize count_test = 0;
+    Usize count_case = 0;
     Usize count_suite = len__Vec(*self->suites);
-    Usize count_passed_test = 0;
+    Usize count_passed_case = 0;
+    Usize count_skipped_case = 0;
     Usize count_passed_suite = 0;
 
     for (Usize i = 0; i < len__Vec(*self->suites); i++) {
         struct Suite *suite = get__Vec(*self->suites, i);
 
-        run__Suite(suite, &count_passed_test, &count_passed_suite);
+        run__Suite(
+          suite, &count_passed_case, &count_skipped_case, &count_passed_suite);
 
-        count_test += len__Vec(*suite->cases);
+        count_case += len__Vec(*suite->cases);
     }
 
     end = clock();
@@ -180,12 +200,26 @@ run__Test(struct Test *self)
             count_suite - count_passed_suite,
             RED("failed"),
             count_suite);
-    Println("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} total\x1b[0m",
-            count_passed_test,
+
+	// Bug: Buffer overflow when print
+	/*
+	        Println("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+            count_passed_case,
             GREEN("passed"),
-            count_test - count_passed_test,
-            RED("failed"),
-            count_test);
+            count_case - (count_passed_case + count_skipped_case),
+            RED("failed"), count_skipped_case, YELLOW("skipped"), count_case);
+	*/
+
+	// Bug fix: temporary fix
+	// TODO: try to find a solution to this bug.
+	// --------------
+	struct String *s = format("\x1b[1mCases: {d} {sa}, {d} {sa}, {d} {sa}, {d} total\x1b[0m",
+            count_passed_case,
+            GREEN("passed"),
+            count_case - (count_passed_case + count_skipped_case),
+            RED("failed"), count_skipped_case, YELLOW("skipped"), count_case);
+	Println("{Sr}", s);
+	// --------------
 
     // Print the time of execution
     printf("\x1b[1mTime: %.2fs\x1b[0m\n", self->time);

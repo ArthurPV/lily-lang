@@ -69,6 +69,8 @@ append__String(struct String *self, struct String *self2, bool drop)
 void
 push_str__String(struct String *self, const Str s)
 {
+    assert(s && "s is equal to NULL");
+
     for (Usize i = 0; i < strlen(s); i++)
         push__String(self, (char *)(UPtr)s[i]);
 }
@@ -76,7 +78,7 @@ push_str__String(struct String *self, const Str s)
 char *
 get__String(struct String self, Usize idx)
 {
-    assert(idx < self.content->len - 1 || idx < 0 && "index out of bounds");
+    assert((idx < self.content->len - 1 || idx < 0) && "index out of bounds");
     return (char *)get__Vec(*self.content, idx);
 }
 
@@ -119,8 +121,6 @@ ends_with__String(struct String self,
     }
 }
 
-#include <stdio.h>
-
 Str
 to_Str__String(struct String self)
 {
@@ -152,8 +152,8 @@ repeat__String(const Str s, Usize count)
 struct String *
 insert__String(struct String self, struct String self2, Usize idx)
 {
-    assert(idx + self2.content->len - 1 < self.content->len - 1 ||
-           idx < 0 && "index out of bounds");
+    assert((idx + self2.content->len - 1 < self.content->len - 1 ||
+           idx < 0) && "index out of bounds");
     struct String *s = NEW(String);
     Usize count = 0;
 

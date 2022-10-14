@@ -31,6 +31,7 @@
 
 #define TEST_SUCCESS 0
 #define TEST_FAILED 1
+#define TEST_SKIPPED -1
 
 #define TEST_ASSERT_EQ(l, r) \
     if (l != r)              \
@@ -109,7 +110,10 @@ add_case__Suite(struct Suite *self, struct Case *case_);
  * @brief Run a single suite.
  */
 void
-run__Suite(struct Suite *self, Usize *passed_test, Usize *passed_suite);
+run__Suite(struct Suite *self,
+           Usize *passed_case,
+           Usize *skipped_case,
+           Usize *passed_suite);
 
 /**
  *
