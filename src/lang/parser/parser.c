@@ -4027,7 +4027,8 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
         }                                                       \
     } else {                                                    \
         assert(0 && "error: literal out of range");             \
-    }
+    } \
+	FREE(String, s);
 
 // Check overflow and underflow for Int64
 #define CHECK_INT64(n)                                          \
@@ -4040,7 +4041,8 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
         }                                                       \
     } else {                                                    \
         assert(0 && "error: literal out of range");             \
-    }
+    } \
+	FREE(String, s);
 
 // Check overflow and underflow for Uint64
 #define CHECK_UINT64(n)                                         \
@@ -4053,7 +4055,8 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
         }                                                       \
     } else {                                                    \
         assert(0 && "error: literal out of range");             \
-    }
+    } \
+	FREE(String, s);
 
 // Check overflow and underflow for Uint128
 #define CHECK_UINT64(n)                                         \
@@ -4066,7 +4069,8 @@ const Int128 Int64Max = 0x7FFFFFFFFFFFFFFF;
         }                                                       \
     } else {                                                    \
         assert(0 && "error: literal out of range");             \
-    }
+    } \
+	FREE(String, s);
 
 struct Expr *
 parse_literal_expr(struct Parser self, struct ParseDecl *parse_decl)

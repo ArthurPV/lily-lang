@@ -341,12 +341,15 @@ __free__DataTypeMut(struct DataType *self)
 void
 __free__DataTypeLambda(struct DataType *self)
 {
-    struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
+	if (self->value.lambda->items[0]) {
+		struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
 
-    for (Usize i = len__Vec(*temporary); i--;)
-        FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));
+		for (Usize i = len__Vec(*temporary) - 1; i--;) 
+			FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));	
 
-    FREE(Vec, self->value.lambda->items[0]);
+		FREE(Vec, temporary);
+	}
+
     FREE(DataTypeAll, self->value.lambda->items[1]);
     FREE(Tuple, self->value.lambda);
     free(self);
@@ -1088,7 +1091,7 @@ struct String *
 to_String__FieldCall(struct FieldCall self)
 {
     if (is_Some__Option(self.value))
-        return format("{S} = {Sr}",
+        return format("{S} := {Sr}",
                       self.name,
                       to_String__Expr(*(struct Expr *)get__Option(self.value)));
     else
@@ -1117,7 +1120,7 @@ to_String__RecordCall(struct RecordCall self)
 {
     struct String *s = NEW(String);
 
-    append__String(s, format("{Sr} {{", to_String__Expr(*self.id)), true);
+    append__String(s, format("{Sr} {{ ", to_String__Expr(*self.id)), true);
 
     for (Usize i = 0; i < len__Vec(*self.fields) - 1; i++)
         append__String(s,
@@ -1129,7 +1132,7 @@ to_String__RecordCall(struct RecordCall self)
                        true);
 
     append__String(s,
-                   format("{Sr} }",
+                   format("{Sr}}",
                           to_String__FieldCall(
                             *(struct FieldCall *)((struct Tuple *)get__Vec(
                                                     *self.fields,

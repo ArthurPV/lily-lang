@@ -531,9 +531,21 @@ __free__TokenAll(struct Token *self)
 {
     switch (self->kind) {
         case TokenKindIdentifier:
+		case TokenKindInt8Lit:
+		case TokenKindInt16Lit:
+		case TokenKindInt32Lit:
+		case TokenKindInt64Lit:
+		case TokenKindInt128Lit:
+		case TokenKindUint8Lit:
+		case TokenKindUint16Lit:
+		case TokenKindUint32Lit:
+		case TokenKindUint64Lit:
+		case TokenKindUint128Lit:
         case TokenKindIntLit:
         case TokenKindCharLit:
         case TokenKindStringLit:
+		case TokenKindFloat32Lit:
+		case TokenKindFloat64Lit:
         case TokenKindFloatLit:
         case TokenKindBitStringLit:
         case TokenKindBitCharLit:
