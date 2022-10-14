@@ -125,7 +125,7 @@ enum LilyErrorKind
     LilyErrorMissPrototypeName,
     LilyErrorMissParamsPrototype,
     LilyErrorUnexpectedSelfParamInFunction,
-    LilyErrorDupliateSelfParam,
+    LilyErrorDuplicateSelfParam,
     LilyErrorSelfParamMustBeTheFirstParam,
     LilyErrorUnknownDataType,
     LilyErrorExpectedEnumObjectOrRecordObject,

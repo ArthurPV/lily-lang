@@ -251,6 +251,8 @@ lily_error_to_String(struct LilyError err)
             return from__String("miss params prototype");
         case LilyErrorUnexpectedSelfParamInFunction:
             return from__String("unexpected self param in function");
+        case LilyErrorDuplicateSelfParam:
+			return from__String("duplicate self param");
         case LilyErrorSelfParamMustBeTheFirstParam:
             return from__String("the self param must be in first");
         case LilyErrorUnknownDataType:
@@ -426,7 +428,7 @@ get_code_of_lily_error(struct LilyError err)
             return "0054";
         case LilyErrorUnexpectedSelfParamInFunction:
             return "0055";
-        case LilyErrorDupliateSelfParam:
+        case LilyErrorDuplicateSelfParam:
             return "0056";
         case LilyErrorSelfParamMustBeTheFirstParam:
             return "0057";

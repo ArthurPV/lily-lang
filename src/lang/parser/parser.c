@@ -186,7 +186,7 @@ This last step will just add the analyzer declarations into a vector (decls).
             emit_warning__Diagnostic(warn, parse_block->disable_warning);      \
         }                                                                      \
                                                                                \
-        if (len__Vec(*self->generic_params) != 0)                              \
+        if (len__Vec(*self->generic_params) > 0)                               \
             self->has_generic_params = true;                                   \
                                                                                \
         next_token_pb(parse_block);                                            \
@@ -201,7 +201,7 @@ This last step will just add the analyzer declarations into a vector (decls).
             next_token_pb(parse_block);                         \
         }                                                       \
                                                                 \
-        if (len__Vec(*self->params) != 0)                       \
+        if (len__Vec(*self->params) > 0)                        \
             self->has_params = true;                            \
                                                                 \
         next_token_pb(parse_block);                             \
@@ -344,11 +344,126 @@ This last step will just add the analyzer declarations into a vector (decls).
     case TokenKindArrow:          \
     case TokenKindStar
 
+#define PARSE_MODULE_BODY(ctx)                                                 \
+    Usize pos = 0;                                                             \
+    struct ParseContext *current = get__Vec(*ctx.body, 0);                     \
+                                                                               \
+    while (pos < len__Vec(*ctx.body)) {                                        \
+        switch (current->kind) {                                               \
+            case ParseContextKindFun:                                          \
+                push__Vec(                                                     \
+                  body,                                                        \
+                  NEW(ModuleBodyItemDecl,                                      \
+                      NEW(DeclFun,                                             \
+                          current->loc,                                        \
+                          parse_fun_declaration(self, current->value.fun))));  \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindEnumObject:                                   \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclEnum,                                    \
+                                  current->loc,                                \
+                                  parse_enum_declaration(                      \
+                                    self, current->value.enum_, true))));      \
+                break;                                                         \
+            case ParseContextKindEnum:                                         \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclEnum,                                    \
+                                  current->loc,                                \
+                                  parse_enum_declaration(                      \
+                                    self, current->value.enum_, false))));     \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindRecordObject:                                 \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclRecord,                                  \
+                                  current->loc,                                \
+                                  parse_record_declaration(                    \
+                                    self, current->value.record, true))));     \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindRecord:                                       \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclRecord,                                  \
+                                  current->loc,                                \
+                                  parse_record_declaration(                    \
+                                    self, current->value.record, false))));    \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindAlias:                                        \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclAlias,                                   \
+                                  current->loc,                                \
+                                  parse_alias_declaration(                     \
+                                    self, current->value.alias))));            \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindTrait:                                        \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclTrait,                                   \
+                                  current->loc,                                \
+                                  parse_trait_declaration(                     \
+                                    self, current->value.trait))));            \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindClass:                                        \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclClass,                                   \
+                                  current->loc,                                \
+                                  parse_class_declaration(                     \
+                                    self, current->value.class))));            \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindImport:                                       \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindConstant:                                     \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclConstant,                                \
+                                  current->loc,                                \
+                                  parse_constant_declaration(                  \
+                                    self, current->value.constant))));         \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindError:                                        \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclError,                                   \
+                                  current->loc,                                \
+                                  parse_error_declaration(                     \
+                                    self, current->value.error))));            \
+                break;                                                         \
+                                                                               \
+            case ParseContextKindModule:                                       \
+                push__Vec(body,                                                \
+                          NEW(ModuleBodyItemDecl,                              \
+                              NEW(DeclModule,                                  \
+                                  current->loc,                                \
+                                  parse_module_declaration(                    \
+                                    self, current->value.module))));           \
+                break;                                                         \
+                                                                               \
+            default:                                                           \
+                break;                                                         \
+        }                                                                      \
+                                                                               \
+        pos += 1;                                                              \
+        current = pos < len__Vec(*ctx.body) ? get__Vec(*ctx.body, pos) : NULL; \
+    }
+
 Usize count_error = 0;
 Usize count_warning = 0;
 
 struct ParseContext *
-get_block(struct ParseBlock *self, bool in_module);
+get_block(struct ParseBlock *self, bool in_module, bool in_tag);
 void
 valid_name(struct ParseBlock *self,
            struct String *name,
@@ -374,10 +489,11 @@ valid_body_item(struct ParseBlock *parse_block,
 void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun);
 void
-get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun);
+get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, bool in_tag);
 void
 get_fun_parse_context(struct FunParseContext *self,
-                      struct ParseBlock *parse_block);
+                      struct ParseBlock *parse_block,
+                      bool in_tag);
 static inline bool
 valid_token_in_enum_variants(struct ParseBlock *parse_block,
                              bool already_invalid);
@@ -406,8 +522,6 @@ valid_class_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_class_parse_context(struct ClassParseContext *self,
                         struct ParseBlock *parse_block);
-static inline bool
-valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid);
 void
 get_tag_parse_context(struct TagParseContext *self,
                       struct ParseBlock *parse_block);
@@ -623,6 +737,9 @@ parse_error_declaration(struct Parser *self,
 struct ModuleDecl *
 parse_module_declaration(struct Parser *self,
                          struct ModuleParseContext module_parse_context);
+struct TagDecl *
+parse_tag_declaration(struct Parser *self,
+                      struct TagParseContext tag_parse_context);
 void
 parse_declaration(struct Parser *self);
 
@@ -643,7 +760,7 @@ __new__ParseBlock(struct Scanner scanner)
 }
 
 struct ParseContext *
-get_block(struct ParseBlock *self, bool in_module)
+get_block(struct ParseBlock *self, bool in_module, bool in_tag)
 {
     struct Location loc = NEW(Location);
 
@@ -660,8 +777,11 @@ get_block(struct ParseBlock *self, bool in_module)
                       NEW(FunParseContext);
                     fun_parse_context.is_pub = true;
 
+					if (in_tag)
+						fun_parse_context.in_tag = true;
+
                     next_token_pb(self);
-                    get_fun_parse_context(&fun_parse_context, self);
+                    get_fun_parse_context(&fun_parse_context, self, in_tag);
                     end__Location(&loc,
                                   ((struct Token *)get__Vec(
                                      *self->scanner.tokens, self->pos - 1))
@@ -695,7 +815,10 @@ get_block(struct ParseBlock *self, bool in_module)
                     fun_parse_context.is_pub = true;
                     fun_parse_context.is_async = true;
 
-                    get_fun_parse_context(&fun_parse_context, self);
+					if (in_tag)
+						fun_parse_context.in_tag = true;
+
+                    get_fun_parse_context(&fun_parse_context, self, in_tag);
                     end__Location(&loc,
                                   ((struct Token *)get__Vec(
                                      *self->scanner.tokens, self->pos - 1))
@@ -712,10 +835,6 @@ get_block(struct ParseBlock *self, bool in_module)
 
                 case TokenKindObjectKw:
                     return get_object_context(self, true);
-
-                case TokenKindTagKw:
-                    TODO("");
-                    break;
 
                 case TokenKindErrorKw: {
                     struct ErrorParseContext error_parse_context =
@@ -813,8 +932,11 @@ get_block(struct ParseBlock *self, bool in_module)
         case TokenKindFunKw: {
             struct FunParseContext fun_parse_context = NEW(FunParseContext);
 
+			if (in_tag)
+				fun_parse_context.in_tag = true;
+
             next_token_pb(self);
-            get_fun_parse_context(&fun_parse_context, self);
+            get_fun_parse_context(&fun_parse_context, self, in_tag);
             end__Location(
               &loc,
               ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
@@ -824,8 +946,29 @@ get_block(struct ParseBlock *self, bool in_module)
 
             return NEW(ParseContextFun, fun_parse_context, loc);
         }
-        case TokenKindTagKw:
-            break;
+        case TokenKindTagKw: {
+            struct TagParseContext tag_parse_context = NEW(TagParseContext);
+
+            next_token_pb(self);
+
+            if (self->current->kind == TokenKindIdentifier) {
+                tag_parse_context.name = self->current->lit;
+
+                next_token_pb(self);
+            } else {
+                assert(0 && "error: miss tag's name");
+            }
+
+            get_tag_parse_context(&tag_parse_context, self);
+            end__Location(
+              &loc,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->e_line,
+              ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
+                ->loc->e_col);
+
+			return NEW(ParseContextTag, tag_parse_context, loc);
+        }
 
         case TokenKindTypeKw:
             return get_type_context(self, false);
@@ -1041,7 +1184,7 @@ run__ParseBlock(struct ParseBlock *self)
     // block
 
     while (self->current->kind != TokenKindEof) {
-        struct ParseContext *block = get_block(self, false);
+        struct ParseContext *block = get_block(self, false, false);
 
         if (block)
             push__Vec(self->blocks, block);
@@ -1470,6 +1613,7 @@ __new__FunParseContext()
                                     .has_params = false,
                                     .has_return_type = false,
                                     .is_operator = false,
+								    .in_tag = false,
                                     .name = NULL,
                                     .tags = NEW(Vec, sizeof(struct Token)),
                                     .generic_params =
@@ -1599,7 +1743,7 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
 }
 
 void
-get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
+get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, bool in_tag)
 {
     Usize start_line = parse_block->current->loc->s_line;
     bool bad_item = false;
@@ -1607,7 +1751,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_body_item(parse_block, bad_item, is_fun)) {
+        if (valid_body_item(parse_block, bad_item, in_tag ? false : true)) {
             switch (parse_block->current->kind) {
                 case TokenKindBeginKw:
                 case TokenKindDoKw:
@@ -1637,7 +1781,8 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun)
 
 void
 get_fun_parse_context(struct FunParseContext *self,
-                      struct ParseBlock *parse_block)
+                      struct ParseBlock *parse_block,
+                      bool in_tag)
 {
     // 1. Get tags.
     if (parse_block->current->kind == TokenKindHashtag) {
@@ -1786,7 +1931,7 @@ get_fun_parse_context(struct FunParseContext *self,
         emit__Diagnostic(err);
     });
 
-    get_body_parse_context(self, parse_block, true);
+    get_body_parse_context(self, parse_block, true, in_tag);
 }
 
 void
@@ -2414,24 +2559,45 @@ __free__ClassParseContext(struct ClassParseContext self)
     FREE(Vec, self.body);
 }
 
-struct TagParseContext *
+struct TagParseContext
 __new__TagParseContext()
 {
-    struct TagParseContext *self = malloc(sizeof(struct TagParseContext));
-    self->has_generic_params = false;
-    self->name = NULL;
-    self->generic_params = NULL;
-    self->body = NEW(Vec, sizeof(struct Token));
+    struct TagParseContext self = { .has_generic_params = false,
+                                    .name = NULL,
+                                    .generic_params = NULL,
+                                    .body =  NEW(Vec, sizeof(struct Token)) };
+
     return self;
 }
 
-static inline bool
-valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
+void
+get_tag_parse_context(struct TagParseContext *self,
+                      struct ParseBlock *parse_block)
 {
-    if (valid_body_item(parse_block, true, false))
-        return true;
-    else {
-        if (!already_invalid) {
+	// 1. Generic params
+	if (parse_block->current->kind == TokenKindLHook) {
+		self->generic_params = NEW(Vec, sizeof(struct Token));
+	}
+
+    // 2. Body
+    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
+        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
+
+        err->err->s = from__String("`=`");
+
+        emit__Diagnostic(err);
+    });
+
+	bool bad_token = false;
+
+    while (parse_block->current->kind != TokenKindEndKw &&
+           parse_block->current->kind != TokenKindEof) {
+        if (parse_block->current->kind == TokenKindFunKw ||
+            parse_block->current->kind == TokenKindImportKw ||
+            parse_block->current->kind == TokenKindIdentifier ||
+            parse_block->current->kind == TokenKindPubKw)
+            push__Vec(self->body, get_block(parse_block, false, true));
+        else if (!bad_token) {
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   parse_block,
@@ -2444,44 +2610,37 @@ valid_tag_token_in_body(struct ParseBlock *parse_block, bool already_invalid)
 
             emit__Diagnostic(err);
             emit__Diagnostic(note);
+
+			bad_token = true;
         }
-
-        return false;
     }
-}
 
-void
-get_tag_parse_context(struct TagParseContext *self,
-                      struct ParseBlock *parse_block)
-{
-    next_token_pb(parse_block);
+    if (parse_block->current->kind == TokenKindEof) {
+        struct Diagnostic *err =
+          NEW(DiagnosticWithErrParser,
+              parse_block,
+              NEW(LilyError, LilyErrorMissClosingBlock),
+              *((struct Token *)get__Vec(*parse_block->scanner.tokens,
+                                         parse_block->pos - 1))
+                 ->loc,
+              format("expected closing block here"),
+              None());
 
-    // 1. Body
-    EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
-        struct Diagnostic *err = EXPECTED_TOKEN_PB_ERR(parse_block, "`=`");
-
-        err->err->s = from__String("`=`");
+        err->err->s = from__String("`end`");
 
         emit__Diagnostic(err);
-    });
-
-    bool bad_token = false;
-
-    while (parse_block->current->kind != TokenKindEndKw &&
-           parse_block->current->kind != TokenKindEof) {
-        if (parse_block->current->kind == TokenKindFunKw) {
-
-        } else if (parse_block->current->kind == TokenKindImportKw) {
-        }
     }
+
+    next_token_pb(parse_block);
 }
 
 void
-__free__TagParseContext(struct TagParseContext *self)
+__free__TagParseContext(struct TagParseContext self)
 {
-    FREE(Vec, self->generic_params);
-    FREE(Vec, self->body);
-    free(self);
+	if (self.generic_params)
+		FREE(Vec, self.generic_params);
+
+    FREE(Vec, self.body);
 }
 
 struct MethodParseContext
@@ -2528,7 +2687,7 @@ get_method_parse_context(struct MethodParseContext *self,
         emit__Diagnostic(err);
     });
 
-    get_body_parse_context(self, parse_block, false);
+    get_body_parse_context(self, parse_block, false, false);
 }
 
 void
@@ -2907,7 +3066,7 @@ get_module_parse_context(struct ModuleParseContext *self,
 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
-        struct ParseContext *block = get_block(parse_block, true);
+        struct ParseContext *block = get_block(parse_block, true, false);
 
         if (block)
             push__Vec(self->body, block);
@@ -3098,6 +3257,16 @@ __new__ParseContextModule(struct ModuleParseContext module, struct Location loc)
     return self;
 }
 
+struct ParseContext *
+__new__ParseContextTag(struct TagParseContext tag, struct Location loc)
+{
+    struct ParseContext *self = malloc(sizeof(struct ParseContext));
+    self->kind = ParseContextKindTag;
+    self->loc = loc;
+    self->value.tag = tag;
+    return self;
+}
+
 void
 __free__ParseContextFun(struct ParseContext *self)
 {
@@ -3182,6 +3351,13 @@ __free__ParseContextError(struct ParseContext *self)
 }
 
 void
+__free__ParseContextTag(struct ParseContext *self)
+{
+    FREE(TagParseContext, self->value.tag);
+    free(self);
+}
+
+void
 __free__ParseContextAll(struct ParseContext *self)
 {
     switch (self->kind) {
@@ -3233,6 +3409,10 @@ __free__ParseContextAll(struct ParseContext *self)
 
         case ParseContextKindModule:
             FREE(ParseContextModule, self);
+            break;
+
+        case ParseContextKindTag:
+            FREE(ParseContextTag, self);
             break;
 
         default:
@@ -6038,6 +6218,7 @@ parse_fun_params(struct Parser self,
                           parse_decl->previous->loc->e_line,
                           parse_decl->previous->loc->e_col);
 
+			if (len__Vec(*parse_decl->tokens) == parse_decl->pos + 1) {
             EXPECTED_TOKEN(parse_decl, TokenKindComma, {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -6051,6 +6232,7 @@ parse_fun_params(struct Parser self,
 
                 emit__Diagnostic(err);
             });
+		}
 
             push__Vec(params, NEW(FunParamSelf, loc));
         } else if (parse_decl->current->kind == TokenKindSelfKw && !is_method) {
@@ -6068,7 +6250,7 @@ parse_fun_params(struct Parser self,
             struct Diagnostic *err =
               NEW(DiagnosticWithErrParser,
                   &self.parse_block,
-                  NEW(LilyError, LilyErrorDupliateSelfParam),
+                  NEW(LilyError, LilyErrorDuplicateSelfParam),
                   *parse_decl->current->loc,
                   format(""),
                   None());
@@ -6246,7 +6428,11 @@ parse_fun_declaration(struct Parser *self,
     if (fun_parse_context.has_params) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.params);
 
-        params = parse_fun_params(*self, &parse, false);
+		// Enable self param in fun param.
+		if (fun_parse_context.in_tag)
+			params = parse_fun_params(*self, &parse, true);
+		else
+			params = parse_fun_params(*self, &parse, false);
     }
 
     if (fun_parse_context.has_return_type) {
@@ -7044,124 +7230,37 @@ parse_module_declaration(struct Parser *self,
 
     if (len__Vec(*module_parse_context.body) > 0) {
         body = NEW(Vec, sizeof(struct ModuleBodyItem));
-        Usize pos = 0;
-        struct ParseContext *current = get__Vec(*module_parse_context.body, 0);
 
-        while (pos < len__Vec(*module_parse_context.body)) {
-            switch (current->kind) {
-                case ParseContextKindFun:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclFun,
-                                      current->loc,
-                                      parse_fun_declaration(
-                                        self, current->value.fun))));
-                    break;
-
-                case ParseContextKindEnumObject:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclEnum,
-                                      current->loc,
-                                      parse_enum_declaration(
-                                        self, current->value.enum_, true))));
-                    break;
-                case ParseContextKindEnum:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclEnum,
-                                      current->loc,
-                                      parse_enum_declaration(
-                                        self, current->value.enum_, false))));
-                    break;
-
-                case ParseContextKindRecordObject:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclRecord,
-                                      current->loc,
-                                      parse_record_declaration(
-                                        self, current->value.record, true))));
-                    break;
-                case ParseContextKindRecord:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclRecord,
-                                      current->loc,
-                                      parse_record_declaration(
-                                        self, current->value.record, false))));
-                    break;
-
-                case ParseContextKindAlias:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclAlias,
-                                      current->loc,
-                                      parse_alias_declaration(
-                                        self, current->value.alias))));
-                    break;
-
-                case ParseContextKindTrait:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclTrait,
-                                      current->loc,
-                                      parse_trait_declaration(
-                                        self, current->value.trait))));
-                    break;
-
-                case ParseContextKindClass:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclClass,
-                                      current->loc,
-                                      parse_class_declaration(
-                                        self, current->value.class))));
-                    break;
-
-                case ParseContextKindImport:
-                    break;
-
-                case ParseContextKindConstant:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclConstant,
-                                      current->loc,
-                                      parse_constant_declaration(
-                                        self, current->value.constant))));
-                    break;
-
-                case ParseContextKindError:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclError,
-                                      current->loc,
-                                      parse_error_declaration(
-                                        self, current->value.error))));
-                    break;
-
-                case ParseContextKindModule:
-                    push__Vec(body,
-                              NEW(ModuleBodyItemDecl,
-                                  NEW(DeclModule,
-                                      current->loc,
-                                      parse_module_declaration(
-                                        self, current->value.module))));
-                    break;
-
-                default:
-                    break;
-            }
-
-            pos += 1;
-            current = pos < len__Vec(*module_parse_context.body)
-                        ? get__Vec(*module_parse_context.body, pos)
-                        : NULL;
-        }
+        PARSE_MODULE_BODY(module_parse_context);
     }
 
     return NEW(
       ModuleDecl, module_parse_context.name, body, module_parse_context.is_pub);
+}
+
+struct TagDecl *
+parse_tag_declaration(struct Parser *self,
+                      struct TagParseContext tag_parse_context)
+{
+    struct Vec *generic_params = NULL;
+    struct Vec *body = NULL;
+
+    if (tag_parse_context.generic_params) {
+        generic_params = NEW(Vec, sizeof(struct Generic));
+
+        struct ParseDecl parse =
+          NEW(ParseDecl, tag_parse_context.generic_params);
+
+        generic_params = parse_generic_params(*self, &parse);
+    }
+
+    if (tag_parse_context.body) {
+        body = NEW(Vec, sizeof(struct ModuleBodyItem));
+
+        PARSE_MODULE_BODY(tag_parse_context);
+    }
+
+    return NEW(TagDecl, tag_parse_context.name, generic_params, body);
 }
 
 void
@@ -7262,8 +7361,17 @@ parse_declaration(struct Parser *self)
                   parse_module_declaration(self, self->current->value.module)));
             break;
 
-        default:
+        case ParseContextKindTag:
+            push__Vec(
+              self->decls,
+              NEW(DeclTag,
+                  self->current->loc,
+                  parse_tag_declaration(self, self->current->value.tag)));
             break;
+
+        default:
+            UNREACHABLE("impossible to get ParseContextKindProperty or "
+                        "ParseContextKindMethod");
     }
 }
 

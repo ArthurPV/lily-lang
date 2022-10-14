@@ -68,6 +68,7 @@ typedef struct FunParseContext
     bool has_params;
     bool has_return_type;
     bool is_operator;
+	bool in_tag;
     struct String *name;        // struct String&
     struct Vec *tags;           // struct Vec<struct Token&>*
     struct Vec *generic_params; // struct Vec<struct Token&>*
@@ -226,7 +227,7 @@ typedef struct TagParseContext
  *
  * @brief Contruct the TagParseContext type.
  */
-struct TagParseContext *
+struct TagParseContext
 __new__TagParseContext();
 
 /**
@@ -234,7 +235,7 @@ __new__TagParseContext();
  * @brief Free the TagParseContext type.
  */
 void
-__free__TagParseContext(struct TagParseContext *self);
+__free__TagParseContext(struct TagParseContext self);
 
 typedef struct MethodParseContext
 {
@@ -382,7 +383,8 @@ enum ParseContextKind
     ParseContextKindImport,
     ParseContextKindConstant,
     ParseContextKindError,
-    ParseContextKindModule
+    ParseContextKindModule,
+    ParseContextKindTag
 };
 
 typedef struct ParseContext
@@ -404,6 +406,7 @@ typedef struct ParseContext
         struct ConstantParseContext constant;
         struct ErrorParseContext error;
         struct ModuleParseContext module;
+        struct TagParseContext tag;
     } value;
 } ParseContext;
 
@@ -502,6 +505,13 @@ __new__ParseContextModule(struct ModuleParseContext module,
 
 /**
  *
+ * @brief Contruct the ParseContext type (Tag variant).
+ */
+struct ParseContext *
+__new__ParseContextTag(struct TagParseContext tag, struct Location loc);
+
+/**
+ *
  * @brief Free the ParseContext type (Fun variant).
  */
 void
@@ -583,6 +593,13 @@ __free__ParseContextError(struct ParseContext *self);
  */
 void
 __free__ParseContextModule(struct ParseContext *self);
+
+/**
+ *
+ * @brief Free the ParseContext type (Tag variant).
+ */
+void
+__free__ParseContextTag(struct ParseContext *self);
 
 /**
  *
