@@ -489,7 +489,10 @@ valid_body_item(struct ParseBlock *parse_block,
 void
 verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun);
 void
-get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, bool in_tag);
+get_body_parse_context(void *self,
+                       struct ParseBlock *parse_block,
+                       bool is_fun,
+                       bool in_tag);
 void
 get_fun_parse_context(struct FunParseContext *self,
                       struct ParseBlock *parse_block,
@@ -777,8 +780,8 @@ get_block(struct ParseBlock *self, bool in_module, bool in_tag)
                       NEW(FunParseContext);
                     fun_parse_context.is_pub = true;
 
-					if (in_tag)
-						fun_parse_context.in_tag = true;
+                    if (in_tag)
+                        fun_parse_context.in_tag = true;
 
                     next_token_pb(self);
                     get_fun_parse_context(&fun_parse_context, self, in_tag);
@@ -815,8 +818,8 @@ get_block(struct ParseBlock *self, bool in_module, bool in_tag)
                     fun_parse_context.is_pub = true;
                     fun_parse_context.is_async = true;
 
-					if (in_tag)
-						fun_parse_context.in_tag = true;
+                    if (in_tag)
+                        fun_parse_context.in_tag = true;
 
                     get_fun_parse_context(&fun_parse_context, self, in_tag);
                     end__Location(&loc,
@@ -932,8 +935,8 @@ get_block(struct ParseBlock *self, bool in_module, bool in_tag)
         case TokenKindFunKw: {
             struct FunParseContext fun_parse_context = NEW(FunParseContext);
 
-			if (in_tag)
-				fun_parse_context.in_tag = true;
+            if (in_tag)
+                fun_parse_context.in_tag = true;
 
             next_token_pb(self);
             get_fun_parse_context(&fun_parse_context, self, in_tag);
@@ -967,7 +970,7 @@ get_block(struct ParseBlock *self, bool in_module, bool in_tag)
               ((struct Token *)get__Vec(*self->scanner.tokens, self->pos - 1))
                 ->loc->e_col);
 
-			return NEW(ParseContextTag, tag_parse_context, loc);
+            return NEW(ParseContextTag, tag_parse_context, loc);
         }
 
         case TokenKindTypeKw:
@@ -1613,7 +1616,7 @@ __new__FunParseContext()
                                     .has_params = false,
                                     .has_return_type = false,
                                     .is_operator = false,
-								    .in_tag = false,
+                                    .in_tag = false,
                                     .name = NULL,
                                     .tags = NEW(Vec, sizeof(struct Token)),
                                     .generic_params =
@@ -1743,7 +1746,10 @@ verify_stmt(void *self, struct ParseBlock *parse_block, bool is_fun)
 }
 
 void
-get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, bool in_tag)
+get_body_parse_context(void *self,
+                       struct ParseBlock *parse_block,
+                       bool is_fun,
+                       bool in_tag)
 {
     Usize start_line = parse_block->current->loc->s_line;
     bool bad_item = false;
@@ -1751,7 +1757,8 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_body_item(parse_block, bad_item, (!is_fun || in_tag) ? false : true)) {
+        if (valid_body_item(
+              parse_block, bad_item, (!is_fun || in_tag) ? false : true)) {
             switch (parse_block->current->kind) {
                 case TokenKindBeginKw:
                 case TokenKindDoKw:
@@ -2565,7 +2572,8 @@ __new__TagParseContext()
     struct TagParseContext self = { .has_generic_params = false,
                                     .name = NULL,
                                     .generic_params = NULL,
-                                    .body =  NEW(Vec, sizeof(struct Token)) };
+                                    .body =
+                                      NEW(Vec, sizeof(struct ParseContext)) };
 
     return self;
 }
@@ -2574,10 +2582,10 @@ void
 get_tag_parse_context(struct TagParseContext *self,
                       struct ParseBlock *parse_block)
 {
-	// 1. Generic params
-	if (parse_block->current->kind == TokenKindLHook) {
-		self->generic_params = NEW(Vec, sizeof(struct Token));
-	}
+    // 1. Generic params
+    if (parse_block->current->kind == TokenKindLHook) {
+        self->generic_params = NEW(Vec, sizeof(struct Token));
+    }
 
     // 2. Body
     EXPECTED_TOKEN_PB(parse_block, TokenKindEq, {
@@ -2588,7 +2596,7 @@ get_tag_parse_context(struct TagParseContext *self,
         emit__Diagnostic(err);
     });
 
-	bool bad_token = false;
+    bool bad_token = false;
 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindEof) {
@@ -2611,7 +2619,7 @@ get_tag_parse_context(struct TagParseContext *self,
             emit__Diagnostic(err);
             emit__Diagnostic(note);
 
-			bad_token = true;
+            bad_token = true;
         }
     }
 
@@ -2637,10 +2645,15 @@ get_tag_parse_context(struct TagParseContext *self,
 void
 __free__TagParseContext(struct TagParseContext self)
 {
-	if (self.generic_params)
-		FREE(Vec, self.generic_params);
+    if (self.generic_params)
+        FREE(Vec, self.generic_params);
 
-    FREE(Vec, self.body);
+    if (self.body) {
+        for (Usize i = 0; i < len__Vec(*self.body); i++)
+            FREE(ParseContextAll, get__Vec(*self.body, i));
+
+        FREE(Vec, self.body);
+    }
 }
 
 struct MethodParseContext
@@ -6218,21 +6231,21 @@ parse_fun_params(struct Parser self,
                           parse_decl->previous->loc->e_line,
                           parse_decl->previous->loc->e_col);
 
-			if (len__Vec(*parse_decl->tokens) == parse_decl->pos + 1) {
-            EXPECTED_TOKEN(parse_decl, TokenKindComma, {
-                struct Diagnostic *err =
-                  NEW(DiagnosticWithErrParser,
-                      &self.parse_block,
-                      NEW(LilyError, LilyErrorExpectedToken),
-                      *parse_decl->current->loc,
-                      format(""),
-                      None());
+            if (len__Vec(*parse_decl->tokens) == parse_decl->pos + 1) {
+                EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                    struct Diagnostic *err =
+                      NEW(DiagnosticWithErrParser,
+                          &self.parse_block,
+                          NEW(LilyError, LilyErrorExpectedToken),
+                          *parse_decl->current->loc,
+                          format(""),
+                          None());
 
-                err->err->s = from__String("`,` or `:=`");
+                    err->err->s = from__String("`,` or `:=`");
 
-                emit__Diagnostic(err);
-            });
-		}
+                    emit__Diagnostic(err);
+                });
+            }
 
             push__Vec(params, NEW(FunParamSelf, loc));
         } else if (parse_decl->current->kind == TokenKindSelfKw && !is_method) {
@@ -6428,11 +6441,11 @@ parse_fun_declaration(struct Parser *self,
     if (fun_parse_context.has_params) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.params);
 
-		// Enable self param in fun param.
-		if (fun_parse_context.in_tag)
-			params = parse_fun_params(*self, &parse, true);
-		else
-			params = parse_fun_params(*self, &parse, false);
+        // Enable self param in fun param.
+        if (fun_parse_context.in_tag)
+            params = parse_fun_params(*self, &parse, true);
+        else
+            params = parse_fun_params(*self, &parse, false);
     }
 
     if (fun_parse_context.has_return_type) {

@@ -252,7 +252,7 @@ lily_error_to_String(struct LilyError err)
         case LilyErrorUnexpectedSelfParamInFunction:
             return from__String("unexpected self param in function");
         case LilyErrorDuplicateSelfParam:
-			return from__String("duplicate self param");
+            return from__String("duplicate self param");
         case LilyErrorSelfParamMustBeTheFirstParam:
             return from__String("the self param must be in first");
         case LilyErrorUnknownDataType:

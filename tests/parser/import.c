@@ -12,29 +12,29 @@
 static int
 test_import_std()
 {
-    return TEST_FAILED;
+    return TEST_SKIPPED;
 }
 
 static int
 test_import_builtin()
 {
-    return TEST_FAILED;
+    return TEST_SKIPPED;
 }
 
 static int
 test_import_url()
 {
-    return TEST_FAILED;
+    return TEST_SKIPPED;
 }
 
 static int
 test_import_file()
 {
-    return TEST_FAILED;
+    return TEST_SKIPPED;
 }
 
 static int
 test_import()
 {
-    return TEST_FAILED;
+    return TEST_SKIPPED;
 }

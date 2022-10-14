@@ -652,7 +652,7 @@ to_String__UnaryOp(struct UnaryOp self)
         case UnaryOpKindBitNot:
             return format("~{Sr}", to_String__Expr(*self.right));
         case UnaryOpKindCustom:
-            return format("{S}{Sr}", self.op, to_String__Expr(*self.right));
+            return format("`{S}`{Sr}", self.op, to_String__Expr(*self.right));
     }
 
     return NULL;
@@ -661,6 +661,9 @@ to_String__UnaryOp(struct UnaryOp self)
 void
 __free__UnaryOp(struct UnaryOp self)
 {
+    if (self.op)
+        FREE(String, self.op);
+
     FREE(ExprAll, self.right);
 }
 
@@ -1589,14 +1592,14 @@ to_String__Expr(struct Expr self)
             for (Usize i = 0; i < len__Vec(*self.value.identifier_access) - 1;
                  i++)
                 append__String(s,
-                               format("{S}.",
+                               format("{Sr}.",
                                       to_String__Expr(*(struct Expr *)get__Vec(
                                         *self.value.identifier_access, i))),
                                true);
 
             append__String(
               s,
-              format("{S}",
+              format("{Sr}",
                      to_String__Expr(*(struct Expr *)get__Vec(
                        *self.value.identifier_access,
                        len__Vec(*self.value.identifier_access) - 1))),
@@ -1711,16 +1714,16 @@ to_String__Expr(struct Expr self)
             return format("{Sr}.*", to_String__Expr(*self.value.dereference));
         case ExprKindRef:
             return format("&{Sr}", to_String__Expr(*self.value.ref));
-		case ExprKindSelf:
-			return from__String("self");
-		case ExprKindUndef:
-			return from__String("undef");
-		case ExprKindNil:
-			return from__String("nil");
-		case ExprKindNone:
-			return from__String("None");
-		case ExprKindWildcard:
-			return from__String("_");
+        case ExprKindSelf:
+            return from__String("self");
+        case ExprKindUndef:
+            return from__String("undef");
+        case ExprKindNil:
+            return from__String("nil");
+        case ExprKindNone:
+            return from__String("None");
+        case ExprKindWildcard:
+            return from__String("_");
         case ExprKindLiteral:
             return to_String__Literal(self.value.literal);
         case ExprKindVariable:
@@ -4428,19 +4431,19 @@ to_String__TagDecl(struct TagDecl self)
 void
 __free__TagDecl(struct TagDecl *self)
 {
-	if (self->generic_params) {
-		for (Usize i = len__Vec(*self->generic_params); i--;)
-			FREE(GenericAll, get__Vec(*self->generic_params, i));
+    if (self->generic_params) {
+        for (Usize i = len__Vec(*self->generic_params); i--;)
+            FREE(GenericAll, get__Vec(*self->generic_params, i));
 
-		FREE(Vec, self->generic_params);
-	}
+        FREE(Vec, self->generic_params);
+    }
 
-	if (self->body) {
-		for (Usize i = len__Vec(*self->body); i--;)
-			FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
+    if (self->body) {
+        for (Usize i = len__Vec(*self->body); i--;)
+            FREE(ModuleBodyItemAll, get__Vec(*self->body, i));
 
-		FREE(Vec, self->body);
-	}
+        FREE(Vec, self->body);
+    }
 
     free(self);
 }
