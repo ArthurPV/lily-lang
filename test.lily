@@ -1,1 +1,11 @@
-fun add(x) = x;
+A :: (Int32, *Int32) := (1, nil);
+B :: |Int32 -> Int32| := a;
+C :: Int8 := 2I8;
+D :: Float32 := 3.333F32;
+E :: Float32 := 33;
+
+fun add() =
+	a :: ?Bool := true
+end
+
+fun add2[T](x T) = x;
