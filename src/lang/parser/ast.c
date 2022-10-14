@@ -664,7 +664,7 @@ to_String__UnaryOp(struct UnaryOp self)
 void
 __free__UnaryOp(struct UnaryOp self)
 {
-    if (self.op)
+    if (self.kind == UnaryOpKindCustom)
         FREE(String, self.op);
 
     FREE(ExprAll, self.right);
@@ -1026,7 +1026,7 @@ to_String__BinaryOp(struct BinaryOp self)
 void
 __free__BinaryOp(struct BinaryOp self)
 {
-	if (self.op)
+	if (self.kind == BinaryOpKindCustom)
 		FREE(String, self.op);
 
     FREE(ExprAll, self.left);
@@ -1973,8 +1973,10 @@ __free__MatchStmt(struct MatchStmt *self)
 
     for (Usize i = len__Vec(*self->pattern); i--;) {
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[0]);
-        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
         FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[2]);
+
+		if (((struct Tuple*)get__Vec(*self->pattern, i))->items[1])
+			FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
 
         if ((struct Tuple *)get__Vec(*self->pattern, i))
             FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
@@ -2158,9 +2160,12 @@ __free__TryStmt(struct TryStmt *self)
     if (self->catch_expr)
         FREE(ExprAll, self->catch_expr);
 
-    if (self->catch_body)
+    if (self->catch_body) {
         for (Usize i = len__Vec(*self->catch_body); i--;)
             FREE(FunBodyItemAll, get__Vec(*self->catch_body, i));
+
+		FREE(Vec, self->catch_body);
+	}
 
     free(self);
 }
@@ -2528,9 +2533,6 @@ __free__ImportStmt(struct ImportStmt *self)
         FREE(ImportStmtValueAll, get__Vec(*self->import_value, i));
 
     FREE(Vec, self->import_value);
-
-    if (self->as)
-        FREE(String, self->as);
 
     free(self);
 }

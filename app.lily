@@ -10,6 +10,8 @@ G :: Int128 := 333333333;
 H :: Float32 := 3.333;
 I :: Float64 := 3.12230333;
 
+J := global.I;
+
 error[T] MyError T;
 
 pub fun add(x, y) = return x+y;
@@ -68,6 +70,12 @@ fun main =
 	end
 
 	mut y := 0
+
+	try do
+		h := "hello"
+	catch err do
+		println("Error")
+	end
 
 	while y < 10 do
 		y += 1
