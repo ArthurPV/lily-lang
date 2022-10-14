@@ -1751,7 +1751,7 @@ get_body_parse_context(void *self, struct ParseBlock *parse_block, bool is_fun, 
     while (parse_block->current->kind != TokenKindEndKw &&
            parse_block->current->kind != TokenKindSemicolon &&
            parse_block->current->kind != TokenKindEof) {
-        if (valid_body_item(parse_block, bad_item, in_tag ? false : true)) {
+        if (valid_body_item(parse_block, bad_item, (!is_fun || in_tag) ? false : true)) {
             switch (parse_block->current->kind) {
                 case TokenKindBeginKw:
                 case TokenKindDoKw:
