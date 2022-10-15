@@ -1,0 +1,6 @@
+// type Person: record =
+// 	name Str,
+// 	age Uint8
+// end
+
+A := Person { name := "John", age := 45 };
