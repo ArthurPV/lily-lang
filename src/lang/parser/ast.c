@@ -1268,7 +1268,7 @@ to_String__Lambda(struct Lambda self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    if (len__Vec(*self.body))
+    if (len__Vec(*self.body) == 1)
         pop__String(s);
 
     push_str__String(s, ")");
@@ -1760,7 +1760,7 @@ to_String__Expr(struct Expr self)
         case ExprKindVariable:
             return to_String__VariableDecl(self.value.variable);
         case ExprKindGrouping:
-            return format("({S})", to_String__Expr(*self.value.grouping));
+            return format("({Sr})", to_String__Expr(*self.value.grouping));
         default:
             UNREACHABLE("unknown expr kind");
     }
