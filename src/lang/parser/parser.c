@@ -5156,6 +5156,13 @@ parse_lambda_expr(struct Parser self,
         FREE(Vec, tokens);
     }
 
+	if (parse_decl->current->kind != TokenKindArrow)
+		if (is_data_type(parse_decl))
+			return_type = parse_data_type(self, parse_decl);
+		else {
+			assert(0 && "error: miss `->` or data type");
+		}
+
     EXPECTED_TOKEN(parse_decl, TokenKindArrow, {
         struct Diagnostic *err = NEW(DiagnosticWithErrParser,
                                      &self.parse_block,

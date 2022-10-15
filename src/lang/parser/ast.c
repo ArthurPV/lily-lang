@@ -1235,7 +1235,7 @@ to_String__Lambda(struct Lambda self)
 {
     struct String *s = NEW(String);
 
-    append__String(s, from__String("fun("), true);
+    append__String(s, from__String("fun ("), true);
 
     // 1. Dump params
     for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
@@ -1254,10 +1254,21 @@ to_String__Lambda(struct Lambda self)
     // 2. Dump return data type
     if (self.return_type)
         append__String(
-          s, format(" {Sr} = ", to_String__DataType(*self.return_type)), true);
+          s, format(" {Sr} -> (", to_String__DataType(*self.return_type)), true);
+	else
+		push_str__String(s, " -> (");
 
     // 3. Dump body
-    TODO("lambda to String");
+	for (Usize i = 0; i < len__Vec(*self.body); i++)
+		append__String(s, format("{Sr}", to_String__FunBodyItem(*(struct FunBodyItem*)get__Vec(*self.body, i))), true);
+
+	if (len__Vec(*self.body))
+		pop__String(s);
+
+	push_str__String(s, ")");
+
+	if (self.instantly_call)
+		push_str__String(s, "()");
 
     return s;
 }
