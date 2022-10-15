@@ -5180,6 +5180,8 @@ parse_lambda_expr(struct Parser self,
         peek_token(*parse_decl, 1)->kind != TokenKindRParen) {
         struct Vec *tokens = NEW(Vec, sizeof(struct Token));
 
+		next_token(parse_decl);
+
         while (parse_decl->current->kind != TokenKindRParen) {
             push__Vec(tokens, parse_decl->current);
             next_token(parse_decl);
