@@ -564,7 +564,7 @@ test_expr_tuple()
         free(output_str);
     }
 
-	FREE(Parser, parser);
+    FREE(Parser, parser);
 
     return TEST_SUCCESS;
 }
@@ -588,7 +588,7 @@ test_expr_array()
         free(output_str);
     }
 
-	FREE(Parser, parser);
+    FREE(Parser, parser);
 
     return TEST_SUCCESS;
 }
@@ -612,7 +612,7 @@ test_expr_variant()
         free(output_str);
     }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
         Str output_str = to_Str__String(*output);
@@ -623,7 +623,7 @@ test_expr_variant()
         free(output_str);
     }
 
-	FREE(Parser, parser);
+    FREE(Parser, parser);
 
     return TEST_SUCCESS;
 }
@@ -631,7 +631,24 @@ test_expr_variant()
 static int
 test_expr_try()
 {
-    return TEST_SKIPPED;
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_try.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := try add(3);"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
