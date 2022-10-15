@@ -9,3 +9,5 @@ fun add() =
 end
 
 fun add2[T](x T) = x;
+
+F := fun (x, y := 8) -> (x + y)(2, y := 4);

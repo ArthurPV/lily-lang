@@ -179,7 +179,7 @@ to_String__DataType(struct DataType self)
             struct Vec *params = self.value.lambda->items[0];
             struct String *lambda_string = NEW(String);
 
-			push_str__String(lambda_string, "|");
+            push_str__String(lambda_string, "|");
             append__String(
               lambda_string,
               to_String__DataType(*(struct DataType *)get__Vec(*params, 0)),
@@ -198,7 +198,7 @@ to_String__DataType(struct DataType self)
                            to_String__DataType(
                              *(struct DataType *)self.value.lambda->items[1]),
                            true);
-			push_str__String(lambda_string, "|");
+            push_str__String(lambda_string, "|");
 
             return lambda_string;
         }
@@ -1107,6 +1107,7 @@ __free__FieldCall(struct FieldCall *self)
         FREE(ExprAll, get__Option(self->value));
 
     FREE(Option, self->value);
+    free(self);
 }
 
 struct RecordCall
@@ -1951,12 +1952,22 @@ to_String__MatchStmt(struct MatchStmt self)
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[0];
         struct Expr *temp_cond =
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
-		struct Expr *temp_expr = ((struct Tuple*)get__Vec(*self.pattern, i))->items[2];
+        struct Expr *temp_expr =
+          ((struct Tuple *)get__Vec(*self.pattern, i))->items[2];
 
-		if (temp_cond)
-			append__String(s, format("{Sr} ? {Sr} => {Sr}", to_String__Expr(*temp_matched), to_String__Expr(*temp_cond), to_String__Expr(*temp_expr)), true);
-		else
-			append__String(s, format("{Sr} => {Sr}", to_String__Expr(*temp_matched), to_String__Expr(*temp_expr)), true);
+        if (temp_cond)
+            append__String(s,
+                           format("{Sr} ? {Sr} => {Sr}",
+                                  to_String__Expr(*temp_matched),
+                                  to_String__Expr(*temp_cond),
+                                  to_String__Expr(*temp_expr)),
+                           true);
+        else
+            append__String(s,
+                           format("{Sr} => {Sr}",
+                                  to_String__Expr(*temp_matched),
+                                  to_String__Expr(*temp_expr)),
+                           true);
     }
 
     push_str__String(s, "end");
@@ -2470,15 +2481,15 @@ __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 void
 __free__ImportStmtValueFile(struct ImportStmtValue *self)
 {
-	FREE(String, self->value.file);
-	free(self);
+    FREE(String, self->value.file);
+    free(self);
 }
 
 void
 __free__ImportStmtValueUrl(struct ImportStmtValue *self)
 {
-	FREE(String, self->value.url);
-	free(self);
+    FREE(String, self->value.url);
+    free(self);
 }
 
 void
@@ -2491,18 +2502,18 @@ __free__ImportStmtValueAll(struct ImportStmtValue *self)
         case ImportStmtValueKindSelector:
             FREE(ImportStmtValueSelector, self);
             break;
-		case ImportStmtValueKindCore:
-		case ImportStmtValueKindStd:
-		case ImportStmtValueKindBuiltin:
-		case ImportStmtValueKindWildcard:
-			free(self);
-			break;
-		case ImportStmtValueKindFile:
-			FREE(ImportStmtValueFile, self);
-			break;
-		case ImportStmtValueKindUrl:
-			FREE(ImportStmtValueUrl, self);
-			break;
+        case ImportStmtValueKindCore:
+        case ImportStmtValueKindStd:
+        case ImportStmtValueKindBuiltin:
+        case ImportStmtValueKindWildcard:
+            free(self);
+            break;
+        case ImportStmtValueKindFile:
+            FREE(ImportStmtValueFile, self);
+            break;
+        case ImportStmtValueKindUrl:
+            FREE(ImportStmtValueUrl, self);
+            break;
         default:
             UNREACHABLE("unknown import stmt value");
     }
@@ -2790,7 +2801,8 @@ to_String__FunParamCall(struct FunParamCall self)
         case FunParamKindNormal:
             return format("{Sr}", to_String__Expr(*self.value));
         case FunParamKindDefault:
-            return format("{S} = {Sr}", self.name, to_String__Expr(*self.value));
+            return format(
+              "{S} = {Sr}", self.name, to_String__Expr(*self.value));
         case FunParamKindSelf:
             return from__String("self");
         default:

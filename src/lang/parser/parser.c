@@ -609,6 +609,10 @@ parse_variant_expr(struct Parser self,
                    struct Expr *id,
                    struct Location loc);
 struct Expr *
+parse_lambda_expr(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc);
+struct Expr *
 parse_fun_call_expr(struct Parser self,
                     struct ParseDecl *parse_decl,
                     struct Expr *id,
@@ -2839,7 +2843,6 @@ valid_constant_expr(struct ParseBlock *parse_block, bool already_invalid)
 {
     switch (parse_block->current->kind) {
         case TokenKindObjectKw:
-        case TokenKindFunKw:
         case TokenKindPubKw:
         case TokenKindErrorKw:
         case TokenKindTagKw:
@@ -4641,6 +4644,9 @@ exit_unary : {
             next_token(parse_decl);
             return parse_variable(self, parse_decl, loc, true);
 
+        case TokenKindFunKw:
+            return parse_lambda_expr(self, parse_decl, loc);
+
         case TokenKindSelfKw: {
             switch (parse_decl->current->kind) {
                 case TokenKindDot: {
@@ -5119,6 +5125,196 @@ parse_variant_expr(struct Parser self,
 
         return NEW(ExprVariant, NEW(Variant, id, NULL), loc);
     }
+}
+
+struct Expr *
+parse_lambda_expr(struct Parser self,
+                  struct ParseDecl *parse_decl,
+                  struct Location loc)
+{
+    struct Vec *params = NULL;
+    struct DataType *return_type = NULL;
+    struct Vec *body = NULL;
+    bool instantly_call = false;
+
+    if (parse_decl->current->kind == TokenKindLParen) {
+        next_token(parse_decl);
+
+        struct Vec *tokens = NEW(Vec, sizeof(struct Token));
+
+        while (parse_decl->current->kind != TokenKindRParen) {
+            push__Vec(tokens, parse_decl->current);
+            next_token(parse_decl);
+        }
+
+        next_token(parse_decl);
+
+        struct ParseDecl parse_params = NEW(ParseDecl, tokens);
+
+        params = parse_fun_params(self, &parse_params, false);
+
+        FREE(Vec, tokens);
+    }
+
+    EXPECTED_TOKEN(parse_decl, TokenKindArrow, {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorExpectedToken),
+                                     *parse_decl->current->loc,
+                                     format(""),
+                                     None());
+
+        err->err->s = from__String("`->`");
+
+        emit__Diagnostic(err);
+    });
+
+    if (parse_decl->current->kind == TokenKindLParen &&
+        peek_token(*parse_decl, 1)->kind != TokenKindRParen) {
+        struct Vec *tokens = NEW(Vec, sizeof(struct Token));
+
+        while (parse_decl->current->kind != TokenKindRParen) {
+            push__Vec(tokens, parse_decl->current);
+            next_token(parse_decl);
+        }
+
+        next_token(parse_decl);
+
+        struct ParseDecl parse_body = NEW(ParseDecl, tokens);
+
+        body = parse_fun_body(self, &parse_body);
+
+        FREE(Vec, tokens);
+
+        if (parse_decl->current->kind == TokenKindLParen) {
+            instantly_call = true;
+
+            Usize i = 0;
+            struct Vec *history = NEW(Vec, sizeof(int));
+
+            next_token(parse_decl);
+
+            while (parse_decl->current->kind != TokenKindRParen &&
+                   i < len__Vec(*params) &&
+                   len__Vec(*history) != len__Vec(*params)) {
+                {
+                    bool is_find = false;
+
+                    for (Usize j = len__Vec(*history); j--;) {
+                        if (i == (Usize)(UPtr)get__Vec(*history, j)) {
+                            is_find = true;
+                            break;
+                        }
+                    }
+
+                    if (is_find)
+                        goto continue_;
+                    else
+                        goto get_expr;
+                }
+
+            continue_ : {
+                i++;
+                continue;
+            }
+
+            get_expr : {
+                if (((struct FunParam *)get__Vec(*params, i))->kind ==
+                    FunParamKindDefault) {
+                    if (parse_decl->current->kind == TokenKindIdentifier &&
+                        peek_token(*parse_decl, 1)->kind == TokenKindColonEq) {
+                        int *find = (int *)-1;
+
+                        for (Usize j = len__Vec(*params); j--;) {
+                            if (eq__String(
+                                  parse_decl->current->lit,
+                                  ((struct FunParam *)get__Vec(*params, j))
+                                    ->name,
+                                  false)) {
+                                find = (int *)j;
+                                break;
+                            }
+                        }
+
+                        if (find != (int *)-1) {
+                            next_token(parse_decl);
+                            next_token(parse_decl);
+
+                            // Free the defined default value in param.
+                            FREE(ExprAll,
+                                 ((struct FunParam *)get__Vec(
+                                    *params, (Usize)(UPtr)find))
+                                   ->value.default_);
+
+                            ((struct FunParam *)get__Vec(*params,
+                                                         (Usize)(UPtr)find))
+                              ->value.default_ = parse_expr(self, parse_decl);
+
+                            push__Vec(history, find);
+                            i++;
+                        } else {
+                            assert(0 && "error: unknown default param");
+                        }
+                    } else {
+                        i++;
+                        continue;
+                    }
+                } else {
+                    ((struct FunParam *)get__Vec(*params, i))->value.default_ =
+                      parse_expr(self, parse_decl);
+                    ((struct FunParam *)get__Vec(*params, i))->kind =
+                      FunParamKindDefault;
+                    push__Vec(history, (int *)i++);
+                }
+            }
+                if (parse_decl->current->kind != TokenKindRParen) {
+                    EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+                        struct Diagnostic *err =
+                          NEW(DiagnosticWithErrParser,
+                              &self.parse_block,
+                              NEW(LilyError, LilyErrorExpectedToken),
+                              *parse_decl->current->loc,
+                              format(""),
+                              None());
+
+                        err->err->s = from__String("`,`");
+
+                        emit__Diagnostic(err);
+                    });
+                }
+            }
+
+            if (parse_decl->current->kind != TokenKindRParen) {
+                while (parse_decl->current->kind != TokenKindRParen)
+                    next_token(parse_decl);
+
+                next_token(parse_decl);
+
+                assert(0 && "error: there are too many arguments or expected "
+                            "`ID` and `:=` before expression");
+            } else {
+                for (Usize i = len__Vec(*params); i--;)
+                    if (((struct FunParam *)get__Vec(*params, i))->kind !=
+                        FunParamKindDefault) {
+                        assert(0 && "error: miss few arguments");
+                    }
+
+                next_token(parse_decl);
+            }
+
+            FREE(Vec, history);
+        }
+    } else {
+        body = NEW(Vec, sizeof(struct FunBodyItem));
+
+        push__Vec(body, NEW(FunBodyItemExpr, parse_expr(self, parse_decl)));
+    }
+
+    end__Location(
+      &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
+
+    return NEW(
+      ExprLambda, NEW(Lambda, params, return_type, body, instantly_call), loc);
 }
 
 struct Expr *
@@ -7409,8 +7605,9 @@ run__Parser(struct Parser *self)
     }
 
 #ifdef DEBUG
-	for (Usize i = 0; i < len__Vec(*self->decls); i++)
-		Println("{Sr}", to_String__Decl(*(struct Decl *)get__Vec(*self->decls, i)));
+    for (Usize i = 0; i < len__Vec(*self->decls); i++)
+        Println("{Sr}",
+                to_String__Decl(*(struct Decl *)get__Vec(*self->decls, i)));
 #endif
 }
 

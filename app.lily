@@ -11,6 +11,7 @@ H :: Float32 := 3.333;
 I :: Float64 := 3.12230333;
 
 J := global.I;
+// K := fun (x) -> (x)(1)
 
 error[T] MyError T;
 
@@ -45,7 +46,6 @@ object Work: trait =
 	@get_work :: self -> Str
 	@get_salary :: self -> Int32
 end
-
 
 object Person: class =
 	@name Str;
