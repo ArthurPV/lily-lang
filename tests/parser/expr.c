@@ -534,7 +534,7 @@ test_expr_lambda()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "B := fun (x := 2) -> ((x))();"));
+        TEST_ASSERT(!strcmp(output_str, "B := fun (x := 2) -> (x)();"));
 
         FREE(String, output);
         free(output_str);
