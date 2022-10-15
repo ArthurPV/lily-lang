@@ -1050,7 +1050,8 @@ to_String__FunCall(struct FunCall self)
 
     append__String(s, format("{Sr}(", to_String__Expr(*self.id)), true);
 
-    for (Usize i = 0; i < len__Vec(*self.params); i++)
+	if (len__Vec(*self.params) > 0) {
+    for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
         append__String(
           s,
           format(
@@ -1060,7 +1061,17 @@ to_String__FunCall(struct FunCall self)
                 ->items[0]))),
           true);
 
-    push_str__String(s, ")");
+    append__String(
+      s,
+      format(
+        "{Sr})",
+        to_String__FunParamCall(
+          *((struct FunParamCall *)((struct Tuple *)get__Vec(
+                                      *self.params, len__Vec(*self.params) - 1))
+              ->items[0]))),
+      true);
+	} else
+		push_str__String(s, ")");
 
     return s;
 }
@@ -1694,6 +1705,7 @@ to_String__Expr(struct Expr self)
 
             push_str__String(s, "[");
 
+			if (len__Vec(*self.value.array) > 0) {
             for (Usize i = 0; i < len__Vec(*self.value.array) - 1; i++)
                 append__String(s,
                                format("{Sr}, ",
@@ -1707,6 +1719,8 @@ to_String__Expr(struct Expr self)
                      to_String__Expr(*(struct Expr *)get__Vec(
                        *self.value.array, len__Vec(*self.value.array) - 1))),
               true);
+			} else
+				push_str__String(s, "]");
 
             return s;
         }
@@ -1715,6 +1729,7 @@ to_String__Expr(struct Expr self)
 
             push_str__String(s, "(");
 
+			if (len__Vec(*self.value.tuple) > 0) {
             for (Usize i = 0; i < len__Vec(*self.value.tuple) - 1; i++)
                 append__String(s,
                                format("{Sr}, ",
@@ -1728,6 +1743,8 @@ to_String__Expr(struct Expr self)
                      to_String__Expr(*(struct Expr *)get__Vec(
                        *self.value.tuple, len__Vec(*self.value.tuple) - 1))),
               true);
+			} else
+				push_str__String(s, ")");
 
             return s;
         }
@@ -3116,7 +3133,8 @@ to_String__FunDecl(struct FunDecl self)
                      to_String__FunParam(*(struct FunParam *)get__Vec(
                        *self.params, len__Vec(*self.params) - 1))),
               true);
-        }
+        } else
+			push_str__String(s, ")");
     }
 
     if (self.return_type)

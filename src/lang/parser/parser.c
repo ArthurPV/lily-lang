@@ -4783,8 +4783,6 @@ exit_unary : {
         }
 
         case TokenKindTryKw: {
-            next_token(parse_decl);
-
             struct Expr *expr_try = parse_expr(self, parse_decl);
 
             end__Location(&loc,
@@ -5180,7 +5178,7 @@ parse_lambda_expr(struct Parser self,
         peek_token(*parse_decl, 1)->kind != TokenKindRParen) {
         struct Vec *tokens = NEW(Vec, sizeof(struct Token));
 
-		next_token(parse_decl);
+        next_token(parse_decl);
 
         while (parse_decl->current->kind != TokenKindRParen) {
             push__Vec(tokens, parse_decl->current);
@@ -5614,9 +5612,12 @@ parse_identifier_access(struct Parser self,
                   parse_decl,
                   NEW(ExprIdentifierAccess, ids, loc),
                   loc_call);
-			case TokenKindColon:
-			case TokenKindColonDollar:
-				return parse_variant_expr(self, parse_decl, NEW(ExprIdentifierAccess, ids, loc), loc_call);
+            case TokenKindColon:
+            case TokenKindColonDollar:
+                return parse_variant_expr(self,
+                                          parse_decl,
+                                          NEW(ExprIdentifierAccess, ids, loc),
+                                          loc_call);
             default:
                 break;
         }
