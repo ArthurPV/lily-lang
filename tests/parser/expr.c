@@ -548,19 +548,84 @@ test_expr_lambda()
 static int
 test_expr_tuple()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_tuple.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := (1, true, \"hello\");"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+	FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_array()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_array.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := [1, 2, 3];"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+	FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_variant()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_variant.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "VAR := Letter.A:$;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+	{
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "VAR2 := Value.Integer:3;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+	FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int

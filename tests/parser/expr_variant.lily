@@ -1,0 +1,14 @@
+// type Letter: enum =
+// 	A,
+// 	B,
+// 	C
+// end
+
+// type Value: enum =
+// 	Integer Int8,
+// 	String Str
+// end
+
+VAR := Letter.A:$;
+
+VAR2 := Value.Integer:3;
