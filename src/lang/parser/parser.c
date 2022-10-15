@@ -5614,6 +5614,9 @@ parse_identifier_access(struct Parser self,
                   parse_decl,
                   NEW(ExprIdentifierAccess, ids, loc),
                   loc_call);
+			case TokenKindColon:
+			case TokenKindColonDollar:
+				return parse_variant_expr(self, parse_decl, NEW(ExprIdentifierAccess, ids, loc), loc_call);
             default:
                 break;
         }
