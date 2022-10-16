@@ -2004,7 +2004,7 @@ to_String__MatchStmt(struct MatchStmt self)
     append__String(
       s, format("match {Sr}\n", to_String__Expr(*self.matching)), true);
 
-	++current_tab_size;
+    ++current_tab_size;
 
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
         struct Expr *temp_matched =
@@ -2017,7 +2017,7 @@ to_String__MatchStmt(struct MatchStmt self)
         if (temp_cond)
             append__String(s,
                            format("{Sr}{Sr} ? {Sr} => {Sr},\n",
-								  repeat__String("\t", current_tab_size),
+                                  repeat__String("\t", current_tab_size),
                                   to_String__Expr(*temp_matched),
                                   to_String__Expr(*temp_cond),
                                   to_String__Expr(*temp_expr)),
@@ -2025,15 +2025,16 @@ to_String__MatchStmt(struct MatchStmt self)
         else
             append__String(s,
                            format("{Sr}{Sr} => {Sr},\n",
-								  repeat__String("\t", current_tab_size),
+                                  repeat__String("\t", current_tab_size),
                                   to_String__Expr(*temp_matched),
                                   to_String__Expr(*temp_expr)),
                            true);
     }
 
-	--current_tab_size;
+    --current_tab_size;
 
-    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2294,7 +2295,8 @@ to_String__WhileStmt(struct WhileStmt self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2312,13 +2314,13 @@ __free__WhileStmt(struct WhileStmt *self)
 }
 
 struct ForStmtExprTraditional *
-__new__ForStmtExprTraditional(struct Option *id,
-                              struct Option *cond,
-                              struct Option *action)
+__new__ForStmtExprTraditional(struct Expr *var,
+                              struct Expr *cond,
+                              struct Expr *action)
 {
     struct ForStmtExprTraditional *self =
       malloc(sizeof(struct ForStmtExprTraditional));
-    self->id = id;
+    self->var = var;
     self->cond = cond;
     self->action = action;
     return self;
@@ -2327,22 +2329,15 @@ __new__ForStmtExprTraditional(struct Option *id,
 void
 __free__ForStmtExprTraditional(struct ForStmtExprTraditional *self)
 {
-    if (is_Some__Option(self->id)) {
-        struct Tuple *temp = get__Option(self->id);
-        FREE(String, temp->items[0]);
-        FREE(ExprAll, temp->items[1]);
-        FREE(Tuple, temp);
-    }
+    if (self->var)
+        FREE(ExprAll, self->var);
 
-    if (is_Some__Option(self->cond))
-        FREE(ExprAll, get__Option(self->cond));
+    if (self->cond)
+        FREE(ExprAll, self->cond);
 
-    if (is_Some__Option(self->action))
-        FREE(ExprAll, get__Option(self->action));
+    if (self->action)
+        FREE(ExprAll, self->action);
 
-    FREE(Option, self->id);
-    FREE(Option, self->cond);
-    FREE(Option, self->action);
     free(self);
 }
 
@@ -2373,38 +2368,37 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
     switch (self.kind) {
         case ForStmtExprKindRange:
             return format(
-              "for {S} in {Sr} do\n",
-              self.value.range->items[0],
+              "for {Sr} in {Sr} do\n",
+              to_String__Expr(*(struct Expr *)self.value.range->items[0]),
               to_String__Expr(*(struct Expr *)self.value.range->items[1]));
         case ForStmtExprKindTraditional: {
             struct String *s = NEW(String);
 
             push_str__String(s, "for ");
 
-            if (is_Some__Option(self.value.traditional->id)) {
-                struct Tuple *temp = get__Option(self.value.traditional->id);
-
+            if (self.value.traditional->var) {
                 append__String(
                   s,
-                  format("{S} := {Sr},",
-                         temp->items[0],
-                         to_String__Expr(*(struct Expr *)temp->items[1])),
+                  format("{Sr}, ", to_String__Expr(*self.value.traditional->var)),
                   true);
             } else
                 push_str__String(s, ",");
 
-            if (is_Some__Option(self.value.traditional->cond)) {
-                struct Expr *temp = get__Option(self.value.traditional->cond);
-
+            if (self.value.traditional->cond) {
                 append__String(
-                  s, format("{Sr},", to_String__Expr(*temp)), true);
+                  s,
+                  format("{Sr}, ",
+                         to_String__Expr(*self.value.traditional->cond)),
+                  true);
             } else
                 push_str__String(s, ",");
 
-            if (is_Some__Option(self.value.traditional->action)) {
-                struct Expr *temp = get__Option(self.value.traditional->action);
-
-                append__String(s, format("{Sr}", to_String__Expr(*temp)), true);
+            if (self.value.traditional->action) {
+                append__String(
+                  s,
+                  format("{Sr}",
+                         to_String__Expr(*self.value.traditional->action)),
+                  true);
             }
 
             push_str__String(s, " do\n");
@@ -2419,7 +2413,7 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
 void
 __free__ForStmtExprRange(struct ForStmtExpr *self)
 {
-    FREE(String, self->value.range->items[0]);
+    FREE(ExprAll, self->value.range->items[0]);
     FREE(ExprAll, self->value.range->items[1]);
     FREE(Tuple, self->value.range);
     free(self);
@@ -2465,12 +2459,12 @@ to_String__ForStmt(struct ForStmt self)
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
         append__String(s,
-                       format("\t{Sr}\n",
+                       format("\t{Sr}",
                               to_String__FunBodyItem(*(
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    push_str__String(s, "end");
+    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2524,23 +2518,36 @@ to_String__ImportStmtValue(struct ImportStmtValue self)
         case ImportStmtValueKindSelector: {
             struct String *s = NEW(String);
 
-            push_str__String(s, "{{");
+            push_str__String(s, "{");
 
-            for (Usize i = 0; i < len__Vec(*self.value.selector) - 1; i++)
-                append__String(s,
-                               format("{Sr}, ",
-                                      to_String__ImportStmtValue(
-                                        *(struct ImportStmtValue *)get__Vec(
-                                          *self.value.selector, i))),
-                               true);
+			bool is_last = false;
 
-            append__String(
-              s,
-              format(
-                "{Sr}}}",
-                to_String__ImportStmtValue(*(struct ImportStmtValue *)get__Vec(
-                  *self.value.selector, len__Vec(*self.value.selector) - 1))),
-              true);
+            for (Usize i = 0; i < len__Vec(*self.value.selector) - 1; i++) {
+				struct Vec *temp;
+
+			print_stmt_value: {
+				temp = !is_last ? get__Vec(*self.value.selector, i) : get__Vec(*self.value.selector, len__Vec(*self.value.selector) - 1);
+
+				for (Usize j = 0; j < len__Vec(*temp) - 1; j++)
+					append__String(s, format("{Sr}.", to_String__ImportStmtValue(*(struct ImportStmtValue*)get__Vec(*temp, j))), true);
+				}
+
+				append__String(s, format("{Sr}", to_String__ImportStmtValue(*(struct ImportStmtValue*)get__Vec(*temp, len__Vec(*temp) - 1))), true); 
+
+				if (!is_last)
+					push_str__String(s, ", ");
+				else
+					goto exit;
+			}
+
+			is_last = true;
+
+			if (is_last)
+				goto print_stmt_value;
+
+			exit: {
+				push_str__String(s, "}");
+			}
 
             return s;
         }
@@ -2561,8 +2568,14 @@ __free__ImportStmtValueAccess(struct ImportStmtValue *self)
 void
 __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 {
-    for (Usize i = len__Vec(*self->value.selector); i--;)
-        FREE(ImportStmtValueAll, get__Vec(*self->value.selector, i));
+    for (Usize i = len__Vec(*self->value.selector); i--;) {
+		struct Vec *temp = get__Vec(*self->value.selector, i);
+
+		for (Usize j = len__Vec(*temp); j--;)
+			FREE(ImportStmtValueAll, get__Vec(*temp, j));
+
+		FREE(Vec, temp);
+	}
 
     FREE(Vec, self->value.selector);
     free(self);
@@ -2623,8 +2636,6 @@ struct String *
 to_String__ImportStmt(struct ImportStmt self)
 {
     struct String *s = NEW(String);
-
-    append__String(s, repeat__String("\t", current_tab_size), true);
 
     if (self.is_pub)
         push_str__String(s, "pub import \"");

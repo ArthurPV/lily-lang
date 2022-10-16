@@ -1670,10 +1670,9 @@ enum ForStmtExprKind
 
 typedef struct ForStmtExprTraditional
 {
-    struct Option
-      *id; // struct Option<struct Tuple<struct String*, struct Expr*>*>*
-    struct Option *cond;   // struct Option<struct Expr*>*
-    struct Option *action; // struct Option<struct Expr*>*
+    struct Expr *var;
+    struct Expr *cond;
+    struct Expr *action;
 } ForStmtExprTraditional;
 
 /**
@@ -1681,9 +1680,9 @@ typedef struct ForStmtExprTraditional
  * @brief Construct the ForStmtExprTraditional type.
  */
 struct ForStmtExprTraditional *
-__new__ForStmtExprTraditional(struct Option *id,
-                              struct Option *cond,
-                              struct Option *action);
+__new__ForStmtExprTraditional(struct Expr *var,
+                              struct Expr *cond,
+                              struct Expr *action);
 
 /**
  *
@@ -1699,7 +1698,7 @@ typedef struct ForStmtExpr
 
     union
     {
-        struct Tuple *range; // struct Tuple<struct String*, struct Expr*>*
+        struct Tuple *range; // struct Tuple<struct Expr*, struct Expr*>*
         struct ForStmtExprTraditional *traditional;
     } value;
 } ForStmtExpr;

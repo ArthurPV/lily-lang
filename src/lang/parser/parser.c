@@ -280,7 +280,10 @@ This last step will just add the analyzer declarations into a vector (decls).
             break;                                                             \
         }                                                                      \
         case TokenKindForKw:                                                   \
-            assert(0 && "todo");                                               \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_for_stmt(self, parse_decl, loc)));    \
+            break;                                                             \
         case TokenKindWhileKw:                                                 \
             push__Vec(                                                         \
               body,                                                            \
@@ -298,7 +301,7 @@ This last step will just add the analyzer declarations into a vector (decls).
             break;                                                             \
         }                                                                      \
         case TokenKindImportKw: {                                              \
-            push__Vec(body, parse_import_stmt(self, parse_decl, loc));         \
+            push__Vec(body, NEW(FunBodyItemStmt, parse_import_stmt(self, parse_decl, loc)));         \
             break;                                                             \
         }                                                                      \
         default:                                                               \
@@ -316,6 +319,7 @@ This last step will just add the analyzer declarations into a vector (decls).
         case TokenKindForKw:                                               \
         case TokenKindWhileKw:                                             \
         case TokenKindMatchKw:                                             \
+		case TokenKindImportKw: \
             next_token(parse_decl);                                        \
             PARSE_STMT(body);                                              \
                                                                            \
@@ -6113,7 +6117,101 @@ struct Stmt *
 parse_for_stmt(struct Parser self,
                struct ParseDecl *parse_decl,
                struct Location loc)
-{}
+{
+    struct Location loc_before_do_kw = NEW(Location);
+    struct Expr *expr = NULL;
+    struct ForStmtExpr *for_expr = NULL;
+
+    start__Location(&loc_before_do_kw,
+                    parse_decl->current->loc->s_line,
+                    parse_decl->current->loc->s_col);
+
+    if (parse_decl->current->kind == TokenKindComma) {
+        next_token(parse_decl);
+
+        goto parse_traditional;
+    }
+
+    expr = parse_expr(self, parse_decl);
+
+    if (parse_decl->current->kind == TokenKindComma) {
+        next_token(parse_decl);
+
+        goto parse_traditional;
+    } else if (parse_decl->current->kind == TokenKindInKw) {
+        next_token(parse_decl);
+
+        goto parse_range;
+    }
+
+parse_range : {
+    struct Expr *id = expr, *value = parse_expr(self, parse_decl);
+
+    end__Location(&loc_before_do_kw,
+                  parse_decl->current->loc->e_line,
+                  parse_decl->current->loc->e_col);
+
+    for_expr =
+      NEW(ForStmtExprRange, NEW(Tuple, 2, id, value), loc_before_do_kw);
+
+    goto expect_do;
+}
+
+parse_traditional : {
+    struct Expr *var = expr, *cond = parse_expr(self, parse_decl), *action;
+
+    EXPECTED_TOKEN(parse_decl, TokenKindComma, {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorExpectedToken),
+                                     *parse_decl->current->loc,
+                                     format(""),
+                                     None());
+
+        err->err->s = from__String("`,`");
+
+        emit__Diagnostic(err);
+    });
+
+    action = parse_expr(self, parse_decl);
+
+    end__Location(&loc_before_do_kw,
+                  parse_decl->current->loc->e_line,
+                  parse_decl->current->loc->e_col);
+
+    for_expr = NEW(ForStmtExprTraditionalVar,
+                   NEW(ForStmtExprTraditional, var, cond, action),
+                   loc_before_do_kw);
+}
+
+expect_do : {
+    EXPECTED_TOKEN(parse_decl, TokenKindDoKw, {
+        struct Diagnostic *err = NEW(DiagnosticWithErrParser,
+                                     &self.parse_block,
+                                     NEW(LilyError, LilyErrorExpectedToken),
+                                     *parse_decl->current->loc,
+                                     format(""),
+                                     None());
+
+        err->err->s = from__String("`do`");
+
+        emit__Diagnostic(err);
+    });
+}
+
+    struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
+
+    while (parse_decl->current->kind != TokenKindEndKw) {
+        PARSE_BODY(body);
+    }
+
+    next_token(parse_decl);
+
+    end__Location(
+      &loc, parse_decl->current->loc->e_line, parse_decl->current->loc->e_col);
+
+    return NEW(StmtFor, loc, NEW(ForStmt, for_expr, body));
+}
 
 struct Stmt *
 parse_import_stmt(struct Parser self,
@@ -6382,8 +6480,9 @@ parse_import_value__parse_import_stmt(struct Parser self,
                 }
             } else if (current == (char *)'{') {
                 push__Vec(import_value,
+						NEW(ImportStmtValueSelector,
                           get_selector__parse_import_stmt(
-                            self, *buffer, buffer_loc, &i));
+                            self, *buffer, buffer_loc, &i)));
                 UPDATE_CURRENT();
 
                 if (i >= len__String(*buffer) - 1)
