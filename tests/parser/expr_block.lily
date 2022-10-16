@@ -1,0 +1,5 @@
+fun main =
+	begin =
+		a := 3
+	end
+end
