@@ -654,7 +654,24 @@ test_expr_try()
 static int
 test_expr_if()
 {
-    return TEST_SKIPPED;
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_if.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "B := if x > 0 do\n\t1\nelse\n\t0\nend;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
