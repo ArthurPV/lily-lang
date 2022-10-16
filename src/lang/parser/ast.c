@@ -1050,28 +1050,28 @@ to_String__FunCall(struct FunCall self)
 
     append__String(s, format("{Sr}(", to_String__Expr(*self.id)), true);
 
-	if (len__Vec(*self.params) > 0) {
-    for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
+    if (len__Vec(*self.params) > 0) {
+        for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
+            append__String(
+              s,
+              format("{Sr}, ",
+                     to_String__FunParamCall(
+                       *((struct FunParamCall *)((struct Tuple *)get__Vec(
+                                                   *self.params, i))
+                           ->items[0]))),
+              true);
+
         append__String(
           s,
-          format(
-            "{Sr}, ",
-            to_String__FunParamCall(*(
-              (struct FunParamCall *)((struct Tuple *)get__Vec(*self.params, i))
-                ->items[0]))),
+          format("{Sr})",
+                 to_String__FunParamCall(
+                   *((struct FunParamCall *)((struct Tuple *)get__Vec(
+                                               *self.params,
+                                               len__Vec(*self.params) - 1))
+                       ->items[0]))),
           true);
-
-    append__String(
-      s,
-      format(
-        "{Sr})",
-        to_String__FunParamCall(
-          *((struct FunParamCall *)((struct Tuple *)get__Vec(
-                                      *self.params, len__Vec(*self.params) - 1))
-              ->items[0]))),
-      true);
-	} else
-		push_str__String(s, ")");
+    } else
+        push_str__String(s, ")");
 
     return s;
 }
@@ -1705,22 +1705,23 @@ to_String__Expr(struct Expr self)
 
             push_str__String(s, "[");
 
-			if (len__Vec(*self.value.array) > 0) {
-            for (Usize i = 0; i < len__Vec(*self.value.array) - 1; i++)
-                append__String(s,
-                               format("{Sr}, ",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.array, i))),
-                               true);
+            if (len__Vec(*self.value.array) > 0) {
+                for (Usize i = 0; i < len__Vec(*self.value.array) - 1; i++)
+                    append__String(
+                      s,
+                      format("{Sr}, ",
+                             to_String__Expr(
+                               *(struct Expr *)get__Vec(*self.value.array, i))),
+                      true);
 
-            append__String(
-              s,
-              format("{Sr}]",
-                     to_String__Expr(*(struct Expr *)get__Vec(
-                       *self.value.array, len__Vec(*self.value.array) - 1))),
-              true);
-			} else
-				push_str__String(s, "]");
+                append__String(s,
+                               format("{Sr}]",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.array,
+                                        len__Vec(*self.value.array) - 1))),
+                               true);
+            } else
+                push_str__String(s, "]");
 
             return s;
         }
@@ -1729,22 +1730,23 @@ to_String__Expr(struct Expr self)
 
             push_str__String(s, "(");
 
-			if (len__Vec(*self.value.tuple) > 0) {
-            for (Usize i = 0; i < len__Vec(*self.value.tuple) - 1; i++)
-                append__String(s,
-                               format("{Sr}, ",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.tuple, i))),
-                               true);
+            if (len__Vec(*self.value.tuple) > 0) {
+                for (Usize i = 0; i < len__Vec(*self.value.tuple) - 1; i++)
+                    append__String(
+                      s,
+                      format("{Sr}, ",
+                             to_String__Expr(
+                               *(struct Expr *)get__Vec(*self.value.tuple, i))),
+                      true);
 
-            append__String(
-              s,
-              format("{Sr})",
-                     to_String__Expr(*(struct Expr *)get__Vec(
-                       *self.value.tuple, len__Vec(*self.value.tuple) - 1))),
-              true);
-			} else
-				push_str__String(s, ")");
+                append__String(s,
+                               format("{Sr})",
+                                      to_String__Expr(*(struct Expr *)get__Vec(
+                                        *self.value.tuple,
+                                        len__Vec(*self.value.tuple) - 1))),
+                               true);
+            } else
+                push_str__String(s, ")");
 
             return s;
         }
@@ -1755,21 +1757,28 @@ to_String__Expr(struct Expr self)
         case ExprKindIf:
             return to_String__IfCond(*self.value.if_);
         case ExprKindBlock: {
-			struct String *s = NEW(String);
+            struct String *s = NEW(String);
 
-			push_str__String(s, "begin =\n");
+            push_str__String(s, "begin =\n");
 
-			++current_tab_size;
+            ++current_tab_size;
 
-			for (Usize i = 0; i < len__Vec(*self.value.block); i++) 
-				append__String(s, to_String__FunBodyItem(*(struct FunBodyItem*)get__Vec(*self.value.block, i)), true);
+            for (Usize i = 0; i < len__Vec(*self.value.block); i++)
+                append__String(
+                  s,
+                  to_String__FunBodyItem(
+                    *(struct FunBodyItem *)get__Vec(*self.value.block, i)),
+                  true);
 
-			--current_tab_size;
-			
-			append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
+            --current_tab_size;
 
-			return s;
-		}
+            append__String(
+              s,
+              format("{Sr}end", repeat__String("\t", current_tab_size)),
+              true);
+
+            return s;
+        }
         case ExprKindQuestionMark:
             return format("{Sr}.?", to_String__Expr(*self.value.question_mark));
         case ExprKindDereference:
@@ -2089,7 +2098,7 @@ to_String__IfCond(struct IfCond self)
     append__String(
       s, format("if {Sr} do\n", to_String__Expr(*self.if_->cond)), true);
 
-	++current_tab_size;
+    ++current_tab_size;
 
     for (Usize i = 0; i < len__Vec(*self.if_->body); i++)
         append__String(
@@ -2099,10 +2108,10 @@ to_String__IfCond(struct IfCond self)
                    *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
           true);
 
---current_tab_size;
+    --current_tab_size;
 
     if (self.elif) {
-		++current_tab_size;
+        ++current_tab_size;
 
         for (Usize i = 0; i < len__Vec(*self.elif); i++) {
             append__String(
@@ -2124,11 +2133,11 @@ to_String__IfCond(struct IfCond self)
                   true);
         }
 
-		--current_tab_size;
+        --current_tab_size;
     }
 
     if (self.else_) {
-		++current_tab_size;
+        ++current_tab_size;
 
         push_str__String(s, "else\n");
 
@@ -2140,7 +2149,7 @@ to_String__IfCond(struct IfCond self)
                        *(struct FunBodyItem *)get__Vec(*self.else_, i))),
               true);
 
-		--current_tab_size;
+        --current_tab_size;
     }
 
     push_str__String(s, "end");
@@ -3160,7 +3169,7 @@ to_String__FunDecl(struct FunDecl self)
                        *self.params, len__Vec(*self.params) - 1))),
               true);
         } else
-			push_str__String(s, ")");
+            push_str__String(s, ")");
     }
 
     if (self.return_type)

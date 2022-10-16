@@ -663,7 +663,8 @@ test_expr_if()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "B := if x > 0 do\n\t1\nelse\n\t0\nend;"));
+        TEST_ASSERT(
+          !strcmp(output_str, "B := if x > 0 do\n\t1\nelse\n\t0\nend;"));
 
         FREE(String, output);
         free(output_str);
@@ -677,7 +678,8 @@ test_expr_if()
 static int
 test_expr_block()
 {
-    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_block.lily"));
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_block.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -686,11 +688,12 @@ test_expr_block()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "fun main =\n"
-							"\tbegin =\n"
-							"\t\ta := 3\n"
-							"\tend\n"
-							"end"));
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun main =\n"
+                            "\tbegin =\n"
+                            "\t\ta := 3\n"
+                            "\tend\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -704,7 +707,8 @@ test_expr_block()
 static int
 test_expr_question_mark()
 {
-    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_question_mark.lily"));
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_question_mark.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -719,7 +723,7 @@ test_expr_question_mark()
         free(output_str);
     }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
         Str output_str = to_Str__String(*output);
