@@ -2004,6 +2004,8 @@ to_String__MatchStmt(struct MatchStmt self)
     append__String(
       s, format("match {Sr}\n", to_String__Expr(*self.matching)), true);
 
+	++current_tab_size;
+
     for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
         struct Expr *temp_matched =
           ((struct Tuple *)get__Vec(*self.pattern, i))->items[0];
@@ -2014,20 +2016,24 @@ to_String__MatchStmt(struct MatchStmt self)
 
         if (temp_cond)
             append__String(s,
-                           format("{Sr} ? {Sr} => {Sr}",
+                           format("{Sr}{Sr} ? {Sr} => {Sr},\n",
+								  repeat__String("\t", current_tab_size),
                                   to_String__Expr(*temp_matched),
                                   to_String__Expr(*temp_cond),
                                   to_String__Expr(*temp_expr)),
                            true);
         else
             append__String(s,
-                           format("{Sr} => {Sr}",
+                           format("{Sr}{Sr} => {Sr},\n",
+								  repeat__String("\t", current_tab_size),
                                   to_String__Expr(*temp_matched),
                                   to_String__Expr(*temp_expr)),
                            true);
     }
 
-    push_str__String(s, "end");
+	--current_tab_size;
+
+    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2116,7 +2122,8 @@ to_String__IfCond(struct IfCond self)
         for (Usize i = 0; i < len__Vec(*self.elif); i++) {
             append__String(
               s,
-              format("elif {Sr} do\n",
+              format("{Sr}elif {Sr} do\n",
+                     repeat__String("\t", current_tab_size - 1),
                      to_String__Expr(
                        *((struct IfBranch *)get__Vec(*self.elif, i))->cond)),
               true);
@@ -2137,9 +2144,12 @@ to_String__IfCond(struct IfCond self)
     }
 
     if (self.else_) {
-        ++current_tab_size;
+        append__String(
+          s,
+          format("{Sr}else\n", repeat__String("\t", current_tab_size)),
+          true);
 
-        push_str__String(s, "else\n");
+        ++current_tab_size;
 
         for (Usize i = 0; i < len__Vec(*self.else_); i++)
             append__String(
@@ -2152,7 +2162,8 @@ to_String__IfCond(struct IfCond self)
         --current_tab_size;
     }
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2198,32 +2209,42 @@ to_String__TryStmt(struct TryStmt self)
 
     push_str__String(s, "try do\n");
 
+    ++current_tab_size;
+
     for (Usize i = 0; i < len__Vec(*self.try_body); i++)
         append__String(
           s,
-          format("\t{Sr}\n",
+          format("{Sr}\n",
                  to_String__FunBodyItem(
                    *(struct FunBodyItem *)get__Vec(*self.try_body, i))),
           true);
 
+    --current_tab_size;
+
     if (self.catch_expr && self.catch_body) {
-        append__String(
-          s,
-          format("catch {Sr} do\n", to_String__Expr(*self.catch_expr)),
-          true);
+        append__String(s,
+                       format("{Sr}catch {Sr} do\n",
+                              repeat__String("\t", current_tab_size),
+                              to_String__Expr(*self.catch_expr)),
+                       true);
+
+        ++current_tab_size;
 
         for (Usize i = 0; i < len__Vec(*self.catch_body); i++)
             append__String(
               s,
-              format("\t{Sr}\n",
+              format("{Sr}\n",
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.catch_body, i))),
               true);
+
+        --current_tab_size;
     } else if ((!self.catch_expr || !self.catch_body) &&
                (self.catch_expr || self.catch_body))
         UNREACHABLE("catch expr and catch body must equal to Some");
 
-    push_str__String(s, "end");
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2273,7 +2294,7 @@ to_String__WhileStmt(struct WhileStmt self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    push_str__String(s, "end");
+    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
