@@ -988,7 +988,7 @@ test_expr_grouping()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "A := (3 + 3) - 3;"));
+        TEST_ASSERT(!strcmp(output_str, "A := 2 * (3 + 2);"));
 
         FREE(String, output);
         free(output_str);
