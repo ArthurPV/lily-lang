@@ -1,0 +1,7 @@
+fun main =
+	a := "hello"
+	b := 3
+	c := true
+	d := 'c'
+	e := b'e'
+end

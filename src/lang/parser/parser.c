@@ -5819,6 +5819,7 @@ parse_expr(struct Parser self, struct ParseDecl *parse_decl)
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
     struct Expr *left = parse_primary_expr(self, parse_decl);
+	Println("{Sr}", token_kind_to_String__Token(*parse_decl->current));
 
     struct Expr *expr = parse_expr_binary_op(
       self, parse_decl, left, loc, get_precedence__Expr(left));

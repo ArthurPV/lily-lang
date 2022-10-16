@@ -777,53 +777,224 @@ test_expr_dereference()
 static int
 test_expr_ref()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_ref.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := &a;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_self()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_self.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := self.a.b.c;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_undef()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_undef.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := undef;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_nil()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_nil.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := nil;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_none()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_none.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := None;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_wildcard()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_wildcard.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := _;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_literal()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_literal.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "fun main =\n"
+					"\ta := \"hello\"\n"
+					"\tb := 3\n"
+					"\tc := true\n"
+					"\td := \'c\'\n"
+					"\te := b\'e\'\n"
+					"end"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_variable()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_variable.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "fun main =\n"
+					"\ta := 23\n"
+					"\tb :: Str := \"hello\"\n"
+					"end"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
 test_expr_grouping()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_grouping.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := (3 + 3) - 3;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
