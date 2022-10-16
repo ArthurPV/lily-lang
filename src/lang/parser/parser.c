@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "lang/scanner/token.h"
 #include <assert.h>
 #include <base/format.h>
 #include <base/macros.h>
@@ -4795,8 +4796,6 @@ exit_unary : {
         }
 
         case TokenKindIfKw: {
-            next_token(parse_decl);
-
             struct IfCond *if_ = parse_if_stmt(self, parse_decl, &loc);
 
             expr = NEW(ExprIf, if_, loc);
@@ -7393,6 +7392,7 @@ parse_constant_declaration(struct Parser *self,
             emit__Diagnostic(err);
         }
     } else {
+		UNREACHABLE("");
     }
 
     return NEW(ConstantDecl,

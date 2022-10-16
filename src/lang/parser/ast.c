@@ -2075,6 +2075,8 @@ to_String__IfCond(struct IfCond self)
     append__String(
       s, format("if {Sr} do\n", to_String__Expr(*self.if_->cond)), true);
 
+	++current_tab_size;
+
     for (Usize i = 0; i < len__Vec(*self.if_->body); i++)
         append__String(
           s,
@@ -2083,7 +2085,11 @@ to_String__IfCond(struct IfCond self)
                    *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
           true);
 
+--current_tab_size;
+
     if (self.elif) {
+		++current_tab_size;
+
         for (Usize i = 0; i < len__Vec(*self.elif); i++) {
             append__String(
               s,
@@ -2103,9 +2109,13 @@ to_String__IfCond(struct IfCond self)
                            *(struct FunBodyItem *)get__Vec(*temp_body, j))),
                   true);
         }
+
+		--current_tab_size;
     }
 
     if (self.else_) {
+		++current_tab_size;
+
         push_str__String(s, "else\n");
 
         for (Usize i = 0; i < len__Vec(*self.else_); i++)
@@ -2115,6 +2125,8 @@ to_String__IfCond(struct IfCond self)
                      to_String__FunBodyItem(
                        *(struct FunBodyItem *)get__Vec(*self.else_, i))),
               true);
+
+		--current_tab_size;
     }
 
     push_str__String(s, "end");
