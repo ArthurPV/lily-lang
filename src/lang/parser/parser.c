@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#include "lang/scanner/token.h"
 #include <assert.h>
 #include <base/format.h>
 #include <base/macros.h>
@@ -4586,6 +4585,7 @@ exit_unary : {
 
                         next_token(parse_decl);
 
+                    p_qm : {
                         if (parse_decl->current->kind == TokenKindDot) {
                             struct Vec *ids = NEW(Vec, sizeof(struct Expr));
 
@@ -4593,10 +4593,74 @@ exit_unary : {
 
                             expr = parse_identifier_access(
                               self, parse_decl, loc, ids);
+                        } else if (parse_decl->current->kind ==
+                                     TokenKindDotInterrogation &&
+                                   parse_decl->pos !=
+                                     len__Vec(*parse_decl->tokens)) {
+                            while (parse_decl->current->kind ==
+                                     TokenKindDotInterrogation &&
+                                   parse_decl->pos !=
+                                     len__Vec(*parse_decl->tokens)) {
+                                end__Location(&loc,
+                                              parse_decl->current->loc->e_line,
+                                              parse_decl->current->loc->e_col);
+
+                                qm = NEW(ExprQuestionMark, qm, loc);
+
+                                next_token(parse_decl);
+                            }
+
+                            goto p_qm;
                         } else
                             expr = qm;
+                    }
 
-                        break;
+                    break;
+                    }
+                    case TokenKindDotStar: {
+                        struct Expr *id = NEW(ExprIdentifier,
+                                              parse_decl->previous->lit,
+                                              *parse_decl->previous->loc);
+
+                        end__Location(&loc,
+                                      parse_decl->current->loc->e_line,
+                                      parse_decl->current->loc->e_col);
+
+                        struct Expr *deref = NEW(ExprDereference, id, loc);
+
+                        next_token(parse_decl);
+
+                    p_deref : {
+                        if (parse_decl->current->kind == TokenKindDot) {
+                            struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+                            push__Vec(ids, deref);
+
+                            expr = parse_identifier_access(
+                              self, parse_decl, loc, ids);
+                        } else if (parse_decl->current->kind ==
+                                     TokenKindDotStar &&
+                                   parse_decl->pos !=
+                                     len__Vec(*parse_decl->tokens)) {
+                            while (parse_decl->current->kind ==
+                                     TokenKindDotStar &&
+                                   parse_decl->pos !=
+                                     len__Vec(*parse_decl->tokens)) {
+                                end__Location(&loc,
+                                              parse_decl->current->loc->e_line,
+                                              parse_decl->current->loc->e_col);
+
+                                deref = NEW(ExprDereference, deref, loc);
+
+                                next_token(parse_decl);
+                            }
+
+                            goto p_deref;
+                        } else
+                            expr = deref;
+                    }
+
+                    break;
                     }
                     case TokenKindColon:
                     case TokenKindColonDollar:
@@ -5688,6 +5752,52 @@ parse_identifier_access(struct Parser self,
                         return qm;
                 } else
                     return qm;
+            }
+            case TokenKindDotStar: {
+                struct Location loc_access = loc, loc_deref = loc;
+
+                end__Location(&loc_access,
+                              parse_decl->previous->loc->e_line,
+                              parse_decl->previous->loc->e_col);
+                end__Location(&loc_deref,
+                              parse_decl->current->loc->e_line,
+                              parse_decl->current->loc->e_col);
+
+                struct Expr *deref =
+                  NEW(ExprDereference,
+                      NEW(ExprIdentifierAccess, ids, loc_access),
+                      loc_deref);
+
+                next_token(parse_decl);
+
+                if (parse_decl->current->kind == TokenKindDot) {
+                p_deref : {
+                    struct Vec *ids_rec = NEW(Vec, sizeof(struct Expr));
+
+                    push__Vec(ids_rec, deref);
+
+                    return parse_identifier_access(
+                      self, parse_decl, loc, ids_rec);
+                }
+                } else if (parse_decl->current->kind == TokenKindDotStar &&
+                           parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+                    while (parse_decl->current->kind == TokenKindDotStar &&
+                           parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+                        end__Location(&loc,
+                                      parse_decl->current->loc->e_line,
+                                      parse_decl->current->loc->e_col);
+
+                        deref = NEW(ExprDereference, deref, loc);
+
+                        next_token(parse_decl);
+                    }
+
+                    if (parse_decl->current->kind == TokenKindDot)
+                        goto p_deref;
+                    else
+                        return deref;
+                } else
+                    return deref;
             }
             default:
                 break;
