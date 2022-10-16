@@ -4573,6 +4573,26 @@ exit_unary : {
 
                         break;
                     }
+					case TokenKindDotInterrogation: {
+						struct Expr *id = NEW(ExprIdentifier, parse_decl->previous->lit, *parse_decl->previous->loc);
+
+						end__Location(&loc, parse_decl->current->loc->e_line, parse_decl->current->loc->e_col);
+
+						struct Expr *qm = NEW(ExprQuestionMark, id, loc);
+
+						next_token(parse_decl);
+
+						if (parse_decl->current->kind == TokenKindDot) {
+							struct Vec *ids = NEW(Vec, sizeof(struct Expr));
+
+							push__Vec(ids, qm);
+
+							expr = parse_identifier_access(self, parse_decl, loc, ids);
+						} else
+							expr = qm;
+
+						break;
+					}
                     case TokenKindColon:
                     case TokenKindColonDollar:
                         expr =
@@ -4820,10 +4840,9 @@ exit_unary : {
 
             struct Vec *body = NEW(Vec, sizeof(struct FunBodyItem));
 
-            while (parse_decl->current->kind != TokenKindEndKw &&
-                   parse_decl->current->kind != TokenKindSemicolon) {
+            while (parse_decl->current->kind != TokenKindEndKw) {
                 PARSE_BODY(body);
-            }
+			}
 
             next_token(parse_decl);
 
@@ -5617,6 +5636,40 @@ parse_identifier_access(struct Parser self,
                                           parse_decl,
                                           NEW(ExprIdentifierAccess, ids, loc),
                                           loc_call);
+			case TokenKindDotInterrogation: {
+				struct Location loc_access = loc, loc_qm = loc;
+
+				end__Location(&loc_access, parse_decl->previous->loc->e_line, parse_decl->previous->loc->e_col);
+				end__Location(&loc_qm, parse_decl->current->loc->e_line, parse_decl->current->loc->e_col);
+
+				struct Expr *qm = NEW(ExprQuestionMark, NEW(ExprIdentifierAccess, ids, loc_access), loc_qm);
+
+				next_token(parse_decl);
+
+				if (parse_decl->current->kind == TokenKindDot) {
+					p_ida: {
+					struct Vec *ids_rec = NEW(Vec, sizeof(struct Expr));
+
+					push__Vec(ids_rec, qm);
+
+					return parse_identifier_access(self, parse_decl, loc, ids_rec);
+						}
+				} else if (parse_decl->current->kind == TokenKindDotInterrogation && parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+					while (parse_decl->current->kind == TokenKindDotInterrogation && parse_decl->pos != len__Vec(*parse_decl->tokens)) {
+						end__Location(&loc, parse_decl->current->loc->e_line, parse_decl->current->loc->e_col);
+
+						qm = NEW(ExprQuestionMark, qm, loc);
+
+						next_token(parse_decl);
+					}
+
+					if (parse_decl->current->kind == TokenKindDot)
+						goto p_ida;
+					else
+						return qm;
+				} else
+					return qm;
+			}
             default:
                 break;
         }

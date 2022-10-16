@@ -1754,8 +1754,22 @@ to_String__Expr(struct Expr self)
             return format("try {Sr}", to_String__Expr(*self.value.try));
         case ExprKindIf:
             return to_String__IfCond(*self.value.if_);
-        case ExprKindBlock:
-            TODO("Block");
+        case ExprKindBlock: {
+			struct String *s = NEW(String);
+
+			push_str__String(s, "begin =\n");
+
+			++current_tab_size;
+
+			for (Usize i = 0; i < len__Vec(*self.value.block); i++) 
+				append__String(s, to_String__FunBodyItem(*(struct FunBodyItem*)get__Vec(*self.value.block, i)), true);
+
+			--current_tab_size;
+			
+			append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
+
+			return s;
+		}
         case ExprKindQuestionMark:
             return format("{Sr}.?", to_String__Expr(*self.value.question_mark));
         case ExprKindDereference:
