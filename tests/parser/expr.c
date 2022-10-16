@@ -742,7 +742,36 @@ test_expr_question_mark()
 static int
 test_expr_dereference()
 {
-    return TEST_SKIPPED;
+    struct Source src =
+      NEW(Source, NEW(File, "./tests/parser/expr_dereference.lily"));
+    struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
+    run__Parser(&parser);
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "A := Z.*.*;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    {
+        struct String *output =
+          to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
+        Str output_str = to_Str__String(*output);
+
+        TEST_ASSERT(!strcmp(output_str, "B := A.B.C.*.*.*;"));
+
+        FREE(String, output);
+        free(output_str);
+    }
+
+    FREE(Parser, parser);
+
+    return TEST_SUCCESS;
 }
 
 static int
