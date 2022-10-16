@@ -4835,6 +4835,12 @@ exit_unary : {
                 next_token(parse_decl);
 
                 expr = NEW(ExprGrouping, grouping, loc);
+
+				int *binary_op_kind = parse_binary_op(parse_decl->current->kind);
+
+				if (binary_op_kind) {
+					expr = parse_expr_binary_op(self, parse_decl, expr, loc, get_precedence__BinaryOpKind((enum BinaryOpKind)(UPtr)binary_op_kind));
+				}
             }
 
             break;
@@ -5819,10 +5825,13 @@ parse_expr(struct Parser self, struct ParseDecl *parse_decl)
       &loc, parse_decl->current->loc->s_line, parse_decl->current->loc->s_col);
 
     struct Expr *left = parse_primary_expr(self, parse_decl);
-	Println("{Sr}", token_kind_to_String__Token(*parse_decl->current));
 
     struct Expr *expr = parse_expr_binary_op(
       self, parse_decl, left, loc, get_precedence__Expr(left));
+
+	if (expr->kind == ExprKindGrouping) {
+		assert(0 && "warning: unused paren");
+	}
 
     return expr;
 }
