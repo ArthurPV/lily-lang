@@ -1,0 +1,7 @@
+fun is_zero(x) =
+	if x == 0 do
+		true
+	else
+		false
+	end
+end

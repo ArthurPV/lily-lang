@@ -777,8 +777,7 @@ test_expr_dereference()
 static int
 test_expr_ref()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/expr_ref.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_ref.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -801,8 +800,7 @@ test_expr_ref()
 static int
 test_expr_self()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/expr_self.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_self.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -849,8 +847,7 @@ test_expr_undef()
 static int
 test_expr_nil()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/expr_nil.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_nil.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -873,8 +870,7 @@ test_expr_nil()
 static int
 test_expr_none()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/expr_none.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/expr_none.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -931,13 +927,14 @@ test_expr_literal()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "fun main =\n"
-					"\ta := \"hello\"\n"
-					"\tb := 3\n"
-					"\tc := true\n"
-					"\td := \'c\'\n"
-					"\te := b\'e\'\n"
-					"end"));
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun main =\n"
+                            "\ta := \"hello\"\n"
+                            "\tb := 3\n"
+                            "\tc := true\n"
+                            "\td := \'c\'\n"
+                            "\te := b\'e\'\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -961,10 +958,11 @@ test_expr_variable()
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 0));
         Str output_str = to_Str__String(*output);
 
-        TEST_ASSERT(!strcmp(output_str, "fun main =\n"
-					"\ta := 23\n"
-					"\tb :: Str := \"hello\"\n"
-					"end"));
+        TEST_ASSERT(!strcmp(output_str,
+                            "fun main =\n"
+                            "\ta := 23\n"
+                            "\tb :: Str := \"hello\"\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);

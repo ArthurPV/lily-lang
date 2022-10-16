@@ -1,0 +1,6 @@
+fun is_zero(x) =
+	match x do
+		0 => true,
+		_ => false,
+	end
+end

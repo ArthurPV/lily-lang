@@ -1,0 +1,7 @@
+fun try_it(x) =
+	try do
+		call(x)
+	catch err do
+		println("error")
+	end
+end

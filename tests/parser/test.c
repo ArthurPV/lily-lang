@@ -83,6 +83,7 @@ main()
     CASE(stmt, await, test_stmt_await);
     CASE(stmt, try, test_stmt_try);
     CASE(stmt, match, test_stmt_match);
+	CASE(stmt, while, test_stmt_while);
     CASE(stmt, for, test_stmt_for);
     CASE(stmt, next, test_stmt_next);
     CASE(stmt, break, test_stmt_break);
