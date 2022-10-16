@@ -1,0 +1,11 @@
+fun loop_to_10 =
+	for i in 10 do
+		println("hey")
+	end
+end
+
+fun loop_to_10_2 =
+	for mut i := 0, i < 10, i += 1 do
+		println("hey")
+	end
+end

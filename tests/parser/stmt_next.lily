@@ -1,0 +1,5 @@
+fun loop_next =
+	for i in 10 do
+		next
+	end
+end

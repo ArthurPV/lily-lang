@@ -1,0 +1,5 @@
+fun loop_break =
+	for i in 10 do
+		break
+	end
+end
