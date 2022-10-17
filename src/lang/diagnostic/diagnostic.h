@@ -148,7 +148,8 @@ enum LilyErrorKind
     LilyErrorNameMustStartByUppercaseCharacter,
     LilyErrorExpectedIntegerDataType,
     LilyErrorExpectedALargerIntegerDataType,
-    LilyErrorFloatIsOutOfRange
+    LilyErrorFloatIsOutOfRange,
+    LilyErrorUnmatchedDataType
 };
 
 typedef struct LilyError

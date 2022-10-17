@@ -5458,7 +5458,15 @@ check_expression(struct Typecheck *self,
                         if (!eq__DataTypeSymbol(defined_data_type_expr_variable,
                                                 expr_variable->data_type)) {
                         error : {
-                            assert(0 && "error: data type is not matched");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorUnmatchedDataType),
+                                  expr->loc,
+                                  from__String(""),
+                                  None());
+
+                            emit__Diagnostic(err);
                         }
                         }
 

@@ -298,6 +298,8 @@ lily_error_to_String(struct LilyError err)
             return from__String("expected a larger integer data type");
         case LilyErrorFloatIsOutOfRange:
             return from__String("float is out of range");
+        case LilyErrorUnmatchedDataType:
+            return from__String("unmatched data type");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -474,10 +476,14 @@ get_code_of_lily_error(struct LilyError err)
             return "0074";
         case LilyErrorNameMustStartByUppercaseCharacter:
             return "0075";
-        case LilyErrorExpectedALargerIntegerDataType:
+        case LilyErrorExpectedIntegerDataType:
             return "0076";
-        case LilyErrorFloatIsOutOfRange:
+        case LilyErrorExpectedALargerIntegerDataType:
             return "0077";
+        case LilyErrorFloatIsOutOfRange:
+            return "0078";
+        case LilyErrorUnmatchedDataType:
+            return "0079";
         default:
             UNREACHABLE("unknown lily error kind");
     }
