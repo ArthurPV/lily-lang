@@ -280,7 +280,7 @@ struct Scope *
 search_from_access(struct Typecheck *self,
                    struct Expr *id,
                    struct Vec *name,
-                   struct SearchContext search_module_context);
+                   struct SearchContext search_context);
 struct Scope *
 search_with_search_module_context(struct Typecheck *self,
                                   struct Vec *name,
@@ -3088,7 +3088,7 @@ struct Scope *
 search_from_access(struct Typecheck *self,
                    struct Expr *id,
                    struct Vec *name,
-                   struct SearchContext search_module_context)
+                   struct SearchContext search_context)
 {
     switch (id->kind) {
         case ExprKindGlobalAccess:
@@ -4840,11 +4840,203 @@ check_expression(struct Typecheck *self,
         case ExprKindBlock:
             TODO("check block");
         case ExprKindQuestionMark:
+            if (defined_data_type) {
+                if (defined_data_type->kind == DataTypeKindOptional) {
+                    struct DataTypeSymbol *expr_qm_dt =
+                      infer_expression(self,
+                                       fun,
+                                       expr->value.question_mark,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       is_return_type);
+
+                    if (expr_qm_dt->kind != DataTypeKindOptional) {
+                        assert(0 && "error: expected Ptr or Ref data type");
+                    }
+
+                    struct DataTypeSymbol *expr_dt =
+                      infer_expression(self,
+                                       fun,
+                                       expr,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       is_return_type);
+
+                    if (!eq__DataTypeSymbol(defined_data_type, expr_dt)) {
+                        assert(0 && "error: data type doesn't match with "
+                                    "defined data type");
+                    }
+
+                    FREE(DataTypeSymbolAll, expr_dt);
+
+                    return NEW(
+                      ExprSymbolQuestionMark,
+                      *expr,
+                      search_from_access(
+                        self,
+                        expr->value.dereference,
+                        NEW(Vec, sizeof(struct String)),
+                        (struct SearchContext){ .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false }),
+                      expr_qm_dt);
+                }
+            } else {
+                return NEW(ExprSymbolQuestionMark,
+                           *expr,
+                           search_from_access(
+                             self,
+                             expr->value.ref,
+                             NEW(Vec, sizeof(struct String)),
+                             (struct SearchContext){ .search_type = false,
+                                                     .search_fun = false,
+                                                     .search_variant = false,
+                                                     .search_value = true,
+                                                     .search_trait = false,
+                                                     .search_class = false,
+                                                     .search_object = false }),
+                           NEW(DataTypeSymbolOptional,
+                               infer_expression(self,
+                                                fun,
+                                                expr->value.question_mark,
+                                                local_value,
+                                                local_data_type,
+                                                defined_data_type,
+                                                is_return_type)));
+            }
             TODO("check question mark");
         case ExprKindDereference:
-            TODO("check dereference");
+            if (defined_data_type) {
+                struct DataTypeSymbol *expr_dereference_dt =
+                  infer_expression(self,
+                                   fun,
+                                   expr->value.dereference,
+                                   local_value,
+                                   local_data_type,
+                                   NULL,
+                                   is_return_type);
+
+                if (!(expr_dereference_dt->kind == DataTypeKindPtr ||
+                      expr_dereference_dt->kind == DataTypeKindRef)) {
+                    assert(0 && "error: expected Ptr or Ref data type");
+                }
+
+                struct DataTypeSymbol *expr_dt =
+                  infer_expression(self,
+                                   fun,
+                                   expr,
+                                   local_value,
+                                   local_data_type,
+                                   NULL,
+                                   is_return_type);
+
+                if (!eq__DataTypeSymbol(defined_data_type, expr_dt)) {
+                    assert(0 && "error: data type doesn't match with "
+                                "defined data type");
+                }
+
+                FREE(DataTypeSymbolAll, expr_dt);
+
+                return NEW(ExprSymbolDereference,
+                           *expr,
+                           search_from_access(
+                             self,
+                             expr->value.dereference,
+                             NEW(Vec, sizeof(struct String)),
+                             (struct SearchContext){ .search_type = false,
+                                                     .search_fun = false,
+                                                     .search_variant = false,
+                                                     .search_value = true,
+                                                     .search_trait = false,
+                                                     .search_class = false,
+                                                     .search_object = false }),
+                           expr_dereference_dt);
+            } else {
+                return NEW(ExprSymbolDereference,
+                           *expr,
+                           search_from_access(
+                             self,
+                             expr->value.dereference,
+                             NEW(Vec, sizeof(struct String)),
+                             (struct SearchContext){ .search_type = false,
+                                                     .search_fun = false,
+                                                     .search_variant = false,
+                                                     .search_value = true,
+                                                     .search_trait = false,
+                                                     .search_class = false,
+                                                     .search_object = false }),
+                           infer_expression(self,
+                                            fun,
+                                            expr,
+                                            local_value,
+                                            local_data_type,
+                                            defined_data_type,
+                                            is_return_type));
+            }
         case ExprKindRef:
-            TODO("check ref");
+            if (defined_data_type)
+                if (defined_data_type->kind == DataTypeKindRef) {
+                    struct DataTypeSymbol *expr_dt =
+                      infer_expression(self,
+                                       fun,
+                                       expr,
+                                       local_value,
+                                       local_data_type,
+                                       NULL,
+                                       is_return_type);
+
+                    if (!(eq__DataTypeSymbol(expr_dt, defined_data_type))) {
+                        assert(0 && "error: data type doesn't match with "
+                                    "defined data type");
+                    }
+
+                    return NEW(
+                      ExprSymbolRef,
+                      *expr,
+                      search_from_access(
+                        self,
+                        expr->value.ref,
+                        NEW(Vec, sizeof(struct String)),
+                        (struct SearchContext){ .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false }),
+                      expr_dt);
+                } else {
+                    assert(0 && "error: expected Ref data type");
+                }
+            else {
+                return NEW(ExprSymbolRef,
+                           *expr,
+                           search_from_access(
+                             self,
+                             expr->value.ref,
+                             NEW(Vec, sizeof(struct String)),
+                             (struct SearchContext){ .search_type = false,
+                                                     .search_fun = false,
+                                                     .search_variant = false,
+                                                     .search_value = true,
+                                                     .search_trait = false,
+                                                     .search_class = false,
+                                                     .search_object = false }),
+                           NEW(DataTypeSymbolRef,
+                               infer_expression(self,
+                                                fun,
+                                                expr->value.ref,
+                                                local_value,
+                                                local_data_type,
+                                                defined_data_type,
+                                                is_return_type)));
+            }
         case ExprKindSelf:
             TODO("check self");
         case ExprKindUndef:
@@ -4888,6 +5080,7 @@ check_expression(struct Typecheck *self,
                                    NEW(CompilerDefinedDataType, "T", false))));
             break;
         case ExprKindWildcard:
+            break;
             TODO("check wildcard");
         case ExprKindLiteral: {
             int *kind = NULL; // int* = LiteralSymbolKind*

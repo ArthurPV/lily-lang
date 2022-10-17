@@ -5260,6 +5260,9 @@ parse_lambda_expr(struct Parser self,
         FREE(Vec, tokens);
     }
 
+    if (is_data_type(parse_decl))
+        return_type = parse_data_type(self, parse_decl);
+
     if (parse_decl->current->kind != TokenKindArrow)
         if (is_data_type(parse_decl))
             return_type = parse_data_type(self, parse_decl);
