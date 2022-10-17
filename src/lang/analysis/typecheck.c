@@ -4858,6 +4858,21 @@ check_expression(struct Typecheck *self,
                                NEW(CompilerDefinedDataType, "T", false)));
         case ExprKindNil:
             if (defined_data_type)
+                if (defined_data_type->kind == DataTypeKindPtr)
+                    return NEW(ExprSymbol,
+                               expr,
+                               copy__DataTypeSymbol(defined_data_type));
+                else {
+                    assert(0 && "error: expected Ptr data type");
+                }
+            else
+                return NEW(ExprSymbol,
+                           expr,
+                           NEW(DataTypeSymbolPtr,
+                               NEW(DataTypeSymbolCompilerDefined,
+                                   NEW(CompilerDefinedDataType, "T", false))));
+        case ExprKindNone:
+            if (defined_data_type)
                 if (defined_data_type->kind == DataTypeKindOptional)
                     return NEW(ExprSymbol,
                                expr,
@@ -4871,6 +4886,7 @@ check_expression(struct Typecheck *self,
                            NEW(DataTypeSymbolOptional,
                                NEW(DataTypeSymbolCompilerDefined,
                                    NEW(CompilerDefinedDataType, "T", false))));
+            break;
         case ExprKindWildcard:
             TODO("check wildcard");
         case ExprKindLiteral: {

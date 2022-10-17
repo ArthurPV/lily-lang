@@ -888,7 +888,7 @@ typedef struct LiteralSymbol
  *
  * @brief Construct LiteralSymbol (Bool variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolBool(bool bool_)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindBool,
@@ -903,7 +903,7 @@ __new__LiteralSymbolBool(bool bool_)
  *
  * @brief Construct LiteralSymbol (Char variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolChar(char char_)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindChar,
@@ -918,7 +918,7 @@ __new__LiteralSymbolChar(char char_)
  *
  * @brief Construct LiteralSymbol (BitChar variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolBitChar(UInt8 bit_char)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindBitChar,
@@ -933,7 +933,7 @@ __new__LiteralSymbolBitChar(UInt8 bit_char)
  *
  * @brief Construct LiteralSymbol (Int8 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolInt8(Int8 int8)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt8,
@@ -948,7 +948,7 @@ __new__LiteralSymbolInt8(Int8 int8)
  *
  * @brief Construct LiteralSymbol (Int16 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolInt16(Int16 int16)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt16,
@@ -963,7 +963,7 @@ __new__LiteralSymbolInt16(Int16 int16)
  *
  * @brief Construct LiteralSymbol (Int32 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolInt32(Int32 int32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt32,
@@ -978,7 +978,7 @@ __new__LiteralSymbolInt32(Int32 int32)
  *
  * @brief Construct LiteralSymbol (Int64 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolInt64(Int64 int64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt64,
@@ -993,7 +993,7 @@ __new__LiteralSymbolInt64(Int64 int64)
  *
  * @brief Construct LiteralSymbol (Int128 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolInt128(Int128 int128)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindInt128,
@@ -1008,7 +1008,7 @@ __new__LiteralSymbolInt128(Int128 int128)
  *
  * @brief Construct LiteralSymbol (Uint8 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUint8(UInt8 uint8)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint8,
@@ -1023,7 +1023,7 @@ __new__LiteralSymbolUint8(UInt8 uint8)
  *
  * @brief Construct LiteralSymbol (Uint16 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUint16(UInt16 uint16)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint16,
@@ -1038,7 +1038,7 @@ __new__LiteralSymbolUint16(UInt16 uint16)
  *
  * @brief Construct LiteralSymbol (Uint32 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUint32(UInt32 uint32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint32,
@@ -1053,7 +1053,7 @@ __new__LiteralSymbolUint32(UInt32 uint32)
  *
  * @brief Construct LiteralSymbol (Uint64 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUint64(UInt64 uint64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint64,
@@ -1068,7 +1068,7 @@ __new__LiteralSymbolUint64(UInt64 uint64)
  *
  * @brief Construct LiteralSymbol (Uint128 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUint128(Int128 uint128)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUint128,
@@ -1083,7 +1083,7 @@ __new__LiteralSymbolUint128(Int128 uint128)
  *
  * @brief Construct LiteralSymbol (Float32 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolFloat32(Float32 float32)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat32,
@@ -1098,7 +1098,7 @@ __new__LiteralSymbolFloat32(Float32 float32)
  *
  * @brief Construct LiteralSymbol (Float64 variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolFloat64(Float64 float64)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindFloat64,
@@ -1113,7 +1113,7 @@ __new__LiteralSymbolFloat64(Float64 float64)
  *
  * @brief Construct LiteralSymbol (Str variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolStr(Str str)
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindStr,
@@ -1128,7 +1128,7 @@ __new__LiteralSymbolStr(Str str)
  *
  * @brief Construct LiteralSymbol (BitStr variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolBitStr(UInt8 **bit_str)
 {
     struct LiteralSymbol self = {
@@ -1145,7 +1145,7 @@ __new__LiteralSymbolBitStr(UInt8 **bit_str)
  *
  * @brief Construct LiteralSymbol (Unit variant).
  */
-inline struct LiteralSymbol
+[[maybe_unused]] static inline struct LiteralSymbol
 __new__LiteralSymbolUnit()
 {
     struct LiteralSymbol self = { .kind = LiteralSymbolKindUnit,
