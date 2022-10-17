@@ -2379,7 +2379,8 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
             if (self.value.traditional->var) {
                 append__String(
                   s,
-                  format("{Sr}, ", to_String__Expr(*self.value.traditional->var)),
+                  format("{Sr}, ",
+                         to_String__Expr(*self.value.traditional->var)),
                   true);
             } else
                 push_str__String(s, ",");
@@ -2464,7 +2465,8 @@ to_String__ForStmt(struct ForStmt self)
                                 struct FunBodyItem *)get__Vec(*self.body, i))),
                        true);
 
-    append__String(s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
+    append__String(
+      s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
 
     return s;
 }
@@ -2520,34 +2522,46 @@ to_String__ImportStmtValue(struct ImportStmtValue self)
 
             push_str__String(s, "{");
 
-			bool is_last = false;
+            bool is_last = false;
 
             for (Usize i = 0; i < len__Vec(*self.value.selector) - 1; i++) {
-				struct Vec *temp;
+                struct Vec *temp;
 
-			print_stmt_value: {
-				temp = !is_last ? get__Vec(*self.value.selector, i) : get__Vec(*self.value.selector, len__Vec(*self.value.selector) - 1);
+            print_stmt_value : {
+                temp = !is_last ? get__Vec(*self.value.selector, i)
+                                : get__Vec(*self.value.selector,
+                                           len__Vec(*self.value.selector) - 1);
 
-				for (Usize j = 0; j < len__Vec(*temp) - 1; j++)
-					append__String(s, format("{Sr}.", to_String__ImportStmtValue(*(struct ImportStmtValue*)get__Vec(*temp, j))), true);
-				}
+                for (Usize j = 0; j < len__Vec(*temp) - 1; j++)
+                    append__String(
+                      s,
+                      format("{Sr}.",
+                             to_String__ImportStmtValue(
+                               *(struct ImportStmtValue *)get__Vec(*temp, j))),
+                      true);
+            }
 
-				append__String(s, format("{Sr}", to_String__ImportStmtValue(*(struct ImportStmtValue*)get__Vec(*temp, len__Vec(*temp) - 1))), true); 
+                append__String(s,
+                               format("{Sr}",
+                                      to_String__ImportStmtValue(
+                                        *(struct ImportStmtValue *)get__Vec(
+                                          *temp, len__Vec(*temp) - 1))),
+                               true);
 
-				if (!is_last)
-					push_str__String(s, ", ");
-				else
-					goto exit;
-			}
+                if (!is_last)
+                    push_str__String(s, ", ");
+                else
+                    goto exit;
+            }
 
-			is_last = true;
+            is_last = true;
 
-			if (is_last)
-				goto print_stmt_value;
+            if (is_last)
+                goto print_stmt_value;
 
-			exit: {
-				push_str__String(s, "}");
-			}
+        exit : {
+            push_str__String(s, "}");
+        }
 
             return s;
         }
@@ -2569,13 +2583,13 @@ void
 __free__ImportStmtValueSelector(struct ImportStmtValue *self)
 {
     for (Usize i = len__Vec(*self->value.selector); i--;) {
-		struct Vec *temp = get__Vec(*self->value.selector, i);
+        struct Vec *temp = get__Vec(*self->value.selector, i);
 
-		for (Usize j = len__Vec(*temp); j--;)
-			FREE(ImportStmtValueAll, get__Vec(*temp, j));
+        for (Usize j = len__Vec(*temp); j--;)
+            FREE(ImportStmtValueAll, get__Vec(*temp, j));
 
-		FREE(Vec, temp);
-	}
+        FREE(Vec, temp);
+    }
 
     FREE(Vec, self->value.selector);
     free(self);

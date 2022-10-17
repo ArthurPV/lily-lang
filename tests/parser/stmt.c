@@ -186,8 +186,7 @@ test_stmt_while()
 static int
 test_stmt_for()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/stmt_for.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/stmt_for.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -198,26 +197,26 @@ test_stmt_for()
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun loop_to_10 =\n"
-							"\tfor i in 10 do\n"
-							"\t\tprintln(\"hey\")\n"
-							"\tend\n"
-							"end"));
+                            "\tfor i in 10 do\n"
+                            "\t\tprintln(\"hey\")\n"
+                            "\tend\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
     }
 
-	{
+    {
         struct String *output =
           to_String__Decl(*(struct Decl *)get__Vec(*parser.decls, 1));
         Str output_str = to_Str__String(*output);
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun loop_to_10_2 =\n"
-							"\tfor i := 0, i < 10, i += 1 do\n"
-							"\t\tprintln(\"hey\")\n"
-							"\tend\n"
-							"end"));
+                            "\tfor i := 0, i < 10, i += 1 do\n"
+                            "\t\tprintln(\"hey\")\n"
+                            "\tend\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -231,8 +230,7 @@ test_stmt_for()
 static int
 test_stmt_next()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/stmt_next.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/stmt_next.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -243,10 +241,10 @@ test_stmt_next()
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun loop_next =\n"
-							"\tfor i in 10 do\n"
-							"\t\tnext\n"
-							"\tend\n"
-							"end"));
+                            "\tfor i in 10 do\n"
+                            "\t\tnext\n"
+                            "\tend\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -272,10 +270,10 @@ test_stmt_break()
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun loop_break =\n"
-							"\tfor i in 10 do\n"
-							"\t\tbreak\n"
-							"\tend\n"
-							"end"));
+                            "\tfor i in 10 do\n"
+                            "\t\tbreak\n"
+                            "\tend\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -301,8 +299,8 @@ test_stmt_import()
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun main =\n"
-							"\timport \"@std.io\" as Io\n"
-							"end"));
+                            "\timport \"@std.io\" as Io\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);
@@ -316,8 +314,7 @@ test_stmt_import()
 static int
 test_stmt()
 {
-    struct Source src =
-      NEW(Source, NEW(File, "./tests/parser/stmt.lily"));
+    struct Source src = NEW(Source, NEW(File, "./tests/parser/stmt.lily"));
     struct Parser parser = NEW(Parser, NEW(ParseBlock, NEW(Scanner, &src)));
     run__Parser(&parser);
 
@@ -328,11 +325,11 @@ test_stmt()
 
         TEST_ASSERT(!strcmp(output_str,
                             "fun main =\n"
-							"\tfor i in 10 do\n"
-							"\t\tprintln(\"hey\")\n"
-							"\tend\n"
-							"\treturn 0\n"
-							"end"));
+                            "\tfor i in 10 do\n"
+                            "\t\tprintln(\"hey\")\n"
+                            "\tend\n"
+                            "\treturn 0\n"
+                            "end"));
 
         FREE(String, output);
         free(output_str);

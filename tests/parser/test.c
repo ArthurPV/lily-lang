@@ -43,7 +43,7 @@ main()
 
     CASE(import, std, test_import_std);
     CASE(import, builtin, test_import_builtin);
-	CASE(import, core, test_import_core);
+    CASE(import, core, test_import_core);
     CASE(import, url, test_import_url);
     CASE(import, file, test_import_file);
     CASE(import, simple, test_import);

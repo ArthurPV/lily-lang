@@ -301,7 +301,9 @@ This last step will just add the analyzer declarations into a vector (decls).
             break;                                                             \
         }                                                                      \
         case TokenKindImportKw: {                                              \
-            push__Vec(body, NEW(FunBodyItemStmt, parse_import_stmt(self, parse_decl, loc)));         \
+            push__Vec(                                                         \
+              body,                                                            \
+              NEW(FunBodyItemStmt, parse_import_stmt(self, parse_decl, loc))); \
             break;                                                             \
         }                                                                      \
         default:                                                               \
@@ -319,7 +321,7 @@ This last step will just add the analyzer declarations into a vector (decls).
         case TokenKindForKw:                                               \
         case TokenKindWhileKw:                                             \
         case TokenKindMatchKw:                                             \
-		case TokenKindImportKw: \
+        case TokenKindImportKw:                                            \
             next_token(parse_decl);                                        \
             PARSE_STMT(body);                                              \
                                                                            \
@@ -6480,9 +6482,9 @@ parse_import_value__parse_import_stmt(struct Parser self,
                 }
             } else if (current == (char *)'{') {
                 push__Vec(import_value,
-						NEW(ImportStmtValueSelector,
-                          get_selector__parse_import_stmt(
-                            self, *buffer, buffer_loc, &i)));
+                          NEW(ImportStmtValueSelector,
+                              get_selector__parse_import_stmt(
+                                self, *buffer, buffer_loc, &i)));
                 UPDATE_CURRENT();
 
                 if (i >= len__String(*buffer) - 1)
