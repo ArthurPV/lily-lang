@@ -292,6 +292,12 @@ lily_error_to_String(struct LilyError err)
             return from__String("name must start by lowercase character");
         case LilyErrorNameMustStartByUppercaseCharacter:
             return from__String("name must start by uppercase character");
+        case LilyErrorExpectedIntegerDataType:
+            return from__String("expected integer data type");
+        case LilyErrorExpectedALargerIntegerDataType:
+            return from__String("expected a larger integer data type");
+        case LilyErrorFloatIsOutOfRange:
+            return from__String("float is out of range");
         default:
             UNREACHABLE("unknown lily error kind");
     }
@@ -468,6 +474,10 @@ get_code_of_lily_error(struct LilyError err)
             return "0074";
         case LilyErrorNameMustStartByUppercaseCharacter:
             return "0075";
+        case LilyErrorExpectedALargerIntegerDataType:
+            return "0076";
+        case LilyErrorFloatIsOutOfRange:
+            return "0077";
         default:
             UNREACHABLE("unknown lily error kind");
     }

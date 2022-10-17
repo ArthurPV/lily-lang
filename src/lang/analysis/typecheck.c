@@ -91,6 +91,60 @@ const Str BuiltinFirstLayer[] = {
     "Fun",    "Ref",    "Custom",  "Mem",      "Io",      "Never"
 };
 
+// It is not used to_str__UnaryOpKind, because it is a little less efficient.
+Str UnaryOperatorToFunName[UnaryOpKindCustom + 1] = {
+    [UnaryOpKindNegative] = "-",
+    [UnaryOpKindNot] = "not",
+    [UnaryOpKindReference] = "&",
+    [UnaryOpKindBitNot] = "~",
+    [UnaryOpKindCustom] = "<Custom>"
+};
+
+// It is not used to_str__BinaryOpKind, because it is a little less efficient.
+Str BinaryOperatorToName[BinaryOpKindCustom + 1] = {
+    [BinaryOpKindAdd] = "+",
+    [BinaryOpKindSub] = "-",
+    [BinaryOpKindMul] = "*",
+    [BinaryOpKindDiv] = "/",
+    [BinaryOpKindMod] = "%",
+    [BinaryOpKindRange] = "..",
+    [BinaryOpKindLt] = "<",
+    [BinaryOpKindGt] = ">",
+    [BinaryOpKindLe] = "<=",
+    [BinaryOpKindGe] = ">=",
+    [BinaryOpKindEq] = "==",
+    [BinaryOpKindNe] = "not=",
+    [BinaryOpKindAnd] = "and",
+    [BinaryOpKindOr] = "or",
+    [BinaryOpKindXor] = "xor",
+    [BinaryOpKindAssign] = "=",
+    [BinaryOpKindAddAssign] = "+=",
+    [BinaryOpKindSubAssign] = "-=",
+    [BinaryOpKindMulAssign] = "*=",
+    [BinaryOpKindDivAssign] = "/=",
+    [BinaryOpKindModAssign] = "%=",
+    [BinaryOpKindConcatAssign] = "^=",
+    [BinaryOpKindBitLShiftAssign] = "<<=",
+    [BinaryOpKindBitRShiftAssign] = ">>=",
+    [BinaryOpKindBitOrAssign] = "|=",
+    [BinaryOpKindXorAssign] = "xor=",
+    [BinaryOpKindBitAndAssign] = "&=",
+    [BinaryOpKindMergeAssign] = "++=",
+    [BinaryOpKindUnmergeAssign] = "--=",
+    [BinaryOpKindExponentAssign] = "**=",
+    [BinaryOpKindChain] = "|>",
+    [BinaryOpKindMerge] = "++",
+    [BinaryOpKindUnmerge] = "--",
+    [BinaryOpKindRepeat] = "$",
+    [BinaryOpKindConcat] = "^",
+    [BinaryOpKindBitLShift] = "<<",
+    [BinaryOpKindBitRShift] = ">>",
+    [BinaryOpKindBitOr] = "|",
+    [BinaryOpKindBitAnd] = "&",
+    [BinaryOpKindExponent] = "**",
+    [BinaryOpKindCustom] = "<Custom>"
+};
+
 struct SearchContext
 {
     bool search_type;
@@ -363,31 +417,31 @@ struct StmtSymbol
 check_for_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
-               struct Vec *local_value,
+               struct Vec local_value,
                struct Vec *local_data_type);
 struct StmtSymbol
 check_if_stmt(struct Typecheck *self,
               struct FunSymbol *fun,
               struct Stmt *stmt,
-              struct Vec *local_value,
+              struct Vec local_value,
               struct Vec *local_data_type);
 struct StmtSymbol
 check_match_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
-                 struct Vec *local_value,
+                 struct Vec local_value,
                  struct Vec *local_data_type);
 struct StmtSymbol
 check_try_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
-               struct Vec *local_value,
+               struct Vec local_value,
                struct Vec *local_data_type);
 struct StmtSymbol
 check_while_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
-                 struct Vec *local_value,
+                 struct Vec local_value,
                  struct Vec *local_data_type);
 void
 check_fun_body(struct Typecheck *self,
@@ -1177,16 +1231,15 @@ resolve_import(struct Typecheck *self,
 
     FREE(Typecheck, tc);
 
-    resolve_import_value(
-      self,
-      tc_copy,
-      import_loc,
-      import_stmt->import_value,
-      is_Some__Option(import_stmt->as) ? get__Option(import_stmt->as) : NULL,
-      import_symbs,
-      NULL,
-      false,
-      import_stmt->is_pub);
+    resolve_import_value(self,
+                         tc_copy,
+                         import_loc,
+                         import_stmt->import_value,
+                         import_stmt->as,
+                         import_symbs,
+                         NULL,
+                         false,
+                         import_stmt->is_pub);
 
 exit : {
     return import_symbs;
@@ -4866,10 +4919,23 @@ check_expression(struct Typecheck *self,
                             case DataTypeKindU128:
                                 kind = (int *)LiteralSymbolKindUint128;
                                 break;
-                            default:
+                            default: {
                                 kind = (int *)LiteralSymbolKindInt32;
-                                assert(0 &&
-                                       "error: expected integer data type");
+
+                                struct Diagnostic *err =
+                                  NEW(DiagnosticWithErrTypecheck,
+                                      self,
+                                      NEW(LilyError,
+                                          LilyErrorExpectedIntegerDataType),
+                                      expr->loc,
+                                      from__String(
+                                        "incompatibility between defined data "
+                                        "type and expression"),
+                                      Some(from__String(
+                                        "expected integer typed expression")));
+
+                                emit__Diagnostic(err);
+                            }
                         }
                     } else
                         kind = (int *)LiteralSymbolKindInt32;
@@ -4895,14 +4961,41 @@ check_expression(struct Typecheck *self,
                             case DataTypeKindI32:
                             case DataTypeKindU8:
                             case DataTypeKindU16:
-                            case DataTypeKindU32:
+                            case DataTypeKindU32: {
                                 kind = (int *)LiteralSymbolKindInt64;
-                                assert(0 && "error: the interger is too large "
-                                            "for I8, I16, I32, U8, U16 or U32");
-                            default:
+
+                                struct Diagnostic *err = NEW(
+                                  DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError,
+                                      LilyErrorExpectedALargerIntegerDataType),
+                                  expr->loc,
+                                  from__String(
+                                    "Int8, Int16, Int32, Uint8, Uint16 or "
+                                    "Uint32 integer data types are too short"),
+                                  Some(
+                                    from__String("define Int64, Int128, Uint64 "
+                                                 "or Uint128 data type")));
+
+                                emit__Diagnostic(err);
+                            }
+                            default: {
                                 kind = (int *)LiteralSymbolKindInt64;
-                                assert(0 &&
-                                       "error: expected integer data type");
+
+                                struct Diagnostic *err =
+                                  NEW(DiagnosticWithErrTypecheck,
+                                      self,
+                                      NEW(LilyError,
+                                          LilyErrorExpectedIntegerDataType),
+                                      expr->loc,
+                                      from__String(
+                                        "incompatibility between defined data "
+                                        "type and expression"),
+                                      Some(from__String(
+                                        "expected integer typed expression")));
+
+                                emit__Diagnostic(err);
+                            }
                         }
                     } else
                         kind = (int *)LiteralSymbolKindInt64;
@@ -4925,14 +5018,37 @@ check_expression(struct Typecheck *self,
                             case DataTypeKindU32:
                             case DataTypeKindU64:
                                 kind = (int *)LiteralSymbolKindInt128;
-                                assert(
-                                  0 &&
-                                  "error: the interger is too large for I8, "
-                                  "I16, I32, I64, U8, U16, U32 or U64");
-                            default:
+                                struct Diagnostic *err = NEW(
+                                  DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError,
+                                      LilyErrorExpectedALargerIntegerDataType),
+                                  expr->loc,
+                                  from__String(
+                                    "Int8, Int16, Int32, Int64, Uint8, Uint16, "
+                                    "Uint32 or Uint64 integer data types are "
+                                    "too short"),
+                                  Some(from__String("define Int128 "
+                                                    "or Uint128 data type")));
+
+                                emit__Diagnostic(err);
+                            default: {
                                 kind = (int *)LiteralSymbolKindInt128;
-                                assert(0 &&
-                                       "error: expected integer data type");
+
+                                struct Diagnostic *err =
+                                  NEW(DiagnosticWithErrTypecheck,
+                                      self,
+                                      NEW(LilyError,
+                                          LilyErrorExpectedIntegerDataType),
+                                      expr->loc,
+                                      from__String(
+                                        "incompatibility between defined data "
+                                        "type and expression"),
+                                      Some(from__String(
+                                        "expected integer typed expression")));
+
+                                emit__Diagnostic(err);
+                            }
                         }
                     } else
                         kind = (int *)LiteralSymbolKindInt128;
@@ -5028,7 +5144,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolInt8,
                                      (Int8)expr->value.literal.value.int32);
                         else {
-                            assert(0 && "error: integer is too large for Int8");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                                  expr->loc,
+                                  from__String("integer is too large for Int8"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolInt8, 0);
                         }
                         break;
                     case LiteralSymbolKindInt16:
@@ -5037,8 +5163,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolInt16,
                                      (Int16)expr->value.literal.value.int32);
                         else {
-                            assert(0 &&
-                                   "error: integer is too large for Int16");
+                            struct Diagnostic *err = NEW(
+                              DiagnosticWithErrTypecheck,
+                              self,
+                              NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                              expr->loc,
+                              from__String("integer is too large for Int16"),
+                              None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolInt16, 0);
                         }
                         break;
                     case LiteralSymbolKindInt32:
@@ -5063,8 +5198,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolUint8,
                                      (UInt8)expr->value.literal.value.int32);
                         else {
-                            assert(0 &&
-                                   "error: integer is too large for Uint8");
+                            struct Diagnostic *err = NEW(
+                              DiagnosticWithErrTypecheck,
+                              self,
+                              NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                              expr->loc,
+                              from__String("integer is too large for Uint8"),
+                              None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolUint8, 0);
                         }
                         break;
                     case LiteralSymbolKindUint16:
@@ -5073,8 +5217,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolUint16,
                                      (UInt16)expr->value.literal.value.int32);
                         else {
-                            assert(0 &&
-                                   "error: integer is too large for Uint16");
+                            struct Diagnostic *err = NEW(
+                              DiagnosticWithErrTypecheck,
+                              self,
+                              NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                              expr->loc,
+                              from__String("integer is too large for Uint16"),
+                              None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolUint16, 0);
                         }
                         break;
                     case LiteralSymbolKindUint32:
@@ -5082,7 +5235,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolUint32,
                                      expr->value.literal.value.int32);
                         else {
-                            assert(0 && "error: integer is less than 0");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                                  expr->loc,
+                                  from__String("integer is less than 0"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolUint32, 0);
                         }
                         break;
                     case LiteralSymbolKindUint64:
@@ -5090,7 +5253,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolUint64,
                                      expr->value.literal.value.int64);
                         else {
-                            assert(0 && "error: integer is less than 0");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                                  expr->loc,
+                                  from__String("integer is less than 0"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolUint64, 0);
                         }
                         break;
                     case LiteralSymbolKindUint128:
@@ -5098,7 +5271,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolUint128,
                                      expr->value.literal.value.int128);
                         else {
-                            assert(0 && "error: integer is less than 0");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorIntegerIsOutOfRange),
+                                  expr->loc,
+                                  from__String("integer is less than 0"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolUint128, 0);
                         }
                         break;
                     case LiteralSymbolKindFloat32: {
@@ -5110,7 +5293,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolFloat32,
                                      expr->value.literal.value.float_);
                         else {
-                            assert(0 && "error: F32 is too large or too small");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorFloatIsOutOfRange),
+                                  expr->loc,
+                                  from__String("Float32 is out of range"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolFloat32, 0);
                         }
                         break;
                     }
@@ -5123,7 +5316,17 @@ check_expression(struct Typecheck *self,
                             ls = NEW(LiteralSymbolFloat64,
                                      expr->value.literal.value.float_);
                         else {
-                            assert(0 && "error: F64 is too large or too small");
+                            struct Diagnostic *err =
+                              NEW(DiagnosticWithErrTypecheck,
+                                  self,
+                                  NEW(LilyError, LilyErrorFloatIsOutOfRange),
+                                  expr->loc,
+                                  from__String("Float64 is out of range"),
+                                  None());
+
+                            emit__Diagnostic(err);
+
+                            ls = NEW(LiteralSymbolFloat64, 0);
                         }
                         break;
                     }
@@ -5305,7 +5508,7 @@ struct StmtSymbol
 check_for_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
-               struct Vec *local_value,
+               struct Vec local_value,
                struct Vec *local_data_type)
 {}
 
@@ -5313,7 +5516,7 @@ struct StmtSymbol
 check_if_stmt(struct Typecheck *self,
               struct FunSymbol *fun,
               struct Stmt *stmt,
-              struct Vec *local_value,
+              struct Vec local_value,
               struct Vec *local_data_type)
 {}
 
@@ -5321,7 +5524,7 @@ struct StmtSymbol
 check_match_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
-                 struct Vec *local_value,
+                 struct Vec local_value,
                  struct Vec *local_data_type)
 {}
 
@@ -5329,7 +5532,7 @@ struct StmtSymbol
 check_try_stmt(struct Typecheck *self,
                struct FunSymbol *fun,
                struct Stmt *stmt,
-               struct Vec *local_value,
+               struct Vec local_value,
                struct Vec *local_data_type)
 {}
 
@@ -5337,7 +5540,7 @@ struct StmtSymbol
 check_while_stmt(struct Typecheck *self,
                  struct FunSymbol *fun,
                  struct Stmt *stmt,
-                 struct Vec *local_value,
+                 struct Vec local_value,
                  struct Vec *local_data_type)
 {}
 
@@ -5397,7 +5600,7 @@ check_fun_body(struct Typecheck *self,
                           NEW(
                             SymbolTableStmt,
                             check_for_stmt(
-                              self, fun, stmt, local_value, local_data_type)));
+                              self, fun, stmt, *local_value, local_data_type)));
 
                         break;
                     case StmtKindIf:
@@ -5406,7 +5609,7 @@ check_fun_body(struct Typecheck *self,
                           NEW(
                             SymbolTableStmt,
                             check_if_stmt(
-                              self, fun, stmt, local_value, local_data_type)));
+                              self, fun, stmt, *local_value, local_data_type)));
 
                         break;
                     case StmtKindMatch:
@@ -5415,7 +5618,7 @@ check_fun_body(struct Typecheck *self,
                           NEW(
                             SymbolTableStmt,
                             check_match_stmt(
-                              self, fun, stmt, local_value, local_data_type)));
+                              self, fun, stmt, *local_value, local_data_type)));
 
                         break;
                     case StmtKindTry:
@@ -5424,7 +5627,7 @@ check_fun_body(struct Typecheck *self,
                           NEW(
                             SymbolTableStmt,
                             check_try_stmt(
-                              self, fun, stmt, local_value, local_data_type)));
+                              self, fun, stmt, *local_value, local_data_type)));
 
                         break;
                     case StmtKindWhile:
@@ -5433,7 +5636,7 @@ check_fun_body(struct Typecheck *self,
                           NEW(
                             SymbolTableStmt,
                             check_while_stmt(
-                              self, fun, stmt, local_value, local_data_type)));
+                              self, fun, stmt, *local_value, local_data_type)));
 
                         break;
                     case StmtKindImport:

@@ -145,7 +145,10 @@ enum LilyErrorKind
     LilyErrorExpectedFinalImportValue,
     LilyErrorDuplicateGenericParam,
     LilyErrorNameMustStartByLowercaseCharacter,
-    LilyErrorNameMustStartByUppercaseCharacter
+    LilyErrorNameMustStartByUppercaseCharacter,
+    LilyErrorExpectedIntegerDataType,
+    LilyErrorExpectedALargerIntegerDataType,
+    LilyErrorFloatIsOutOfRange
 };
 
 typedef struct LilyError
