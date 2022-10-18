@@ -70,5 +70,10 @@ target_include_directories(parser_test PRIVATE src)
 
 add_test(NAME parser_test COMMAND parser_test)
 
+add_executable(analysis_test
+	tests/analysis/test.c)
+target_link_libraries(analysis_test lily_base lily_lang)
+target_include_directories(analysis_test PRIVATE src)
+
 add_subdirectory(src/lang/runtime/c)
 add_subdirectory(src/lang/runtime/cpp)

@@ -9,6 +9,7 @@ build:
 test:
 	@./build/scanner_test
 	@./build/parser_test
+	@./build/analysis_test
 	@cd tests/runtime/js && npm run-script vitest
 
 check_leaks:
