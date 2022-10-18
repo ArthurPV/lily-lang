@@ -1,7 +1,11 @@
 # Lily
 
 ```lily
-fun add(x, y) = x+y;
+import "@std.Io"
+
+fun main =
+	Io.println("Hello")
+end
 ```
 
 ## Build the project
@@ -28,3 +32,113 @@ ninja
 | Linux                   | not tested | tested     | not tested | not tested |
 | BSD                     | not tested | not tested | not tested | not tested |
 | macOS                   | ---------  | not tested | not tested | ---------  |
+
+## Features
+
+The Lily language is a multi-paradigm, object-oriented, functional, generic and imperative language. It has strong typing, static and embeds type inference.
+
+### Function
+
+When you declare a function you don't have to add a type to the parameters of the function. The compiler reserves the right to assign abstract types to describe an ambiguous type. Moreover, it is logical that you are not obliged to declare the generic parameters, as in the OCaml and Haskell languages.
+
+Here are some examples of function declaration:
+
+```lily
+fun add(x) = x;
+```
+
+```lily
+fun add[T](x T) T = x;
+```
+
+```lily
+fun add(x) =
+	return x
+end
+```
+
+These are all ways to declare functions in Lily.
+
+### Type
+
+There are several types such as `record`, `enum` and `alias`.
+
+NOTE: It is not possible to omit generic parameters like for functions. 
+
+#### Record
+
+Lily records are the simplest structure for recording information in a functional way. It is possible to have public or private fields (private by default). 
+
+Here are some examples of `record` declaration in Lily:
+
+```lily
+type Car: record =
+	name Str,
+	price Uint64
+end
+```
+
+```lily
+type Custom[T]: record =
+	pub v T
+end
+```
+
+#### Enum
+
+Lily enums are very similar to those found in the Haskell or OCaml language. Except that it is possible to natively add default values to each variant or make error enums.
+
+Here are some examples of `enum` declaration in Lily:
+
+```lily
+type Animal: enum =
+	Cat,
+	Dog,
+end
+```
+
+```lily
+type Digit: enum(Uint8) =
+	Zero,
+	One,
+	Two,
+	Tree,
+	Fore,
+	Five,
+	Six,
+	Seven,
+	Eight,
+	Nine
+end
+```
+
+```lily
+type Error: enum(error) =
+	Panic,
+	Fatal,
+end
+```
+
+```lily
+type Expr: enum =
+	Add (Expr, Expr),
+	Sub (Expr, Expr),
+	Mul (Expr, Expr),
+	Div (Expr, Expr),
+	Int Int32
+end
+```
+
+#### Alias
+
+Aliases are really the simplest types, they simply allow you to rename a type.
+
+Here are some examples of `alias` declarations in Lily:
+
+```lily
+type Number: alias = Uint64;
+```
+
+```lily
+type Custom[T] = T;
+```
