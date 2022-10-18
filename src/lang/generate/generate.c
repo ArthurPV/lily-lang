@@ -77,7 +77,6 @@ write_on_file__Generate(struct Generate self)
           1;
         Str command = malloc(command_size);
 
-        setenv("LD_LIBRARY_PATH=./lily_cache/lib");
         snprintf(command,
                  command_size,
                  "./scripts/compile.sh %s src/lang/runtime/c "
