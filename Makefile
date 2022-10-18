@@ -40,3 +40,4 @@ format:
 	@clang-format -i tests/scanner/*.c
 	@clang-format -i tests/scanner/*.h
 	@clang-format -i tests/parser/*.c
+	@clang-format -i tests/analysis/*.c
