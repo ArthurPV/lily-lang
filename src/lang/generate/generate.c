@@ -24,6 +24,7 @@
 
 #include <base/file.h>
 #include <base/platform.h>
+#include <base/macros.h>
 #include <lang/generate/generate.h>
 #include <stdio.h>
 
@@ -58,26 +59,37 @@ write_on_file__Generate(struct Generate self)
         free(output_str);
     }
 
+    Usize exe_size = snprintf(NULL, 0, "%s", fw) - 6;
+    Str exe = malloc(exe_size);
+
+    snprintf(exe, exe_size, "%s", fw);
+
 #ifdef LILY_WINDOWS_OS
 #else
+#ifdef LOCAL
     {
-        Usize exe_size = snprintf(NULL, 0, "%s", fw) - 6;
-        Str exe = malloc(exe_size);
+        Usize command_size =
+          snprintf(NULL,
+                   0,
+                   "./scripts/compile.sh %s src/lang/runtime/c "
+                   "build/src/lang/runtime/c/liblily_runtime_c.so %s",
+                   exe) +
+          1;
+		Str command = malloc(command_size);
 
-        snprintf(exe, exe_size, "%s", fw);
-
-        Usize size_command =
-          snprintf(NULL, 0, "cc -Wall -O0 -O -O2 -O3 %s -o %s", fw, exe) + 1;
-        Str command = malloc(size_command);
-
-        snprintf(
-          command, size_command, "cc -Wall -O0 -O -O2 -O3 %s -o %s", fw, exe);
+		setenv("LD_LIBRARY_PATH=./lily_cache/lib");
+		snprintf(command, command_size, "./scripts/compile.sh %s src/lang/runtime/c "
+                   "build/src/lang/runtime/c/liblily_runtime_c.so %s",
+                   exe);
 
         system(command);
-
-        free(command);
-        free(exe);
     }
+#endif
+#ifdef INSTALL
+    {
+        system("");
+    }
+#endif
 #endif
 
     free(fw);
