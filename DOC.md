@@ -125,34 +125,34 @@ end
 
 #### Primitive types
 
-| Type    | Description                            |
-|---------|----------------------------------------|
-| Int8    | signed 8-bit integer                   |
-| Int16   | signed 16-bit integer                  |
-| Int32   | signed 32-bit integer                  |
-| Int64   | signed 64-bit integer                  |
-| Int128  | signed 128-bit integer                 |
-| Uint8   | unsigned 8-bit integer                 |
-| Uint16  | unsigned 16-bit integer                |
-| Uint32  | unsigned 32-bit integer                |
-| Uint64  | unsigned 64-bit integer                |
-| Uint128 | unsigned 128-bit integer               |
-| Usize   | unsigned pointer size integer          |
-| Isize   | signed pointer size integer            |
-| Float32 | 32-bit floating point                  |
-| Float64 | 64-bit floating point                  |
-| Bool    | type which has the value true or false |
-| Unit    | like void C type                       |
-| Str     | like char* C type                      |
+| Type    	| Description                            |
+|-----------|----------------------------------------|
+| `Int8`    | signed 8-bit integer                   |
+| `Int16`   | signed 16-bit integer                  |
+| `Int32`   | signed 32-bit integer                  |
+| `Int64`   | signed 64-bit integer                  |
+| `Int128`  | signed 128-bit integer                 |
+| `Uint8`   | unsigned 8-bit integer                 |
+| `Uint16`  | unsigned 16-bit integer                |
+| `Uint32`  | unsigned 32-bit integer                |
+| `Uint64`  | unsigned 64-bit integer                |
+| `Uint128` | unsigned 128-bit integer               |
+| `Usize`   | unsigned pointer size integer          |
+| `Isize`   | signed pointer size integer            |
+| `Float32` | 32-bit floating point                  |
+| `Float64` | 64-bit floating point                  |
+| `Bool`    | type which has the value true or false |
+| `Unit`    | like void C type                       |
+| `Str`     | like char* C type                      |
 
 #### Primitive values
 
-| Name               | Description        |
-|--------------------|--------------------|
-| `true` and `false` | Bool values        |
-| nil                | Value for pointer  |
-| None               | Value for optional |
-| undef              | Unspecified value  |
+| Name                 | Description        |
+|----------------------|--------------------|
+| `true` and `false`   | Bool values        |
+| `nil`                | Value for pointer  |
+| `None`               | Value for optional |
+| `undef`              | Unspecified value  |
 
 </section>
 
@@ -160,7 +160,7 @@ end
 
 ### Variables
 
-In the Lily language the variables are immutable by default, like explain in this example:
+In the Lily language, variables are immutable by default, as explained in this example:
 
 ```lily
 fun main =
@@ -173,7 +173,7 @@ end
 
 #### mutable variable
 
-For the variables are mutable you must add `mut` before the name of variable. 
+For variables to be mutable, you must add `mut` before the variable name.
 
 ```lily
 fun main =
@@ -189,6 +189,25 @@ end
 <section id="integers">
 
 ### Integers
+
+List of integer types in the Lily language:
+
+signed:
+
+- Int8
+- Int16
+- Int32
+- Int64
+- Int128
+
+unsigned:
+
+- Uint8
+- Uint16
+- Uint32
+- Uint32
+- Uint64
+- Uint128
 
 ```lily
 fun main =
@@ -210,5 +229,34 @@ fun main =
 	n := 0o123_123 // Int32
 end
 ```
+
+</section>
+
+<section id="floats">
+
+### Floats
+
+List of floating point types in the Lily language:
+
+- Float32
+- Float64
+
+
+```lily
+fun main =
+	a := 3.33F32; // Cast Float32
+	b := 3.322F64; // Cast Float64
+
+	c := 3.33_333; // Float64
+	d := 2.3E+2; // Float64
+	e := 5.2e+10; // Float64
+end
+```
+
+</section>
+
+<section id="operators">
+
+### Operators
 
 </section>
