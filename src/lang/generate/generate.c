@@ -23,8 +23,8 @@
  */
 
 #include <base/file.h>
-#include <base/platform.h>
 #include <base/macros.h>
+#include <base/platform.h>
 #include <lang/generate/generate.h>
 #include <stdio.h>
 
@@ -75,12 +75,14 @@ write_on_file__Generate(struct Generate self)
                    "build/src/lang/runtime/c/liblily_runtime_c.so %s",
                    exe) +
           1;
-		Str command = malloc(command_size);
+        Str command = malloc(command_size);
 
-		setenv("LD_LIBRARY_PATH=./lily_cache/lib");
-		snprintf(command, command_size, "./scripts/compile.sh %s src/lang/runtime/c "
-                   "build/src/lang/runtime/c/liblily_runtime_c.so %s",
-                   exe);
+        setenv("LD_LIBRARY_PATH=./lily_cache/lib");
+        snprintf(command,
+                 command_size,
+                 "./scripts/compile.sh %s src/lang/runtime/c "
+                 "build/src/lang/runtime/c/liblily_runtime_c.so %s",
+                 exe);
 
         system(command);
     }
