@@ -142,3 +142,25 @@ type Number: alias = Uint64;
 ```lily
 type Custom[T] = T;
 ```
+
+### Object
+
+There are several types such as `record`, `enum`, `trait` and `class`.
+
+#### Record
+
+#### Enum 
+
+#### Trait
+
+#### Class
+
+### Error
+
+### Module
+
+### Constant
+
+### Import
+
+Have fun coding :)
