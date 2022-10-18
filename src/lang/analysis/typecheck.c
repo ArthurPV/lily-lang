@@ -154,6 +154,7 @@ struct SearchContext
     bool search_trait;
     bool search_class;
     bool search_object; // Enum and Record object
+    bool search_primary_type;
 } SearchContext;
 
 inline struct Diagnostic *
@@ -272,6 +273,10 @@ check_fun(struct Typecheck *self,
           struct FunSymbol *fun,
           Usize id,
           struct Scope *previous);
+struct SymbolTable *
+get_info_of_decl_from_scope(struct Typecheck *self,
+                            struct Scope *scope,
+                            struct Location loc);
 void
 check_symbols(struct Typecheck *self);
 struct ModuleSymbol *
@@ -1790,7 +1795,29 @@ check_constant(struct Typecheck *self,
               constant->visibility ? ScopeKindGlobal : ScopeKindLocal,
               previous);
 
-        TODO("check constant");
+        constant->data_type = check_data_type(
+          self,
+          constant->constant_decl->loc,
+          constant->constant_decl->value.constant->data_type,
+          NULL,
+          NULL,
+          (struct SearchContext){ .search_class = true,
+                                  .search_type = true,
+                                  .search_value = false,
+                                  .search_fun = false,
+                                  .search_object = true,
+                                  .search_trait = true,
+                                  .search_variant = false,
+                                  .search_primary_type = true });
+
+        constant->expr_symbol =
+          check_expression(self,
+                           NULL,
+                           constant->constant_decl->value.constant->expr,
+                           NULL,
+                           NULL,
+                           NULL,
+                           false);
 
         if (!previous)
             ++count_const_id;
@@ -2669,7 +2696,8 @@ check_class(struct Typecheck *self,
                                        .search_type = false,
                                        .search_variant = false,
                                        .search_trait = true,
-                                       .search_class = false };
+                                       .search_class = false,
+                                       .search_primary_type = false };
 
             for (Usize i = len__Vec(*class->class_decl->value.class->impl);
                  i--;) {
@@ -2791,7 +2819,8 @@ check_fun(struct Typecheck *self,
                                           .search_value = false,
                                           .search_trait = false,
                                           .search_class = false,
-                                          .search_object = true });
+                                          .search_object = true,
+                                          .search_primary_type = false });
 
                 if (dts)
                     push__Vec(tagged_type, dts);
@@ -2836,7 +2865,9 @@ check_fun(struct Typecheck *self,
                                                   .search_value = false,
                                                   .search_trait = false,
                                                   .search_class = false,
-                                                  .search_object = false });
+                                                  .search_object = false,
+                                                  .search_primary_type =
+                                                    false });
 
                         if (dts)
                             push__Vec(
@@ -2890,7 +2921,8 @@ check_fun(struct Typecheck *self,
                                           .search_value = false,
                                           .search_trait = true,
                                           .search_class = true,
-                                          .search_object = true });
+                                          .search_object = true,
+                                          .search_primary_type = false });
 
                 if (dts) {
                     param->param_data_type =
@@ -2933,7 +2965,8 @@ check_fun(struct Typecheck *self,
                                       .search_value = false,
                                       .search_trait = true,
                                       .search_class = true,
-                                      .search_object = true });
+                                      .search_object = true,
+                                      .search_primary_type = false });
 
             if (dts)
                 return_type = dts;
@@ -2966,6 +2999,97 @@ check_fun(struct Typecheck *self,
 
         if (local_value)
             FREE(Vec, local_value);
+    }
+}
+
+struct SymbolTable *
+get_info_of_decl_from_scope(struct Typecheck *self,
+                            struct Scope *scope,
+                            struct Location loc)
+{
+    struct Vec *scopes = NEW(Vec, sizeof(struct Scope));
+
+    {
+        struct Scope *previous = scope;
+
+        while (previous) {
+            push__Vec(scopes, previous);
+            previous = scope->previous;
+        }
+    }
+
+    struct SymbolTable *current = NULL;
+
+    {
+        struct Scope *first = get__Vec(*scopes, len__Vec(*scopes) - 1);
+
+        switch (first->item_kind) {
+            case ScopeItemKindAlias:
+                if (len__Vec(*scopes) > 1) {
+                    UNREACHABLE("impossible to have more one scope with "
+                                "ScopeItemkindAlias");
+                } else {
+                    FREE(Vec, scopes);
+
+                    return NEW(SymbolTableAlias,
+                               search_in_aliases_from_name(self, first->name));
+                }
+            case ScopeItemKindRecord:
+                if (len__Vec(*scopes) == 1) {
+                    FREE(Vec, scopes);
+
+                    return NEW(SymbolTableRecord,
+                               search_in_records_from_name(self, first->name));
+                } else
+                    UNREACHABLE("impossible to have more on scope with "
+                                "ScopeItemKindRecord");
+            case ScopeItemKindEnum:
+                if (len__Vec(*scopes) == 1) {
+                    FREE(Vec, scopes);
+
+                    return NEW(SymbolTableEnum,
+                               search_in_enums_from_name(self, first->name));
+                } else if (len__Vec(*scopes) == 2) {
+                    struct Scope *last = get__Vec(*scopes, 0);
+                    struct SymbolTable *enum_ =
+                      NEW(SymbolTableEnum,
+                          search_in_enums_from_name(self, first->name));
+                    struct Expr *id = NEW(ExprIdentifier, last->name, loc);
+                    struct SymbolTable *variant =
+                      search_enum_item_in_scope(self, id, enum_);
+
+                    free(id);
+                    free(enum_);
+                    FREE(Vec, scopes);
+
+                    return variant;
+                } else
+                    UNREACHABLE("impossible to have more on scope with "
+                                "ScopeItemKindEnum");
+            case ScopeItemKindRecordObj:
+                break;
+            case ScopeItemKindEnumObj:
+                break;
+            case ScopeItemKindConstant:
+                break;
+            case ScopeItemKindVariant:
+                break;
+            case ScopeItemKindFun:
+                break;
+            case ScopeItemKindError:
+                break;
+            case ScopeItemKindClass:
+                break;
+            case ScopeItemKindModule:
+                break;
+            case ScopeItemKindTrait:
+                break;
+            default:
+                UNREACHABLE("cannot search local value");
+        }
+    }
+
+    for (Usize i = len__Vec(*scopes) - 1; i--;) {
     }
 }
 
@@ -3094,6 +3218,8 @@ search_from_access(struct Typecheck *self,
         case ExprKindGlobalAccess:
             break;
         case ExprKindIdentifierAccess:
+            break;
+        case ExprKindPropertyAccessInit:
             break;
         default:
             UNREACHABLE("");
@@ -3605,8 +3731,9 @@ check_data_type(
                           // function search by default in global
   struct SearchContext ctx)
 {
-    if (ctx.search_object || ctx.search_type || ctx.search_class ||
-        ctx.search_trait) {
+    if ((ctx.search_object || ctx.search_type || ctx.search_class ||
+         ctx.search_trait) &&
+        (!ctx.search_primary_type || data_type->kind == DataTypeKindCustom)) {
         switch (data_type->kind) {
             case DataTypeKindCustom: {
             custom_data_type : {
@@ -3806,7 +3933,8 @@ check_data_type(
                             .search_value = false,
                             .search_variant = false,
                             .search_trait = false,
-                            .search_class = false
+                            .search_class = false,
+                            .search_primary_type = false
                         };
                         /* return NEW(DataTypeSymbolCustom,
                                    data_type->value.custom->items[1],
@@ -4831,9 +4959,97 @@ check_expression(struct Typecheck *self,
             TODO("check lambda");
         case ExprKindTuple:
             TODO("check tuple");
-        case ExprKindArray:
-            TODO("check array");
+        case ExprKindArray: {
+            if (defined_data_type) {
+                struct Vec *array = NEW(Vec, sizeof(struct ExprSymbol));
+
+                for (Usize i = 0; i < len__Vec(*expr->value.array); i++)
+                    push__Vec(
+                      array,
+                      check_expression(self,
+                                       fun,
+                                       get__Vec(*expr->value.array, i),
+                                       local_value,
+                                       local_data_type,
+                                       defined_data_type->value.array->items[0],
+                                       is_return_type));
+
+                // Check if the data type is the same as the defined data type
+                for (Usize i = len__Vec(*array); i--;)
+                    if (!eq__DataTypeSymbol(
+                          ((struct ExprSymbol *)get__Vec(*array, i))->data_type,
+                          defined_data_type->value.array->items[0])) {
+                        assert(0 && "error: this expression doens't match with "
+                                    "defined data type in array");
+                        break;
+                    }
+
+                return NEW(ExprSymbolArray,
+                           *expr,
+                           array,
+                           copy__DataTypeSymbol(defined_data_type));
+            } else {
+                struct Vec *array = NEW(Vec, sizeof(struct ExprSymbol));
+
+                for (Usize i = 0; i < len__Vec(*expr->value.array); i++)
+                    push__Vec(array,
+                              check_expression(self,
+                                               fun,
+                                               get__Vec(*expr->value.array, i),
+                                               local_value,
+                                               local_data_type,
+                                               NULL,
+                                               is_return_type));
+
+                struct DataTypeSymbol *dt = infer_expression(self,
+                                                             fun,
+                                                             expr,
+                                                             local_value,
+                                                             local_data_type,
+                                                             NULL,
+                                                             is_return_type);
+
+                // Check if the data type is the same as the defined data type
+                for (Usize i = len__Vec(*array); i--;)
+                    if (!eq__DataTypeSymbol(
+                          ((struct ExprSymbol *)get__Vec(*array, i))->data_type,
+                          dt->value.array->items[0])) {
+                        assert(0 && "error: this expression doens't match with "
+                                    "defined data type in array");
+                        break;
+                    }
+
+                return NEW(ExprSymbolArray, *expr, array, dt);
+            }
+        }
         case ExprKindVariant:
+            if (defined_data_type) {
+                struct ExprSymbol *value = NULL;
+                struct Scope *scope = search_from_access(
+                  self,
+                  expr->value.variant.id,
+                  NEW(Vec, sizeof(struct String)),
+                  (struct SearchContext){ .search_class = false,
+                                          .search_fun = false,
+                                          .search_object = false,
+                                          .search_trait = false,
+                                          .search_type = false,
+                                          .search_value = false,
+                                          .search_variant = true,
+                                          .search_primary_type = false });
+
+                if (expr->value.variant.value) {
+                    value = check_expression(self,
+                                             fun,
+                                             expr->value.variant.value,
+                                             local_value,
+                                             local_data_type,
+                                             NULL,
+                                             is_return_type);
+                }
+            } else {
+            }
+            // return NEW(ExprSymbolVariant, *expr, )
             TODO("check variant");
         case ExprKindTry:
             TODO("check try");
@@ -4884,23 +5100,25 @@ check_expression(struct Typecheck *self,
                                                 .search_value = true,
                                                 .search_trait = false,
                                                 .search_class = false,
-                                                .search_object = false }),
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                       expr_qm_dt);
                 }
             } else {
                 return NEW(ExprSymbolQuestionMark,
                            *expr,
-                           search_from_access(
-                             self,
-                             expr->value.ref,
-                             NEW(Vec, sizeof(struct String)),
-                             (struct SearchContext){ .search_type = false,
-                                                     .search_fun = false,
-                                                     .search_variant = false,
-                                                     .search_value = true,
-                                                     .search_trait = false,
-                                                     .search_class = false,
-                                                     .search_object = false }),
+                           search_from_access(self,
+                                              expr->value.ref,
+                                              NEW(Vec, sizeof(struct String)),
+                                              (struct SearchContext){
+                                                .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                            NEW(DataTypeSymbolOptional,
                                infer_expression(self,
                                                 fun,
@@ -4945,32 +5163,34 @@ check_expression(struct Typecheck *self,
 
                 return NEW(ExprSymbolDereference,
                            *expr,
-                           search_from_access(
-                             self,
-                             expr->value.dereference,
-                             NEW(Vec, sizeof(struct String)),
-                             (struct SearchContext){ .search_type = false,
-                                                     .search_fun = false,
-                                                     .search_variant = false,
-                                                     .search_value = true,
-                                                     .search_trait = false,
-                                                     .search_class = false,
-                                                     .search_object = false }),
+                           search_from_access(self,
+                                              expr->value.dereference,
+                                              NEW(Vec, sizeof(struct String)),
+                                              (struct SearchContext){
+                                                .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                            expr_dereference_dt);
             } else {
                 return NEW(ExprSymbolDereference,
                            *expr,
-                           search_from_access(
-                             self,
-                             expr->value.dereference,
-                             NEW(Vec, sizeof(struct String)),
-                             (struct SearchContext){ .search_type = false,
-                                                     .search_fun = false,
-                                                     .search_variant = false,
-                                                     .search_value = true,
-                                                     .search_trait = false,
-                                                     .search_class = false,
-                                                     .search_object = false }),
+                           search_from_access(self,
+                                              expr->value.dereference,
+                                              NEW(Vec, sizeof(struct String)),
+                                              (struct SearchContext){
+                                                .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                            infer_expression(self,
                                             fun,
                                             expr,
@@ -5009,7 +5229,8 @@ check_expression(struct Typecheck *self,
                                                 .search_value = true,
                                                 .search_trait = false,
                                                 .search_class = false,
-                                                .search_object = false }),
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                       expr_dt);
                 } else {
                     assert(0 && "error: expected Ref data type");
@@ -5017,17 +5238,18 @@ check_expression(struct Typecheck *self,
             else {
                 return NEW(ExprSymbolRef,
                            *expr,
-                           search_from_access(
-                             self,
-                             expr->value.ref,
-                             NEW(Vec, sizeof(struct String)),
-                             (struct SearchContext){ .search_type = false,
-                                                     .search_fun = false,
-                                                     .search_variant = false,
-                                                     .search_value = true,
-                                                     .search_trait = false,
-                                                     .search_class = false,
-                                                     .search_object = false }),
+                           search_from_access(self,
+                                              expr->value.ref,
+                                              NEW(Vec, sizeof(struct String)),
+                                              (struct SearchContext){
+                                                .search_type = false,
+                                                .search_fun = false,
+                                                .search_variant = false,
+                                                .search_value = true,
+                                                .search_trait = false,
+                                                .search_class = false,
+                                                .search_object = false,
+                                                .search_primary_type = false }),
                            NEW(DataTypeSymbolRef,
                                infer_expression(self,
                                                 fun,
@@ -5571,34 +5793,38 @@ check_expression(struct Typecheck *self,
             if (expr->value.variable.data_type) {
                 switch (expr->value.variable.data_type->kind) {
                     case DataTypeKindCustom:
-                        defined_data_type_expr_variable = check_data_type(
-                          self,
-                          expr->loc,
-                          expr->value.variable.data_type,
-                          local_data_type,
-                          NULL,
-                          (struct SearchContext){ .search_type = true,
-                                                  .search_fun = false,
-                                                  .search_variant = false,
-                                                  .search_value = false,
-                                                  .search_trait = true,
-                                                  .search_class = true,
-                                                  .search_object = true });
+                        defined_data_type_expr_variable =
+                          check_data_type(self,
+                                          expr->loc,
+                                          expr->value.variable.data_type,
+                                          local_data_type,
+                                          NULL,
+                                          (struct SearchContext){
+                                            .search_type = true,
+                                            .search_fun = false,
+                                            .search_variant = false,
+                                            .search_value = false,
+                                            .search_trait = true,
+                                            .search_class = true,
+                                            .search_object = true,
+                                            .search_primary_type = false });
                         break;
                     default:
-                        defined_data_type_expr_variable = check_data_type(
-                          self,
-                          expr->loc,
-                          expr->value.variable.data_type,
-                          local_data_type,
-                          NULL,
-                          (struct SearchContext){ .search_type = false,
-                                                  .search_fun = false,
-                                                  .search_variant = false,
-                                                  .search_value = false,
-                                                  .search_trait = false,
-                                                  .search_class = false,
-                                                  .search_object = false });
+                        defined_data_type_expr_variable =
+                          check_data_type(self,
+                                          expr->loc,
+                                          expr->value.variable.data_type,
+                                          local_data_type,
+                                          NULL,
+                                          (struct SearchContext){
+                                            .search_type = false,
+                                            .search_fun = false,
+                                            .search_variant = false,
+                                            .search_value = false,
+                                            .search_trait = false,
+                                            .search_class = false,
+                                            .search_object = false,
+                                            .search_primary_type = false });
                         break;
                 }
             }

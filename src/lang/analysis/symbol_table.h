@@ -400,6 +400,7 @@ typedef struct FunParamSymbol
     struct Tuple *param_data_type; // struct Tuple<struct DataTypeSymbol*,
                                    // struct Location&>*
     struct Location loc;
+    bool default_defined_data_type;
 
     union
     {
@@ -457,8 +458,8 @@ __free__FunSymbol(struct FunSymbol *self);
 
 typedef struct ConstantSymbol
 {
-    struct String *name;        // struct String&
-    struct DataType *data_type; // struct DataType&
+    struct String *name;              // struct String&
+    struct DataTypeSymbol *data_type; // struct DataTypeSymbol*
     struct ExprSymbol *expr_symbol;
     struct Scope *scope;        // struct Scope&
     struct Decl *constant_decl; // struct Decl&

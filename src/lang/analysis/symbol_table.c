@@ -307,9 +307,8 @@ eq__DataTypeSymbol(struct DataTypeSymbol *self, struct DataTypeSymbol *y)
                     return false;
             } else
                 return false;
-        default:
-            UNREACHABLE(
-              "impossible to define in input CompilerDefined data type");
+        case DataTypeKindCompilerDefined:
+            return true;
     }
 }
 
@@ -1013,6 +1012,7 @@ __new__FunParamSymbol(struct FunParam *param)
     self->kind = param->kind;
     self->param_data_type = NULL;
     self->loc = param->loc;
+    self->default_defined_data_type = param->param_data_type ? true : false;
     self->name = param->name;
     self->default_ = NULL;
     return self;
@@ -1086,7 +1086,7 @@ __new__ConstantSymbol(struct Decl *constant_decl)
 {
     struct ConstantSymbol *self = malloc(sizeof(struct ConstantSymbol));
     self->name = constant_decl->value.constant->name;
-    self->data_type = constant_decl->value.constant->data_type;
+    self->data_type = NULL;
     self->expr_symbol = NULL;
     self->scope = NULL;
     self->constant_decl = constant_decl;
@@ -1098,6 +1098,7 @@ void
 __free__ConstantSymbol(struct ConstantSymbol *self)
 {
     FREE(ExprSymbolAll, self->expr_symbol);
+    FREE(DataTypeSymbolAll, self->data_type);
     FREE(Scope, self->scope);
     free(self);
 }
