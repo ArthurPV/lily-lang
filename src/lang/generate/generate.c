@@ -85,6 +85,7 @@ write_on_file__Generate(struct Generate self)
                  exe);
 
         system(command);
+        free(command);
     }
 #endif
 #ifdef INSTALL
@@ -95,6 +96,7 @@ write_on_file__Generate(struct Generate self)
 #endif
 
     free(fw);
+    free(exe);
 }
 
 void
