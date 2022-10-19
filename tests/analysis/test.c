@@ -95,6 +95,53 @@ main()
     CASE(expr, check if, test_expr_if);
     CASE(expr, check block, test_expr_block);
 
+    CASE(global_access, check global_access in module, test_global_access_in_module);
+    CASE(global_access, check global access in class, test_global_access_in_class);
+    CASE(global_access, check global access in function, test_global_access_in_function);
+
+    CASE(identifier_access, check identifier_access in scope, test_identifier_access_in_scope);
+    CASE(identifier_access, check identifier_access in global, test_identifier_access_in_global);
+
+    CASE(import, check import builtin, test_import_builtin);
+    CASE(import, check import core, test_import_core);
+    CASE(import, check import file, test_import_file);
+    CASE(import, check import std, test_import_std);
+    CASE(import, check import url, test_import_url);
+    CASE(import, check import in public, test_import_in_public);
+    CASE(import, check import with as, test_import_with_as);
+
+    CASE(module, check module scope, test_module_scope);
+    CASE(module, check module in public, test_module_in_public);
+
+    CASE(object, check object record, test_object_record);;
+    CASE(object, check object enum, test_object_enum);
+    CASE(object, check attached function to object, test_attached_function_to_object);
+
+    CASE(self_access, check self_access in class, test_self_access_in_class);
+    CASE(self_access, check self_access in class with inheritance, test_self_access_in_class_with_inheritance);
+    CASE(self_access, check self_access in record object, test_self_access_in_record_object);
+    CASE(self_access, check self access in enum object, test_self_access_in_enum_object);
+
+    CASE(stmt, check stmt return, test_stmt_return);
+    CASE(stmt, check stmt if, test_stmt_if);
+    CASE(stmt, check stmt await, test_stmt_await);
+    CASE(stmt, check stmt try, test_stmt_try);
+    CASE(stmt, check stmt match, test_stmt_match);
+    CASE(stmt, check stmt while, test_stmt_while);
+    CASE(stmt, check stmt for, test_stmt_for);
+    CASE(stmt, check stmt next, test_stmt_next);
+    CASE(stmt, check stmt break, test_stmt_break);
+    CASE(stmt, check stmt import, test_stmt_import);
+
+    CASE(tag, simple test, test_tag);
+
+    CASE(trait, check trait generic param, test_trait_generic_param);
+    CASE(trait, check trati inheritance, test_trait_inheritance);
+
+    CASE(type, simple test, test_type);
+
+    CASE(variable, check variable data type, test_variable_data_type);
+    
     SUITE(t, fun);
     SUITE(t, class);
     SUITE(t, enum_);
