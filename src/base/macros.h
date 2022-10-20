@@ -38,6 +38,8 @@
 #define LOCAL
 #undef LOCAL
 
+#define CAST(expr, dt) ((dt)expr)
+
 #define UNREACHABLE(msg)                                             \
     {                                                                \
         println("UNREACHABLE: %s (%s:%d)", msg, __FILE__, __LINE__); \

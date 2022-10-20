@@ -1220,48 +1220,48 @@ align_location(struct Scanner *self)
     self->loc.e_col += 3;
 }
 
-#define GET_TOKENS()                                                     \
-    struct Vec *tokens = NEW(Vec, sizeof(struct Token));                 \
-    while (self->src->pos < len__String(*self->src->file.content) &&     \
-           self->src->c != (char *)'}') {                                \
-        skip_space(self);                                                \
-                                                                         \
-        if (self->src->pos >= len__String(*self->src->file.content) - 1) \
-            break;                                                       \
-                                                                         \
-        if (self->src->c == (char *)'{') {                               \
-            assert(0 && "error");                                        \
-            break;                                                       \
-        }                                                                \
-                                                                         \
-        struct Result *tok = get_token(self);                            \
-                                                                         \
-        if (is_err__Result(*tok))                                        \
-            return tok;                                                  \
-                                                                         \
-        struct Token *token_ok = get_ok__Result(*tok);                   \
-                                                                         \
-        end_token(self);                                                 \
-        next_char_by_token(self, *token_ok);                             \
-                                                                         \
-        if (token_ok->loc == NULL) {                                     \
-            struct Location *copy = copy__Location(&self->loc);          \
-                                                                         \
-            token_ok->loc = copy;                                        \
-        }                                                                \
-                                                                         \
-        if (token_ok->kind == TokenKindRParen ||                         \
-            token_ok->kind == TokenKindRHook) {                          \
-            for (Usize i = 0;                                            \
-                 i < len__Vec(*self->tokens) &&                          \
-                 ((struct Token *)get__Vec(*self->tokens, i))->kind !=   \
-                   TokenKindDocComment;) {                               \
-                push__Vec(tokens, shift__Vec(self->tokens));             \
-            }                                                            \
-        }                                                                \
-                                                                         \
-        push__Vec(tokens, token_ok);                                     \
-        FREE(Result, tok);                                               \
+#define GET_TOKENS()                                                       \
+    struct Vec *tokens = NEW(Vec, sizeof(struct Token));                   \
+    while (self->src->pos < len__String(*self->src->file.content) &&       \
+           self->src->c != (char *)'}') {                                  \
+        skip_space(self);                                                  \
+                                                                           \
+        if (self->src->pos >= len__String(*self->src->file.content) - 1)   \
+            break;                                                         \
+                                                                           \
+        if (self->src->c == (char *)'{') {                                 \
+            assert(0 && "error");                                          \
+            break;                                                         \
+        }                                                                  \
+                                                                           \
+        struct Result *tok = get_token(self);                              \
+                                                                           \
+        if (is_err__Result(*tok))                                          \
+            return tok;                                                    \
+                                                                           \
+        struct Token *token_ok = get_ok__Result(*tok);                     \
+                                                                           \
+        end_token(self);                                                   \
+        next_char_by_token(self, *token_ok);                               \
+                                                                           \
+        if (token_ok->loc == NULL) {                                       \
+            struct Location *copy = copy__Location(&self->loc);            \
+                                                                           \
+            token_ok->loc = copy;                                          \
+        }                                                                  \
+                                                                           \
+        if (token_ok->kind == TokenKindRParen ||                           \
+            token_ok->kind == TokenKindRHook) {                            \
+            for (Usize i = 0;                                              \
+                 i < len__Vec(*self->tokens) &&                            \
+                 CAST(get__Vec(*self->tokens, i), struct Token *)->kind != \
+                   TokenKindDocComment;) {                                 \
+                push__Vec(tokens, shift__Vec(self->tokens));               \
+            }                                                              \
+        }                                                                  \
+                                                                           \
+        push__Vec(tokens, token_ok);                                       \
+        FREE(Result, tok);                                                 \
     }
 
 #define GET_STRING(s)                                                    \

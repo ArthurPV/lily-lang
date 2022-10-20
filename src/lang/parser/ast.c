@@ -180,23 +180,23 @@ to_String__DataType(struct DataType self)
             struct String *lambda_string = NEW(String);
 
             push_str__String(lambda_string, "|");
-            append__String(
-              lambda_string,
-              to_String__DataType(*(struct DataType *)get__Vec(*params, 0)),
-              true);
+            append__String(lambda_string,
+                           to_String__DataType(
+                             *CAST(get__Vec(*params, 0), struct DataType *)),
+                           true);
 
             for (Usize i = 1; i < len__Vec(*params); i++) {
                 push_str__String(lambda_string, " -> ");
-                append__String(
-                  lambda_string,
-                  to_String__DataType(*(struct DataType *)get__Vec(*params, i)),
-                  true);
+                append__String(lambda_string,
+                               to_String__DataType(*CAST(get__Vec(*params, i),
+                                                         struct DataType *)),
+                               true);
             }
 
             push_str__String(lambda_string, " -> ");
             append__String(lambda_string,
-                           to_String__DataType(
-                             *(struct DataType *)self.value.lambda->items[1]),
+                           to_String__DataType(*CAST(
+                             self.value.lambda->items[1], struct DataType *)),
                            true);
             push_str__String(lambda_string, "|");
 
@@ -227,17 +227,18 @@ to_String__DataType(struct DataType self)
             struct String *tuple_string = NEW(String);
 
             push_str__String(tuple_string, "(");
-            append__String(tuple_string,
-                           to_String__DataType(*(struct DataType *)get__Vec(
-                             *self.value.tuple, 0)),
-                           true);
+            append__String(
+              tuple_string,
+              to_String__DataType(
+                *CAST(get__Vec(*self.value.tuple, 0), struct DataType *)),
+              true);
 
             for (Usize i = 1; i < len__Vec(*self.value.tuple); i++)
                 append__String(
                   tuple_string,
                   format(", {Sr}",
-                         to_String__DataType(
-                           *(struct DataType *)get__Vec(*self.value.tuple, i))),
+                         to_String__DataType(*CAST(
+                           get__Vec(*self.value.tuple, i), struct DataType *))),
                   true);
 
             push_str__String(tuple_string, ")");
@@ -253,14 +254,16 @@ to_String__DataType(struct DataType self)
                 for (Usize i = 0; i < len__Vec(*names) - 1; i++)
                     append__String(
                       custom_string,
-                      format("{S}.", (struct String *)get__Vec(*names, i)),
+                      format("{S}.",
+                             CAST(get__Vec(*names, i), struct String *)),
                       true);
 
-                append__String(custom_string,
-                               format("{S}",
-                                      (struct String *)get__Vec(
-                                        *names, len__Vec(*names) - 1)),
-                               true);
+                append__String(
+                  custom_string,
+                  format("{S}",
+                         CAST(get__Vec(*names, len__Vec(*names) - 1),
+                              struct String *)),
+                  true);
             }
 
             if (self.value.custom->items[1]) {
@@ -268,15 +271,16 @@ to_String__DataType(struct DataType self)
 
                 push_str__String(custom_string, "[");
                 append__String(custom_string,
-                               to_String__DataType(
-                                 *(struct DataType *)get__Vec(*generic, 0)),
+                               to_String__DataType(*CAST(get__Vec(*generic, 0),
+                                                         struct DataType *)),
                                true);
 
                 for (Usize i = 1; i < len__Vec(*generic); i++)
                     append__String(
                       custom_string,
                       format(", {Sr}",
-                             *(struct DataType *)get__Vec(*generic, i)),
+                             to_String__DataType(*CAST(get__Vec(*generic, i),
+                                                       struct DataType *))),
                       true);
 
                 push_str__String(custom_string, "]");
@@ -344,10 +348,10 @@ void
 __free__DataTypeLambda(struct DataType *self)
 {
     if (self->value.lambda->items[0]) {
-        struct Vec *temporary = (struct Vec *)self->value.lambda->items[0];
+        struct Vec *temporary = self->value.lambda->items[0];
 
         for (Usize i = len__Vec(*temporary); i--;)
-            FREE(DataTypeAll, (struct DataType *)get__Vec(*temporary, i));
+            FREE(DataTypeAll, get__Vec(*temporary, i));
 
         FREE(Vec, temporary);
     }
@@ -361,7 +365,7 @@ void
 __free__DataTypeArray(struct DataType *self)
 {
     if (self->value.array->items[0])
-        FREE(DataTypeAll, (struct DataType *)self->value.array->items[0]);
+        FREE(DataTypeAll, self->value.array->items[0]);
 
     FREE(Tuple, self->value.array);
     free(self);
@@ -373,10 +377,12 @@ __free__DataTypeCustom(struct DataType *self)
     FREE(Vec, self->value.custom->items[0]);
 
     if (self->value.custom->items[1]) {
-        for (Usize i = len__Vec(*(struct Vec *)self->value.custom->items[1]);
+        for (Usize i =
+               len__Vec(*CAST(self->value.custom->items[1], struct Vec *));
              i--;)
-            FREE(DataTypeAll,
-                 get__Vec(*(struct Vec *)self->value.custom->items[1], i));
+            FREE(
+              DataTypeAll,
+              get__Vec(*CAST(self->value.custom->items[1], struct Vec *), i));
 
         FREE(Vec, self->value.custom->items[1]);
     }
@@ -479,10 +485,10 @@ to_String__Generic(struct Generic self)
             return format(
               "{S}: {Sr}",
               self.value.restricted_data_type->items[0],
-              to_String__DataType(
-                *(struct DataType *)((struct Tuple *)self.value
-                                       .restricted_data_type->items[1])
-                   ->items[0]));
+              to_String__DataType(*CAST(
+                CAST(self.value.restricted_data_type->items[1], struct Tuple *)
+                  ->items[0],
+                struct DataType *)));
         default:
             UNREACHABLE("unknown generic kind");
     }
@@ -491,11 +497,11 @@ to_String__Generic(struct Generic self)
 void
 __free__GenericRestrictedDataType(struct Generic *self)
 {
-    FREE(
-      DataTypeAll,
-      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[0]);
-    free(
-      ((struct Tuple *)self->value.restricted_data_type->items[1])->items[1]);
+    FREE(DataTypeAll,
+         CAST(self->value.restricted_data_type->items[1], struct Tuple *)
+           ->items[0]);
+    free(CAST(self->value.restricted_data_type->items[1], struct Tuple *)
+           ->items[1]);
     FREE(Tuple, self->value.restricted_data_type->items[1]);
     FREE(Tuple, self->value.restricted_data_type);
     free(self);
@@ -1054,21 +1060,21 @@ to_String__FunCall(struct FunCall self)
         for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
             append__String(
               s,
-              format("{Sr}, ",
-                     to_String__FunParamCall(
-                       *((struct FunParamCall *)((struct Tuple *)get__Vec(
-                                                   *self.params, i))
-                           ->items[0]))),
+              format(
+                "{Sr}, ",
+                to_String__FunParamCall(*CAST(
+                  CAST(get__Vec(*self.params, i), struct Tuple *)->items[0],
+                  struct FunParamCall *))),
               true);
 
         append__String(
           s,
           format("{Sr})",
-                 to_String__FunParamCall(
-                   *((struct FunParamCall *)((struct Tuple *)get__Vec(
-                                               *self.params,
-                                               len__Vec(*self.params) - 1))
-                       ->items[0]))),
+                 to_String__FunParamCall(*CAST(
+                   CAST(get__Vec(*self.params, len__Vec(*self.params) - 1),
+                        struct Tuple *)
+                     ->items[0],
+                   struct FunParamCall *))),
           true);
     } else
         push_str__String(s, ")");
@@ -1083,9 +1089,9 @@ __free__FunCall(struct FunCall self)
 
     for (Usize i = len__Vec(*self.params); i--;) {
         FREE(FunParamCallAll,
-             ((struct Tuple *)get__Vec(*self.params, i))->items[0]);
-        free(((struct Tuple *)get__Vec(*self.params, i))->items[1]);
-        FREE(Tuple, ((struct Tuple *)get__Vec(*self.params, i)));
+             CAST(get__Vec(*self.params, i), struct Tuple *)->items[0]);
+        free(CAST(get__Vec(*self.params, i), struct Tuple *)->items[1]);
+        FREE(Tuple, CAST(get__Vec(*self.params, i), struct Tuple *));
     }
 
     FREE(Vec, self.params);
@@ -1104,9 +1110,10 @@ struct String *
 to_String__FieldCall(struct FieldCall self)
 {
     if (is_Some__Option(self.value))
-        return format("{S} := {Sr}",
-                      self.name,
-                      to_String__Expr(*(struct Expr *)get__Option(self.value)));
+        return format(
+          "{S} := {Sr}",
+          self.name,
+          to_String__Expr(*CAST(get__Option(self.value), struct Expr *)));
     else
         return format("{S}", self.name);
 }
@@ -1137,22 +1144,23 @@ to_String__RecordCall(struct RecordCall self)
     append__String(s, format("{Sr} {{ ", to_String__Expr(*self.id)), true);
 
     for (Usize i = 0; i < len__Vec(*self.fields) - 1; i++)
-        append__String(s,
-                       format("{Sr}, ",
-                              to_String__FieldCall(
-                                *(struct FieldCall *)((struct Tuple *)get__Vec(
-                                                        *self.fields, i))
-                                   ->items[0])),
-                       true);
+        append__String(
+          s,
+          format("{Sr}, ",
+                 to_String__FieldCall(*CAST(
+                   CAST(get__Vec(*self.fields, i), struct Tuple *)->items[0],
+                   struct FieldCall *))),
+          true);
 
-    append__String(s,
-                   format("{Sr}}",
-                          to_String__FieldCall(
-                            *(struct FieldCall *)((struct Tuple *)get__Vec(
-                                                    *self.fields,
-                                                    len__Vec(*self.fields) - 1))
-                               ->items[0])),
-                   true);
+    append__String(
+      s,
+      format("{Sr}}",
+             to_String__FieldCall(
+               *CAST(CAST(get__Vec(*self.fields, len__Vec(*self.fields) - 1),
+                          struct Tuple *)
+                       ->items[0],
+                     struct FieldCall *))),
+      true);
 
     return s;
 }
@@ -1163,9 +1171,10 @@ __free__RecordCall(struct RecordCall self)
     FREE(ExprAll, self.id);
 
     for (Usize i = len__Vec(*self.fields); i--;) {
-        FREE(FieldCall, ((struct Tuple *)get__Vec(*self.fields, i))->items[0]);
-        free(((struct Tuple *)get__Vec(*self.fields, i))->items[1]);
-        FREE(Tuple, ((struct Tuple *)get__Vec(*self.fields, i)));
+        FREE(FieldCall,
+             CAST(get__Vec(*self.fields, i), struct Tuple *)->items[0]);
+        free(CAST(get__Vec(*self.fields, i), struct Tuple *)->items[1]);
+        FREE(Tuple, CAST(get__Vec(*self.fields, i), struct Tuple *));
     }
 
     FREE(Vec, self.fields);
@@ -1179,11 +1188,11 @@ to_String__ArrayAccess(struct ArrayAccess self)
     append__String(s, format("{Sr}", to_String__Expr(*self.id)), true);
 
     for (Usize i = 0; i < len__Vec(*self.access); i++)
-        append__String(
-          s,
-          format("[{Sr}]",
-                 to_String__Expr(*(struct Expr *)get__Vec(*self.access, i))),
-          true);
+        append__String(s,
+                       format("[{Sr}]",
+                              to_String__Expr(*CAST(get__Vec(*self.access, i),
+                                                    struct Expr *))),
+                       true);
 
     return s;
 }
@@ -1207,11 +1216,11 @@ to_String__TupleAccess(struct TupleAccess self)
     append__String(s, format("{Sr}", to_String__Expr(*self.id)), true);
 
     for (Usize i = 0; i < len__Vec(*self.access); i++)
-        append__String(
-          s,
-          format("#{Sr}",
-                 to_String__Expr(*(struct Expr *)get__Vec(*self.access, i))),
-          true);
+        append__String(s,
+                       format("#{Sr}",
+                              to_String__Expr(*CAST(get__Vec(*self.access, i),
+                                                    struct Expr *))),
+                       true);
 
     return s;
 }
@@ -1252,14 +1261,15 @@ to_String__Lambda(struct Lambda self)
     for (Usize i = 0; i < len__Vec(*self.params) - 1; i++)
         append__String(s,
                        format("{Sr}, ",
-                              to_String__FunParam(
-                                *(struct FunParam *)get__Vec(*self.params, i))),
+                              to_String__FunParam(*CAST(
+                                get__Vec(*self.params, i), struct FunParam *))),
                        true);
 
     append__String(s,
                    format("{Sr})",
-                          to_String__FunParam(*(struct FunParam *)get__Vec(
-                            *self.params, len__Vec(*self.params) - 1))),
+                          to_String__FunParam(*CAST(
+                            get__Vec(*self.params, len__Vec(*self.params) - 1),
+                            struct FunParam *))),
                    true);
 
     // 2. Dump return data type
@@ -1273,11 +1283,12 @@ to_String__Lambda(struct Lambda self)
 
     // 3. Dump body
     for (Usize i = 0; i < len__Vec(*self.body); i++)
-        append__String(s,
-                       format("{Sr}",
-                              to_String__FunBodyItem(*(
-                                struct FunBodyItem *)get__Vec(*self.body, i))),
-                       true);
+        append__String(
+          s,
+          format("{Sr}",
+                 to_String__FunBodyItem(
+                   *CAST(get__Vec(*self.body, i), struct FunBodyItem *))),
+          true);
 
     if (len__Vec(*self.body) == 1)
         pop__String(s);
@@ -1633,18 +1644,21 @@ to_String__Expr(struct Expr self)
 
             for (Usize i = 0; i < len__Vec(*self.value.identifier_access) - 1;
                  i++)
-                append__String(s,
-                               format("{Sr}.",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.identifier_access, i))),
-                               true);
+                append__String(
+                  s,
+                  format("{Sr}.",
+                         to_String__Expr(
+                           *CAST(get__Vec(*self.value.identifier_access, i),
+                                 struct Expr *))),
+                  true);
 
             append__String(
               s,
               format("{Sr}",
-                     to_String__Expr(*(struct Expr *)get__Vec(
-                       *self.value.identifier_access,
-                       len__Vec(*self.value.identifier_access) - 1))),
+                     to_String__Expr(*CAST(
+                       get__Vec(*self.value.identifier_access,
+                                len__Vec(*self.value.identifier_access) - 1),
+                       struct Expr *))),
               true);
 
             return s;
@@ -1657,16 +1671,19 @@ to_String__Expr(struct Expr self)
             for (Usize i = 0; i < len__Vec(*self.value.global_access) - 1; i++)
                 append__String(s,
                                format("{Sr}.",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.global_access, i))),
+                                      to_String__Expr(*CAST(
+                                        get__Vec(*self.value.global_access, i),
+                                        struct Expr *))),
                                true);
 
-            append__String(s,
-                           format("{Sr}",
-                                  to_String__Expr(*(struct Expr *)get__Vec(
-                                    *self.value.global_access,
-                                    len__Vec(*self.value.global_access) - 1))),
-                           true);
+            append__String(
+              s,
+              format("{Sr}",
+                     to_String__Expr(
+                       *CAST(get__Vec(*self.value.global_access,
+                                      len__Vec(*self.value.global_access) - 1),
+                             struct Expr *))),
+              true);
 
             return s;
         }
@@ -1678,18 +1695,21 @@ to_String__Expr(struct Expr self)
             for (Usize i = 0;
                  i < len__Vec(*self.value.property_access_init) - 1;
                  i++)
-                append__String(s,
-                               format("{Sr}.",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.property_access_init, i))),
-                               true);
+                append__String(
+                  s,
+                  format("{Sr}.",
+                         to_String__Expr(
+                           *CAST(get__Vec(*self.value.property_access_init, i),
+                                 struct Expr *))),
+                  true);
 
             append__String(
               s,
               format("{Sr}",
-                     to_String__Expr(*(struct Expr *)get__Vec(
-                       *self.value.property_access_init,
-                       len__Vec(*self.value.property_access_init) - 1))),
+                     to_String__Expr(*CAST(
+                       get__Vec(*self.value.property_access_init,
+                                len__Vec(*self.value.property_access_init) - 1),
+                       struct Expr *))),
               true);
 
             return s;
@@ -1710,16 +1730,18 @@ to_String__Expr(struct Expr self)
                     append__String(
                       s,
                       format("{Sr}, ",
-                             to_String__Expr(
-                               *(struct Expr *)get__Vec(*self.value.array, i))),
+                             to_String__Expr(*CAST(
+                               get__Vec(*self.value.array, i), struct Expr *))),
                       true);
 
-                append__String(s,
-                               format("{Sr}]",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.array,
-                                        len__Vec(*self.value.array) - 1))),
-                               true);
+                append__String(
+                  s,
+                  format("{Sr}]",
+                         to_String__Expr(
+                           *CAST(get__Vec(*self.value.array,
+                                          len__Vec(*self.value.array) - 1),
+                                 struct Expr *))),
+                  true);
             } else
                 push_str__String(s, "]");
 
@@ -1735,16 +1757,18 @@ to_String__Expr(struct Expr self)
                     append__String(
                       s,
                       format("{Sr}, ",
-                             to_String__Expr(
-                               *(struct Expr *)get__Vec(*self.value.tuple, i))),
+                             to_String__Expr(*CAST(
+                               get__Vec(*self.value.tuple, i), struct Expr *))),
                       true);
 
-                append__String(s,
-                               format("{Sr})",
-                                      to_String__Expr(*(struct Expr *)get__Vec(
-                                        *self.value.tuple,
-                                        len__Vec(*self.value.tuple) - 1))),
-                               true);
+                append__String(
+                  s,
+                  format("{Sr})",
+                         to_String__Expr(
+                           *CAST(get__Vec(*self.value.tuple,
+                                          len__Vec(*self.value.tuple) - 1),
+                                 struct Expr *))),
+                  true);
             } else
                 push_str__String(s, ")");
 
@@ -1766,8 +1790,8 @@ to_String__Expr(struct Expr self)
             for (Usize i = 0; i < len__Vec(*self.value.block); i++)
                 append__String(
                   s,
-                  to_String__FunBodyItem(
-                    *(struct FunBodyItem *)get__Vec(*self.value.block, i)),
+                  to_String__FunBodyItem(*CAST(get__Vec(*self.value.block, i),
+                                               struct FunBodyItem *)),
                   true);
 
             --current_tab_size;
@@ -2112,7 +2136,7 @@ to_String__IfCond(struct IfCond self)
           s,
           format("{Sr}",
                  to_String__FunBodyItem(
-                   *(struct FunBodyItem *)get__Vec(*self.if_->body, i))),
+                   *CAST(get__Vec(*self.if_->body, i), struct FunBodyItem *))),
           true);
 
     --current_tab_size;
@@ -2123,21 +2147,22 @@ to_String__IfCond(struct IfCond self)
         for (Usize i = 0; i < len__Vec(*self.elif); i++) {
             append__String(
               s,
-              format("{Sr}elif {Sr} do\n",
-                     repeat__String("\t", current_tab_size - 1),
-                     to_String__Expr(
-                       *((struct IfBranch *)get__Vec(*self.elif, i))->cond)),
+              format(
+                "{Sr}elif {Sr} do\n",
+                repeat__String("\t", current_tab_size - 1),
+                to_String__Expr(
+                  *(CAST(get__Vec(*self.elif, i), struct IfBranch *))->cond)),
               true);
 
             struct Vec *temp_body =
-              ((struct IfBranch *)get__Vec(*self.elif, i))->body;
+              CAST(get__Vec(*self.elif, i), struct IfBranch *)->body;
 
             for (Usize j = 0; j < len__Vec(*temp_body); j++)
                 append__String(
                   s,
                   format("{Sr}",
-                         to_String__FunBodyItem(
-                           *(struct FunBodyItem *)get__Vec(*temp_body, j))),
+                         to_String__FunBodyItem(*CAST(get__Vec(*temp_body, j),
+                                                      struct FunBodyItem *))),
                   true);
         }
 
@@ -2157,7 +2182,7 @@ to_String__IfCond(struct IfCond self)
               s,
               format("{Sr}",
                      to_String__FunBodyItem(
-                       *(struct FunBodyItem *)get__Vec(*self.else_, i))),
+                       *CAST(get__Vec(*self.else_, i), struct FunBodyItem *))),
               true);
 
         --current_tab_size;
@@ -2217,7 +2242,7 @@ to_String__TryStmt(struct TryStmt self)
           s,
           format("{Sr}\n",
                  to_String__FunBodyItem(
-                   *(struct FunBodyItem *)get__Vec(*self.try_body, i))),
+                   *CAST(get__Vec(*self.try_body, i), struct FunBodyItem *))),
           true);
 
     --current_tab_size;
@@ -2235,8 +2260,8 @@ to_String__TryStmt(struct TryStmt self)
             append__String(
               s,
               format("{Sr}\n",
-                     to_String__FunBodyItem(
-                       *(struct FunBodyItem *)get__Vec(*self.catch_body, i))),
+                     to_String__FunBodyItem(*CAST(get__Vec(*self.catch_body, i),
+                                                  struct FunBodyItem *))),
               true);
 
         --current_tab_size;
@@ -2289,11 +2314,12 @@ to_String__WhileStmt(struct WhileStmt self)
       s, format("while {Sr} do\n", to_String__Expr(*self.cond)), true);
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
-        append__String(s,
-                       format("\t{Sr}\n",
-                              to_String__FunBodyItem(*(
-                                struct FunBodyItem *)get__Vec(*self.body, i))),
-                       true);
+        append__String(
+          s,
+          format("\t{Sr}\n",
+                 to_String__FunBodyItem(
+                   *CAST(get__Vec(*self.body, i), struct FunBodyItem *))),
+          true);
 
     append__String(
       s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
@@ -2369,8 +2395,9 @@ to_String__ForStmtExpr(struct ForStmtExpr self)
         case ForStmtExprKindRange:
             return format(
               "for {Sr} in {Sr} do\n",
-              to_String__Expr(*(struct Expr *)self.value.range->items[0]),
-              to_String__Expr(*(struct Expr *)self.value.range->items[1]));
+              to_String__Expr(*CAST(self.value.range->items[0], struct Expr *)),
+              to_String__Expr(
+                *CAST(self.value.range->items[1], struct Expr *)));
         case ForStmtExprKindTraditional: {
             struct String *s = NEW(String);
 
@@ -2459,11 +2486,12 @@ to_String__ForStmt(struct ForStmt self)
     append__String(s, to_String__ForStmtExpr(*self.expr), true);
 
     for (Usize i = 0; i < len__Vec(*self.body); i++)
-        append__String(s,
-                       format("\t{Sr}",
-                              to_String__FunBodyItem(*(
-                                struct FunBodyItem *)get__Vec(*self.body, i))),
-                       true);
+        append__String(
+          s,
+          format("\t{Sr}",
+                 to_String__FunBodyItem(
+                   *CAST(get__Vec(*self.body, i), struct FunBodyItem *))),
+          true);
 
     append__String(
       s, format("{Sr}end", repeat__String("\t", current_tab_size)), true);
@@ -2536,16 +2564,16 @@ to_String__ImportStmtValue(struct ImportStmtValue self)
                     append__String(
                       s,
                       format("{Sr}.",
-                             to_String__ImportStmtValue(
-                               *(struct ImportStmtValue *)get__Vec(*temp, j))),
+                             to_String__ImportStmtValue(*CAST(
+                               get__Vec(*temp, j), struct ImportStmtValue *))),
                       true);
             }
 
                 append__String(s,
                                format("{Sr}",
-                                      to_String__ImportStmtValue(
-                                        *(struct ImportStmtValue *)get__Vec(
-                                          *temp, len__Vec(*temp) - 1))),
+                                      to_String__ImportStmtValue(*CAST(
+                                        get__Vec(*temp, len__Vec(*temp) - 1),
+                                        struct ImportStmtValue *))),
                                true);
 
                 if (!is_last)
@@ -2660,15 +2688,16 @@ to_String__ImportStmt(struct ImportStmt self)
         append__String(
           s,
           format("{Sr}.",
-                 to_String__ImportStmtValue(
-                   *(struct ImportStmtValue *)get__Vec(*self.import_value, i))),
+                 to_String__ImportStmtValue(*CAST(
+                   get__Vec(*self.import_value, i), struct ImportStmtValue *))),
           true);
 
     append__String(
       s,
       format("{Sr}\"",
-             to_String__ImportStmtValue(*(struct ImportStmtValue *)get__Vec(
-               *self.import_value, len__Vec(*self.import_value) - 1))),
+             to_String__ImportStmtValue(*CAST(
+               get__Vec(*self.import_value, len__Vec(*self.import_value) - 1),
+               struct ImportStmtValue *))),
       true);
 
     if (self.as)
@@ -2997,8 +3026,8 @@ to_String__FunParam(struct FunParam self)
                         "{S}#{S} {Sr} := {Sr}",
                         self.name,
                         self.super_tag.name,
-                        to_String__DataType(
-                          *(struct DataType *)self.param_data_type->items[0]),
+                        to_String__DataType(*CAST(
+                          self.param_data_type->items[0], struct DataType *)),
                         to_String__Expr(*self.value.default_)),
                       true);
                 else
@@ -3007,8 +3036,8 @@ to_String__FunParam(struct FunParam self)
                       format(
                         "{S} {Sr} := {Sr}",
                         self.name,
-                        to_String__DataType(
-                          *(struct DataType *)self.param_data_type->items[0]),
+                        to_String__DataType(*CAST(
+                          self.param_data_type->items[0], struct DataType *)),
                         to_String__Expr(*self.value.default_)),
                       true);
             else if (self.super_tag.name)
@@ -3032,24 +3061,22 @@ to_String__FunParam(struct FunParam self)
 
             if (self.param_data_type)
                 if (self.super_tag.name)
-                    append__String(
-                      s,
-                      format(
-                        "{S}#{S} {Sr}",
-                        self.name,
-                        self.super_tag.name,
-                        to_String__DataType(
-                          *(struct DataType *)self.param_data_type->items[0])),
-                      true);
+                    append__String(s,
+                                   format("{S}#{S} {Sr}",
+                                          self.name,
+                                          self.super_tag.name,
+                                          to_String__DataType(*CAST(
+                                            self.param_data_type->items[0],
+                                            struct DataType *))),
+                                   true);
                 else
-                    append__String(
-                      s,
-                      format(
-                        "{S} {Sr}",
-                        self.name,
-                        to_String__DataType(
-                          *(struct DataType *)self.param_data_type->items[0])),
-                      true);
+                    append__String(s,
+                                   format("{S} {Sr}",
+                                          self.name,
+                                          to_String__DataType(*CAST(
+                                            self.param_data_type->items[0],
+                                            struct DataType *))),
+                                   true);
             else if (self.super_tag.name)
                 append__String(
                   s, format("{S}#{S}", self.name, self.super_tag.name), true);
@@ -3158,20 +3185,20 @@ to_String__FunDecl(struct FunDecl self)
         for (Usize i = 0; i < len__Vec(*self.tags) - 1; i++)
             append__String(
               s,
-              format(
-                "{Sr}, ",
-                to_String__DataType(
-                  *(struct DataType *)((struct Tuple *)get__Vec(*self.tags, i))
-                     ->items[0])),
+              format("{Sr}, ",
+                     to_String__DataType(*CAST(
+                       CAST(get__Vec(*self.tags, i), struct Tuple *)->items[0],
+                       struct DataType *))),
               true);
 
         append__String(
           s,
           format("{Sr})",
                  to_String__DataType(
-                   *(struct DataType *)((struct Tuple *)get__Vec(
-                                          *self.tags, len__Vec(*self.tags) - 1))
-                      ->items[0])),
+                   *CAST(CAST(get__Vec(*self.tags, len__Vec(*self.tags) - 1),
+                              struct Tuple *)
+                           ->items[0],
+                         struct DataType *))),
           true);
     }
 
@@ -3184,16 +3211,17 @@ to_String__FunDecl(struct FunDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     if (self.params) {
@@ -3204,15 +3232,16 @@ to_String__FunDecl(struct FunDecl self)
                 append__String(
                   s,
                   format("{Sr}, ",
-                         to_String__FunParam(
-                           *(struct FunParam *)get__Vec(*self.params, i))),
+                         to_String__FunParam(*CAST(get__Vec(*self.params, i),
+                                                   struct FunParam *))),
                   true);
 
             append__String(
               s,
               format("{Sr})",
-                     to_String__FunParam(*(struct FunParam *)get__Vec(
-                       *self.params, len__Vec(*self.params) - 1))),
+                     to_String__FunParam(
+                       *CAST(get__Vec(*self.params, len__Vec(*self.params) - 1),
+                             struct FunParam *))),
               true);
         } else
             push_str__String(s, ")");
@@ -3223,7 +3252,7 @@ to_String__FunDecl(struct FunDecl self)
           s,
           format(" {Sr} =\n",
                  to_String__DataType(
-                   *(struct DataType *)self.return_type->items[0])),
+                   *CAST(self.return_type->items[0], struct DataType *))),
           true);
     else
         push_str__String(s, " =\n");
@@ -3236,15 +3265,15 @@ to_String__FunDecl(struct FunDecl self)
               s,
               format("{Sr}",
                      to_String__FunBodyItem(
-                       *(struct FunBodyItem *)get__Vec(*self.body, i))),
+                       *CAST(get__Vec(*self.body, i), struct FunBodyItem *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}",
-                 to_String__FunBodyItem(*(struct FunBodyItem *)get__Vec(
-                   *self.body, len__Vec(*self.body) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}",
+                              to_String__FunBodyItem(*CAST(
+                                get__Vec(*self.body, len__Vec(*self.body) - 1),
+                                struct FunBodyItem *))),
+                       true);
 
         --current_tab_size;
     }
@@ -3260,7 +3289,7 @@ __free__FunDecl(struct FunDecl *self)
 {
     if (self->tags) {
         for (Usize i = len__Vec(*self->tags); i--;) {
-            struct Tuple *temp = (struct Tuple *)get__Vec(*self->tags, i);
+            struct Tuple *temp = get__Vec(*self->tags, i);
             FREE(DataTypeAll, temp->items[0]);
             free(temp->items[1]);
             FREE(Tuple, temp);
@@ -3375,8 +3404,8 @@ to_String__ModuleBodyItem(struct ModuleBodyItem self)
             return format("{Sr}\n", to_String__Decl(*self.value.decl));
         case ModuleBodyItemKindImport:
             return format("{Sr}\n",
-                          to_String__ImportStmt(
-                            *(struct ImportStmt *)self.value.import->items[0]));
+                          to_String__ImportStmt(*CAST(
+                            self.value.import->items[0], struct ImportStmt *)));
         case ModuleBodyItemKindInclude:
             TODO("include");
     }
@@ -3447,8 +3476,8 @@ to_String__ModuleDecl(struct ModuleDecl self)
 
         for (Usize i = 0; i < len__Vec(*self.body); i++) {
             append__String(s,
-                           to_String__ModuleBodyItem(
-                             *(struct ModuleBodyItem *)get__Vec(*self.body, i)),
+                           to_String__ModuleBodyItem(*CAST(
+                             get__Vec(*self.body, i), struct ModuleBodyItem *)),
                            true);
         }
 
@@ -3513,16 +3542,17 @@ to_String__AliasDecl(struct AliasDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     append__String(
@@ -3640,16 +3670,17 @@ to_String__RecordDecl(struct RecordDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     push_str__String(s, ": record =\n");
@@ -3662,14 +3693,15 @@ to_String__RecordDecl(struct RecordDecl self)
               s,
               format("{Sr},\n",
                      to_String__FieldRecord(
-                       *(struct FieldRecord *)get__Vec(*self.fields, i))),
+                       *CAST(get__Vec(*self.fields, i), struct FieldRecord *))),
               true);
 
         append__String(
           s,
           format("{Sr}\n",
-                 to_String__FieldRecord(*(struct FieldRecord *)get__Vec(
-                   *self.fields, len__Vec(*self.fields) - 1))),
+                 to_String__FieldRecord(
+                   *CAST(get__Vec(*self.fields, len__Vec(*self.fields) - 1),
+                         struct FieldRecord *))),
           true);
 
         --current_tab_size;
@@ -3776,16 +3808,17 @@ to_String__EnumDecl(struct EnumDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     if (self.type_value) {
@@ -3805,15 +3838,16 @@ to_String__EnumDecl(struct EnumDecl self)
             append__String(
               s,
               format("{Sr},\n",
-                     to_String__VariantEnum(
-                       *(struct VariantEnum *)get__Vec(*self.variants, i))),
+                     to_String__VariantEnum(*CAST(get__Vec(*self.variants, i),
+                                                  struct VariantEnum *))),
               true);
 
         append__String(
           s,
           format("{Sr}\n",
-                 to_String__VariantEnum(*(struct VariantEnum *)get__Vec(
-                   *self.variants, len__Vec(*self.variants) - 1))),
+                 to_String__VariantEnum(
+                   *CAST(get__Vec(*self.variants, len__Vec(*self.variants) - 1),
+                         struct VariantEnum *))),
           true);
 
         --current_tab_size;
@@ -3883,16 +3917,17 @@ to_String__ErrorDecl(struct ErrorDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     if (self.data_type)
@@ -4005,16 +4040,17 @@ to_String__MethodDecl(struct MethodDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     if (self.params) {
@@ -4025,15 +4061,16 @@ to_String__MethodDecl(struct MethodDecl self)
                 append__String(
                   s,
                   format("{Sr}, ",
-                         to_String__FunParam(
-                           *(struct FunParam *)get__Vec(*self.params, i))),
+                         to_String__FunParam(*CAST(get__Vec(*self.params, i),
+                                                   struct FunParam *))),
                   true);
 
             append__String(
               s,
               format("{Sr})",
-                     to_String__FunParam(*(struct FunParam *)get__Vec(
-                       *self.params, len__Vec(*self.params) - 1))),
+                     to_String__FunParam(
+                       *CAST(get__Vec(*self.params, len__Vec(*self.params) - 1),
+                             struct FunParam *))),
               true);
         }
     }
@@ -4052,7 +4089,7 @@ to_String__MethodDecl(struct MethodDecl self)
               s,
               format("{Sr}",
                      to_String__FunBodyItem(
-                       *(struct FunBodyItem *)get__Vec(*self.body, i))),
+                       *CAST(get__Vec(*self.body, i), struct FunBodyItem *))),
               true);
 
         --current_tab_size;
@@ -4209,16 +4246,17 @@ to_String__ClassDecl(struct ClassDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     if (self.inheritance) {
@@ -4228,21 +4266,21 @@ to_String__ClassDecl(struct ClassDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__DataType(
-                       *(struct DataType *)((struct Tuple *)get__Vec(
-                                              *self.inheritance, i))
-                          ->items[0])),
+                     to_String__DataType(*CAST(
+                       CAST(get__Vec(*self.inheritance, i), struct Tuple *)
+                         ->items[0],
+                       struct DataType *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__DataType(
-                   *(struct DataType *)((struct Tuple *)get__Vec(
-                                          *self.inheritance,
-                                          len__Vec(*self.inheritance) - 1))
-                      ->items[0])),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__DataType(*CAST(
+                                CAST(get__Vec(*self.inheritance,
+                                              len__Vec(*self.inheritance) - 1),
+                                     struct Tuple *)
+                                  ->items[0],
+                                struct DataType *))),
+                       true);
     }
 
     if (self.impl) {
@@ -4252,21 +4290,21 @@ to_String__ClassDecl(struct ClassDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__DataType(
-                       *(struct DataType *)((struct Tuple *)get__Vec(
-                                              *self.inheritance, i))
-                          ->items[0])),
+                     to_String__DataType(*CAST(
+                       CAST(get__Vec(*self.inheritance, i), struct Tuple *)
+                         ->items[0],
+                       struct DataType *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__DataType(
-                   *(struct DataType *)((struct Tuple *)get__Vec(
-                                          *self.inheritance,
-                                          len__Vec(*self.inheritance) - 1))
-                      ->items[0])),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__DataType(*CAST(
+                                CAST(get__Vec(*self.inheritance,
+                                              len__Vec(*self.inheritance) - 1),
+                                     struct Tuple *)
+                                  ->items[0],
+                                struct DataType *))),
+                       true);
     }
 
     push_str__String(s, ": class =\n");
@@ -4279,7 +4317,7 @@ to_String__ClassDecl(struct ClassDecl self)
               s,
               format("{Sr}\n",
                      to_String__ClassBodyItem(
-                       *(struct ClassBodyItem *)get__Vec(*self.body, i))),
+                       *CAST(get__Vec(*self.body, i), struct ClassBodyItem *))),
               true);
 
         --current_tab_size;
@@ -4302,9 +4340,11 @@ __free__ClassDecl(struct ClassDecl *self)
 
     if (self->inheritance) {
         for (Usize i = len__Vec(*self->inheritance); i--;) {
-            FREE(DataTypeAll,
-                 ((struct Tuple *)get__Vec(*self->inheritance, i))->items[0]);
-            free(((struct Tuple *)get__Vec(*self->inheritance, i))->items[1]);
+            FREE(
+              DataTypeAll,
+              CAST(get__Vec(*self->inheritance, i), struct Tuple *)->items[0]);
+            free(
+              CAST(get__Vec(*self->inheritance, i), struct Tuple *)->items[1]);
             FREE(Tuple, get__Vec(*self->inheritance, i));
         }
 
@@ -4314,8 +4354,8 @@ __free__ClassDecl(struct ClassDecl *self)
     if (self->impl) {
         for (Usize i = len__Vec(*self->impl); i--;) {
             FREE(DataTypeAll,
-                 ((struct Tuple *)get__Vec(*self->impl, i))->items[0]);
-            free(((struct Tuple *)get__Vec(*self->impl, i))->items[1]);
+                 CAST(get__Vec(*self->impl, i), struct Tuple *)->items[0]);
+            free(CAST(get__Vec(*self->impl, i), struct Tuple *)->items[1]);
             FREE(Tuple, get__Vec(*self->impl, i));
         }
 
@@ -4363,11 +4403,12 @@ to_String__Prototype(struct Prototype self)
     append__String(s, format("@{S} :: ", self.name), true);
 
     for (Usize i = 0; i < len__Vec(*self.params_type); i++)
-        append__String(s,
-                       format("{Sr} -> ",
-                              to_String__DataType(*(struct DataType *)get__Vec(
-                                *self.params_type, i))),
-                       true);
+        append__String(
+          s,
+          format("{Sr} -> ",
+                 to_String__DataType(
+                   *CAST(get__Vec(*self.params_type, i), struct DataType *))),
+          true);
 
     append__String(
       s, format("{Sr}", to_String__DataType(*self.return_type)), true);
@@ -4470,16 +4511,17 @@ to_String__TraitDecl(struct TraitDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     push_str__String(s, ": trait =\n");
@@ -4489,8 +4531,8 @@ to_String__TraitDecl(struct TraitDecl self)
 
         for (Usize i = 0; i < len__Vec(*self.body); i++)
             append__String(s,
-                           to_String__TraitBodyItem(
-                             *(struct TraitBodyItem *)get__Vec(*self.body, i)),
+                           to_String__TraitBodyItem(*CAST(
+                             get__Vec(*self.body, i), struct TraitBodyItem *)),
                            true);
 
         --current_tab_size;
@@ -4515,8 +4557,8 @@ __free__TraitDecl(struct TraitDecl *self)
     if (self->inh) {
         for (Usize i = len__Vec(*self->inh); i--;) {
             FREE(DataTypeAll,
-                 ((struct Tuple *)get__Vec(*self->inh, i))->items[0]);
-            free(((struct Tuple *)get__Vec(*self->inh, i))->items[1]);
+                 CAST(get__Vec(*self->inh, i), struct Tuple *)->items[0]);
+            free(CAST(get__Vec(*self->inh, i), struct Tuple *)->items[1]);
             FREE(Tuple, get__Vec(*self->inh, i));
         }
 
@@ -4562,16 +4604,17 @@ to_String__TagDecl(struct TagDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__Generic(
-                       *(struct Generic *)get__Vec(*self.generic_params, i))),
+                     to_String__Generic(*CAST(get__Vec(*self.generic_params, i),
+                                              struct Generic *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr}]",
-                 to_String__Generic(*(struct Generic *)get__Vec(
-                   *self.generic_params, len__Vec(*self.generic_params) - 1))),
-          true);
+        append__String(s,
+                       format("{Sr}]",
+                              to_String__Generic(*CAST(
+                                get__Vec(*self.generic_params,
+                                         len__Vec(*self.generic_params) - 1),
+                                struct Generic *))),
+                       true);
     }
 
     push_str__String(s, " =\n");
@@ -4581,8 +4624,8 @@ to_String__TagDecl(struct TagDecl self)
 
         for (Usize i = 0; i < len__Vec(*self.body); i++)
             append__String(s,
-                           to_String__ModuleBodyItem(
-                             *(struct ModuleBodyItem *)get__Vec(*self.body, i)),
+                           to_String__ModuleBodyItem(*CAST(
+                             get__Vec(*self.body, i), struct ModuleBodyItem *)),
                            true);
 
         --current_tab_size;
