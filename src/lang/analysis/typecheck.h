@@ -30,24 +30,29 @@
 typedef struct Typecheck
 {
     struct Parser parser;
-    struct Decl *decl;
-    struct Vec *buffers;       // struct Vec<struct Typecheck*>*
+    struct Scope *global;
+    struct Vec *funs;        // struct Vec<struct SymbolTable*>*
+    struct Vec *consts;      // struct Vec<struct SymbolTable*>*
+    struct Vec *modules;     // struct Vec<struct SymbolTable*>*
+    struct Vec *aliases;     // struct Vec<struct SymbolTable*>*
+    struct Vec *records;     // struct Vec<struct SymbolTable*>*
+    struct Vec *enums;       // struct Vec<struct SymbolTable*>*
+    struct Vec *errors;      // struct Vec<struct SymbolTable*>*
+    struct Vec *classes;     // struct Vec<struct SymbolTable*>*
+    struct Vec *traits;      // struct Vec<struct SymbolTable*>*
+    struct Vec *records_obj; // struct Vec<struct SymbolTable*>*
+    struct Vec *enums_obj;   // struct Vec<struct SymbolTable*>
+} Typecheck;
+
+typedef struct Compiler
+{
+    struct Typecheck *tc;
+    struct Vec *buffers;       // struct Vec<struct Compiler*>*
     struct Vec *builtins;      // struct Vec<struct Builtin*>*
     struct Vec *import_values; // struct Vec<struct Tuple<struct SymbolTable*>,
                                // int*, Str>* the int* value represents if the
                                // SymbolTable* is free
-    struct Vec *funs;          // struct Vec<struct FunSymbol*>*
-    struct Vec *consts;        // struct Vec<struct ConstantSymbol*>*
-    struct Vec *modules;       // struct Vec<struct ModuleSymbol*>*
-    struct Vec *aliases;       // struct Vec<struct AliasSymbol*>*
-    struct Vec *records;       // struct Vec<struct RecordSymbol*>*
-    struct Vec *enums;         // struct Vec<struct EnumSymbol*>*
-    struct Vec *errors;        // struct Vec<struct ErrorSymbol*>*
-    struct Vec *classes;       // struct Vec<struct ClassSymbol*>*
-    struct Vec *traits;        // struct Vec<struct TraitSymbol*>*
-    struct Vec *records_obj;   // struct Vec<struct RecordObjSymbol*>*
-    struct Vec *enums_obj;     // struct Vec<struct EnumObjSymbol*>
-} Typecheck;
+} Compiler;
 
 /**
  *
@@ -61,7 +66,7 @@ __new__Typecheck(struct Parser parser);
  * @brief Run the typecheck phase.
  */
 void
-run__Typecheck(struct Typecheck *self, struct Vec *primary_buffer);
+run__Typecheck(struct Compiler *self, struct Vec *primary_buffer);
 
 /**
  *
@@ -69,5 +74,19 @@ run__Typecheck(struct Typecheck *self, struct Vec *primary_buffer);
  */
 void
 __free__Typecheck(struct Typecheck self);
+
+/**
+ *
+ * @brief Construct the Compiler type.
+ */
+struct Compiler
+__new__Compiler(struct Typecheck *tc);
+
+/**
+ *
+ * @brief Free the Compiler type.
+ */
+void
+__free__Compiler(struct Compiler self);
 
 #endif // LILY_TYPECHECK_H

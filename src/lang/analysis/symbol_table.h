@@ -44,23 +44,33 @@ enum ScopeItemKind
     ScopeItemKindClass,
     ScopeItemKindModule,
     ScopeItemKindTrait,
-    ScopeItemKindGeneric
+    ScopeItemKindGeneric,
+    ScopeItemKindGlobal
 };
 
-enum ScopeKind
+enum Visibility
 {
-    ScopeKindLocal = 0,
-    ScopeKindGlobal = 1
+    VisibilityPublic = 1,
+    VisibilityPrivate = 0
 };
 
 typedef struct Scope
 {
     Str filename;
     struct String *name; // struct String&
-    Usize id;
     enum ScopeItemKind item_kind;
-    enum ScopeKind kind;
-    struct Scope *previous;
+    enum Visibility visibility;
+    struct Vec *scopes, *public_names, *names;
+    // scopes = struct Vec<struct Scope*>* -> previous scope
+    // public_names = struct Vec<struct Tuple<struct String&, enum
+    // ScopeItemKind*>&>* -> all public names declared in the scope names =
+    // struct Vec<struct Tuple<struct String&, enum ScopeItemKind*>*>* -> all
+    struct Location *loc; // struct Location&
+
+    union
+    {
+        struct SymbolTable *symb;
+    } value;
 } ScopdId;
 
 /**
@@ -70,10 +80,12 @@ typedef struct Scope
 struct Scope *
 __new__Scope(const Str filename,
              struct String *name,
-             Usize id,
              enum ScopeItemKind item_kind,
-             enum ScopeKind kind,
-             struct Scope *previous);
+             enum Visibility visibility,
+             struct Vec *scopes,
+             struct Vec *public_names,
+             struct Vec *names,
+             struct Location *loc);
 
 /**
  *
@@ -86,11 +98,8 @@ copy__Scope(struct Scope *self);
  *
  * @brief Free the Scope type.
  */
-inline void
-__free__Scope(struct Scope *scope)
-{
-    free(scope);
-}
+void
+__free__Scope(struct Scope *self);
 
 typedef struct LocalDataType
 {
@@ -118,12 +127,6 @@ __new__LocalDataType(struct String *name, struct Tuple *restricted)
  */
 void
 __free__LocalDataType(struct LocalDataType *self);
-
-enum Visibility
-{
-    VisibilityPublic,
-    VisibilityPrivate
-};
 
 #define VISIBILITY(self) \
     self->is_pub == true ? VisibilityPublic : VisibilityPrivate;
@@ -167,7 +170,7 @@ typedef struct DataTypeSymbol
 
     union
     {
-        struct String *custom_name; // For generic param
+        struct String *custom_name; // For custom data type
     };
 } DataTypeSymbol;
 
@@ -534,6 +537,7 @@ typedef struct FieldRecordSymbol
     struct DataTypeSymbol *data_type;
     struct ExprSymbol *value;
     enum Visibility visibility;
+    struct Scope *scope;
     struct Location loc;
 } FieldRecordSymbol;
 
@@ -604,6 +608,7 @@ typedef struct VariantEnumSymbol
 {
     struct String *name; // struct String&
     struct DataTypeSymbol *data_type;
+    struct Scope *scope;
     struct Location loc;
 } VariantEnumSymbol;
 
@@ -622,6 +627,7 @@ inline void
 __free__VariantEnumSymbol(struct VariantEnumSymbol *self)
 {
     FREE(DataTypeSymbolAll, self->data_type);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -2276,6 +2282,13 @@ get_name__SymbolTable(struct SymbolTable *self);
  */
 struct Scope *
 get_scope__SymbolTable(struct SymbolTable *self);
+
+/**
+ *
+ * @brief Get visibility of SymbolTable.
+ */
+enum Visibility
+get_visibility__SymbolTable(struct SymbolTable *self);
 
 /**
  *

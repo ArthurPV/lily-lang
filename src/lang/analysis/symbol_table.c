@@ -30,18 +30,21 @@
 struct Scope *
 __new__Scope(const Str filename,
              struct String *name,
-             Usize id,
              enum ScopeItemKind item_kind,
-             enum ScopeKind kind,
-             struct Scope *previous)
+             enum Visibility visibility,
+             struct Vec *scopes,
+             struct Vec *public_names,
+             struct Vec *names,
+             struct Location *loc)
 {
     struct Scope *self = malloc(sizeof(struct Scope));
     self->filename = filename;
     self->name = name;
-    self->id = id;
     self->item_kind = item_kind;
-    self->kind = kind;
-    self->previous = previous;
+    self->visibility = visibility;
+    self->scopes = scopes;
+    self->public_names = public_names;
+    self->names = names;
     return self;
 }
 
@@ -53,6 +56,25 @@ copy__Scope(struct Scope *self)
     memcpy(copy, self, sizeof(struct Scope));
 
     return copy;
+}
+
+void
+__free__Scope(struct Scope *self)
+{
+    if (self->names) {
+        for (Usize i = len__Vec(*self->names); i--;)
+            FREE(Tuple, get__Vec(*self->names, i));
+
+        FREE(Vec, self->names);
+    }
+
+    if (self->scopes)
+        FREE(Vec, self->scopes);
+
+    if (self->public_names)
+        FREE(Vec, self->public_names);
+
+    free(self);
 }
 
 void
@@ -1156,6 +1178,7 @@ __new__FieldRecordSymbol(struct FieldRecord *field_record)
     self->data_type = NULL;
     self->value = NULL;
     self->visibility = VISIBILITY(field_record);
+    self->scope = NULL;
     self->loc = field_record->loc;
     return self;
 }
@@ -1165,6 +1188,7 @@ __free__FieldRecordSymbol(struct FieldRecordSymbol *self)
 {
     FREE(DataTypeSymbolAll, self->data_type);
     FREE(ExprSymbolAll, self->value);
+    FREE(Scope, self->scope);
     free(self);
 }
 
@@ -1237,6 +1261,7 @@ __new__VariantEnumSymbol(struct VariantEnum *variant_enum)
     struct VariantEnumSymbol *self = malloc(sizeof(struct VariantEnumSymbol));
     self->name = variant_enum->name;
     self->data_type = NULL;
+    self->scope = NULL;
     self->loc = variant_enum->loc;
     return self;
 }
@@ -1743,6 +1768,14 @@ get_name__SymbolTable(struct SymbolTable *self)
             return self->value.record_obj->name;
         case SymbolTableKindEnumObj:
             return self->value.enum_obj->name;
+        case SymbolTableKindProperty:
+            return self->value.property->name;
+        case SymbolTableKindMethod:
+            return self->value.method->name;
+        case SymbolTableKindField:
+            return self->value.field->name;
+        case SymbolTableKindVariant:
+            return self->value.variant->name;
         default:
             return NULL;
     }
@@ -1774,8 +1807,56 @@ get_scope__SymbolTable(struct SymbolTable *self)
             return self->value.record_obj->scope;
         case SymbolTableKindEnumObj:
             return self->value.enum_obj->scope;
+        case SymbolTableKindProperty:
+            return self->value.property->scope;
+        case SymbolTableKindMethod:
+            return self->value.method->scope;
+        case SymbolTableKindField:
+            return self->value.field->scope;
+        case SymbolTableKindVariant:
+            return self->value.variant->scope;
         default:
             UNREACHABLE("can't get scope");
+    }
+}
+
+enum Visibility
+get_visibility__SymbolTable(struct SymbolTable *self)
+{
+    switch (self->kind) {
+        case SymbolTableKindFun:
+            return self->value.fun->visibility;
+        case SymbolTableKindConstant:
+            return self->value.constant->visibility;
+        case SymbolTableKindModule:
+            return self->value.module->visibility;
+        case SymbolTableKindAlias:
+            return self->value.alias->visibility;
+        case SymbolTableKindRecord:
+            return self->value.record->visibility;
+        case SymbolTableKindEnum:
+            return self->value.enum_->visibility;
+        case SymbolTableKindError:
+            return self->value.error->visibility;
+        case SymbolTableKindClass:
+            return self->value.class->visibility;
+        case SymbolTableKindTrait:
+            return self->value.trait->visibility;
+        case SymbolTableKindRecordObj:
+            return self->value.record_obj->visibility;
+        case SymbolTableKindEnumObj:
+            return self->value.enum_obj->visibility;
+        case SymbolTableKindExpr:
+        case SymbolTableKindStmt:
+            return VisibilityPrivate;
+        case SymbolTableKindVariant:
+            return VisibilityPublic;
+        case SymbolTableKindField:
+            return self->value.field->visibility;
+        case SymbolTableKindProperty:
+            return self->value.property->visibility;
+        case SymbolTableKindMethod:
+            return self->value.method->visibility;
     }
 }
 
