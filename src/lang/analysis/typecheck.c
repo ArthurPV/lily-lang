@@ -789,42 +789,36 @@ search_in_the_prev_scope : {
          i < len__Vec(*names) &&
          count_scope < len__Vec(*last->value.module->scope->scopes);
          i++) {
-        if (current) {
-            // Search in last module
-            if (current->kind == SymbolTableKindModule)
-                current = search_in_module(self,
-                                           current,
-                                           get__Vec(*names, i),
-                                           in_primary_scope ? false : true);
+        // Search in last module
+        if (current->kind == SymbolTableKindModule)
+            current = search_in_module(self,
+                                       current,
+                                       get__Vec(*names, i),
+                                       in_primary_scope ? false : true);
 
-            if (i == 0)
-                in_primary_scope = false;
+        if (i == 0)
+            in_primary_scope = false;
 
-            if (!current && i == 0) {
-                ++count_scope;
+        if (!current && i == 0) {
+            ++count_scope;
 
-                if (count_scope <
-                    len__Vec(*last->value.module->scope->scopes)) {
-                    current = search_from_scopes(
-                      self,
-                      last->value.module->scope->scopes,
-                      (Usize *)count_scope + 1 -
-                        len__Vec(*last->value.module->scope->scopes));
+            if (count_scope < len__Vec(*last->value.module->scope->scopes)) {
+                current = search_from_scopes(
+                  self,
+                  last->value.module->scope->scopes,
+                  (Usize *)count_scope + 1 -
+                    len__Vec(*last->value.module->scope->scopes));
 
-                    goto search_in_the_prev_scope;
-                } else if (i == 0)
-                    break;
-            } else if (SYMB_IS_TYPE(current)) {
-                if (len__Vec(*names) != i + 1) {
-                    assert(0 && "error: this path to data type is unusable");
-                }
-            } else {
-                assert(0 && "error: expected class, record, enum, alias, "
-                            "record object, enum object or module in the path");
+                goto search_in_the_prev_scope;
+            } else if (i == 0)
+                break;
+        } else if (SYMB_IS_TYPE(current)) {
+            if (len__Vec(*names) != i + 1) {
+                assert(0 && "error: this path to data type is unusable");
             }
         } else {
-            // Search in global
-            current = search_in_global(self, get__Vec(*names, i));
+            assert(0 && "error: expected class, record, enum, alias, "
+                        "record object, enum object or module in the path");
         }
     }
 }
