@@ -1081,13 +1081,17 @@ check_symb(struct Compiler *self,
            struct SymbolTable *symb,
            struct SymbolTable *parent)
 {
-    struct Vec *scopes = NULL;
-
     if (get_scope__SymbolTable(symb))
         return;
 
+    struct Vec *scopes = NEW(Vec, sizeof(struct Scope));
+
     if (parent) {
-        scopes = copy__Vec(get_scope__SymbolTable(parent)->scopes);
+        struct Vec *scopes_p = get_scope__SymbolTable(parent)->scopes;
+
+        for (Usize i = 0; i < len__Vec(*scopes_p); i++)
+            push__Vec(scopes, get__Vec(*scopes_p, i));
+
         push__Vec(scopes, get_scope__SymbolTable(parent));
     }
 
