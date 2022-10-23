@@ -1532,8 +1532,8 @@ __free__ExprAll(struct Expr *self);
 typedef struct MatchStmt
 {
     struct Expr *matching;
-    struct Vec *pattern; // struct Vec<struct Tuple<struct Expr*, struct Expr*,
-                         // struct Expr*>*>*
+    struct Vec *patterns; // struct Vec<struct Tuple<struct Expr*, struct Expr*,
+                          // struct Expr*>*>*
 } MatchStmt;
 
 /**
@@ -1541,7 +1541,7 @@ typedef struct MatchStmt
  * @brief Construct the MatchStmt type.
  */
 struct MatchStmt *
-__new__MatchStmt(struct Expr *matching, struct Vec *pattern);
+__new__MatchStmt(struct Expr *matching, struct Vec *patterns);
 
 /**
  *
@@ -3120,7 +3120,6 @@ __free__TagDecl(struct TagDecl *self);
 enum DeclKind
 {
     DeclKindFun,
-    // DeclKindVariable,
     DeclKindConstant,
     DeclKindModule,
     DeclKindAlias,

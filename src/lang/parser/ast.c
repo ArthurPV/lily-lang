@@ -2012,11 +2012,11 @@ __free__ExprAll(struct Expr *self)
 }
 
 struct MatchStmt *
-__new__MatchStmt(struct Expr *matching, struct Vec *pattern)
+__new__MatchStmt(struct Expr *matching, struct Vec *patterns)
 {
     struct MatchStmt *self = malloc(sizeof(struct MatchStmt));
     self->matching = matching;
-    self->pattern = pattern;
+    self->patterns = patterns;
     return self;
 }
 
@@ -2030,13 +2030,13 @@ to_String__MatchStmt(struct MatchStmt self)
 
     ++current_tab_size;
 
-    for (Usize i = 0; i < len__Vec(*self.pattern); i++) {
+    for (Usize i = 0; i < len__Vec(*self.patterns); i++) {
         struct Expr *temp_matched =
-          ((struct Tuple *)get__Vec(*self.pattern, i))->items[0];
+          ((struct Tuple *)get__Vec(*self.patterns, i))->items[0];
         struct Expr *temp_cond =
-          ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
+          ((struct Tuple *)get__Vec(*self.patterns, i))->items[1];
         struct Expr *temp_expr =
-          ((struct Tuple *)get__Vec(*self.pattern, i))->items[2];
+          ((struct Tuple *)get__Vec(*self.patterns, i))->items[2];
 
         if (temp_cond)
             append__String(s,
@@ -2068,19 +2068,19 @@ __free__MatchStmt(struct MatchStmt *self)
 {
     FREE(ExprAll, self->matching);
 
-    for (Usize i = len__Vec(*self->pattern); i--;) {
-        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[0]);
-        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->pattern, i))->items[2]);
+    for (Usize i = len__Vec(*self->patterns); i--;) {
+        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->patterns, i))->items[0]);
+        FREE(ExprAll, ((struct Tuple *)get__Vec(*self->patterns, i))->items[2]);
 
-        if (((struct Tuple *)get__Vec(*self->pattern, i))->items[1])
+        if (((struct Tuple *)get__Vec(*self->patterns, i))->items[1])
             FREE(ExprAll,
-                 ((struct Tuple *)get__Vec(*self->pattern, i))->items[1]);
+                 ((struct Tuple *)get__Vec(*self->patterns, i))->items[1]);
 
-        if ((struct Tuple *)get__Vec(*self->pattern, i))
-            FREE(Tuple, ((struct Tuple *)get__Vec(*self->pattern, i)));
+        if ((struct Tuple *)get__Vec(*self->patterns, i))
+            FREE(Tuple, ((struct Tuple *)get__Vec(*self->patterns, i)));
     }
 
-    FREE(Vec, self->pattern);
+    FREE(Vec, self->patterns);
     free(self);
 }
 
