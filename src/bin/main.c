@@ -25,10 +25,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <base/format.h>
+#include <base/macros.h>
 #include <base/platform.h>
 #include <base/print.h>
 #include <base/util.h>
 #include <command/command.h>
+#include <command/diagnostic.h>
 #include <command/help.h>
 #include <lang/analysis/typecheck.h>
 #include <lang/generate/generate.h>
@@ -59,7 +62,8 @@ main(int argc, char **argv)
             status = BUILD_COMMAND;
         } else if (!strcmp(argv[1], "compile")) {
             status = COMPILE_COMMAND;
-        } else if (!strcmp(argv[1], "help")) {
+        } else if (!strcmp(argv[1], "help") || !strcmp(argv[1], "-h") ||
+                   !strcmp(argv[1], "--help")) {
             status = HELP_COMMAND;
         } else if (!strcmp(argv[1], "init")) {
             status = INIT_COMMAND;
@@ -70,12 +74,13 @@ main(int argc, char **argv)
         }
     }
 
-    switch (status) {
-        case BUILD_COMMAND:
-            Println("Build");
-            break;
-        case COMPILE_COMMAND:
-            if (argc > 2) {
+    if (argc > 1) {
+        switch (status) {
+            case BUILD_COMMAND:
+                Println("Build");
+                break;
+            case COMPILE_COMMAND:
+                if (argc > 2) {
 #ifdef LILY_WINDOWS_OS
 #include <windows.h>
 #else
@@ -83,52 +88,56 @@ main(int argc, char **argv)
 #endif
 
 #ifdef LILY_WINDOWS_OS
-                DWORD start = GetTickCount();
+                    DWORD start = GetTickCount();
 #else
-                clock_t start = clock();
+                    clock_t start = clock();
 #endif
 
-                struct File file = NEW(File, argv[2]);
-                struct Source src = NEW(Source, file);
-                struct Scanner scanner = NEW(Scanner, &src);
-                struct ParseBlock parse_block = NEW(ParseBlock, scanner);
-                struct Parser parser = NEW(Parser, parse_block);
-                struct Typecheck tc = NEW(Typecheck, parser);
+                    struct File file = NEW(File, argv[2]);
+                    struct Source src = NEW(Source, file);
+                    struct Scanner scanner = NEW(Scanner, &src);
+                    struct ParseBlock parse_block = NEW(ParseBlock, scanner);
+                    struct Parser parser = NEW(Parser, parse_block);
+                    struct Typecheck tc = NEW(Typecheck, parser);
+                    struct Compiler compiler = NEW(Compiler, &tc);
 
-                run__Typecheck(&tc, NULL);
+                    run__Typecheck(&compiler, NULL);
 
-                struct Generate gen = NEW(Generate, tc);
+                    // struct Generate gen = NEW(Generate, tc);
 
-                write_main_function(&gen);
-                run__GenerateC(gen);
+                    // write_main_function(&gen);
+                    // run__GenerateC(gen);
 
-                FREE(Generate, gen);
+                    // FREE(Generate, gen);
+                    FREE(Compiler, compiler);
 
 #ifdef LILY_WINDOWS_OS
-                double total_t = (double)(GetTickCount() - start);
+                    double total_t = (double)(GetTickCount() - start);
 #else
-                double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
+                    double total_t = (double)(clock() - start) / CLOCKS_PER_SEC;
 #endif
 
-                println("compiled in %.3fs", total_t);
-            }
+                    println("compiled in %.3fs", total_t);
+                }
 
-            break;
-        case HELP_COMMAND:
-            printf("%s\n", MAIN_HELP);
-            break;
-        case INIT_COMMAND:
-            Println("Init");
-            break;
-        case NEW_COMMAND:
-            Println("New");
-            break;
-        case VERSION_COMMAND:
-            Println("Version");
-            break;
-        case UNKNOWN_COMMAND: {
-#include <assert.h>
-            assert(0 && "unknown command");
+                break;
+            case HELP_COMMAND:
+                println("%s", MAIN_HELP);
+                break;
+            case INIT_COMMAND:
+                Println("Init");
+                break;
+            case NEW_COMMAND:
+                Println("New");
+                break;
+            case VERSION_COMMAND:
+                Println("Version");
+                break;
+            case UNKNOWN_COMMAND: {
+                error(format("unknown command: `{s}`", argv[1]));
+            }
+            default:
+                UNREACHABLE("");
         }
     }
 }
