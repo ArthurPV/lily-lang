@@ -66,8 +66,9 @@ format(Str fmt, ...)
                         if (fmt[i + 1] == 'r') {
                             i++;
                             append__String(s, string, true);
-                        } else
+                        } else {
                             append__String(s, string, false);
+                        }
 
                         break;
                     }
