@@ -149,6 +149,34 @@ There are several types such as `record`, `enum`, `trait` and `class`.
 
 #### Record
 
+The records defined with the `object` keyword are similar to the records defined with the `type` keyword, except that the only difference is that it is possible to attach functions to the record.
+
+Here are an example of `record` (object) declaration in Lily:
+
+```lily
+object Car: record =
+	name Str,
+	price Uint64
+end
+
+tag Car =
+	fun get_name(self) = self.name;
+
+	fun get_price(self) = self.price;
+
+	fun update_price(mut self, price) = self.price = price;
+end
+
+// or
+
+fun#Car get_name(self) = self.name;
+
+fun#Car get_price(self) = self.price;
+
+fun#Car update_price(mut self, price) = self.price = price;
+
+```
+
 #### Enum 
 
 #### Trait
