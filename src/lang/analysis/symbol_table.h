@@ -39,6 +39,7 @@ enum ScopeItemKind
     ScopeItemKindEnumObj,
     ScopeItemKindConstant,
     ScopeItemKindVariant,
+    ScopeItemKindField,
     ScopeItemKindFun,
     ScopeItemKindError,
     ScopeItemKindClass,
@@ -63,8 +64,9 @@ typedef struct Scope
     struct Vec *scopes, *public_names, *names;
     // scopes = struct Vec<struct Scope*>* -> previous scope
     // public_names = struct Vec<struct Tuple<struct String&, enum
-    // ScopeItemKind*>&>* -> all public names declared in the scope names =
-    // struct Vec<struct Tuple<struct String&, enum ScopeItemKind*>*>* -> all
+    // ScopeItemKind*>&>* -> all public names declared in the scope
+    // names = struct Vec<struct Tuple<struct String&, enum ScopeItemKind*>*>*
+    // -> all
     struct Location *loc; // struct Location&
 
     union
@@ -440,9 +442,11 @@ typedef struct FunSymbol
     enum Visibility visibility;
     bool is_async;
     struct DataTypeSymbol *return_type;
-    struct Vec *body;      // struct Vec<struct SymbolTable*>*
-    struct Scope *scope;   // struct Scope&
-    struct Decl *fun_decl; // struct Decl&
+    struct Vec *body; // struct Vec<struct SymbolTable*>*
+    struct Scope *scope;
+    struct Vec *local_values; // struct Vec<struct Vec<struct Tuple<struct
+                              // Scope*, struct Vec<struct VariableAddr*>*>*>*>*
+    struct Decl *fun_decl;    // struct Decl&
 } FunSymbol;
 
 /**
@@ -464,7 +468,7 @@ typedef struct ConstantSymbol
     struct String *name;              // struct String&
     struct DataTypeSymbol *data_type; // struct DataTypeSymbol*
     struct ExprSymbol *expr_symbol;
-    struct Scope *scope;        // struct Scope&
+    struct Scope *scope;
     struct Decl *constant_decl; // struct Decl&
     enum Visibility visibility;
 } ConstantSymbol;
@@ -485,9 +489,9 @@ __free__ConstantSymbol(struct ConstantSymbol *self);
 
 typedef struct ModuleSymbol
 {
-    struct String *name;         // struct String&
-    struct Vec *body;            // struct Vec<SymbolTable*>*
-    struct Scope *scope;         // struct Scope&
+    struct String *name; // struct String&
+    struct Vec *body;    // struct Vec<SymbolTable*>*
+    struct Scope *scope;
     struct Decl *module_decl;    // struct Decl&
     struct Location *import_loc; // for `as` module
     enum Visibility visibility;
@@ -512,7 +516,7 @@ typedef struct AliasSymbol
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct DataTypeSymbol *data_type;
-    struct Scope *scope;     // struct Scope&
+    struct Scope *scope;
     struct Decl *alias_decl; // struct Decl&
     enum Visibility visibility;
 } AliasSymbol;
@@ -560,8 +564,8 @@ typedef struct RecordSymbol
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *fields;         // struct Vec<struct SymbolTable*>*
-    struct Scope *scope;        // struct Scope&
-    struct Decl *record_decl;   // struct Decl&
+    struct Scope *scope;
+    struct Decl *record_decl; // struct Decl&
     enum Visibility visibility;
 } RecordSymbol;
 
@@ -585,8 +589,8 @@ typedef struct RecordObjSymbol
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *fields;         // struct Vec<struct SymbolTable*>*
     struct Vec *attached;       // struct Vec<struct SymbolTable*>*
-    struct Scope *scope;        // struct Scope&
-    struct Decl *record_decl;   // struct Decl&
+    struct Scope *scope;
+    struct Decl *record_decl; // struct Decl&
     enum Visibility visibility;
 } RecordObjSymbol;
 
@@ -721,8 +725,10 @@ typedef struct MethodSymbol
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *params;         // struct Vec<struct FunParamSymbol*>*
     struct DataTypeSymbol *return_type;
-    struct Vec *body;                  // structg Vec<struct SymbolTable*>*
-    struct Scope *scope;               // struct Scope&
+    struct Vec *body; // structg Vec<struct SymbolTable*>*
+    struct Scope *scope;
+    struct Vec *local_values; // struct Vec<struct Vec<struct Tuple<struct
+                              // Scope*, struct Vec<struct VariableAddr*>*>*>*
     struct ClassBodyItem *method_decl; // struct ClassBodyItem&
     enum Visibility visibility;
     bool has_first_self_param;
@@ -773,8 +779,8 @@ typedef struct ClassSymbol
     struct Vec *inheritance;    // struct Vec<struct DataTypeSymbol*>*
     struct Vec *impl;           // struct Vec<struct DataTypeSymbol*>*
     struct Vec *body;           // struct Vec<struct SymbolTable*>*
-    struct Scope *scope;        // struct Scope&
-    struct Decl *class_decl;    // struct Decl&
+    struct Scope *scope;
+    struct Decl *class_decl; // struct Decl&
     enum Visibility visibility;
 } ClassSymbol;
 
@@ -797,7 +803,7 @@ typedef struct PrototypeSymbol
     struct String *name;     // struct String&
     struct Vec *params_type; // struct Vec<struct DataTypeSymbol*>*
     struct DataTypeSymbol *return_type;
-    struct Scope *scope;                  // struct Scope&
+    struct Scope *scope;
     struct TraitBodyItem *prototype_decl; // struct TraitBodyItem&
     bool is_async;
     bool has_first_self_param;
@@ -823,8 +829,8 @@ typedef struct TraitSymbol
     struct Vec *generic_params; // struct Vec<struct Generic*>&
     struct Vec *inh;            // struct Vec<struct DataTypeSymbol*>*
     struct Vec *body;           // struct Vec<struct SymbolTable*>*
-    struct Scope *scope;        // struct Scope&
-    struct Decl *trait_decl;    // struct Decl&
+    struct Scope *scope;
+    struct Decl *trait_decl; // struct Decl&
     enum Visibility visibility;
 } TraitSymbol;
 
@@ -1808,8 +1814,8 @@ __free__VariableSymbol(struct VariableSymbol *self)
 typedef struct MatchSymbol
 {
     struct ExprSymbol *matching;
-    struct Vec *pattern; // struct Vec<struct Tuple<struct ExprSymbol*, struct
-                         // Vec<struct SymbolTable*>*>*
+    struct Vec *patterns; // struct Vec<struct Tuple<struct ExprSymbol*, struct
+                          // ExprSymbol*, struct ExprSymbol*>*
 } MatchSymbol;
 
 /**
@@ -1817,9 +1823,9 @@ typedef struct MatchSymbol
  * @brief Construct the MatchSymbol type.
  */
 inline struct MatchSymbol
-__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *pattern)
+__new__MatchSymbol(struct ExprSymbol *matching, struct Vec *patterns)
 {
-    struct MatchSymbol self = { .matching = matching, .pattern = pattern };
+    struct MatchSymbol self = { .matching = matching, .patterns = patterns };
 
     return self;
 }
@@ -1876,7 +1882,6 @@ __free__IfCondSymbol(struct IfCondSymbol self);
 
 typedef struct TrySymbol
 {
-    struct ExprSymbol *try_expr;
     struct Vec *try_body; // struct Vec<struct SymbolTable*>*
     struct ExprSymbol *catch_expr;
     struct Vec *catch_body; // struct Vec<struct SymbolTable*>*
@@ -1887,8 +1892,7 @@ typedef struct TrySymbol
  * @brief Construct the TrySymbol type.
  */
 struct TrySymbol
-__new__TrySymbol(struct ExprSymbol *try_expr,
-                 struct Vec *try_body,
+__new__TrySymbol(struct Vec *try_body,
                  struct ExprSymbol *catch_expr,
                  struct Vec *catch_body);
 
@@ -2483,5 +2487,26 @@ __free__SymbolTableMethod(struct SymbolTable *self)
  */
 void
 __free__SymbolTableAll(struct SymbolTable *self);
+
+typedef struct VariableAddr
+{
+    Usize id;     // main id
+    Usize id_sec; // secondary id for if branch choice or try branch choice
+                  // -1 = NULL
+} VariableAddr;
+
+/**
+ *
+ * @brief Construct the VariableAddr type.
+ */
+struct VariableAddr *
+__new__VariableAddr(Usize id, Usize id_sec);
+
+/**
+ *
+ * @brief Free the VariableAddr type.
+ */
+void
+__free__VariableAddr(struct VariableAddr *self);
 
 #endif // LILY_SYMBOL_TABLE_H

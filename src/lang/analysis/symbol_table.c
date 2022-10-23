@@ -892,21 +892,20 @@ __free__MatchSymbol(struct MatchSymbol self)
 {
     FREE(ExprSymbolAll, self.matching);
 
-    for (Usize i = len__Vec(*self.pattern); i--;) {
+    for (Usize i = len__Vec(*self.patterns); i--;) {
         FREE(ExprSymbolAll,
-             ((struct Tuple *)get__Vec(*self.pattern, i))->items[0]);
+             CAST(get__Vec(*self.patterns, i), struct Tuple *)->items[0]);
 
-        struct Vec *temp =
-          ((struct Tuple *)get__Vec(*self.pattern, i))->items[1];
+        if (CAST(get__Vec(*self.patterns, i), struct Tuple *)->items[1])
+            FREE(ExprSymbolAll,
+                 CAST(get__Vec(*self.patterns, i), struct Tuple *)->items[1]);
 
-        for (Usize j = len__Vec(*temp); j--;)
-            FREE(SymbolTableAll, get__Vec(*temp, j));
-
-        FREE(Vec, temp);
-        FREE(Tuple, get__Vec(*self.pattern, i));
+        FREE(ExprSymbolAll,
+             CAST(get__Vec(*self.patterns, i), struct Tuple *)->items[2]);
+        FREE(Tuple, get__Vec(*self.patterns, i));
     }
 
-    FREE(Vec, self.pattern);
+    FREE(Vec, self.patterns);
 }
 
 struct IfBranchSymbol *
@@ -953,13 +952,11 @@ __free__IfCondSymbol(struct IfCondSymbol self)
 }
 
 struct TrySymbol
-__new__TrySymbol(struct ExprSymbol *try_expr,
-                 struct Vec *try_body,
+__new__TrySymbol(struct Vec *try_body,
                  struct ExprSymbol *catch_expr,
                  struct Vec *catch_body)
 {
-    struct TrySymbol self = { .try_expr = try_expr,
-                              .try_body = try_body,
+    struct TrySymbol self = { .try_body = try_body,
                               .catch_expr = catch_expr,
                               .catch_body = catch_body };
 
@@ -969,8 +966,6 @@ __new__TrySymbol(struct ExprSymbol *try_expr,
 void
 __free__TrySymbol(struct TrySymbol self)
 {
-    FREE(ExprSymbolAll, self.try_expr);
-
     for (Usize i = len__Vec(*self.try_body); i--;)
         FREE(SymbolTableAll, get__Vec(*self.try_body, i));
 
@@ -1065,6 +1060,7 @@ __new__FunSymbol(struct Decl *fun_decl)
     self->return_type = NULL;
     self->body = NULL;
     self->scope = NULL;
+    self->local_values = NULL;
     self->fun_decl = &*fun_decl;
     return self;
 }
@@ -1100,6 +1096,31 @@ __free__FunSymbol(struct FunSymbol *self)
     }
 
     FREE(Scope, self->scope);
+
+    if (self->local_values) {
+        for (Usize i = 0; i < len__Vec(*self->local_values); i++) {
+            struct Vec *v2 = get__Vec(*self->local_values, i);
+
+            for (Usize j = 0; j < len__Vec(*v2); j++) {
+                struct Tuple *t = get__Vec(*v2, j);
+
+                for (Usize k = 0;
+                     k < len__Vec(*CAST(t->items[1], struct Vec *));
+                     k++)
+                    FREE(VariableAddr,
+                         CAST(get__Vec(*CAST(t->items[1], struct Vec *), k),
+                              struct VariableAddr *));
+
+                FREE(Vec, t->items[1]);
+                FREE(Tuple, t);
+            }
+
+            FREE(Vec, v2);
+        }
+
+        FREE(Vec, self->local_values);
+    }
+
     free(self);
 }
 
@@ -1229,8 +1250,8 @@ __new__RecordObjSymbol(struct Decl *record_decl)
     self->fields = NULL;
     self->attached = NULL;
     self->scope = NULL;
-    self->visibility = VISIBILITY(record_decl->value.record);
     self->record_decl = record_decl;
+    self->visibility = VISIBILITY(record_decl->value.record);
     return self;
 }
 
@@ -1359,6 +1380,7 @@ __new__MethodSymbol(struct ClassBodyItem *method_decl)
     self->return_type = NULL;
     self->body = NULL;
     self->scope = NULL;
+    self->local_values = NULL;
     self->method_decl = method_decl;
     self->visibility = VISIBILITY(method_decl->value.method);
     self->has_first_self_param =
@@ -1388,6 +1410,31 @@ __free__MethodSymbol(struct MethodSymbol *self)
     }
 
     FREE(Scope, self->scope);
+
+    if (self->local_values) {
+        for (Usize i = 0; i < len__Vec(*self->local_values); i++) {
+            struct Vec *v2 = get__Vec(*self->local_values, i);
+
+            for (Usize j = 0; j < len__Vec(*v2); j++) {
+                struct Tuple *t = get__Vec(*v2, j);
+
+                for (Usize k = 0;
+                     k < len__Vec(*CAST(t->items[1], struct Vec *));
+                     k++)
+                    FREE(VariableAddr,
+                         CAST(get__Vec(*CAST(t->items[1], struct Vec *), k),
+                              struct VariableAddr *));
+
+                FREE(Vec, t->items[1]);
+                FREE(Tuple, t);
+            }
+
+            FREE(Vec, v2);
+        }
+
+        FREE(Vec, self->local_values);
+    }
+
     free(self);
 }
 
@@ -1918,4 +1965,19 @@ __free__SymbolTableAll(struct SymbolTable *self)
         default:
             UNREACHABLE("unknown symbol table kind");
     }
+}
+
+struct VariableAddr *
+__new__VariableAddr(Usize id, Usize id_sec)
+{
+    struct VariableAddr *self = malloc(sizeof(struct VariableAddr));
+    self->id = id;
+    self->id_sec = id_sec;
+    return self;
+}
+
+void
+__free__VariableAddr(struct VariableAddr *self)
+{
+    free(self);
 }

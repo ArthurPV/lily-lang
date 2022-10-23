@@ -199,13 +199,73 @@ search_in_module(struct Compiler *self,
                  struct String *name,
                  bool check_visibility);
 struct SymbolTable *
+search_in_class(struct Compiler *self,
+                struct SymbolTable *symb,
+                struct String *name,
+                bool check_visibility);
+struct SymbolTable *
+search_in_record(struct Compiler *self,
+                 struct SymbolTable *symb,
+                 struct String *name);
+struct SymbolTable *
+search_in_enum(struct Compiler *self,
+               struct SymbolTable *symb,
+               struct String *name);
+struct SymbolTable *
+search_in_record_obj(struct Compiler *self,
+                     struct SymbolTable *symb,
+                     struct String *name,
+                     bool search_fun,
+                     bool check_visibility);
+struct SymbolTable *
+search_in_enum_obj(struct Compiler *self,
+                   struct SymbolTable *symb,
+                   struct String *name,
+                   bool search_fun,
+                   bool check_visibility);
+struct SymbolTable *
 search_in_global(struct Compiler *self, struct String *name);
+struct SymbolTable *
+search_in_parent(struct Compiler *self,
+                 struct SymbolTable *parent,
+                 struct String *name,
+                 bool check_visibility,
+                 bool *search_fun);
+struct SymbolTable *
+search_symb_from_parent(struct Compiler *self,
+                        struct SymbolTable *parent,
+                        struct Expr *expr,
+                        bool *search_fun);
+struct SymbolTable *
+search_symb_from_global(struct Compiler *self,
+                        struct Expr *expr,
+                        bool *search_fun);
+struct SymbolTable *
+search_symb(struct Compiler *self,
+            struct SymbolTable *parent,
+            struct Expr *expr,
+            bool *search_fun);
+struct Tuple *
+search_variable_in_local_values(struct Compiler *self,
+                                struct Vec *local_values,
+                                struct Expr *identifier);
+struct SymbolTable *
+get_symb_of_variable(struct Compiler *self,
+                     struct Vec *local_values,
+                     struct Expr *identifier,
+                     struct Vec *body);
+struct ExprSymbol *
+check_expression(struct Compiler *self,
+                 struct Expr *expr,
+                 struct SymbolTable *symb,
+                 struct SymbolTable *parent);
 void
 check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes);
 void
 check_constant(struct Compiler *self,
                struct ConstantSymbol *constant,
-               struct Vec *scopes);
+               struct Vec *scopes,
+               struct SymbolTable *parent);
 void
 check_module(struct Compiler *self,
              struct ModuleSymbol *module,
@@ -661,7 +721,7 @@ search_in_module(struct Compiler *self,
     assert(symb->kind == SymbolTableKindModule && "expected module");
 
     for (Usize i = len__Vec(*symb->value.module->scope->names); i--;) {
-        if (eq__String(CAST(get__Vec(*symb->value.module->scope->scopes, i),
+        if (eq__String(CAST(get__Vec(*symb->value.module->scope->names, i),
                             struct Tuple *)
                          ->items[0],
                        name,
@@ -669,6 +729,182 @@ search_in_module(struct Compiler *self,
             check_symb(self, get__Vec(*symb->value.module->body, i), symb);
 
             struct SymbolTable *res = get__Vec(*symb->value.module->body, i);
+
+            if (check_visibility)
+                if (get_visibility__SymbolTable(res) != VisibilityPublic) {
+                    assert(0 && "error: impossible to get because is private");
+                }
+
+            return res;
+        }
+    }
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_in_class(struct Compiler *self,
+                struct SymbolTable *symb,
+                struct String *name,
+                bool check_visibility)
+{
+    assert(symb->kind == SymbolTableKindClass && "expected class");
+
+    for (Usize i = len__Vec(*symb->value.class->scope->names); i--;) {
+        if (eq__String(CAST(get__Vec(*symb->value.class->scope->names, i),
+                            struct Tuple *)
+                         ->items[0],
+                       name,
+                       false)) {
+            check_symb(self, get__Vec(*symb->value.class->body, i), symb);
+
+            struct SymbolTable *res = get__Vec(*symb->value.class->body, i);
+
+            if (check_visibility)
+                if (get_visibility__SymbolTable(res) != VisibilityPublic) {
+                    assert(0 && "error: impossible to get because is private");
+                }
+
+            return res;
+        }
+    }
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_in_record(struct Compiler *self,
+                 struct SymbolTable *symb,
+                 struct String *name)
+{
+    assert(symb->kind == SymbolTableKindRecord && "expected record");
+
+    for (Usize i = len__Vec(*symb->value.record->scope->names); i--;) {
+        if (eq__String(CAST(get__Vec(*symb->value.record->scope->names, i),
+                            struct Tuple *)
+                         ->items[0],
+                       name,
+                       false)) {
+            check_symb(self, get__Vec(*symb->value.record->fields, i), symb);
+
+            struct SymbolTable *res = get__Vec(*symb->value.record->fields, i);
+
+            if (get_visibility__SymbolTable(res) != VisibilityPublic) {
+                assert(0 && "error: impossible to get because is private");
+            }
+
+            return res;
+        }
+    }
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_in_enum(struct Compiler *self,
+               struct SymbolTable *symb,
+               struct String *name)
+{
+    assert(symb->kind == SymbolTableKindEnum && "expected enum");
+
+    for (Usize i = len__Vec(*symb->value.enum_->scope->names); i--;) {
+        if (eq__String(CAST(get__Vec(*symb->value.enum_->scope->names, i),
+                            struct Tuple *)
+                         ->items[0],
+                       name,
+                       false)) {
+            check_symb(self, get__Vec(*symb->value.enum_->variants, i), symb);
+
+            return get__Vec(*symb->value.enum_->variants, i);
+        }
+    }
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_in_record_obj(struct Compiler *self,
+                     struct SymbolTable *symb,
+                     struct String *name,
+                     bool search_fun,
+                     bool check_visibility)
+{
+    assert(symb->kind == SymbolTableKindRecordObj && "expected record object");
+
+    for (Usize i = len__Vec(*symb->value.record_obj->scope->names); i--;) {
+        struct Tuple *t = get__Vec(*symb->value.record_obj->scope->names, i);
+
+        if (eq__String(t->items[0], name, false) &&
+            ((search_fun &&
+              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) ||
+             (!search_fun &&
+              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindField))) {
+            // NOTE: the first pushed elements in
+            // symb->value.record_obj->scope->names are fields.
+
+            if (search_fun)
+                check_symb(
+                  self,
+                  get__Vec(*symb->value.record_obj->attached,
+                           i - len__Vec(*symb->value.record_obj->fields)),
+                  symb);
+            else
+                check_symb(
+                  self, get__Vec(*symb->value.record_obj->fields, i), symb);
+
+            struct SymbolTable *res =
+              search_fun
+                ? get__Vec(*symb->value.record_obj->attached,
+                           i - len__Vec(*symb->value.record_obj->fields))
+                : get__Vec(*symb->value.record_obj->fields, i);
+
+            if (check_visibility)
+                if (get_visibility__SymbolTable(res) != VisibilityPublic) {
+                    assert(0 && "error: impossible to get because is private");
+                }
+
+            return res;
+        }
+    }
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_in_enum_obj(struct Compiler *self,
+                   struct SymbolTable *symb,
+                   struct String *name,
+                   bool search_fun,
+                   bool check_visibility)
+{
+    assert(symb->kind == SymbolTableKindEnumObj && "expected enum object");
+
+    for (Usize i = len__Vec(*symb->value.enum_obj->scope->names); i--;) {
+        struct Tuple *t = get__Vec(*symb->value.enum_obj->scope->names, i);
+
+        if (eq__String(t->items[0], name, false) &&
+            ((search_fun &&
+              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) ||
+             (!search_fun &&
+              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindVariant))) {
+            // NOTE: the first pushed elements in
+            // symb->value.enum_obj->scope->names are variants.
+
+            if (search_fun)
+                check_symb(
+                  self,
+                  get__Vec(*symb->value.enum_obj->attached,
+                           i - len__Vec(*symb->value.enum_obj->variants)),
+                  symb);
+            else
+                check_symb(
+                  self, get__Vec(*symb->value.enum_obj->variants, i), symb);
+
+            struct SymbolTable *res =
+              search_fun
+                ? get__Vec(*symb->value.enum_obj->attached,
+                           i - len__Vec(*symb->value.enum_obj->variants))
+                : get__Vec(*symb->value.enum_obj->variants, i);
 
             if (check_visibility)
                 if (get_visibility__SymbolTable(res) != VisibilityPublic) {
@@ -769,6 +1005,424 @@ search_in_global(struct Compiler *self, struct String *name)
     }
 
     assert(0 && "error: not found");
+}
+
+struct SymbolTable *
+search_in_parent(struct Compiler *self,
+                 struct SymbolTable *parent,
+                 struct String *name,
+                 bool check_visibility,
+                 bool *search_fun)
+{
+    switch (parent->kind) {
+        case SymbolTableKindModule:
+            return search_in_module(self, parent, name, check_visibility);
+        case SymbolTableKindClass:
+            return search_in_class(self, parent, name, check_visibility);
+        case SymbolTableKindRecord:
+            return search_in_record(self, parent, name);
+        case SymbolTableKindEnum:
+            return search_in_enum(self, parent, name);
+        case SymbolTableKindRecordObj:
+            assert(search_fun && "expected search_fun != NULL");
+
+            return search_in_record_obj(
+              self, parent, name, (bool)(UPtr)search_fun, check_visibility);
+        case SymbolTableKindEnumObj:
+            assert(search_fun && "expected search_fun != NULL");
+
+            return search_in_enum_obj(
+              self, parent, name, (bool)(UPtr)search_fun, check_visibility);
+        default:
+            UNREACHABLE("it's impossible to search symbol in this parent");
+    }
+}
+
+struct SymbolTable *
+search_symb_from_parent(struct Compiler *self,
+                        struct SymbolTable *parent,
+                        struct Expr *expr,
+                        bool *search_fun)
+{
+    switch (expr->kind) {
+        case ExprKindIdentifier:
+            return search_in_parent(
+              self, parent, expr->value.identifier, false, search_fun);
+        case ExprKindIdentifierAccess: {
+            struct SymbolTable *current = parent;
+            bool check_visibility = true;
+            Usize i = 0;
+
+            for (; i < len__Vec(*expr->value.identifier_access) && current;
+                 i++) {
+                struct Expr *item = get__Vec(*expr->value.identifier_access, i);
+
+                assert(item->kind == ExprKindIdentifier &&
+                       "expected identifier");
+
+                current = i == len__Vec(*expr->value.identifier_access) - 1
+                            ? search_in_parent(self,
+                                               current,
+                                               item->value.identifier,
+                                               check_visibility,
+                                               search_fun)
+                            : search_in_parent(self,
+                                               current,
+                                               item->value.identifier,
+                                               check_visibility,
+                                               NULL);
+
+                if (check_visibility)
+                    check_visibility = false;
+            }
+
+            if (!current && i > 0) {
+                assert(0 && "error: symbol not found");
+            }
+
+            return current;
+        }
+        default:
+            UNREACHABLE("not expected expression");
+    }
+}
+
+struct SymbolTable *
+search_symb_from_global(struct Compiler *self,
+                        struct Expr *expr,
+                        bool *search_fun)
+{
+    switch (expr->kind) {
+        case ExprKindIdentifier: {
+            struct SymbolTable *global =
+              search_in_global(self, expr->value.identifier);
+
+            if (global)
+                return global;
+
+            break;
+        }
+        case ExprKindIdentifierAccess: {
+            struct SymbolTable *current = search_in_global(
+              self, get__Vec(*expr->value.identifier_access, 0));
+
+            for (Usize i = 1; i < len__Vec(*expr->value.identifier_access);
+                 i++) {
+                struct Expr *id = get__Vec(*expr->value.identifier_access, i);
+
+                assert(id->kind == ExprKindIdentifier && "expected identifier");
+
+                current =
+                  i == len__Vec(*expr->value.identifier_access) - 1
+                    ? search_in_parent(
+                        self, current, id->value.identifier, true, search_fun)
+                    : search_in_parent(
+                        self, current, id->value.identifier, true, NULL);
+            }
+
+            if (current)
+                return current;
+
+            break;
+        }
+        default:
+            UNREACHABLE("")
+    }
+
+    assert(0 && "error: symbol not found");
+
+    return NULL;
+}
+
+struct SymbolTable *
+search_symb(struct Compiler *self,
+            struct SymbolTable *parent,
+            struct Expr *expr,
+            bool *search_fun)
+{
+    struct SymbolTable *res = NULL;
+
+    if (!parent)
+        goto search_in_global;
+
+    struct SymbolTable *current = NULL;
+    struct Vec *scopes = get_scope__SymbolTable(parent)->scopes;
+
+    for (Usize i = 0; i < len__Vec(*scopes); i++) {
+        current = i == 0
+                    ? parent
+                    : search_from_scopes(
+                        self, scopes, (Usize *)(i + 1) - len__Vec(*scopes));
+        res = search_symb_from_parent(self, current, expr, search_fun);
+    }
+
+    if (!res)
+        goto search_in_global;
+    else {
+        assert(0 && "error: symbol not found");
+    }
+
+    if (res == NULL) {
+    search_in_global : {
+        TODO("Search in global");
+    }
+    }
+
+    return res;
+}
+
+// local_values = struct Vec<struct Vec<struct Tuple<struct Scope*, struct
+// Vec<VariableAddr*>*>*>* struct Tuple* = struct Tuple<struct Scope*, struct
+// Vec<VariableAddr*>*>*
+struct Tuple *
+search_variable_in_local_values(struct Compiler *self,
+                                struct Vec *local_values,
+                                struct Expr *identifier)
+{
+    switch (identifier->kind) {
+        case ExprKindIdentifier:
+            for (Usize i = len__Vec(*local_values); i--;) {
+                struct Vec *current = get__Vec(*local_values, i);
+
+                for (Usize j = len__Vec(*current); j--;) {
+                    if (eq__String(
+                          CAST(CAST(get__Vec(*current, j), struct Tuple *)
+                                 ->items[0],
+                               struct Scope *)
+                            ->name,
+                          identifier->value.identifier,
+                          false))
+                        return get__Vec(*current, j);
+                }
+            }
+
+            return NULL;
+        case ExprKindIdentifierAccess:
+            // Make sure it doesn't start with `self`.
+
+            for (Usize i = len__Vec(*local_values); i--;) {
+                struct Vec *current = get__Vec(*local_values, i);
+
+                for (Usize j = len__Vec(*current); j--;) {
+                    if (eq__String(
+                          CAST(CAST(get__Vec(*current, j), struct Tuple *)
+                                 ->items[0],
+                               struct Scope *)
+                            ->name,
+                          CAST(
+                            get__Vec(*identifier->value.identifier_access, 0),
+                            struct Expr *)
+                            ->value.identifier,
+                          false)) {
+                        return get__Vec(*current, j);
+                    }
+                }
+            }
+
+            return NULL;
+        default:
+            UNREACHABLE("expected only identifier or identifier access");
+    }
+}
+
+// ex:
+// if <cond> do // -> {0, 0}
+//   if <cond> do // -> {0, 0}
+//    if <cond> do // -> {0, 0}
+//     a := 3 // -> {0, NULL}
+//    end
+//   end
+// end
+//
+// a -> Vec<VariableAddr*> = [{0, 0}, {0, 0}, {0, 0}, {0, NULL}]
+//
+// ex:
+// while <cond> do // -> {0, NULL}
+//  while <cond> do // -> {0, NULL}
+//    try do
+//    catch err do // -> {0, 1}
+//      a := 3 // -> {0, NULL}
+//    end
+//  end
+// end
+//
+// a -> Vec<Usize*> = [{0, NULL}, {0, NULL}, {0, 1}, {0, NULL}]
+struct SymbolTable *
+get_symb_of_variable(struct Compiler *self,
+                     struct Vec *local_values,
+                     struct Expr *identifier,
+                     struct Vec *body)
+{
+    struct Tuple *var =
+      search_variable_in_local_values(self, local_values, identifier);
+
+    if (!var)
+        return NULL;
+
+    struct Vec *addr = var->items[1];
+    struct SymbolTable *current =
+      get__Vec(*body, CAST(get__Vec(*addr, 0), struct VariableAddr *)->id);
+    Usize id_sec = CAST(get__Vec(*addr, 0), struct VariableAddr *)->id_sec;
+
+    for (Usize i = 1; i < len__Vec(*addr); i++) {
+        struct VariableAddr *item = get__Vec(*addr, i);
+
+        switch (current->kind) {
+            case SymbolTableKindStmt:
+                switch (current->value.stmt.kind) {
+                    case StmtKindIf:
+                        if (id_sec == 0)
+                            current =
+                              get__Vec(*current->value.stmt.value.if_.if_->body,
+                                       item->id);
+                        else if (id_sec <
+                                 len__Vec(
+                                   *current->value.stmt.value.if_.elif)) {
+                            struct Vec *body =
+                              CAST(get__Vec(*current->value.stmt.value.if_.elif,
+                                            item->id_sec),
+                                   struct IfBranchSymbol *)
+                                ->body;
+
+                            current = get__Vec(*body, item->id);
+                        } else
+                            current = get__Vec(
+                              *current->value.stmt.value.if_.else_->body,
+                              item->id);
+
+                        break;
+                    case StmtKindFor:
+                    case StmtKindWhile:
+                        current = get__Vec(
+                          *current->value.stmt.value.while_.body, item->id);
+
+                        break;
+                    case StmtKindTry:
+                        if (id_sec == 0) {
+                            current =
+                              get__Vec(*current->value.stmt.value.try.try_body,
+                                       item->id);
+                        } else if (id_sec == 1) {
+                            current = get__Vec(
+                              *current->value.stmt.value.try.catch_body,
+                              item->id);
+                        } else
+                            UNREACHABLE(
+                              "impossible to get an id_sec > 1 on try stmt");
+                        break;
+                    case StmtKindMatch: {
+                        struct Tuple *pattern = get__Vec(
+                          *current->value.stmt.value.match.patterns, id_sec);
+                        current = get__Vec(
+                          *CAST(
+                            CAST(pattern->items[2], struct Expr *)->value.block,
+                            struct Vec *),
+                          item->id);
+                        break;
+                    }
+                    default:
+                        UNREACHABLE("this stmt is not expected");
+                }
+                break;
+            case SymbolTableKindExpr:
+                break;
+            default:
+                UNREACHABLE("it's impossible to get this variant");
+        }
+
+        id_sec = item->id_sec;
+    }
+
+    assert(current->value.expr->kind == ExprKindVariable &&
+           "expected variable");
+
+    return current;
+}
+
+struct ExprSymbol *
+check_expression(struct Compiler *self,
+                 struct Expr *expr,
+                 struct SymbolTable *symb,
+                 struct SymbolTable *parent)
+{
+    switch (expr->kind) {
+        case ExprKindIf:
+            break;
+        case ExprKindTry:
+            break;
+        case ExprKindRef:
+            break;
+        case ExprKindNil:
+            break;
+        case ExprKindSelf:
+            break;
+        case ExprKindNone:
+            break;
+        case ExprKindTuple:
+            break;
+        case ExprKindArray:
+            break;
+        case ExprKindBlock:
+            break;
+        case ExprKindUndef:
+            break;
+        case ExprKindLambda:
+            break;
+        case ExprKindUnaryOp:
+            break;
+        case ExprKindFunCall:
+            break;
+        case ExprKindVariant:
+            break;
+        case ExprKindLiteral:
+            break;
+        case ExprKindBinaryOp:
+            break;
+        case ExprKindWildcard:
+            break;
+        case ExprKindVariable:
+            break;
+        case ExprKindGrouping:
+            break;
+        case ExprKindRecordCall:
+            break;
+        case ExprKindIdentifier: {
+            struct SymbolTable *var = NULL;
+
+            if (symb->kind == SymbolTableKindFun) // Search variable in fun body
+                var = get_symb_of_variable(self,
+                                           symb->value.fun->local_values,
+                                           expr,
+                                           symb->value.fun->body);
+            else if (symb->kind ==
+                     SymbolTableKindMethod) // Search variable in method body
+                var = get_symb_of_variable(self,
+                                           symb->value.method->local_values,
+                                           expr,
+                                           symb->value.method->body);
+
+            if (var) {
+
+            } else {
+            }
+
+            break;
+        }
+        case ExprKindArrayAccess:
+            break;
+        case ExprKindTupleAccess:
+            break;
+        case ExprKindDereference:
+            break;
+        case ExprKindQuestionMark:
+            break;
+        case ExprKindGlobalAccess:
+            break;
+        case ExprKindIdentifierAccess:
+            break;
+        case ExprKindPropertyAccessInit:
+            break;
+    }
 }
 
 struct DataTypeSymbol *
@@ -985,7 +1639,8 @@ check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes)
 void
 check_constant(struct Compiler *self,
                struct ConstantSymbol *constant,
-               struct Vec *scopes)
+               struct Vec *scopes,
+               struct SymbolTable *parent)
 {
     if (!constant->scope) {
         constant->scope =
@@ -998,6 +1653,10 @@ check_constant(struct Compiler *self,
               NULL,
               NULL,
               &constant->constant_decl->loc);
+
+        if (constant->constant_decl->value.constant->data_type)
+            constant->data_type = check_data_type(
+              self, constant->constant_decl->value.constant->data_type, parent);
     }
 }
 
@@ -1100,7 +1759,7 @@ check_symb(struct Compiler *self,
             check_fun(self, symb->value.fun, scopes);
             break;
         case SymbolTableKindConstant:
-            check_constant(self, symb->value.constant, scopes);
+            check_constant(self, symb->value.constant, scopes, parent);
             break;
         case SymbolTableKindModule:
             check_module(self, symb->value.module, scopes);
