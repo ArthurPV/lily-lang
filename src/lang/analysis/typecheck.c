@@ -254,11 +254,19 @@ get_symb_of_variable(struct Compiler *self,
                      struct Vec *local_values,
                      struct Expr *identifier,
                      struct Vec *body);
+struct DataTypeSymbol *
+infer_symb(struct Compiler *self, struct SymbolTable *expr_symb);
+Str
+get_compiler_defined_dt_name(Usize *count_compiler_defined_name);
 struct ExprSymbol *
 check_expression(struct Compiler *self,
                  struct Expr *expr,
                  struct SymbolTable *symb,
-                 struct SymbolTable *parent);
+                 struct SymbolTable *parent,
+                 Usize *count_compiler_defined_name,
+                 bool *search_fun);
+void
+check_fun_param(struct Compiler *self, struct FunSymbol *fun);
 void
 check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes);
 void
@@ -366,10 +374,26 @@ __new__Typecheck(struct Parser parser)
     return self;
 }
 
+#define CHECK_SYMBS(v)                              \
+    for (Usize i = len__Vec(*self->tc->funs); i--;) \
+        check_symb(self, get__Vec(*self->tc->funs, i), NULL);
+
 void
 run__Typecheck(struct Compiler *self, struct Vec *primary_buffer)
 {
     push_all_symbols(self);
+
+    CHECK_SYMBS(self->tc->funs);
+    CHECK_SYMBS(self->tc->consts);
+    CHECK_SYMBS(self->tc->modules);
+    CHECK_SYMBS(self->tc->aliases);
+    CHECK_SYMBS(self->tc->records);
+    CHECK_SYMBS(self->tc->enums);
+    CHECK_SYMBS(self->tc->errors);
+    CHECK_SYMBS(self->tc->classes);
+    CHECK_SYMBS(self->tc->traits);
+    CHECK_SYMBS(self->tc->records_obj);
+    CHECK_SYMBS(self->tc->enums_obj);
 
     SUMMARY();
 }
@@ -1339,33 +1363,232 @@ get_symb_of_variable(struct Compiler *self,
     return current;
 }
 
+struct DataTypeSymbol *
+infer_symb(struct Compiler *self, struct SymbolTable *expr_symb)
+{
+    struct String *name = NULL;
+    struct Scope *scope = get_scope__SymbolTable(expr_symb);
+    struct Vec *generic_params = NULL;
+
+    switch (expr_symb->kind) {
+        case SymbolTableKindEnum:
+        case SymbolTableKindRecord:
+        case SymbolTableKindEnumObj:
+        case SymbolTableKindRecordObj:
+        case SymbolTableKindClass:
+        case SymbolTableKindTrait:
+            name = get_name__SymbolTable(expr_symb);
+            break;
+        default:
+            break;
+    }
+
+    return NEW(DataTypeSymbolCustom, generic_params, name, scope);
+}
+
+Str
+get_compiler_defined_dt_name(Usize *count_compiler_defined_name)
+{
+    char c = (char)(*count_compiler_defined_name % 26 + 65);
+    Usize n = (Usize)floor((double)*count_compiler_defined_name / 26);
+    Usize size = n > 0 ? snprintf(NULL, 0, "%c%zu", c, n) + 1
+                       : snprintf(NULL, 0, "%c", c) + 1;
+    Str name = malloc(size);
+
+    if (n > 0)
+        snprintf(name, size, "%c%zu", c, n);
+    else
+        snprintf(name, size, "%c", c);
+
+    ++(*count_compiler_defined_name);
+
+    return name;
+}
+
+#define CHECK_IDENTIFIER(name)                                               \
+    struct SymbolTable *var = NULL;                                          \
+                                                                             \
+    if (symb->kind == SymbolTableKindFun) /* Search variable in fun body */  \
+        var = get_symb_of_variable(                                          \
+          self, symb->value.fun->local_values, expr, symb->value.fun->body); \
+    else if (symb->kind ==                                                   \
+             SymbolTableKindMethod) /* Search variable in method body */     \
+        var = get_symb_of_variable(self,                                     \
+                                   symb->value.method->local_values,         \
+                                   expr,                                     \
+                                   symb->value.method->body);                \
+                                                                             \
+    if (var)                                                                 \
+        return NEW(ExprSymbol##name,                                         \
+                   *expr,                                                    \
+                   get_scope__SymbolTable(var),                              \
+                   infer_symb(self, var));                                   \
+    else {                                                                   \
+        struct SymbolTable *value = NULL;                                    \
+                                                                             \
+        if (parent)                                                          \
+            value = search_symb_from_parent(self, parent, expr, search_fun); \
+        else                                                                 \
+            value = search_symb_from_global(self, expr, search_fun);         \
+                                                                             \
+        if (value)                                                           \
+            return NEW(ExprSymbol##name,                                     \
+                       *expr,                                                \
+                       get_scope__SymbolTable(value),                        \
+                       infer_symb(self, value));                             \
+                                                                             \
+        return NULL;                                                         \
+    }
+
 struct ExprSymbol *
 check_expression(struct Compiler *self,
                  struct Expr *expr,
                  struct SymbolTable *symb,
-                 struct SymbolTable *parent)
+                 struct SymbolTable *parent,
+                 Usize *count_compiler_defined_name,
+                 bool *search_fun)
 {
     switch (expr->kind) {
         case ExprKindIf:
+            TODO("check if branch");
             break;
-        case ExprKindTry:
-            break;
-        case ExprKindRef:
-            break;
+        case ExprKindTry: {
+            struct ExprSymbol *try_expr =
+              check_expression(self,
+                               expr->value.try,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+
+            if (try_expr->data_type->kind != DataTypeKindOptional) {
+                assert(0 &&
+                       "error: expected expression with optional data type");
+            }
+
+            return NEW(
+              ExprSymbolTry,
+              *expr,
+              try_expr,
+              copy__DataTypeSymbol(try_expr->data_type->value.optional));
+        }
+        case ExprKindRef: {
+            struct ExprSymbol *ref_expr =
+              check_expression(self,
+                               expr->value.ref,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+
+            return NEW(ExprSymbolRef,
+                       *expr,
+                       ref_expr,
+                       NEW(DataTypeSymbolRef,
+                           copy__DataTypeSymbol(ref_expr->data_type)));
+        }
         case ExprKindNil:
-            break;
+            return NEW(ExprSymbol,
+                       expr,
+                       NEW(DataTypeSymbolPtr,
+                           NEW(DataTypeSymbolCompilerDefined,
+                               NEW(CompilerDefinedDataType,
+                                   get_compiler_defined_dt_name(
+                                     count_compiler_defined_name),
+                                   false))));
         case ExprKindSelf:
             break;
         case ExprKindNone:
-            break;
-        case ExprKindTuple:
-            break;
-        case ExprKindArray:
-            break;
+            return NEW(ExprSymbol,
+                       expr,
+                       NEW(DataTypeSymbolOptional,
+                           NEW(DataTypeSymbolCompilerDefined,
+                               NEW(CompilerDefinedDataType,
+                                   get_compiler_defined_dt_name(
+                                     count_compiler_defined_name),
+                                   false))));
+        case ExprKindTuple: {
+            struct Vec *tuple = NEW(Vec, sizeof(struct ExprSymbol));
+            struct Vec *dts = NEW(Vec, sizeof(struct DataTypeSymbol));
+
+            for (Usize i = 0; i < len__Vec(*expr->value.tuple); i++) {
+                push__Vec(tuple,
+                          check_expression(self,
+                                           get__Vec(*expr->value.tuple, i),
+                                           symb,
+                                           parent,
+                                           count_compiler_defined_name,
+                                           search_fun));
+                push__Vec(
+                  dts,
+                  copy__DataTypeSymbol(
+                    CAST(get__Vec(*tuple, i), struct ExprSymbol *)->data_type));
+            }
+
+            return NEW(
+              ExprSymbolTuple, *expr, tuple, NEW(DataTypeSymbolTuple, dts));
+        }
+        case ExprKindArray: {
+            struct Vec *array = NEW(Vec, sizeof(struct ExprSymbol));
+
+            if (len__Vec(*expr->value.array) > 0) {
+                push__Vec(array,
+                          check_expression(self,
+                                           get__Vec(*expr->value.array, 0),
+                                           symb,
+                                           parent,
+                                           count_compiler_defined_name,
+                                           search_fun));
+
+                struct DataTypeSymbol *dt =
+                  CAST(get__Vec(*array, 0), struct ExprSymbol *)->data_type;
+
+                for (Usize i = 1; i < len__Vec(*expr->value.array); i++) {
+                    push__Vec(array,
+                              check_expression(self,
+                                               get__Vec(*expr->value.array, i),
+                                               symb,
+                                               parent,
+                                               count_compiler_defined_name,
+                                               search_fun));
+
+                    if (!eq__DataTypeSymbol(
+                          dt,
+                          CAST(get__Vec(*array, i), struct ExprSymbol *)
+                            ->data_type)) {
+                        assert(0 && "error: mismatched data type");
+                    }
+                }
+
+                return NEW(
+                  ExprSymbolArray,
+                  *expr,
+                  array,
+                  NEW(DataTypeSymbolArray, copy__DataTypeSymbol(dt), NULL));
+            } else {
+                return NEW(ExprSymbolArray,
+                           *expr,
+                           array,
+                           NEW(DataTypeSymbolArray,
+                               NEW(DataTypeSymbolCompilerDefined,
+                                   NEW(CompilerDefinedDataType,
+                                       get_compiler_defined_dt_name(
+                                         count_compiler_defined_name),
+                                       false)),
+                               NULL));
+            }
+        }
         case ExprKindBlock:
+            TODO("check block");
             break;
         case ExprKindUndef:
-            break;
+            return NEW(
+              ExprSymbol,
+              expr,
+              NEW(DataTypeSymbolCompilerDefined,
+                  NEW(CompilerDefinedDataType,
+                      get_compiler_defined_dt_name(count_compiler_defined_name),
+                      false)));
         case ExprKindLambda:
             break;
         case ExprKindUnaryOp:
@@ -1379,48 +1602,166 @@ check_expression(struct Compiler *self,
         case ExprKindBinaryOp:
             break;
         case ExprKindWildcard:
+            return NEW(ExprSymbol, expr, NULL);
+        case ExprKindVariable: {
+            Println("variable");
+            TODO("check variable");
             break;
-        case ExprKindVariable:
-            break;
+        }
         case ExprKindGrouping:
-            break;
-        case ExprKindRecordCall:
-            break;
-        case ExprKindIdentifier: {
-            struct SymbolTable *var = NULL;
+            return check_expression(self,
+                                    expr->value.grouping,
+                                    symb,
+                                    parent,
+                                    count_compiler_defined_name,
+                                    search_fun);
+        case ExprKindRecordCall: {
+            struct ExprSymbol *id =
+              check_expression(self,
+                               expr->value.record_call.id,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+            struct Scope *scope = get_scope__ExprSymbol(id);
 
-            if (symb->kind == SymbolTableKindFun) // Search variable in fun body
-                var = get_symb_of_variable(self,
-                                           symb->value.fun->local_values,
-                                           expr,
-                                           symb->value.fun->body);
-            else if (symb->kind ==
-                     SymbolTableKindMethod) // Search variable in method body
-                var = get_symb_of_variable(self,
-                                           symb->value.method->local_values,
-                                           expr,
-                                           symb->value.method->body);
+            if (scope && (scope->item_kind == ScopeItemKindRecord ||
+                          scope->item_kind == ScopeItemKindRecordObj)) {
+                struct SymbolTable *symb =
+                  search_from_scopes(self, scope->scopes, NULL);
 
-            if (var) {
-
-            } else {
+                switch (symb->kind) {
+                    case SymbolTableKindRecord:
+                        TODO("record");
+                        break;
+                    case SymbolTableKindRecordObj:
+                        TODO("record obj");
+                        break;
+                    default:
+                        UNREACHABLE("");
+                }
+            } else if (!scope) {
+                assert(0 && "error: symbol not found");
+            } else if (scope->item_kind != ScopeItemKindRecord &&
+                       scope->item_kind != ScopeItemKindRecordObj) {
+                assert(0 && "error: expected record");
             }
 
             break;
         }
-        case ExprKindArrayAccess:
-            break;
-        case ExprKindTupleAccess:
-            break;
-        case ExprKindDereference:
-            break;
+        case ExprKindIdentifier: {
+            CHECK_IDENTIFIER(Identifier);
+        }
+        case ExprKindArrayAccess: {
+            struct ExprSymbol *value =
+              check_expression(self,
+                               expr->value.array_access.id,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+            struct DataTypeSymbol *current = value->data_type;
+            struct Vec *ids = NEW(Vec, sizeof(struct ExprSymbol));
+
+            for (Usize i = 0; i < len__Vec(*expr->value.array_access.access);
+                 i++) {
+                if (current->kind == DataTypeKindArray) {
+                    current = current->value.array->items[0];
+                    push__Vec(ids,
+                              check_expression(
+                                self,
+                                get__Vec(*expr->value.array_access.access, i),
+                                symb,
+                                parent,
+                                count_compiler_defined_name,
+                                search_fun));
+                } else {
+                    assert(0 && "error: expected array");
+                }
+            }
+
+            return NEW(ExprSymbolArrayAccess,
+                       *expr,
+                       NEW(Tuple, 2, value, ids),
+                       copy__DataTypeSymbol(current));
+        }
+        case ExprKindTupleAccess: {
+            struct ExprSymbol *value =
+              check_expression(self,
+                               expr->value.tuple_access.id,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+
+            struct DataTypeSymbol *current = value->data_type;
+
+            for (Usize i = 0; i < len__Vec(*expr->value.tuple_access.access);
+                 i++) {
+                if (expr->value.tuple_access.id->value.literal.kind ==
+                    LiteralKindInt32) {
+                    if (current->kind == DataTypeKindTuple) {
+                        current = get__Vec(*current->value.tuple,
+                                           expr->value.tuple_access.id->value
+                                             .literal.value.int32);
+                    } else {
+                        assert(0 && "error: expected tuple");
+                    }
+                } else {
+                    assert(0 && "error: expected literal Int32");
+                }
+            }
+
+            return NEW(
+              ExprSymbolTupleAccess,
+              *expr,
+              NEW(Tuple,
+                  2,
+                  value,
+                  expr->value.tuple_access.id->value.literal.value.int32),
+              copy__DataTypeSymbol(current));
+        }
+        case ExprKindDereference: {
+            struct ExprSymbol *expr_dereference =
+              check_expression(self,
+                               expr->value.dereference,
+                               symb,
+                               parent,
+                               count_compiler_defined_name,
+                               search_fun);
+
+            if (expr_dereference->data_type->kind != DataTypeKindPtr) {
+                assert(0 && "error: expected pointer data type");
+            }
+
+            return NEW(
+              ExprSymbolDereference,
+              *expr,
+              expr_dereference,
+              copy__DataTypeSymbol(expr_dereference->data_type->value.ptr));
+        }
         case ExprKindQuestionMark:
             break;
-        case ExprKindGlobalAccess:
-            break;
-        case ExprKindIdentifierAccess:
-            break;
+        case ExprKindGlobalAccess: {
+            struct SymbolTable *value =
+              search_symb_from_global(self, expr, search_fun);
+
+            return NEW(ExprSymbolGlobalAccess,
+                       *expr,
+                       get_scope__SymbolTable(value),
+                       infer_symb(self, value));
+        }
+        case ExprKindIdentifierAccess: {
+            CHECK_IDENTIFIER(IdentifierAccess);
+        }
         case ExprKindPropertyAccessInit:
+            if (symb->kind == SymbolTableKindMethod) {
+                TODO("property access init");
+            } else {
+                assert(
+                  0 &&
+                  "error: unexpected property access init outside of method");
+            }
             break;
     }
 }
@@ -1632,8 +1973,52 @@ check_data_type(struct Compiler *self,
 }
 
 void
+check_fun_param(struct Compiler *self, struct FunSymbol *fun)
+{
+    // 1. check if param name is not duplicate
+    if (fun->fun_decl->value.fun->params) {
+        for (Usize i = 0; i < len__Vec(*fun->fun_decl->value.fun->params);
+             i++) {
+            for (Usize j = i + 1;
+                 j < len__Vec(*fun->fun_decl->value.fun->params);
+                 j++) {
+                if (eq__String(
+                      CAST(get__Vec(*fun->fun_decl->value.fun->params, i),
+                           struct FunParam *)
+                        ->name,
+                      CAST(get__Vec(*fun->fun_decl->value.fun->params, j),
+                           struct FunParam *)
+                        ->name,
+                      false)) {
+                    assert(0 && "error: param name is duplicate");
+                }
+            }
+        }
+    }
+}
+
+void
 check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes)
 {
+    if (!fun->scope) {
+		// 1. Build fun scope
+        fun->scope = NEW(Scope,
+                         self->tc->parser.parse_block.scanner.src->file.name,
+                         fun->fun_decl->value.fun->name,
+                         ScopeItemKindFun,
+                         fun->visibility,
+                         scopes,
+                         NULL,
+                         NULL,
+                         &fun->fun_decl->loc);
+
+		// 2. Check fun param
+        check_fun_param(self, fun);
+
+        // fun add(x, y) = x+y;
+
+        TODO("check fun");
+    }
 }
 
 void
@@ -1658,6 +2043,8 @@ check_constant(struct Compiler *self,
             constant->data_type = check_data_type(
               self, constant->constant_decl->value.constant->data_type, parent);
     }
+
+    TODO("check constant");
 }
 
 void
@@ -1665,6 +2052,7 @@ check_module(struct Compiler *self,
              struct ModuleSymbol *module,
              struct Vec *scopes)
 {
+    TODO("check module");
 }
 
 void
@@ -1672,6 +2060,7 @@ check_alias(struct Compiler *self,
             struct AliasSymbol *alias,
             struct Vec *scopes)
 {
+    TODO("check alias");
 }
 
 void
@@ -1679,6 +2068,7 @@ check_record(struct Compiler *self,
              struct RecordSymbol *record,
              struct Vec *scopes)
 {
+    TODO("check record");
 }
 
 void
@@ -1686,11 +2076,13 @@ check_record_obj(struct Compiler *self,
                  struct RecordObjSymbol *record_obj,
                  struct Vec *scopes)
 {
+    TODO("check record obj");
 }
 
 void
 check_enum(struct Compiler *self, struct EnumSymbol *enum_, struct Vec *scopes)
 {
+    TODO("check enum");
 }
 
 void
@@ -1698,6 +2090,7 @@ check_enum_obj(struct Compiler *self,
                struct EnumObjSymbol *enum_obj,
                struct Vec *scopes)
 {
+    TODO("check enum obj");
 }
 
 void
@@ -1705,6 +2098,7 @@ check_error(struct Compiler *self,
             struct ErrorSymbol *error,
             struct Vec *scopes)
 {
+    TODO("check error");
 }
 
 void
@@ -1712,6 +2106,7 @@ check_class(struct Compiler *self,
             struct ClassSymbol *class,
             struct Vec *scopes)
 {
+    TODO("check class");
 }
 
 void
@@ -1719,6 +2114,7 @@ check_trait(struct Compiler *self,
             struct TraitSymbol *trait,
             struct Vec *scopes)
 {
+    TODO("check trait");
 }
 
 void
@@ -1726,6 +2122,7 @@ check_property(struct Compiler *self,
                struct PropertySymbol *prop,
                struct Vec *scopes)
 {
+    TODO("check property");
 }
 
 void
@@ -1733,6 +2130,7 @@ check_method(struct Compiler *self,
              struct MethodSymbol *method,
              struct Vec *scopes)
 {
+    TODO("check method");
 }
 
 void

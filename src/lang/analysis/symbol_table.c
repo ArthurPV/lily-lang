@@ -567,7 +567,7 @@ __new__ExprSymbolGlobalAccess(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-                             struct Scope *array_access,
+                             struct Tuple *array_access,
                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -580,7 +580,7 @@ __new__ExprSymbolArrayAccess(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolTupleAccess(struct Expr expr,
-                             struct Scope *tuple_access,
+                             struct Tuple *tuple_access,
                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -671,7 +671,7 @@ __new__ExprSymbolBlock(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolQuestionMark(struct Expr expr,
-                              struct Scope *question_mark,
+                              struct ExprSymbol *question_mark,
                               struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -684,7 +684,7 @@ __new__ExprSymbolQuestionMark(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolDereference(struct Expr expr,
-                             struct Scope *dereference,
+                             struct ExprSymbol *dereference,
                              struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -697,7 +697,7 @@ __new__ExprSymbolDereference(struct Expr expr,
 
 struct ExprSymbol *
 __new__ExprSymbolRef(struct Expr expr,
-                     struct Scope *ref,
+                     struct ExprSymbol *ref,
                      struct DataTypeSymbol *data_type)
 {
     struct ExprSymbol *self = malloc(sizeof(struct ExprSymbol));
@@ -741,6 +741,21 @@ __new__ExprSymbolGrouping(struct Expr expr,
     self->data_type = data_type;
     self->value.grouping = grouping;
     return self;
+}
+
+struct Scope *
+get_scope__ExprSymbol(struct ExprSymbol *self)
+{
+    switch (self->kind) {
+        case ExprKindIdentifier:
+            return self->value.identifier;
+        case ExprKindIdentifierAccess:
+            return self->value.identifier_access;
+        case ExprKindGlobalAccess:
+            return self->value.global_access;
+        default:
+            UNREACHABLE("cannot get scope from this ExprSymbol's variant");
+    }
 }
 
 void

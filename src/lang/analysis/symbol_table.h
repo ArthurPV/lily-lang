@@ -1353,8 +1353,9 @@ typedef struct ExprSymbol
         struct Scope *identifier;
         struct Scope *identifier_access;
         struct Scope *global_access;
-        struct Scope *array_access;
-        struct Scope *tuple_access;
+        struct Tuple *array_access; // struct Tuple<struct ExprSymbol*, struct
+                                    // Vec<struct ExprSymbol*>*>*
+        struct Tuple *tuple_access; // struct Tuple<struct ExprSymbol*, Usize*>*
         struct LambdaSymbol lambda;
         struct Vec *array; // struct Vec<struct ExprSymbol*>*
         struct Vec *tuple; // struct Vec<struct ExprSymbol*>*
@@ -1362,9 +1363,9 @@ typedef struct ExprSymbol
         struct ExprSymbol *try;
         // struct IfCond
         struct Vec *block; // struct Vec<struct SymbolTable*>*
-        struct Scope *question_mark;
-        struct Scope *dereference;
-        struct Scope *ref;
+        struct ExprSymbol *question_mark;
+        struct ExprSymbol *dereference;
+        struct ExprSymbol *ref;
         struct LiteralSymbol literal;
         struct VariableSymbol *variable;
         struct Tuple *
@@ -1448,7 +1449,7 @@ __new__ExprSymbolGlobalAccess(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolArrayAccess(struct Expr expr,
-                             struct Scope *array_access,
+                             struct Tuple *array_access,
                              struct DataTypeSymbol *data_type);
 
 /**
@@ -1457,7 +1458,7 @@ __new__ExprSymbolArrayAccess(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolTupleAccess(struct Expr expr,
-                             struct Scope *tuple_access,
+                             struct Tuple *tuple_access,
                              struct DataTypeSymbol *data_type);
 
 /**
@@ -1520,7 +1521,7 @@ __new__ExprSymbolBlock(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolQuestionMark(struct Expr expr,
-                              struct Scope *question_mark,
+                              struct ExprSymbol *question_mark,
                               struct DataTypeSymbol *data_type);
 
 /**
@@ -1529,7 +1530,7 @@ __new__ExprSymbolQuestionMark(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolDereference(struct Expr expr,
-                             struct Scope *dereference,
+                             struct ExprSymbol *dereference,
                              struct DataTypeSymbol *data_type);
 
 /**
@@ -1538,7 +1539,7 @@ __new__ExprSymbolDereference(struct Expr expr,
  */
 struct ExprSymbol *
 __new__ExprSymbolRef(struct Expr expr,
-                     struct Scope *ref,
+                     struct ExprSymbol *ref,
                      struct DataTypeSymbol *data_type);
 
 /**
@@ -1563,6 +1564,13 @@ struct ExprSymbol *
 __new__ExprSymbolGrouping(struct Expr expr,
                           struct Tuple *grouping,
                           struct DataTypeSymbol *data_type);
+
+/**
+ *
+ * @brief Get scope of ExprSymbol.
+ */
+struct Scope *
+get_scope__ExprSymbol(struct ExprSymbol *self);
 
 /**
  *
@@ -1654,7 +1662,15 @@ __free__ExprSymbolGlobalAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.array_access);
+    FREE(ExprSymbolAll, self->value.tuple_access->items[0]);
+
+    for (Usize i = len__Vec(*(struct Vec *)self->value.tuple_access->items[1]);
+         i--;)
+        FREE(ExprSymbolAll,
+             get__Vec(*(struct Vec *)self->value.tuple_access->items[1], i));
+
+    FREE(Vec, self->value.tuple_access->items[1]);
+    FREE(Tuple, self->value.tuple_access);
     free(self);
 }
 
@@ -1665,7 +1681,8 @@ __free__ExprSymbolArrayAccess(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolTupleAccess(struct ExprSymbol *self)
 {
-    FREE(Scope, self->value.tuple_access);
+    FREE(ExprSymbolAll, self->value.tuple_access->items[0]);
+    FREE(Tuple, self->value.tuple_access);
     free(self);
 }
 
@@ -1726,6 +1743,7 @@ __free__ExprSymbolBlock(struct ExprSymbol *self);
 inline void
 __free__ExprSymbolQuestionMark(struct ExprSymbol *self)
 {
+    FREE(ExprSymbolAll, self->value.question_mark);
     free(self);
 }
 
@@ -1736,6 +1754,7 @@ __free__ExprSymbolQuestionMark(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolDereference(struct ExprSymbol *self)
 {
+    FREE(ExprSymbolAll, self->value.dereference);
     free(self);
 }
 
@@ -1746,6 +1765,7 @@ __free__ExprSymbolDereference(struct ExprSymbol *self)
 inline void
 __free__ExprSymbolRef(struct ExprSymbol *self)
 {
+    FREE(ExprSymbolAll, self->value.ref);
     free(self);
 }
 
