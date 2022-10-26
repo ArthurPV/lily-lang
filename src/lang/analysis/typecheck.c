@@ -1186,7 +1186,7 @@ search_symb(struct Compiler *self,
 
     if (res == NULL) {
     search_in_global : {
-        TODO("Search in global");
+		res = search_symb_from_global(self, expr);
     }
     }
 
