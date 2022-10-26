@@ -140,7 +140,7 @@ type Number: alias = Uint64;
 ```
 
 ```lily
-type Custom[T] = T;
+type Custom[T]: alias = T;
 ```
 
 ### Object
