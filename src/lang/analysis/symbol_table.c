@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#include "lang/parser/ast.h"
 #include <base/macros.h>
 #include <lang/analysis/symbol_table.h>
 #include <string.h>
@@ -1053,8 +1052,7 @@ __new__FunParamSymbol(struct FunParam *param)
 void
 __free__FunParamSymbol(struct FunParamSymbol *self)
 {
-    FREE(DataTypeSymbolAll, self->param_data_type->items[0]);
-    FREE(Tuple, self->param_data_type);
+    FREE(DataTypeSymbolAll, self->param_data_type);
 
     if (self->kind == FunParamKindDefault)
         FREE(ExprSymbolAll, self->default_);

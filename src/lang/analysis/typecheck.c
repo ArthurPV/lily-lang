@@ -215,13 +215,11 @@ struct SymbolTable *
 search_in_record_obj(struct Compiler *self,
                      struct SymbolTable *symb,
                      struct String *name,
-                     bool search_fun,
                      bool check_visibility);
 struct SymbolTable *
 search_in_enum_obj(struct Compiler *self,
                    struct SymbolTable *symb,
                    struct String *name,
-                   bool search_fun,
                    bool check_visibility);
 struct SymbolTable *
 search_in_global(struct Compiler *self, struct String *name);
@@ -229,17 +227,14 @@ struct SymbolTable *
 search_in_parent(struct Compiler *self,
                  struct SymbolTable *parent,
                  struct String *name,
-                 bool check_visibility,
-                 bool *search_fun);
+                 bool check_visibility);
 struct SymbolTable *
 search_symb_from_parent(struct Compiler *self,
                         struct SymbolTable *parent,
-                        struct Expr *expr,
-                        bool *search_fun);
+                        struct Expr *expr);
 struct SymbolTable *
 search_symb_from_global(struct Compiler *self,
-                        struct Expr *expr,
-                        bool *search_fun);
+                        struct Expr *expr);
 struct SymbolTable *
 search_symb(struct Compiler *self,
             struct SymbolTable *parent,
@@ -258,64 +253,84 @@ struct DataTypeSymbol *
 infer_symb(struct Compiler *self, struct SymbolTable *expr_symb);
 Str
 get_compiler_defined_dt_name(Usize *count_compiler_defined_name);
+struct DataTypeSymbol *
+get_sub_data_type(struct DataTypeSymbol *dt, Usize *n);
 struct ExprSymbol *
 check_expression(struct Compiler *self,
                  struct Expr *expr,
                  struct SymbolTable *symb,
                  struct SymbolTable *parent,
                  Usize *count_compiler_defined_name,
-                 bool *search_fun);
+				 struct DataTypeSymbol *defined_data_type);
 void
-check_fun_param(struct Compiler *self, struct FunSymbol *fun);
+check_fun_param(struct Compiler *self,
+                struct SymbolTable *fun,
+                struct SymbolTable *parent);
 void
-check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes);
+check_fun(struct Compiler *self,
+          struct SymbolTable *fun,
+          struct Vec *scopes,
+          struct SymbolTable *parent);
 void
 check_constant(struct Compiler *self,
-               struct ConstantSymbol *constant,
+               struct SymbolTable *constant,
                struct Vec *scopes,
                struct SymbolTable *parent);
 void
 check_module(struct Compiler *self,
-             struct ModuleSymbol *module,
-             struct Vec *scopes);
+             struct SymbolTable *module,
+             struct Vec *scopes,
+             struct SymbolTable *parent);
 void
 check_alias(struct Compiler *self,
-            struct AliasSymbol *alias,
-            struct Vec *scopes);
+            struct SymbolTable *alias,
+            struct Vec *scopes,
+            struct SymbolTable *parent);
 void
 check_record(struct Compiler *self,
-             struct RecordSymbol *record,
-             struct Vec *scopes);
+             struct SymbolTable *record,
+             struct Vec *scopes,
+             struct SymbolTable *parent);
 void
 check_record_obj(struct Compiler *self,
-                 struct RecordObjSymbol *record_obj,
-                 struct Vec *scopes);
+                 struct SymbolTable *record_obj,
+                 struct Vec *scopes,
+                 struct SymbolTable *parent);
 void
-check_enum(struct Compiler *self, struct EnumSymbol *enum_, struct Vec *scopes);
+check_enum(struct Compiler *self,
+           struct SymbolTable *enum_,
+           struct Vec *scopes,
+           struct SymbolTable *parent);
 void
 check_enum_obj(struct Compiler *self,
-               struct EnumObjSymbol *enum_obj,
-               struct Vec *scopes);
+               struct SymbolTable *enum_obj,
+               struct Vec *scopes,
+               struct SymbolTable *parent);
 void
 check_error(struct Compiler *self,
-            struct ErrorSymbol *error,
-            struct Vec *scopes);
+            struct SymbolTable *error,
+            struct Vec *scopes,
+            struct SymbolTable *parent);
 void
 check_class(struct Compiler *self,
-            struct ClassSymbol *class,
-            struct Vec *scopes);
+            struct SymbolTable *class,
+            struct Vec *scopes,
+            struct SymbolTable *parent);
 void
 check_trait(struct Compiler *self,
-            struct TraitSymbol *trait,
-            struct Vec *scopes);
+            struct SymbolTable *trait,
+            struct Vec *scopes,
+            struct SymbolTable *parent);
 void
 check_property(struct Compiler *self,
-               struct PropertySymbol *prop,
-               struct Vec *scopes);
+               struct SymbolTable *prop,
+               struct Vec *scopes,
+               struct SymbolTable *parent);
 void
 check_method(struct Compiler *self,
-             struct MethodSymbol *method,
-             struct Vec *scopes);
+             struct SymbolTable *method,
+             struct Vec *scopes,
+             struct SymbolTable *parent);
 void
 check_symb(struct Compiler *self,
            struct SymbolTable *symb,
@@ -850,7 +865,6 @@ struct SymbolTable *
 search_in_record_obj(struct Compiler *self,
                      struct SymbolTable *symb,
                      struct String *name,
-                     bool search_fun,
                      bool check_visibility)
 {
     assert(symb->kind == SymbolTableKindRecordObj && "expected record object");
@@ -858,29 +872,25 @@ search_in_record_obj(struct Compiler *self,
     for (Usize i = len__Vec(*symb->value.record_obj->scope->names); i--;) {
         struct Tuple *t = get__Vec(*symb->value.record_obj->scope->names, i);
 
-        if (eq__String(t->items[0], name, false) &&
-            ((search_fun &&
-              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) ||
-             (!search_fun &&
-              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindField))) {
+        if (eq__String(t->items[0], name, false)) {
             // NOTE: the first pushed elements in
             // symb->value.record_obj->scope->names are fields.
 
-            if (search_fun)
-                check_symb(
+			struct SymbolTable *res = NULL;
+
+			if ((enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) {
+				check_symb(
                   self,
                   get__Vec(*symb->value.record_obj->attached,
-                           i - len__Vec(*symb->value.record_obj->fields)),
-                  symb);
-            else
+                           i - len__Vec(*symb->value.record_obj->fields)), symb);
+
+				res = get__Vec(*symb->value.record_obj->attached, i - len__Vec(*symb->value.record_obj->fields));
+			} else {
                 check_symb(
                   self, get__Vec(*symb->value.record_obj->fields, i), symb);
 
-            struct SymbolTable *res =
-              search_fun
-                ? get__Vec(*symb->value.record_obj->attached,
-                           i - len__Vec(*symb->value.record_obj->fields))
-                : get__Vec(*symb->value.record_obj->fields, i);
+				res = get__Vec(*symb->value.record_obj->fields, i);
+			}
 
             if (check_visibility)
                 if (get_visibility__SymbolTable(res) != VisibilityPublic) {
@@ -898,7 +908,6 @@ struct SymbolTable *
 search_in_enum_obj(struct Compiler *self,
                    struct SymbolTable *symb,
                    struct String *name,
-                   bool search_fun,
                    bool check_visibility)
 {
     assert(symb->kind == SymbolTableKindEnumObj && "expected enum object");
@@ -906,29 +915,25 @@ search_in_enum_obj(struct Compiler *self,
     for (Usize i = len__Vec(*symb->value.enum_obj->scope->names); i--;) {
         struct Tuple *t = get__Vec(*symb->value.enum_obj->scope->names, i);
 
-        if (eq__String(t->items[0], name, false) &&
-            ((search_fun &&
-              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) ||
-             (!search_fun &&
-              (enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindVariant))) {
+        if (eq__String(t->items[0], name, false)) {
             // NOTE: the first pushed elements in
             // symb->value.enum_obj->scope->names are variants.
 
-            if (search_fun)
-                check_symb(
+			struct SymbolTable *res = NULL;
+
+			if ((enum ScopeItemKind)(UPtr)t->items[1] == ScopeItemKindFun) {
+				check_symb(
                   self,
                   get__Vec(*symb->value.enum_obj->attached,
-                           i - len__Vec(*symb->value.enum_obj->variants)),
-                  symb);
-            else
+                           i - len__Vec(*symb->value.enum_obj->variants)), symb);
+
+				res = get__Vec(*symb->value.enum_obj->attached, i - len__Vec(*symb->value.enum_obj->variants));
+			} else {
                 check_symb(
                   self, get__Vec(*symb->value.enum_obj->variants, i), symb);
 
-            struct SymbolTable *res =
-              search_fun
-                ? get__Vec(*symb->value.enum_obj->attached,
-                           i - len__Vec(*symb->value.enum_obj->variants))
-                : get__Vec(*symb->value.enum_obj->variants, i);
+				res = get__Vec(*symb->value.enum_obj->variants, i);
+			}
 
             if (check_visibility)
                 if (get_visibility__SymbolTable(res) != VisibilityPublic) {
@@ -1035,8 +1040,7 @@ struct SymbolTable *
 search_in_parent(struct Compiler *self,
                  struct SymbolTable *parent,
                  struct String *name,
-                 bool check_visibility,
-                 bool *search_fun)
+                 bool check_visibility)
 {
     switch (parent->kind) {
         case SymbolTableKindModule:
@@ -1048,15 +1052,13 @@ search_in_parent(struct Compiler *self,
         case SymbolTableKindEnum:
             return search_in_enum(self, parent, name);
         case SymbolTableKindRecordObj:
-            assert(search_fun && "expected search_fun != NULL");
-
             return search_in_record_obj(
-              self, parent, name, (bool)(UPtr)search_fun, check_visibility);
+              self, parent, name, check_visibility);
         case SymbolTableKindEnumObj:
-            assert(search_fun && "expected search_fun != NULL");
+            // assert(search_fun && "expected search_fun != NULL");
 
             return search_in_enum_obj(
-              self, parent, name, (bool)(UPtr)search_fun, check_visibility);
+              self, parent, name, check_visibility);
         default:
             UNREACHABLE("it's impossible to search symbol in this parent");
     }
@@ -1065,13 +1067,12 @@ search_in_parent(struct Compiler *self,
 struct SymbolTable *
 search_symb_from_parent(struct Compiler *self,
                         struct SymbolTable *parent,
-                        struct Expr *expr,
-                        bool *search_fun)
+                        struct Expr *expr)
 {
     switch (expr->kind) {
         case ExprKindIdentifier:
             return search_in_parent(
-              self, parent, expr->value.identifier, false, search_fun);
+              self, parent, expr->value.identifier, false);
         case ExprKindIdentifierAccess: {
             struct SymbolTable *current = parent;
             bool check_visibility = true;
@@ -1088,13 +1089,11 @@ search_symb_from_parent(struct Compiler *self,
                             ? search_in_parent(self,
                                                current,
                                                item->value.identifier,
-                                               check_visibility,
-                                               search_fun)
+                                               check_visibility)
                             : search_in_parent(self,
                                                current,
                                                item->value.identifier,
-                                               check_visibility,
-                                               NULL);
+                                               check_visibility);
 
                 if (check_visibility)
                     check_visibility = false;
@@ -1113,8 +1112,7 @@ search_symb_from_parent(struct Compiler *self,
 
 struct SymbolTable *
 search_symb_from_global(struct Compiler *self,
-                        struct Expr *expr,
-                        bool *search_fun)
+                        struct Expr *expr)
 {
     switch (expr->kind) {
         case ExprKindIdentifier: {
@@ -1139,9 +1137,9 @@ search_symb_from_global(struct Compiler *self,
                 current =
                   i == len__Vec(*expr->value.identifier_access) - 1
                     ? search_in_parent(
-                        self, current, id->value.identifier, true, search_fun)
+                        self, current, id->value.identifier, true)
                     : search_in_parent(
-                        self, current, id->value.identifier, true, NULL);
+                        self, current, id->value.identifier, true);
             }
 
             if (current)
@@ -1177,7 +1175,7 @@ search_symb(struct Compiler *self,
                     ? parent
                     : search_from_scopes(
                         self, scopes, (Usize *)(i + 1) - len__Vec(*scopes));
-        res = search_symb_from_parent(self, current, expr, search_fun);
+        res = search_symb_from_parent(self, current, expr);
     }
 
     if (!res)
@@ -1427,9 +1425,9 @@ get_compiler_defined_dt_name(Usize *count_compiler_defined_name)
         struct SymbolTable *value = NULL;                                    \
                                                                              \
         if (parent)                                                          \
-            value = search_symb_from_parent(self, parent, expr, search_fun); \
+            value = search_symb_from_parent(self, parent, expr); \
         else                                                                 \
-            value = search_symb_from_global(self, expr, search_fun);         \
+            value = search_symb_from_global(self, expr);         \
                                                                              \
         if (value)                                                           \
             return NEW(ExprSymbol##name,                                     \
@@ -1440,13 +1438,65 @@ get_compiler_defined_dt_name(Usize *count_compiler_defined_name)
         return NULL;                                                         \
     }
 
+struct DataTypeSymbol *
+get_sub_data_type(struct DataTypeSymbol *dt, Usize *n)
+{
+	if (!dt)
+		return NULL;
+
+	switch (dt->kind) {
+		case DataTypeKindSelf:
+		case DataTypeKindStr:
+		case DataTypeKindBitStr:
+		case DataTypeKindChar:
+		case DataTypeKindBitChar:
+		case DataTypeKindI8:
+		case DataTypeKindI16:
+		case DataTypeKindI32:
+		case DataTypeKindI64:
+		case DataTypeKindI128:
+		case DataTypeKindU8:
+		case DataTypeKindU16:
+		case DataTypeKindU32:
+		case DataTypeKindU64:
+		case DataTypeKindU128:
+		case DataTypeKindF32:
+		case DataTypeKindF64:
+		case DataTypeKindBool:
+		case DataTypeKindIsize:
+		case DataTypeKindUsize:
+		case DataTypeKindNever:
+		case DataTypeKindAny:
+		case DataTypeKindUnit:
+		case DataTypeKindLambda:
+		case DataTypeKindCustom:
+		case DataTypeKindCompilerDefined:
+			return NULL;
+		case DataTypeKindPtr:
+			return dt->value.ptr;
+		case DataTypeKindRef:
+			return dt->value.ref;
+		case DataTypeKindOptional:
+			return dt->value.optional;
+		case DataTypeKindException:
+			return dt->value.exception;
+		case DataTypeKindMut:
+			return dt->value.mut;
+		case DataTypeKindArray:
+			return dt->value.array->items[0];
+		case DataTypeKindTuple:
+			assert(n && "n != NULL when it's use for get sub data type of tuple");
+			return get__Vec(*dt->value.tuple, (Usize)(UPtr)n);
+	}
+}
+
 struct ExprSymbol *
 check_expression(struct Compiler *self,
                  struct Expr *expr,
                  struct SymbolTable *symb,
                  struct SymbolTable *parent,
                  Usize *count_compiler_defined_name,
-                 bool *search_fun)
+				 struct DataTypeSymbol *defined_data_type)
 {
     switch (expr->kind) {
         case ExprKindIf:
@@ -1459,7 +1509,7 @@ check_expression(struct Compiler *self,
                                symb,
                                parent,
                                count_compiler_defined_name,
-                               search_fun);
+							   get_sub_data_type(defined_data_type, NULL));
 
             if (try_expr->data_type->kind != DataTypeKindOptional) {
                 assert(0 &&
@@ -1479,7 +1529,7 @@ check_expression(struct Compiler *self,
                                symb,
                                parent,
                                count_compiler_defined_name,
-                               search_fun);
+							   get_sub_data_type(defined_data_type, NULL));
 
             return NEW(ExprSymbolRef,
                        *expr,
@@ -1518,7 +1568,7 @@ check_expression(struct Compiler *self,
                                            symb,
                                            parent,
                                            count_compiler_defined_name,
-                                           search_fun));
+										   get_sub_data_type(defined_data_type, (Usize*)i)));
                 push__Vec(
                   dts,
                   copy__DataTypeSymbol(
@@ -1538,7 +1588,7 @@ check_expression(struct Compiler *self,
                                            symb,
                                            parent,
                                            count_compiler_defined_name,
-                                           search_fun));
+										   get_sub_data_type(defined_data_type, NULL)));
 
                 struct DataTypeSymbol *dt =
                   CAST(get__Vec(*array, 0), struct ExprSymbol *)->data_type;
@@ -1550,7 +1600,7 @@ check_expression(struct Compiler *self,
                                                symb,
                                                parent,
                                                count_compiler_defined_name,
-                                               search_fun));
+											   get_sub_data_type(defined_data_type, NULL)));
 
                     if (!eq__DataTypeSymbol(
                           dt,
@@ -1614,7 +1664,7 @@ check_expression(struct Compiler *self,
                                     symb,
                                     parent,
                                     count_compiler_defined_name,
-                                    search_fun);
+									get_sub_data_type(defined_data_type, NULL));
         case ExprKindRecordCall: {
             struct ExprSymbol *id =
               check_expression(self,
@@ -1622,7 +1672,7 @@ check_expression(struct Compiler *self,
                                symb,
                                parent,
                                count_compiler_defined_name,
-                               search_fun);
+							   defined_data_type);
             struct Scope *scope = get_scope__ExprSymbol(id);
 
             if (scope && (scope->item_kind == ScopeItemKindRecord ||
@@ -1659,7 +1709,7 @@ check_expression(struct Compiler *self,
                                symb,
                                parent,
                                count_compiler_defined_name,
-                               search_fun);
+							   defined_data_type);
             struct DataTypeSymbol *current = value->data_type;
             struct Vec *ids = NEW(Vec, sizeof(struct ExprSymbol));
 
@@ -1673,8 +1723,7 @@ check_expression(struct Compiler *self,
                                 get__Vec(*expr->value.array_access.access, i),
                                 symb,
                                 parent,
-                                count_compiler_defined_name,
-                                search_fun));
+                                count_compiler_defined_name, get_sub_data_type(defined_data_type, NULL)));
                 } else {
                     assert(0 && "error: expected array");
                 }
@@ -1691,8 +1740,7 @@ check_expression(struct Compiler *self,
                                expr->value.tuple_access.id,
                                symb,
                                parent,
-                               count_compiler_defined_name,
-                               search_fun);
+                               count_compiler_defined_name, defined_data_type);
 
             struct DataTypeSymbol *current = value->data_type;
 
@@ -1722,17 +1770,21 @@ check_expression(struct Compiler *self,
               copy__DataTypeSymbol(current));
         }
         case ExprKindDereference: {
+			struct DataTypeSymbol *dt = defined_data_type ? NEW(DataTypeSymbolPtr, defined_data_type) : NULL;
             struct ExprSymbol *expr_dereference =
               check_expression(self,
                                expr->value.dereference,
                                symb,
                                parent,
                                count_compiler_defined_name,
-                               search_fun);
+							   dt);
 
             if (expr_dereference->data_type->kind != DataTypeKindPtr) {
                 assert(0 && "error: expected pointer data type");
             }
+
+			if (dt)
+				free(dt);
 
             return NEW(
               ExprSymbolDereference,
@@ -1744,7 +1796,7 @@ check_expression(struct Compiler *self,
             break;
         case ExprKindGlobalAccess: {
             struct SymbolTable *value =
-              search_symb_from_global(self, expr, search_fun);
+              search_symb_from_global(self, expr);
 
             return NEW(ExprSymbolGlobalAccess,
                        *expr,
@@ -1865,8 +1917,18 @@ check_data_type(struct Compiler *self,
                 struct DataType *dt,
                 struct SymbolTable *last)
 {
-    assert((last == NULL || last->kind == SymbolTableKindModule) &&
-           "last == NULL && last->kind != SymbolTableKindModule");
+    if (last)
+        assert((last->kind == SymbolTableKindModule ||
+                last->kind == SymbolTableKindClass ||
+                last->kind == SymbolTableKindRecord ||
+                last->kind == SymbolTableKindRecordObj ||
+                last->kind == SymbolTableKindEnum ||
+                last->kind == SymbolTableKindEnumObj ||
+                last->kind == SymbolTableKindTrait) &&
+               "last->kind must be equal to SymbolTableKindClass, "
+               "SymbolTableKindRecord, SymbolTableKindRecordObj, "
+               "SymbolTableKindEnum, "
+               "SymbolTableKindEnumObj or SymbolTableKindTrait");
 
     switch (dt->kind) {
         case DataTypeKindSelf:
@@ -1973,47 +2035,84 @@ check_data_type(struct Compiler *self,
 }
 
 void
-check_fun_param(struct Compiler *self, struct FunSymbol *fun)
+check_fun_param(struct Compiler *self,
+                struct SymbolTable *fun,
+                struct SymbolTable *parent)
 {
-    // 1. check if param name is not duplicate
-    if (fun->fun_decl->value.fun->params) {
-        for (Usize i = 0; i < len__Vec(*fun->fun_decl->value.fun->params);
+    struct Vec *params = NEW(Vec, sizeof(struct FunParamSymbol));
+
+    if (fun->value.fun->fun_decl->value.fun->params) {
+        // 1. check if param name is not duplicate
+        for (Usize i = 0;
+             i < len__Vec(*fun->value.fun->fun_decl->value.fun->params);
              i++) {
             for (Usize j = i + 1;
-                 j < len__Vec(*fun->fun_decl->value.fun->params);
+                 j < len__Vec(*fun->value.fun->fun_decl->value.fun->params);
                  j++) {
                 if (eq__String(
-                      CAST(get__Vec(*fun->fun_decl->value.fun->params, i),
+                      CAST(get__Vec(
+                             *fun->value.fun->fun_decl->value.fun->params, i),
                            struct FunParam *)
                         ->name,
-                      CAST(get__Vec(*fun->fun_decl->value.fun->params, j),
+                      CAST(get__Vec(
+                             *fun->value.fun->fun_decl->value.fun->params, j),
                            struct FunParam *)
                         ->name,
                       false)) {
                     assert(0 && "error: param name is duplicate");
                 }
             }
+
+            struct FunParam *fp =
+              get__Vec(*fun->value.fun->fun_decl->value.fun->params, i);
+            struct FunParamSymbol *res = NEW(FunParamSymbol, fp);
+
+            switch (fp->kind) {
+                case FunParamKindDefault: {
+                    if (fp->param_data_type)
+                        res->param_data_type =
+                          check_data_type(self, fp->param_data_type, parent);
+
+					// res->default_ = check_expression(self, fp->value.default_, fun, parent, NULL, 0);
+
+                    break;
+                }
+                case FunParamKindNormal: {
+                    if (fp->param_data_type)
+                        res->param_data_type =
+                          check_data_type(self, fp->param_data_type, parent);
+
+                    break;
+                }
+                case FunParamKindSelf:
+                    TODO("check self param");
+                    break;
+            }
         }
     }
 }
 
 void
-check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes)
+check_fun(struct Compiler *self,
+          struct SymbolTable *fun,
+          struct Vec *scopes,
+          struct SymbolTable *parent)
 {
-    if (!fun->scope) {
-		// 1. Build fun scope
-        fun->scope = NEW(Scope,
-                         self->tc->parser.parse_block.scanner.src->file.name,
-                         fun->fun_decl->value.fun->name,
-                         ScopeItemKindFun,
-                         fun->visibility,
-                         scopes,
-                         NULL,
-                         NULL,
-                         &fun->fun_decl->loc);
+    if (!fun->value.fun->scope) {
+        // 1. Build fun scope
+        fun->value.fun->scope =
+          NEW(Scope,
+              self->tc->parser.parse_block.scanner.src->file.name,
+              fun->value.fun->fun_decl->value.fun->name,
+              ScopeItemKindFun,
+              fun->value.fun->visibility,
+              scopes,
+              NULL,
+              NULL,
+              &fun->value.fun->fun_decl->loc);
 
-		// 2. Check fun param
-        check_fun_param(self, fun);
+        // 2. Check fun param
+        check_fun_param(self, fun, parent);
 
         // fun add(x, y) = x+y;
 
@@ -2023,25 +2122,28 @@ check_fun(struct Compiler *self, struct FunSymbol *fun, struct Vec *scopes)
 
 void
 check_constant(struct Compiler *self,
-               struct ConstantSymbol *constant,
+               struct SymbolTable *constant,
                struct Vec *scopes,
                struct SymbolTable *parent)
 {
-    if (!constant->scope) {
-        constant->scope =
+    if (!constant->value.constant->scope) {
+        constant->value.constant->scope =
           NEW(Scope,
               self->tc->parser.parse_block.scanner.src->file.name,
-              constant->constant_decl->value.constant->name,
+              constant->value.constant->constant_decl->value.constant->name,
               ScopeItemKindConstant,
-              constant->visibility,
+              constant->value.constant->visibility,
               scopes,
               NULL,
               NULL,
-              &constant->constant_decl->loc);
+              &constant->value.constant->constant_decl->loc);
 
-        if (constant->constant_decl->value.constant->data_type)
-            constant->data_type = check_data_type(
-              self, constant->constant_decl->value.constant->data_type, parent);
+        if (constant->value.constant->constant_decl->value.constant->data_type)
+            constant->value.constant->data_type =
+              check_data_type(self,
+                              constant->value.constant->constant_decl->value
+                                .constant->data_type,
+                              parent);
     }
 
     TODO("check constant");
@@ -2049,86 +2151,99 @@ check_constant(struct Compiler *self,
 
 void
 check_module(struct Compiler *self,
-             struct ModuleSymbol *module,
-             struct Vec *scopes)
+             struct SymbolTable *module,
+             struct Vec *scopes,
+             struct SymbolTable *parent)
 {
     TODO("check module");
 }
 
 void
 check_alias(struct Compiler *self,
-            struct AliasSymbol *alias,
-            struct Vec *scopes)
+            struct SymbolTable *alias,
+            struct Vec *scopes,
+            struct SymbolTable *parent)
 {
     TODO("check alias");
 }
 
 void
 check_record(struct Compiler *self,
-             struct RecordSymbol *record,
-             struct Vec *scopes)
+             struct SymbolTable *record,
+             struct Vec *scopes,
+             struct SymbolTable *parent)
 {
     TODO("check record");
 }
 
 void
 check_record_obj(struct Compiler *self,
-                 struct RecordObjSymbol *record_obj,
-                 struct Vec *scopes)
+                 struct SymbolTable *record_obj,
+                 struct Vec *scopes,
+                 struct SymbolTable *parent)
 {
     TODO("check record obj");
 }
 
 void
-check_enum(struct Compiler *self, struct EnumSymbol *enum_, struct Vec *scopes)
+check_enum(struct Compiler *self,
+           struct SymbolTable *enum_,
+           struct Vec *scopes,
+           struct SymbolTable *parent)
 {
     TODO("check enum");
 }
 
 void
 check_enum_obj(struct Compiler *self,
-               struct EnumObjSymbol *enum_obj,
-               struct Vec *scopes)
+               struct SymbolTable *enum_obj,
+               struct Vec *scopes,
+               struct SymbolTable *parent)
 {
     TODO("check enum obj");
 }
 
 void
 check_error(struct Compiler *self,
-            struct ErrorSymbol *error,
-            struct Vec *scopes)
+            struct SymbolTable *error,
+            struct Vec *scopes,
+            struct SymbolTable *parent)
 {
     TODO("check error");
 }
 
 void
 check_class(struct Compiler *self,
-            struct ClassSymbol *class,
-            struct Vec *scopes)
+            struct SymbolTable *class,
+            struct Vec *scopes,
+            struct SymbolTable *parent)
 {
     TODO("check class");
 }
 
 void
 check_trait(struct Compiler *self,
-            struct TraitSymbol *trait,
-            struct Vec *scopes)
+            struct SymbolTable *trait,
+            struct Vec *scopes,
+            struct SymbolTable *parent)
 {
     TODO("check trait");
 }
 
 void
 check_property(struct Compiler *self,
-               struct PropertySymbol *prop,
-               struct Vec *scopes)
+               struct SymbolTable *prop,
+               struct Vec *scopes,
+               struct SymbolTable *parent)
 {
     TODO("check property");
 }
 
 void
 check_method(struct Compiler *self,
-             struct MethodSymbol *method,
-             struct Vec *scopes)
+             struct SymbolTable *method,
+             struct Vec *scopes,
+             struct SymbolTable *parent)
 {
     TODO("check method");
 }
@@ -2154,40 +2269,40 @@ check_symb(struct Compiler *self,
 
     switch (symb->kind) {
         case SymbolTableKindFun:
-            check_fun(self, symb->value.fun, scopes);
+            check_fun(self, symb, scopes, parent);
             break;
         case SymbolTableKindConstant:
-            check_constant(self, symb->value.constant, scopes, parent);
+            check_constant(self, symb, scopes, parent);
             break;
         case SymbolTableKindModule:
-            check_module(self, symb->value.module, scopes);
+            check_module(self, symb, scopes, parent);
             break;
         case SymbolTableKindAlias:
-            check_alias(self, symb->value.alias, scopes);
+            check_alias(self, symb, scopes, parent);
             break;
         case SymbolTableKindRecord:
-            check_record(self, symb->value.record, scopes);
+            check_record(self, symb, scopes, parent);
             break;
         case SymbolTableKindEnum:
-            check_enum(self, symb->value.enum_, scopes);
+            check_enum(self, symb, scopes, parent);
             break;
         case SymbolTableKindError:
-            check_error(self, symb->value.error, scopes);
+            check_error(self, symb, scopes, parent);
             break;
         case SymbolTableKindClass:
-            check_class(self, symb->value.class, scopes);
+            check_class(self, symb, scopes, parent);
             break;
         case SymbolTableKindTrait:
-            check_trait(self, symb->value.trait, scopes);
+            check_trait(self, symb, scopes, parent);
             break;
         case SymbolTableKindRecordObj:
-            check_record_obj(self, symb->value.record_obj, scopes);
+            check_record_obj(self, symb, scopes, parent);
             break;
         case SymbolTableKindEnumObj:
-            check_enum_obj(self, symb->value.enum_obj, scopes);
+            check_enum_obj(self, symb, scopes, parent);
             break;
         case SymbolTableKindProperty:
-            check_property(self, symb->value.property, scopes);
+            check_property(self, symb, scopes, parent);
             break;
         default:
             UNREACHABLE("this SymbolTableKind doesn't exist in global");

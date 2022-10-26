@@ -402,8 +402,7 @@ __free__GenericSymbolAll(struct Generic *self);
 typedef struct FunParamSymbol
 {
     enum FunParamKind kind;
-    struct Tuple *param_data_type; // struct Tuple<struct DataTypeSymbol*,
-                                   // struct Location&>*
+    struct DataTypeSymbol *param_data_type;
     struct Location loc;
     bool default_defined_data_type;
 
