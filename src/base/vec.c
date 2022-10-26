@@ -149,8 +149,8 @@ shift__Vec(struct Vec *self)
 void
 modify_item__Vec(struct Vec *self, void *value, Usize idx)
 {
-    assert(self->len > 0 || idx < self->len ||
-           idx > 0 && "index out of bounds");
+    assert((self->len > 0 || idx < self->len ||
+           idx > 0) && "index out of bounds");
     self->items[idx] = value;
 }
 
