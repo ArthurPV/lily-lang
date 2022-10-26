@@ -3537,80 +3537,99 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
     next_token(parse_decl);
 
     struct DataType *data_type = NULL;
+    struct Location loc = NEW(Location);
+
+    start__Location(&loc,
+                    parse_decl->previous->loc->s_line,
+                    parse_decl->previous->loc->s_col);
 
     switch (parse_decl->previous->kind) {
         case TokenKindSelfKw:
-            return NEW(DataType, DataTypeKindSelf);
-        case TokenKindMutKw:
-            return NEW(DataTypeMut, parse_data_type(self, parse_decl));
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
+            return NEW(DataType, DataTypeKindSelf, loc);
+        case TokenKindMutKw: {
+            struct DataType *dt = parse_data_type(self, parse_decl);
+
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            return NEW(DataTypeMut, dt, loc);
+        }
         case TokenKindIdentifier: {
+            end__Location(&loc,
+                          parse_decl->previous->loc->e_line,
+                          parse_decl->previous->loc->e_col);
+
             Str identifier_str = to_Str__String(*parse_decl->previous->lit);
 
             if (!strcmp(identifier_str, "Int8"))
-                data_type = NEW(DataType, DataTypeKindI8);
+                data_type = NEW(DataType, DataTypeKindI8, loc);
 
             else if (!strcmp(identifier_str, "Int16"))
-                data_type = NEW(DataType, DataTypeKindI16);
+                data_type = NEW(DataType, DataTypeKindI16, loc);
 
             else if (!strcmp(identifier_str, "Int32"))
-                data_type = NEW(DataType, DataTypeKindI32);
+                data_type = NEW(DataType, DataTypeKindI32, loc);
 
             else if (!strcmp(identifier_str, "Int64"))
-                data_type = NEW(DataType, DataTypeKindI64);
+                data_type = NEW(DataType, DataTypeKindI64, loc);
 
             else if (!strcmp(identifier_str, "Int128"))
-                data_type = NEW(DataType, DataTypeKindI128);
+                data_type = NEW(DataType, DataTypeKindI128, loc);
 
             else if (!strcmp(identifier_str, "Uint8"))
-                data_type = NEW(DataType, DataTypeKindU8);
+                data_type = NEW(DataType, DataTypeKindU8, loc);
 
             else if (!strcmp(identifier_str, "Uint16"))
-                data_type = NEW(DataType, DataTypeKindU16);
+                data_type = NEW(DataType, DataTypeKindU16, loc);
 
             else if (!strcmp(identifier_str, "Uint32"))
-                data_type = NEW(DataType, DataTypeKindU32);
+                data_type = NEW(DataType, DataTypeKindU32, loc);
 
             else if (!strcmp(identifier_str, "Uint64"))
-                data_type = NEW(DataType, DataTypeKindU64);
+                data_type = NEW(DataType, DataTypeKindU64, loc);
 
             else if (!strcmp(identifier_str, "Uint128"))
-                data_type = NEW(DataType, DataTypeKindU128);
+                data_type = NEW(DataType, DataTypeKindU128, loc);
 
             else if (!strcmp(identifier_str, "Isize"))
-                data_type = NEW(DataType, DataTypeKindIsize);
+                data_type = NEW(DataType, DataTypeKindIsize, loc);
 
             else if (!strcmp(identifier_str, "Usize"))
-                data_type = NEW(DataType, DataTypeKindUsize);
+                data_type = NEW(DataType, DataTypeKindUsize, loc);
 
             else if (!strcmp(identifier_str, "Float32"))
-                data_type = NEW(DataType, DataTypeKindF32);
+                data_type = NEW(DataType, DataTypeKindF32, loc);
 
             else if (!strcmp(identifier_str, "Float64"))
-                data_type = NEW(DataType, DataTypeKindF64);
+                data_type = NEW(DataType, DataTypeKindF64, loc);
 
             else if (!strcmp(identifier_str, "Bool"))
-                data_type = NEW(DataType, DataTypeKindBool);
+                data_type = NEW(DataType, DataTypeKindBool, loc);
 
             else if (!strcmp(identifier_str, "Char"))
-                data_type = NEW(DataType, DataTypeKindChar);
+                data_type = NEW(DataType, DataTypeKindChar, loc);
 
             else if (!strcmp(identifier_str, "BitChar"))
-                data_type = NEW(DataType, DataTypeKindBitChar);
+                data_type = NEW(DataType, DataTypeKindBitChar, loc);
 
             else if (!strcmp(identifier_str, "Str"))
-                data_type = NEW(DataType, DataTypeKindStr);
+                data_type = NEW(DataType, DataTypeKindStr, loc);
 
             else if (!strcmp(identifier_str, "BitStr"))
-                data_type = NEW(DataType, DataTypeKindBitStr);
+                data_type = NEW(DataType, DataTypeKindBitStr, loc);
 
             else if (!strcmp(identifier_str, "Any"))
-                data_type = NEW(DataType, DataTypeKindAny);
+                data_type = NEW(DataType, DataTypeKindAny, loc);
 
             else if (!strcmp(identifier_str, "Never"))
-                data_type = NEW(DataType, DataTypeKindNever);
+                data_type = NEW(DataType, DataTypeKindNever, loc);
 
             else if (!strcmp(identifier_str, "Unit"))
-                data_type = NEW(DataType, DataTypeKindUnit);
+                data_type = NEW(DataType, DataTypeKindUnit, loc);
 
             else {
                 struct Vec *names = NEW(Vec, sizeof(struct String));
@@ -3668,9 +3687,18 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                           warn, self.parse_block.disable_warning);
                     }
 
-                    data_type = NEW(DataTypeCustom, names, data_types);
-                } else
-                    data_type = NEW(DataTypeCustom, names, NULL);
+                    end__Location(&loc,
+                                  parse_decl->current->loc->e_line,
+                                  parse_decl->current->loc->e_col);
+
+                    data_type = NEW(DataTypeCustom, names, data_types, loc);
+                } else {
+                    end__Location(&loc,
+                                  parse_decl->current->loc->e_line,
+                                  parse_decl->current->loc->e_col);
+
+                    data_type = NEW(DataTypeCustom, names, NULL, loc);
+                }
             }
 
             free(identifier_str);
@@ -3755,12 +3783,20 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 next_token(parse_decl);
 
             if (is_data_type(parse_decl)) {
+                end__Location(&loc,
+                              parse_decl->current->loc->e_line,
+                              parse_decl->current->loc->e_col);
+
                 if (!size)
-                    data_type = NEW(
-                      DataTypeArray, parse_data_type(self, parse_decl), NULL);
+                    data_type = NEW(DataTypeArray,
+                                    parse_data_type(self, parse_decl),
+                                    NULL,
+                                    loc);
                 else
-                    data_type = NEW(
-                      DataTypeArray, parse_data_type(self, parse_decl), NULL);
+                    data_type = NEW(DataTypeArray,
+                                    parse_data_type(self, parse_decl),
+                                    size,
+                                    loc);
             } else {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -3799,27 +3835,62 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
                 }
             });
 
-            data_type = NEW(DataTypeTuple, data_types);
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            data_type = NEW(DataTypeTuple, data_types, loc);
 
             break;
         }
 
-        case TokenKindStar:
-            data_type = NEW(DataTypePtr, parse_data_type(self, parse_decl));
-            break;
+        case TokenKindStar: {
+            struct DataType *dt = parse_data_type(self, parse_decl);
 
-        case TokenKindInterrogation:
-            data_type =
-              NEW(DataTypeOptional, parse_data_type(self, parse_decl));
-            break;
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
 
-        case TokenKindBang:
-            data_type =
-              NEW(DataTypeException, parse_data_type(self, parse_decl));
-            break;
+            data_type = NEW(DataTypePtr, dt, loc);
 
-        case TokenKindAmpersand:
-            data_type = NEW(DataTypeRef, parse_data_type(self, parse_decl));
+            break;
+        }
+
+        case TokenKindInterrogation: {
+            struct DataType *dt = parse_data_type(self, parse_decl);
+
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            data_type = NEW(DataTypeOptional, dt, loc);
+
+            break;
+        }
+
+        case TokenKindBang: {
+            struct DataType *dt = parse_data_type(self, parse_decl);
+
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            data_type = NEW(DataTypeException, dt, loc);
+
+            break;
+        }
+
+        case TokenKindAmpersand: {
+            struct DataType *dt = parse_data_type(self, parse_decl);
+
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            data_type = NEW(DataTypeRef, dt, loc);
+
+            break;
+        }
 
         case TokenKindBar: {
             struct Vec *params = NEW(Vec, sizeof(struct Vec));
@@ -3860,7 +3931,11 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 
             next_token(parse_decl);
 
-            data_type = NEW(DataTypeLambda, params, return_type);
+            end__Location(&loc,
+                          parse_decl->current->loc->e_line,
+                          parse_decl->current->loc->e_col);
+
+            data_type = NEW(DataTypeLambda, params, return_type, loc);
 
             break;
         }
@@ -3875,8 +3950,9 @@ parse_data_type(struct Parser self, struct ParseDecl *parse_decl)
 struct Vec *
 parse_tags(struct Parser self, struct ParseDecl *parse_decl)
 {
-    struct Vec *tags =
-      len__Vec(*parse_decl->tokens) > 0 ? NEW(Vec, sizeof(struct Tuple)) : NULL;
+    struct Vec *tags = len__Vec(*parse_decl->tokens) > 0
+                         ? NEW(Vec, sizeof(struct DataType))
+                         : NULL;
 
     while (parse_decl->pos < len__Vec(*parse_decl->tokens)) {
         struct Location loc = NEW(Location);
@@ -3886,17 +3962,10 @@ parse_tags(struct Parser self, struct ParseDecl *parse_decl)
                         parse_decl->current->loc->s_col);
 
         switch (parse_decl->current->kind) {
-            case TokenKindIdentifier: {
-                struct DataType *data_type = parse_data_type(self, parse_decl);
-
-                end__Location(&loc,
-                              parse_decl->previous->loc->s_line,
-                              parse_decl->previous->loc->s_col);
-
-                push__Vec(tags, NEW(Tuple, 2, data_type, copy__Location(&loc)));
+            case TokenKindIdentifier:
+                push__Vec(tags, parse_data_type(self, parse_decl));
 
                 break;
-            }
             default: {
                 struct Diagnostic *err =
                   NEW(DiagnosticWithErrParser,
@@ -3977,10 +4046,7 @@ parse_generic_params(struct Parser self, struct ParseDecl *parse_decl)
                               NEW(GenericRestrictedDataType,
                                   data_type,
                                   loc,
-                                  NEW(Tuple,
-                                      2,
-                                      restricted_data_type,
-                                      copy__Location(&loc_data_type))));
+                                  restricted_data_type));
                 } else {
                     end__Location(&loc,
                                   parse_decl->current->loc->s_line,
@@ -6881,11 +6947,7 @@ parse_fun_params(struct Parser self,
             else if (!default_value)
                 push__Vec(
                   params,
-                  NEW(FunParamNormal,
-                      name,
-                      super_tag_name,
-                      NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
-                      loc));
+                  NEW(FunParamNormal, name, super_tag_name, data_type, loc));
             else if (default_value && !data_type)
                 push__Vec(params,
                           NEW(FunParamDefault,
@@ -6895,14 +6957,13 @@ parse_fun_params(struct Parser self,
                               loc,
                               default_value));
             else
-                push__Vec(
-                  params,
-                  NEW(FunParamDefault,
-                      name,
-                      super_tag_name,
-                      NEW(Tuple, 2, data_type, copy__Location(&loc_data_type)),
-                      loc,
-                      default_value));
+                push__Vec(params,
+                          NEW(FunParamDefault,
+                              name,
+                              super_tag_name,
+                              data_type,
+                              loc,
+                              default_value));
 
             if (parse_decl->pos + 1 < len__Vec(*parse_decl->tokens)) {
                 EXPECTED_TOKEN(parse_decl, TokenKindComma, {
@@ -6948,7 +7009,7 @@ parse_fun_declaration(struct Parser *self,
     struct Vec *tags = NULL;
     struct Vec *generic_params = NULL;
     struct Vec *params = NULL;
-    struct Tuple *return_type = NULL;
+    struct DataType *return_type = NULL;
     struct Vec *body = NULL;
 
     if (fun_parse_context.has_tags || fun_parse_context.has_tag) {
@@ -6976,22 +7037,8 @@ parse_fun_declaration(struct Parser *self,
 
     if (fun_parse_context.has_return_type) {
         struct ParseDecl parse = NEW(ParseDecl, fun_parse_context.return_type);
-        struct Location loc = NEW(Location);
-        struct DataType *dt = NULL;
 
-        start__Location(
-          &loc, parse.current->loc->s_line, parse.current->loc->s_col);
-
-        dt = parse_data_type(*self, &parse);
-
-        if (len__Vec(*parse.tokens) == 1)
-            end__Location(
-              &loc, parse.current->loc->e_line, parse.current->loc->e_col);
-        else
-            end__Location(
-              &loc, parse.current->loc->s_line, parse.current->loc->s_col);
-
-        return_type = NEW(Tuple, 2, dt, copy__Location(&loc));
+        return_type = parse_data_type(*self, &parse);
 
         if (parse.pos + 1 < len__Vec(*parse.tokens)) {
             struct Diagnostic *err =
@@ -7283,7 +7330,7 @@ parse_inheritance(struct Parser self, struct ParseDecl *parse_decl)
 
         switch (dt->kind) {
             case DataTypeKindCustom:
-                push__Vec(inh, NEW(Tuple, 2, dt, copy__Location(&loc)));
+                push__Vec(inh, dt);
                 break;
             default: {
                 struct Diagnostic *err =

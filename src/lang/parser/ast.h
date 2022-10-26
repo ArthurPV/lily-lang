@@ -73,6 +73,7 @@ enum DataTypeKind
 typedef struct DataType
 {
     enum DataTypeKind kind;
+    struct Location loc;
     union
     {
         struct DataType *ptr;
@@ -94,63 +95,69 @@ typedef struct DataType
  * @brief Construct DataType type.
  */
 struct DataType *
-__new__DataType(enum DataTypeKind kind);
+__new__DataType(enum DataTypeKind kind, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Ptr variant).
  */
 struct DataType *
-__new__DataTypePtr(struct DataType *ptr);
+__new__DataTypePtr(struct DataType *ptr, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Ref variant).
  */
 struct DataType *
-__new__DataTypeRef(struct DataType *ref);
+__new__DataTypeRef(struct DataType *ref, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Optional variant).
  */
 struct DataType *
-__new__DataTypeOptional(struct DataType *optional);
+__new__DataTypeOptional(struct DataType *optional, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Exception variant).
  */
 struct DataType *
-__new__DataTypeException(struct DataType *exception);
+__new__DataTypeException(struct DataType *exception, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Mut variant).
  */
 struct DataType *
-__new__DataTypeMut(struct DataType *mut);
+__new__DataTypeMut(struct DataType *mut, struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Lambda variant).
  */
 struct DataType *
-__new__DataTypeLambda(struct Vec *params, struct DataType *return_type);
+__new__DataTypeLambda(struct Vec *params,
+                      struct DataType *return_type,
+                      struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Array variant).
  */
 struct DataType *
-__new__DataTypeArray(struct DataType *data_type, Usize *size);
+__new__DataTypeArray(struct DataType *data_type,
+                     Usize *size,
+                     struct Location loc);
 
 /**
  *
  * @brief Construct DataType type (Custom variant).
  */
 struct DataType *
-__new__DataTypeCustom(struct Vec *names, struct Vec *generic_params);
+__new__DataTypeCustom(struct Vec *names,
+                      struct Vec *generic_params,
+                      struct Location loc);
 
 /**
  *
@@ -158,7 +165,7 @@ __new__DataTypeCustom(struct Vec *names, struct Vec *generic_params);
  */
 ;
 struct DataType *
-__new__DataTypeTuple(struct Vec *tuple);
+__new__DataTypeTuple(struct Vec *tuple, struct Location loc);
 
 /**
  *
@@ -264,10 +271,9 @@ typedef struct Generic
 
     union
     {
-        struct String *data_type; // struct String&
-        struct Tuple
-          *restricted_data_type; // struct Tuple<struct String&, struct
-                                 // Tuple<struct DataType*, struct Location*>*>*
+        struct String *data_type;           // struct String&
+        struct Tuple *restricted_data_type; // struct Tuple<struct String&,
+                                            // struct DataType*>*
     } value;
 } Generic;
 
@@ -285,7 +291,7 @@ __new__GenericDataType(struct String *data_type, struct Location loc);
 struct Generic *
 __new__GenericRestrictedDataType(struct String *name,
                                  struct Location loc,
-                                 struct Tuple *data_type);
+                                 struct DataType *data_type);
 
 struct String *
 get_name__Generic(struct Generic *self);
@@ -998,7 +1004,7 @@ __free__TupleAccess(struct TupleAccess self);
 typedef struct Lambda
 {
     struct Vec *params;           // struct Vec<struct FunParam*>*
-    struct DataType *return_type; // struct Option<struct DataType*>*
+    struct DataType *return_type; // struct DataType*
     struct Vec *body;             // struct Vec<struct FunBodyItem*>*
     bool instantly_call;
 } Lambda;
@@ -2300,8 +2306,7 @@ __free__FunParamCallAll(struct FunParamCall *self);
 typedef struct FunParam
 {
     enum FunParamKind kind;
-    struct Tuple
-      *param_data_type; // struct Tuple<struct DataType*, struct Location*>*
+    struct DataType *param_data_type;
     struct Location loc;
 
     union
@@ -2328,7 +2333,7 @@ typedef struct FunParam
 struct FunParam *
 __new__FunParamDefault(struct String *name,
                        struct String *super_tag_name,
-                       struct Tuple *param_data_type,
+                       struct DataType *param_data_type,
                        struct Location loc,
                        struct Expr *default_);
 
@@ -2339,7 +2344,7 @@ __new__FunParamDefault(struct String *name,
 struct FunParam *
 __new__FunParamNormal(struct String *name,
                       struct String *super_tag_name,
-                      struct Tuple *param_data_type,
+                      struct DataType *param_data_type,
                       struct Location loc);
 
 /**
@@ -2386,13 +2391,11 @@ __free__FunParamAll(struct FunParam *self);
 typedef struct FunDecl
 {
     struct Vec *doc;
-    struct String *name; // struct String&
-    struct Vec
-      *tags; // struct Vec<struct Tuple<struct DataType*, struct Location&>*>*
+    struct String *name;        // struct String&
+    struct Vec *tags;           // struct Vec<struct DataType*>*
     struct Vec *generic_params; // struct Vec<struct Generic*>*
     struct Vec *params;         // struct Vec<struct FunParam*>*
-    struct Tuple
-      *return_type;   // struct Tuple<struct DataType*, struct Location*>*
+    struct DataType *return_type;
     struct Vec *body; // struct Vec<struct FunBodyItem*>*
     bool is_pub;
     bool is_async;
@@ -2407,7 +2410,7 @@ __new__FunDecl(struct String *name,
                struct Vec *tags,
                struct Vec *generic_params,
                struct Vec *params,
-               struct Tuple *return_type,
+               struct DataType *return_type,
                struct Vec *body,
                bool is_pub,
                bool is_async);
@@ -2916,11 +2919,9 @@ typedef struct ClassDecl
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
-    struct Vec *inheritance; // struct Vec<struct Tuple<struct DataType*, struct
-                             // Location*>*>*
-    struct Vec
-      *impl; // struct Vec<struct Tuple<struct DataType*, struct Location*>*>*
-    struct Vec *body; // struct Vec<struct ClassBodyItem*>*
+    struct Vec *inheritance;    // struct Vec<struct DataType*>*
+    struct Vec *impl;           // struct Vec<struct DataType*>*
+    struct Vec *body;           // struct Vec<struct ClassBodyItem*>*
     bool is_pub;
 } ClassDecl;
 
@@ -3056,9 +3057,8 @@ typedef struct TraitDecl
 {
     struct String *name;        // struct String&
     struct Vec *generic_params; // struct Vec<struct Generic*>*
-    struct Vec
-      *inh; // struct Vec<struct Tuple<struct DataType*, struct Location*>*>*
-    struct Vec *body; // struct Vec<struct TraitBodyItem*>*
+    struct Vec *inh;            // struct Vec<struct DataType*>*
+    struct Vec *body;           // struct Vec<struct TraitBodyItem*>*
     bool is_pub;
 } TraitDecl;
 

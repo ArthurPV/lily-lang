@@ -33,90 +33,106 @@
 static Usize current_tab_size = 0;
 
 struct DataType *
-__new__DataType(enum DataTypeKind kind)
+__new__DataType(enum DataTypeKind kind, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = kind;
+    self->loc = loc;
     return self;
 }
 
 struct DataType *
-__new__DataTypePtr(struct DataType *ptr)
+__new__DataTypePtr(struct DataType *ptr, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindPtr;
+    self->loc = loc;
     self->value.ptr = ptr;
     return self;
 }
 
 struct DataType *
-__new__DataTypeRef(struct DataType *ref)
+__new__DataTypeRef(struct DataType *ref, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindRef;
+    self->loc = loc;
     self->value.ref = ref;
     return self;
 }
 
 struct DataType *
-__new__DataTypeOptional(struct DataType *optional)
+__new__DataTypeOptional(struct DataType *optional, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindOptional;
+    self->loc = loc;
     self->value.optional = optional;
     return self;
 }
 
 struct DataType *
-__new__DataTypeException(struct DataType *exception)
+__new__DataTypeException(struct DataType *exception, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindException;
+    self->loc = loc;
     self->value.exception = exception;
     return self;
 }
 
 struct DataType *
-__new__DataTypeMut(struct DataType *mut)
+__new__DataTypeMut(struct DataType *mut, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindMut;
+    self->loc = loc;
     self->value.mut = mut;
     return self;
 }
 
 struct DataType *
-__new__DataTypeLambda(struct Vec *params, struct DataType *return_type)
+__new__DataTypeLambda(struct Vec *params,
+                      struct DataType *return_type,
+                      struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindLambda;
+    self->loc = loc;
     self->value.lambda = NEW(Tuple, 2, params, return_type);
     return self;
 }
 
 struct DataType *
-__new__DataTypeArray(struct DataType *data_type, Usize *size)
+__new__DataTypeArray(struct DataType *data_type,
+                     Usize *size,
+                     struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindArray;
+    self->loc = loc;
     self->value.array = NEW(Tuple, 2, data_type, size);
     return self;
 }
 
 struct DataType *
-__new__DataTypeCustom(struct Vec *names, struct Vec *generic_params)
+__new__DataTypeCustom(struct Vec *names,
+                      struct Vec *generic_params,
+                      struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindCustom;
+    self->loc = loc;
     self->value.custom = NEW(Tuple, 2, names, generic_params);
     return self;
 }
 
 struct DataType *
-__new__DataTypeTuple(struct Vec *tuple)
+__new__DataTypeTuple(struct Vec *tuple, struct Location loc)
 {
     struct DataType *self = malloc(sizeof(struct DataType));
     self->kind = DataTypeKindTuple;
+    self->loc = loc;
     self->value.tuple = tuple;
     return self;
 }
@@ -453,7 +469,7 @@ __new__GenericDataType(struct String *data_type, struct Location loc)
 struct Generic *
 __new__GenericRestrictedDataType(struct String *name,
                                  struct Location loc,
-                                 struct Tuple *data_type)
+                                 struct DataType *data_type)
 {
     struct Generic *self = malloc(sizeof(struct Generic));
     self->kind = GenericKindRestrictedDataType;
@@ -486,9 +502,7 @@ to_String__Generic(struct Generic self)
               "{S}: {Sr}",
               self.value.restricted_data_type->items[0],
               to_String__DataType(*CAST(
-                CAST(self.value.restricted_data_type->items[1], struct Tuple *)
-                  ->items[0],
-                struct DataType *)));
+                self.value.restricted_data_type->items[1], struct DataType *)));
         default:
             UNREACHABLE("unknown generic kind");
     }
@@ -497,12 +511,7 @@ to_String__Generic(struct Generic self)
 void
 __free__GenericRestrictedDataType(struct Generic *self)
 {
-    FREE(DataTypeAll,
-         CAST(self->value.restricted_data_type->items[1], struct Tuple *)
-           ->items[0]);
-    free(CAST(self->value.restricted_data_type->items[1], struct Tuple *)
-           ->items[1]);
-    FREE(Tuple, self->value.restricted_data_type->items[1]);
+    FREE(DataTypeAll, self->value.restricted_data_type->items[1]);
     FREE(Tuple, self->value.restricted_data_type);
     free(self);
 }
@@ -2972,7 +2981,7 @@ __free__FunParamCallAll(struct FunParamCall *self)
 struct FunParam *
 __new__FunParamDefault(struct String *name,
                        struct String *super_tag_name,
-                       struct Tuple *param_data_type,
+                       struct DataType *param_data_type,
                        struct Location loc,
                        struct Expr *default_)
 {
@@ -2989,7 +2998,7 @@ __new__FunParamDefault(struct String *name,
 struct FunParam *
 __new__FunParamNormal(struct String *name,
                       struct String *super_tag_name,
-                      struct Tuple *param_data_type,
+                      struct DataType *param_data_type,
                       struct Location loc)
 {
     struct FunParam *self = malloc(sizeof(struct FunParam));
@@ -3022,23 +3031,19 @@ to_String__FunParam(struct FunParam self)
                 if (self.super_tag.name)
                     append__String(
                       s,
-                      format(
-                        "{S}#{S} {Sr} := {Sr}",
-                        self.name,
-                        self.super_tag.name,
-                        to_String__DataType(*CAST(
-                          self.param_data_type->items[0], struct DataType *)),
-                        to_String__Expr(*self.value.default_)),
+                      format("{S}#{S} {Sr} := {Sr}",
+                             self.name,
+                             self.super_tag.name,
+                             to_String__DataType(*self.param_data_type),
+                             to_String__Expr(*self.value.default_)),
                       true);
                 else
                     append__String(
                       s,
-                      format(
-                        "{S} {Sr} := {Sr}",
-                        self.name,
-                        to_String__DataType(*CAST(
-                          self.param_data_type->items[0], struct DataType *)),
-                        to_String__Expr(*self.value.default_)),
+                      format("{S} {Sr} := {Sr}",
+                             self.name,
+                             to_String__DataType(*self.param_data_type),
+                             to_String__Expr(*self.value.default_)),
                       true);
             else if (self.super_tag.name)
                 append__String(s,
@@ -3061,22 +3066,20 @@ to_String__FunParam(struct FunParam self)
 
             if (self.param_data_type)
                 if (self.super_tag.name)
-                    append__String(s,
-                                   format("{S}#{S} {Sr}",
-                                          self.name,
-                                          self.super_tag.name,
-                                          to_String__DataType(*CAST(
-                                            self.param_data_type->items[0],
-                                            struct DataType *))),
-                                   true);
+                    append__String(
+                      s,
+                      format("{S}#{S} {Sr}",
+                             self.name,
+                             self.super_tag.name,
+                             to_String__DataType(*self.param_data_type)),
+                      true);
                 else
-                    append__String(s,
-                                   format("{S} {Sr}",
-                                          self.name,
-                                          to_String__DataType(*CAST(
-                                            self.param_data_type->items[0],
-                                            struct DataType *))),
-                                   true);
+                    append__String(
+                      s,
+                      format("{S} {Sr}",
+                             self.name,
+                             to_String__DataType(*self.param_data_type)),
+                      true);
             else if (self.super_tag.name)
                 append__String(
                   s, format("{S}#{S}", self.name, self.super_tag.name), true);
@@ -3095,11 +3098,8 @@ to_String__FunParam(struct FunParam self)
 void
 __free__FunParamDefault(struct FunParam *self)
 {
-    if (self->param_data_type) {
-        FREE(DataTypeAll, self->param_data_type->items[0]);
-        free(self->param_data_type->items[1]);
-        FREE(Tuple, self->param_data_type);
-    }
+    if (self->param_data_type)
+        FREE(DataTypeAll, self->param_data_type);
 
     FREE(ExprAll, self->value.default_);
     free(self);
@@ -3108,11 +3108,8 @@ __free__FunParamDefault(struct FunParam *self)
 void
 __free__FunParamNormal(struct FunParam *self)
 {
-    if (self->param_data_type) {
-        FREE(DataTypeAll, self->param_data_type->items[0]);
-        free(self->param_data_type->items[1]);
-        FREE(Tuple, self->param_data_type);
-    }
+    if (self->param_data_type)
+        FREE(DataTypeAll, self->param_data_type);
 
     free(self);
 }
@@ -3146,7 +3143,7 @@ __new__FunDecl(struct String *name,
                struct Vec *tags,
                struct Vec *generic_params,
                struct Vec *params,
-               struct Tuple *return_type,
+               struct DataType *return_type,
                struct Vec *body,
                bool is_pub,
                bool is_async)
@@ -3186,20 +3183,16 @@ to_String__FunDecl(struct FunDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__DataType(*CAST(
-                       CAST(get__Vec(*self.tags, i), struct Tuple *)->items[0],
-                       struct DataType *))),
+                     to_String__DataType(
+                       *CAST(get__Vec(*self.tags, i), struct DataType *))),
               true);
 
-        append__String(
-          s,
-          format("{Sr})",
-                 to_String__DataType(
-                   *CAST(CAST(get__Vec(*self.tags, len__Vec(*self.tags) - 1),
-                              struct Tuple *)
-                           ->items[0],
-                         struct DataType *))),
-          true);
+        append__String(s,
+                       format("{Sr})",
+                              to_String__DataType(*CAST(
+                                get__Vec(*self.tags, len__Vec(*self.tags) - 1),
+                                struct DataType *))),
+                       true);
     }
 
     append__String(s, format(" {S}", self.name), true);
@@ -3249,11 +3242,7 @@ to_String__FunDecl(struct FunDecl self)
 
     if (self.return_type)
         append__String(
-          s,
-          format(" {Sr} =\n",
-                 to_String__DataType(
-                   *CAST(self.return_type->items[0], struct DataType *))),
-          true);
+          s, format(" {Sr} =\n", to_String__DataType(*self.return_type)), true);
     else
         push_str__String(s, " =\n");
 
@@ -3288,12 +3277,8 @@ void
 __free__FunDecl(struct FunDecl *self)
 {
     if (self->tags) {
-        for (Usize i = len__Vec(*self->tags); i--;) {
-            struct Tuple *temp = get__Vec(*self->tags, i);
-            FREE(DataTypeAll, temp->items[0]);
-            free(temp->items[1]);
-            FREE(Tuple, temp);
-        }
+        for (Usize i = len__Vec(*self->tags); i--;)
+            FREE(DataTypeAll, get__Vec(*self->tags, i));
 
         FREE(Vec, self->tags);
     }
@@ -3312,11 +3297,8 @@ __free__FunDecl(struct FunDecl *self)
         FREE(Vec, self->params);
     }
 
-    if (self->return_type) {
-        FREE(DataTypeAll, self->return_type->items[0]);
-        free(self->return_type->items[1]);
-        FREE(Tuple, self->return_type);
-    }
+    if (self->return_type)
+        FREE(DataTypeAll, self->return_type);
 
     if (self->body) {
         for (Usize i = len__Vec(*self->body); i--;)
@@ -4266,21 +4248,17 @@ to_String__ClassDecl(struct ClassDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__DataType(*CAST(
-                       CAST(get__Vec(*self.inheritance, i), struct Tuple *)
-                         ->items[0],
-                       struct DataType *))),
+                     to_String__DataType(*CAST(get__Vec(*self.inheritance, i),
+                                               struct DataType *))),
               true);
 
-        append__String(s,
-                       format("{Sr}]",
-                              to_String__DataType(*CAST(
-                                CAST(get__Vec(*self.inheritance,
-                                              len__Vec(*self.inheritance) - 1),
-                                     struct Tuple *)
-                                  ->items[0],
-                                struct DataType *))),
-                       true);
+        append__String(
+          s,
+          format("{Sr}]",
+                 to_String__DataType(*CAST(
+                   get__Vec(*self.inheritance, len__Vec(*self.inheritance) - 1),
+                   struct DataType *))),
+          true);
     }
 
     if (self.impl) {
@@ -4290,19 +4268,14 @@ to_String__ClassDecl(struct ClassDecl self)
             append__String(
               s,
               format("{Sr}, ",
-                     to_String__DataType(*CAST(
-                       CAST(get__Vec(*self.inheritance, i), struct Tuple *)
-                         ->items[0],
-                       struct DataType *))),
+                     to_String__DataType(
+                       *CAST(get__Vec(*self.impl, i), struct DataType *))),
               true);
 
         append__String(s,
                        format("{Sr}]",
                               to_String__DataType(*CAST(
-                                CAST(get__Vec(*self.inheritance,
-                                              len__Vec(*self.inheritance) - 1),
-                                     struct Tuple *)
-                                  ->items[0],
+                                get__Vec(*self.impl, len__Vec(*self.impl) - 1),
                                 struct DataType *))),
                        true);
     }
@@ -4339,25 +4312,15 @@ __free__ClassDecl(struct ClassDecl *self)
     }
 
     if (self->inheritance) {
-        for (Usize i = len__Vec(*self->inheritance); i--;) {
-            FREE(
-              DataTypeAll,
-              CAST(get__Vec(*self->inheritance, i), struct Tuple *)->items[0]);
-            free(
-              CAST(get__Vec(*self->inheritance, i), struct Tuple *)->items[1]);
-            FREE(Tuple, get__Vec(*self->inheritance, i));
-        }
+        for (Usize i = len__Vec(*self->inheritance); i--;)
+            FREE(DataTypeAll, get__Vec(*self->inheritance, i));
 
         FREE(Vec, self->inheritance);
     }
 
     if (self->impl) {
-        for (Usize i = len__Vec(*self->impl); i--;) {
-            FREE(DataTypeAll,
-                 CAST(get__Vec(*self->impl, i), struct Tuple *)->items[0]);
-            free(CAST(get__Vec(*self->impl, i), struct Tuple *)->items[1]);
-            FREE(Tuple, get__Vec(*self->impl, i));
-        }
+        for (Usize i = len__Vec(*self->impl); i--;)
+            FREE(DataTypeAll, get__Vec(*self->impl, i));
 
         FREE(Vec, self->impl);
     }
