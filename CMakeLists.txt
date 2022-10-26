@@ -3,7 +3,7 @@ project(lily C)
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_INCLUDE_PATH src)
-SET(CMAKE_C_FLAGS "-Wall -O0 -O -O2 -O3")
+SET(CMAKE_C_FLAGS "-Wall -O0 -O -O2 -O3 -lm")
 set(CMAKE_COLOR_NINJA ON)
 
 set(BASE_SRC
